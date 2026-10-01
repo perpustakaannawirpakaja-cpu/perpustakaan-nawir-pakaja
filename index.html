@@ -179,6 +179,15 @@ main{
 .book-card p{
   margin:8px 0;
 }
+
+  .book-cover{
+  width:100%;
+  height:280px;
+  object-fit:cover;
+  border-radius:14px;
+  margin-bottom:16px;
+  display:block;
+}
 .letter .icon{
   font-size:34px;
 }
@@ -605,6 +614,7 @@ document
     card.className = "book-card";
 
     card.innerHTML = `
+    ${buku.cover_url ? `<img class="book-cover" src="${buku.cover_url}" alt="Cover ${buku.title || 'Buku'}">` : ""}
       <h3>${buku.title || "Tanpa Judul"}</h3>
       <p>Penulis: ${buku.author || "-"}</p>
       <p>Kategori: ${buku.category || "-"}</p>
