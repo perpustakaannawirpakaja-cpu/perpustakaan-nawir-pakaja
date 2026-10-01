@@ -156,7 +156,29 @@ main{
 .letter:active{
   transform:scale(.96);
 }
+#bookList{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
+  margin-top:30px;
+}
 
+.book-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 4px 15px rgba(0,0,0,.05);
+}
+
+.book-card h3{
+  margin-top:0;
+  margin-bottom:14px;
+}
+
+.book-card p{
+  margin:8px 0;
+}
 .letter .icon{
   font-size:34px;
 }
@@ -580,6 +602,7 @@ document
 
   data.forEach((buku) => {
     const card = document.createElement("div");
+    card.className = "book-card";
 
     card.innerHTML = `
       <h3>${buku.title || "Tanpa Judul"}</h3>
