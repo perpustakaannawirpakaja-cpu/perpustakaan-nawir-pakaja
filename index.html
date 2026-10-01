@@ -557,6 +557,27 @@ document
   const SUPABASE_URL = "https://lacdmofkvrmygwczoeux.supabase.co";
   const SUPABASE_KEY = "sb_publishable_vu1p7MFzan_Dqx_58B8dmQ_V14Hm0Vj";
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    async function tesSupabase() {
+  const { data, error } = await db
+    .from("books")
+    .select("*");
+
+  if (error) {
+    console.error("Supabase error:", error);
+    alert("Koneksi Supabase gagal: " + error.message);
+    return;
+  }
+
+  console.log("Data books:", data);
+
+  if (data && data.length > 0) {
+    alert("Koneksi berhasil! Buku ditemukan: " + data[0].title);
+  } else {
+    alert("Koneksi berhasil, tetapi tabel books belum mengirim data.");
+  }
+}
+
+tesSupabase();
 </script>
 
 </body>
