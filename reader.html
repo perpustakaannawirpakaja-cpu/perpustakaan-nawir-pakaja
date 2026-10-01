@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Reader | Perpustakaan Nawir Pakaja</title>
+
+  <style>
+    *{
+      box-sizing:border-box;
+    }
+
+    body{
+      margin:0;
+      font-family:Arial, sans-serif;
+      background:#111827;
+      color:white;
+    }
+
+    .reader-header{
+      height:60px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 20px;
+      background:#0f172a;
+      border-bottom:1px solid #334155;
+    }
+
+    .reader-header h2{
+      margin:0;
+      font-size:18px;
+    }
+
+    .back-button{
+      color:white;
+      text-decoration:none;
+      background:#2563eb;
+      padding:9px 14px;
+      border-radius:8px;
+    }
+
+    .reader-area{
+      min-height:calc(100vh - 60px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+
+    .book{
+      width:90%;
+      max-width:1000px;
+      min-height:600px;
+      background:white;
+      color:#111827;
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 20px 60px rgba(0,0,0,.35);
+    }
+
+    .book p{
+      font-size:22px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header class="reader-header">
+    <h2>📖 Perpustakaan Nawir Pakaja</h2>
+
+    <a href="index.html" class="back-button">
+      ← Kembali
+    </a>
+  </header>
+
+  <main class="reader-area">
+    <div class="book">
+      <p>Flipbook sedang disiapkan...</p>
+    </div>
+  </main>
+
+</body>
+</html>
