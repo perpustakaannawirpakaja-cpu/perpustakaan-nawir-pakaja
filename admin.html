@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Admin - Perpustakaan Nawir Pakaja</title>
+
+<style>
+:root{
+  --bg:#f4f7fb;
+  --card:#ffffff;
+  --text:#172033;
+  --muted:#667085;
+  --primary:#2563eb;
+  --border:#e4e7ec;
+}
+
+body.dark{
+  --bg:#0f172a;
+  --card:#1e293b;
+  --text:#f8fafc;
+  --muted:#cbd5e1;
+  --primary:#2563eb;
+  --border:#334155;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  transition:.3s;
+}
+
+header{
+  padding:20px;
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+header h1{
+  margin:0;
+  font-size:22px;
+}
+
+.header-buttons{
+  display:flex;
+  gap:8px;
+}
+
+button,
+.back{
+  border:0;
+  border-radius:12px;
+  padding:12px 16px;
+  cursor:pointer;
+  font-size:15px;
+}
+
+.theme{
+  background:var(--primary);
+  color:white;
+}
+
+.back{
+  background:var(--bg);
+  color:var(--text);
+  text-decoration:none;
+  border:1px solid var(--border);
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:22px;
+}
+
+.welcome{
+  margin-bottom:22px;
+}
+
+.welcome h2{
+  margin-bottom:8px;
+}
+
+.welcome p{
+  color:var(--muted);
+  line-height:1.6;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:22px;
+  margin-bottom:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,.05);
+}
+
+.card h2{
+  margin-top:0;
+}
+
+label{
+  display:block;
+  margin-top:16px;
+  margin-bottom:7px;
+  font-weight:bold;
+}
+
+input,
+select{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:var(--bg);
+  color:var(--text);
+  font-size:16px;
+}
+
+.file-box{
+  border:2px dashed var(--border);
+  padding:20px;
+  border-radius:16px;
+  margin-top:8px;
+  text-align:center;
+}
+
+.file-box p{
+  color:var(--muted);
+}
+
+.save{
+  width:100%;
+  margin-top:22px;
+  background:var(--primary);
+  color:white;
+  font-weight:bold;
+  font-size:16px;
+}
+
+.message{
+  display:none;
+  margin-top:15px;
+  padding:14px;
+  border-radius:12px;
+  background:#dcfce7;
+  color:#166534;
+}
+
+.book{
+  padding:15px 0;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  gap:15px;
+  align-items:center;
+}
+
+.book:last-child{
+  border-bottom:0;
+}
+
+.book-title{
+  font-weight:bold;
+}
+
+.book-info{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.delete{
+  background:#fee2e2;
+  color:#b91c1c;
+  padding:9px 12px;
+}
+
+.empty{
+  text-align:center;
+  padding:25px 10px;
+  color:var(--muted);
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+  margin-bottom:20px;
+}
+
+.stat{
+  background:var(--card);
+  border:1px solid var(--border);
+  padding:18px;
+  border-radius:18px;
+}
+
+.stat strong{
+  display:block;
+  font-size:28px;
+  margin-top:5px;
+}
+
+@media(max-width:600px){
+  header{
+    align-items:flex-start;
+  }
+
+  header h1{
+    font-size:19px;
+  }
+
+  .container{
+    padding:16px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+
+<h1>🔐 Admin Perpustakaan</h1>
+
+<div class="header-buttons">
+  <a href="index.html" class="back">← Beranda</a>
+  <button class="theme" onclick="toggleTheme()" id="themeButton">
+    🌙 Dark
+  </button>
+</div>
+
+</header>
+
+<div class="container">
+
+<div class="welcome">
+
+<h2>Dashboard Admin</h2>
+
+<p>
+Kelola koleksi digital Perpustakaan Nawir Pakaja.
+Tambahkan buku dan kelompokkan berdasarkan abjad A–Z.
+</p>
+
+</div>
+
+<div class="stats">
+
+<div class="stat">
+📚 Total Buku
+<strong id="totalBooks">0</strong>
+</div>
+
+<div class="stat">
+🔤 Kategori
+<strong id="totalCategories">0</strong>
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>📤 Upload Buku</h2>
+
+<label>Judul Buku</label>
+
+<input
+type="text"
+id="title"
+placeholder="Contoh: I'tiqad Ahlus Sunnah Wal Jama'ah"
+>
+
+<label>Penulis</label>
+
+<input
+type="text"
+id="author"
+placeholder="Nama penulis"
+>
+
+<label>Kategori Abjad</label>
+
+<select id="category">
+
+<option value="">Pilih kategori</option>
+<option>A</option>
+<option>B</option>
+<option>C</option>
+<option>D</option>
+<option>E</option>
+<option>F</option>
+<option>G</option>
+<option>H</option>
+<option>I</option>
+<option>J</option>
+<option>K</option>
+<option>L</option>
+<option>M</option>
+<option>N</option>
+<option>O</option>
+<option>P</option>
+<option>Q</option>
+<option>R</option>
+<option>S</option>
+<option>T</option>
+<option>U</option>
+<option>V</option>
+<option>W</option>
+<option>X</option>
+<option>Y</option>
+<option>Z</option>
+
+</select>
+
+<label>File Buku</label>
+
+<div class="file-box">
+
+<input
+type="file"
+id="bookFile"
+accept=".pdf,application/pdf"
+>
+
+<p>Format sementara: PDF</p>
+
+</div>
+
+<button class="save" onclick="addBook()">
+📚 Tambahkan ke Koleksi
+</button>
+
+<div class="message" id="message">
+✅ Buku berhasil ditambahkan ke daftar admin.
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>📖 Daftar Buku</h2>
+
+<div id="bookList"></div>
+
+</div>
+
+</div>
+
+<script>
+
+const STORAGE_KEY = "nawirLibraryBooks";
+
+function toggleTheme(){
+
+  document.body.classList.toggle("dark");
+
+  const dark =
+    document.body.classList.contains("dark");
+
+  localStorage.setItem(
+    "nawirTheme",
+    dark ? "dark" : "light"
+  );
+
+  updateThemeButton();
+}
+
+function updateThemeButton(){
+
+  const button =
+    document.getElementById("themeButton");
+
+  if(document.body.classList.contains("dark")){
+    button.innerHTML="☀️ Light";
+  }else{
+    button.innerHTML="🌙 Dark";
+  }
+}
+
+function loadTheme(){
+
+  if(localStorage.getItem("nawirTheme")==="dark"){
+    document.body.classList.add("dark");
+  }
+
+  updateThemeButton();
+}
+
+function getBooks(){
+
+  try{
+    return JSON.parse(
+      localStorage.getItem(STORAGE_KEY)
+    ) || [];
+  }
+  catch{
+    return [];
+  }
+}
+
+function saveBooks(books){
+
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(books)
+  );
+}
+
+function addBook(){
+
+  const title =
+    document.getElementById("title")
+    .value.trim();
+
+  const author =
+    document.getElementById("author")
+    .value.trim();
+
+  const category =
+    document.getElementById("category")
+    .value;
+
+  const fileInput =
+    document.getElementById("bookFile");
+
+  if(!title){
+    alert("Masukkan judul buku.");
+    return;
+  }
+
+  if(!category){
+    alert("Pilih kategori A–Z.");
+    return;
+  }
+
+  if(!fileInput.files.length){
+    alert("Pilih file PDF terlebih dahulu.");
+    return;
+  }
+
+  const file = fileInput.files[0];
+
+  if(
+    file.type !== "application/pdf" &&
+    !file.name.toLowerCase().endsWith(".pdf")
+  ){
+    alert("File harus berformat PDF.");
+    return;
+  }
+
+  const books = getBooks();
+
+  books.push({
+    id:Date.now(),
+    title:title,
+    author:author || "-",
+    category:category,
+    fileName:file.name
+  });
+
+  saveBooks(books);
+
+  document.getElementById("title").value="";
+  document.getElementById("author").value="";
+  document.getElementById("category").value="";
+  fileInput.value="";
+
+  const message =
+    document.getElementById("message");
+
+  message.style.display="block";
+
+  setTimeout(()=>{
+    message.style.display="none";
+  },3000);
+
+  renderBooks();
+}
+
+function deleteBook(id){
+
+  if(!confirm("Hapus buku ini dari daftar?")){
+    return;
+  }
+
+  const books =
+    getBooks().filter(
+      book => book.id !== id
+    );
+
+  saveBooks(books);
+
+  renderBooks();
+}
+
+function renderBooks(){
+
+  const books = getBooks();
+
+  const list =
+    document.getElementById("bookList");
+
+  document.getElementById(
+    "totalBooks"
+  ).textContent = books.length;
+
+  const categories =
+    new Set(
+      books.map(book=>book.category)
+    );
+
+  document.getElementById(
+    "totalCategories"
+  ).textContent = categories.size;
+
+  if(books.length===0){
+
+    list.innerHTML=`
+      <div class="empty">
+        📚<br><br>
+        Belum ada buku dalam koleksi.
+      </div>
+    `;
+
+    return;
+  }
+
+  books.sort(
+    (a,b)=>
+    a.title.localeCompare(b.title)
+  );
+
+  list.innerHTML =
+    books.map(book=>`
+
+      <div class="book">
+
+        <div>
+
+          <div class="book-title">
+            📖 ${escapeHtml(book.title)}
+          </div>
+
+          <div class="book-info">
+            Penulis:
+            ${escapeHtml(book.author)}
+            • Kategori ${book.category}
+            <br>
+            📄 ${escapeHtml(book.fileName)}
+          </div>
+
+        </div>
+
+        <button
+          class="delete"
+          onclick="deleteBook(${book.id})"
+        >
+          Hapus
+        </button>
+
+      </div>
+
+    `).join("");
+}
+
+function escapeHtml(text){
+
+  const div =
+    document.createElement("div");
+
+  div.textContent=text;
+
+  return div.innerHTML;
+}
+
+loadTheme();
+renderBooks();
+
+</script>
+
+</body>
+</html>
