@@ -1,186 +1,556 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Perpustakaan Nawir Pakaja</title>
+<title>Perpustakaan Nawir Pakaja</title>
 
-  <style>
-    :root {
-      --bg: #f4f7fb;
-      --card: #ffffff;
-      --text: #172033;
-      --muted: #667085;
-      --primary: #2563eb;
-    }
+<style>
+:root{
+  --bg:#f4f7fb;
+  --card:#ffffff;
+  --text:#172033;
+  --muted:#667085;
+  --primary:#2563eb;
+  --border:#e4e7ec;
+}
 
-    body.dark {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --text: #f8fafc;
-      --muted: #cbd5e1;
-    }
+body.dark{
+  --bg:#0f172a;
+  --card:#1e293b;
+  --text:#f8fafc;
+  --muted:#cbd5e1;
+  --border:#334155;
+}
 
-    * {
-      box-sizing: border-box;
-    }
+*{
+  box-sizing:border-box;
+}
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      transition: 0.3s;
-    }
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  transition:.3s;
+}
 
-    header {
-      padding: 20px;
-      background: var(--card);
-      box-shadow: 0 2px 12px rgba(0,0,0,.08);
-    }
+header{
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:var(--card);
+  box-shadow:0 2px 12px rgba(0,0,0,.08);
+}
 
-    .top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      max-width: 1000px;
-      margin: auto;
-    }
+.topbar{
+  max-width:1100px;
+  margin:auto;
+  padding:16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
 
-    h1 {
-      margin: 0;
-      font-size: 22px;
-    }
+.logo{
+  font-size:20px;
+  font-weight:bold;
+}
 
-    .theme-button {
-      border: 0;
-      background: var(--primary);
-      color: white;
-      padding: 10px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-    }
+.actions{
+  display:flex;
+  gap:8px;
+}
 
-    main {
-      max-width: 1000px;
-      margin: auto;
-      padding: 25px 16px;
-    }
+button{
+  border:0;
+  cursor:pointer;
+  font-size:15px;
+}
 
-    .hero {
-      background: var(--card);
-      padding: 25px;
-      border-radius: 18px;
-      margin-bottom: 20px;
-      box-shadow: 0 5px 20px rgba(0,0,0,.08);
-    }
+.theme-btn,
+.admin-btn{
+  padding:10px 12px;
+  border-radius:12px;
+}
 
-    .hero h2 {
-      margin-top: 0;
-    }
+.theme-btn{
+  background:var(--primary);
+  color:white;
+}
 
-    .hero p {
-      color: var(--muted);
-      line-height: 1.6;
-    }
+.admin-btn{
+  background:var(--card);
+  color:var(--text);
+  border:1px solid var(--border);
+}
 
-    .books {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 15px;
-    }
+main{
+  max-width:1100px;
+  margin:auto;
+  padding:22px 16px 50px;
+}
 
-    .book {
-      background: var(--card);
-      padding: 20px;
-      border-radius: 16px;
-      text-align: center;
-      box-shadow: 0 5px 20px rgba(0,0,0,.07);
-    }
+.hero{
+  background:var(--card);
+  padding:24px;
+  border-radius:20px;
+  box-shadow:0 5px 20px rgba(0,0,0,.07);
+  margin-bottom:20px;
+}
 
-    .book-icon {
-      font-size: 50px;
-    }
+.hero h1{
+  margin:0 0 10px;
+  font-size:28px;
+}
 
-    .book h3 {
-      margin-bottom: 5px;
-    }
+.hero p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.6;
+}
 
-    .book p {
-      color: var(--muted);
-      font-size: 14px;
-    }
-  </style>
+.search{
+  margin:20px 0;
+}
+
+.search input{
+  width:100%;
+  padding:16px 18px;
+  border:1px solid var(--border);
+  border-radius:15px;
+  background:var(--card);
+  color:var(--text);
+  font-size:16px;
+  outline:none;
+}
+
+.search input:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(37,99,235,.15);
+}
+
+.section-title{
+  margin:25px 0 14px;
+}
+
+.alphabet{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(110px,1fr));
+  gap:12px;
+}
+
+.letter{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px 10px;
+  text-align:center;
+  box-shadow:0 4px 15px rgba(0,0,0,.05);
+  cursor:pointer;
+  transition:.2s;
+}
+
+.letter:active{
+  transform:scale(.96);
+}
+
+.letter .icon{
+  font-size:34px;
+}
+
+.letter h3{
+  margin:8px 0 4px;
+  font-size:22px;
+}
+
+.letter p{
+  margin:0;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.no-result{
+  display:none;
+  background:var(--card);
+  padding:20px;
+  border-radius:15px;
+  text-align:center;
+  color:var(--muted);
+}
+
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  z-index:50;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.modal.show{
+  display:flex;
+}
+
+.modal-box{
+  width:100%;
+  max-width:400px;
+  background:var(--card);
+  border-radius:20px;
+  padding:24px;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+}
+
+.modal-box h2{
+  margin-top:0;
+}
+
+.modal-box input{
+  width:100%;
+  padding:14px;
+  margin-bottom:12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:var(--bg);
+  color:var(--text);
+  font-size:16px;
+}
+
+.modal-actions{
+  display:flex;
+  gap:10px;
+}
+
+.login-btn,
+.close-btn{
+  flex:1;
+  padding:13px;
+  border-radius:12px;
+}
+
+.login-btn{
+  background:var(--primary);
+  color:white;
+}
+
+.close-btn{
+  background:var(--bg);
+  color:var(--text);
+}
+
+footer{
+  text-align:center;
+  padding:25px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+@media(max-width:500px){
+  .logo{
+    font-size:17px;
+  }
+
+  .theme-btn,
+  .admin-btn{
+    padding:9px;
+    font-size:13px;
+  }
+
+  .hero h1{
+    font-size:24px;
+  }
+
+  .alphabet{
+    grid-template-columns:repeat(3,1fr);
+  }
+}
+</style>
 </head>
 
 <body>
 
 <header>
-  <div class="top">
-    <h1>📚 Perpustakaan Nawir Pakaja</h1>
+  <div class="topbar">
 
-    <button class="theme-button" onclick="ubahTema()">
-      🌙 Dark
-    </button>
+    <div class="logo">
+      📚 Perpustakaan Nawir Pakaja
+    </div>
+
+    <div class="actions">
+
+      <button class="admin-btn" onclick="bukaAdmin()">
+        🔐 Admin
+      </button>
+
+      <button class="theme-btn" onclick="ubahTema()">
+        🌙 Dark
+      </button>
+
+    </div>
+
   </div>
 </header>
 
 <main>
 
   <section class="hero">
-    <h2>Selamat Datang</h2>
+
+    <h1>Selamat Datang</h1>
 
     <p>
-      Perpustakaan digital Nawir Pakaja.
-      Buku-buku nantinya dapat dikelompokkan berdasarkan
-      abjad dan dibaca dalam bentuk flipbook.
+      Temukan dan baca koleksi buku digital
+      Perpustakaan Nawir Pakaja.
+      Koleksi disusun berdasarkan abjad A–Z.
     </p>
-  </section>
-
-  <section class="books">
-
-    <div class="book">
-      <div class="book-icon">📖</div>
-      <h3>A</h3>
-      <p>Koleksi buku huruf A</p>
-    </div>
-
-    <div class="book">
-      <div class="book-icon">📖</div>
-      <h3>B</h3>
-      <p>Koleksi buku huruf B</p>
-    </div>
-
-    <div class="book">
-      <div class="book-icon">📖</div>
-      <h3>C</h3>
-      <p>Koleksi buku huruf C</p>
-    </div>
 
   </section>
+
+  <div class="search">
+
+    <input
+      type="search"
+      id="searchInput"
+      placeholder="🔎 Cari berdasarkan abjad..."
+      oninput="cariKoleksi()"
+    >
+
+  </div>
+
+  <h2 class="section-title">
+    Koleksi A–Z
+  </h2>
+
+  <section class="alphabet" id="alphabet"></section>
+
+  <div class="no-result" id="noResult">
+    📚 Koleksi tidak ditemukan.
+  </div>
 
 </main>
 
+<footer>
+  © Perpustakaan Nawir Pakaja
+</footer>
+
+
+<!-- MODAL ADMIN -->
+
+<div class="modal" id="adminModal">
+
+  <div class="modal-box">
+
+    <h2>🔐 Admin</h2>
+
+    <p>
+      Area pengelolaan Perpustakaan Nawir Pakaja.
+    </p>
+
+    <input
+      type="text"
+      placeholder="Nama pengguna"
+    >
+
+    <input
+      type="password"
+      placeholder="Password"
+    >
+
+    <div class="modal-actions">
+
+      <button
+        class="close-btn"
+        onclick="tutupAdmin()">
+        Batal
+      </button>
+
+      <button
+        class="login-btn"
+        onclick="loginAdmin()">
+        Masuk
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
 <script>
-  const tombolTema = document.querySelector(".theme-button");
 
-  if (localStorage.getItem("tema") === "dark") {
-    document.body.classList.add("dark");
-    tombolTema.innerHTML = "☀️ Light";
-  }
+const alphabet =
+"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
-  function ubahTema() {
-    document.body.classList.toggle("dark");
+const container =
+document.getElementById("alphabet");
 
-    if (document.body.classList.contains("dark")) {
-      localStorage.setItem("tema", "dark");
-      tombolTema.innerHTML = "☀️ Light";
-    } else {
-      localStorage.setItem("tema", "light");
-      tombolTema.innerHTML = "🌙 Dark";
+alphabet.forEach(huruf => {
+
+  const card =
+  document.createElement("div");
+
+  card.className = "letter";
+
+  card.dataset.letter = huruf;
+
+  card.innerHTML = `
+    <div class="icon">📖</div>
+    <h3>${huruf}</h3>
+    <p>Koleksi huruf ${huruf}</p>
+  `;
+
+  card.onclick = function(){
+    bukaKoleksi(huruf);
+  };
+
+  container.appendChild(card);
+
+});
+
+
+function bukaKoleksi(huruf){
+
+  alert(
+    "Koleksi buku huruf " +
+    huruf +
+    " akan kita isi pada tahap berikutnya."
+  );
+
+}
+
+
+function cariKoleksi(){
+
+  const keyword =
+  document
+  .getElementById("searchInput")
+  .value
+  .trim()
+  .toUpperCase();
+
+  const cards =
+  document.querySelectorAll(".letter");
+
+  let ditemukan = false;
+
+  cards.forEach(card => {
+
+    const cocok =
+    card.dataset.letter.includes(keyword);
+
+    card.style.display =
+    cocok ? "block" : "none";
+
+    if(cocok){
+      ditemukan = true;
     }
+
+  });
+
+  document
+  .getElementById("noResult")
+  .style.display =
+  ditemukan ? "none" : "block";
+
+}
+
+
+const tombolTema =
+document.querySelector(".theme-btn");
+
+
+if(
+  localStorage.getItem("tema")
+  === "dark"
+){
+
+  document.body
+  .classList
+  .add("dark");
+
+  tombolTema.innerHTML =
+  "☀️ Light";
+
+}
+
+
+function ubahTema(){
+
+  document.body
+  .classList
+  .toggle("dark");
+
+  if(
+    document.body
+    .classList
+    .contains("dark")
+  ){
+
+    localStorage
+    .setItem("tema","dark");
+
+    tombolTema.innerHTML =
+    "☀️ Light";
+
+  }else{
+
+    localStorage
+    .setItem("tema","light");
+
+    tombolTema.innerHTML =
+    "🌙 Dark";
+
   }
+
+}
+
+
+function bukaAdmin(){
+
+  document
+  .getElementById("adminModal")
+  .classList
+  .add("show");
+
+}
+
+
+function tutupAdmin(){
+
+  document
+  .getElementById("adminModal")
+  .classList
+  .remove("show");
+
+}
+
+
+function loginAdmin(){
+
+  alert(
+    "Login Admin sudah aktif secara tampilan. Sistem keamanan Admin akan kita pasang pada tahap berikutnya."
+  );
+
+}
+
+
+document
+.getElementById("adminModal")
+.addEventListener(
+  "click",
+  function(e){
+
+    if(e.target === this){
+      tutupAdmin();
+    }
+
+  }
+);
+
 </script>
 
 </body>
