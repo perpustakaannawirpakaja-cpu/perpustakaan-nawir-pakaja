@@ -643,7 +643,7 @@ document
       <p>Penulis: ${buku.author || "-"}</p>
       <p>Kategori: ${buku.category || "-"}</p>
       <p>${buku.description || ""}</p>
-      ${buku.file_url ? `<a class="read-button" href="${buku.file_url}" target="_blank">📖 Baca Buku</a>` : ""}
+      ${buku.file_url ? `<a class="read-button" href="reader.html?file=${encodeURIComponent(buku.file_url)}">📖 Baca Buku</a>` : ""}
       </div>
     `;
 
