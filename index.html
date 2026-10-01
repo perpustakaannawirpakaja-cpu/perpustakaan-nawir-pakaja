@@ -325,7 +325,7 @@ footer{
   </h2>
 
   <section class="alphabet" id="alphabet"></section>
-
+<section id="bookList"></section>
   <div class="no-result" id="noResult">
     📚 Koleksi tidak ditemukan.
   </div>
@@ -557,28 +557,43 @@ document
   const SUPABASE_URL = "https://lacdmofkvrmygwczoeux.supabase.co";
   const SUPABASE_KEY = "sb_publishable_vu1p7MFzan_Dqx_58B8dmQ_V14Hm0Vj";
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    async function tesSupabase() {
+    async function tampilkanBuku() {
   const { data, error } = await db
     .from("books")
-    .select("*");
+    .select("*")
+    .order("title", { ascending: true });
+
+  const bookList = document.getElementById("bookList");
 
   if (error) {
-    console.error("Supabase error:", error);
-    alert("Koneksi Supabase gagal: " + error.message);
+    console.error("Gagal mengambil buku:", error);
+    bookList.innerHTML = "<p>Gagal memuat koleksi buku.</p>";
     return;
   }
 
-  console.log("Data books:", data);
-
-  if (data && data.length > 0) {
-    alert("Koneksi berhasil! Buku ditemukan: " + data[0].title);
-  } else {
-    alert("Koneksi berhasil, tetapi tabel books belum mengirim data.");
+  if (!data || data.length === 0) {
+    bookList.innerHTML = "<p>Belum ada buku.</p>";
+    return;
   }
+
+  bookList.innerHTML = "";
+
+  data.forEach((buku) => {
+    const card = document.createElement("div");
+
+    card.innerHTML = `
+      <h3>${buku.title || "Tanpa Judul"}</h3>
+      <p>Penulis: ${buku.author || "-"}</p>
+      <p>Kategori: ${buku.category || "-"}</p>
+      <p>${buku.description || ""}</p>
+    `;
+
+    bookList.appendChild(card);
+  });
 }
 
-tesSupabase();
-</script>
+tampilkanBuku();
+    </script>
 
 </body>
 </html>
