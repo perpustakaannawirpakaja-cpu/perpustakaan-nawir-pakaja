@@ -67,6 +67,31 @@
     .book p{
       font-size:22px;
     }
+    .page-controls{
+  position:fixed;
+  top:75px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:9999;
+
+  display:flex;
+  align-items:center;
+  gap:12px;
+
+  padding:10px 14px;
+  background:#0f172a;
+  color:white;
+  border-radius:12px;
+  box-shadow:0 6px 20px rgba(0,0,0,.25);
+  white-space:nowrap;
+}
+
+.page-controls button{
+  padding:8px 12px;
+  border:0;
+  border-radius:8px;
+  cursor:pointer;
+}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
