@@ -92,6 +92,50 @@
   border-radius:8px;
   cursor:pointer;
 }
+    .page-container{
+  perspective:1800px;
+}
+
+#pdf-page{
+  transform-style:preserve-3d;
+  backface-visibility:hidden;
+}
+
+#pdf-page.flip-next{
+  animation:flipNext .65s ease;
+}
+
+#pdf-page.flip-prev{
+  animation:flipPrev .65s ease;
+}
+
+@keyframes flipNext{
+  0%{
+    transform:rotateY(0deg);
+  }
+
+  50%{
+    transform:rotateY(-85deg) scale(.96);
+  }
+
+  100%{
+    transform:rotateY(0deg);
+  }
+}
+
+@keyframes flipPrev{
+  0%{
+    transform:rotateY(0deg);
+  }
+
+  50%{
+    transform:rotateY(85deg) scale(.96);
+  }
+
+  100%{
+    transform:rotateY(0deg);
+  }
+}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -166,14 +210,33 @@ document.getElementById("page-num").textContent = pageNum;
     document.getElementById("page-count").textContent = pdfDoc.numPages;
     renderPage(pageNum);
   }
+function flipToPage(targetPage, direction) {
+  const canvas = document.getElementById("pdf-page");
+  const flipClass = direction === "next" ? "flip-next" : "flip-prev";
+
+  canvas.classList.remove("flip-next", "flip-prev");
+
+  void canvas.offsetWidth;
+
+  canvas.classList.add(flipClass);
+
+  setTimeout(() => {
+    renderPage(targetPage);
+  }, 325);
+
+  setTimeout(() => {
+    canvas.classList.remove(flipClass);
+  }, 650);
+}
+
 document.getElementById("prev-page").addEventListener("click", () => {
   if (pageNum <= 1) return;
-  renderPage(pageNum - 1);
+  flipToPage(pageNum - 1, "prev");
 });
 
 document.getElementById("next-page").addEventListener("click", () => {
   if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
-  renderPage(pageNum + 1);
+  flipToPage(pageNum + 1, "next");
 });
   loadPDF();
 </script>
