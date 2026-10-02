@@ -81,7 +81,20 @@
 
   <main class="reader-area">
     <div class="book" id="flipbook">
+  <div class="page-container">
   <canvas id="pdf-page"></canvas>
+</div>
+
+<div class="page-controls">
+  <button id="prev-page">◀ Sebelumnya</button>
+
+  <span>
+    Halaman <b id="page-num">1</b> /
+    <b id="page-count">0</b>
+  </span>
+
+  <button id="next-page">Berikutnya ▶</button>
+</div>
 </div>
   </main>
 <script>
@@ -95,6 +108,9 @@
   let pageNum = 1;
 
   async function renderPage(num) {
+
+    pageNum = num;
+document.getElementById("page-num").textContent = pageNum;
     const page = await pdfDoc.getPage(num);
 
     const canvas = document.getElementById("pdf-page");
@@ -118,9 +134,18 @@
     }
 
     pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+    document.getElementById("page-count").textContent = pdfDoc.numPages;
     renderPage(pageNum);
   }
+document.getElementById("prev-page").addEventListener("click", () => {
+  if (pageNum <= 1) return;
+  renderPage(pageNum - 1);
+});
 
+document.getElementById("next-page").addEventListener("click", () => {
+  if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+  renderPage(pageNum + 1);
+});
   loadPDF();
 </script>
 </body>
