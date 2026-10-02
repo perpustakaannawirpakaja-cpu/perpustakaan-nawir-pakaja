@@ -111,29 +111,45 @@
 
 @keyframes flipNext{
   0%{
-    transform:rotateY(0deg);
+    transform:rotateY(0deg) scale(1);
+    opacity:1;
+  }
+
+  49%{
+    transform:rotateY(-89deg) scale(.92);
+    opacity:.35;
   }
 
   50%{
-    transform:rotateY(-85deg) scale(.96);
+    transform:rotateY(89deg) scale(.92);
+    opacity:.35;
   }
 
   100%{
-    transform:rotateY(0deg);
+    transform:rotateY(0deg) scale(1);
+    opacity:1;
   }
 }
 
-@keyframes flipPrev{
+    @keyframes flipPrev{
   0%{
-    transform:rotateY(0deg);
+    transform:rotateY(0deg) scale(1);
+    opacity:1;
+  }
+
+  49%{
+    transform:rotateY(89deg) scale(.92);
+    opacity:.35;
   }
 
   50%{
-    transform:rotateY(85deg) scale(.96);
+    transform:rotateY(-89deg) scale(.92);
+    opacity:.35;
   }
 
   100%{
-    transform:rotateY(0deg);
+    transform:rotateY(0deg) scale(1);
+    opacity:1;
   }
 }
   </style>
