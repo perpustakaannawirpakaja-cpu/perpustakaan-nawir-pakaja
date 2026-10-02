@@ -81,20 +81,22 @@
 
   <main class="reader-area">
     <div class="book" id="flipbook">
+
+  <div class="page-controls">
+    <button id="prev-page">◀ Sebelumnya</button>
+
+    <span>
+      Halaman <b id="page-num">1</b> /
+      <b id="page-count">0</b>
+    </span>
+
+    <button id="next-page">Berikutnya ▶</button>
+  </div>
+
   <div class="page-container">
-  <canvas id="pdf-page"></canvas>
-</div>
+    <canvas id="pdf-page"></canvas>
+  </div>
 
-<div class="page-controls">
-  <button id="prev-page">◀ Sebelumnya</button>
-
-  <span>
-    Halaman <b id="page-num">1</b> /
-    <b id="page-count">0</b>
-  </span>
-
-  <button id="next-page">Berikutnya ▶</button>
-</div>
 </div>
   </main>
 <script>
