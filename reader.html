@@ -176,6 +176,63 @@
   color:white;
   box-shadow:0 10px 30px rgba(0,0,0,.35);
 }
+    @media (max-width:600px){
+
+  .reader-header{
+    height:54px;
+    padding:0 10px;
+  }
+
+  .reader-header h2{
+    font-size:14px;
+  }
+
+  .back-button{
+    padding:7px 10px;
+    font-size:12px;
+  }
+
+  .reader-area{
+    padding:10px 6px 85px;
+  }
+
+  .book{
+    width:100%;
+    min-height:0;
+    border-radius:10px;
+    gap:10px;
+  }
+
+  .page-controls{
+    top:auto;
+    bottom:10px;
+    width:calc(100% - 16px);
+    padding:8px;
+    gap:5px;
+    justify-content:center;
+    border-radius:12px;
+  }
+
+  .page-controls button{
+    padding:8px 7px;
+    font-size:11px;
+  }
+
+  .page-controls span{
+    font-size:11px;
+  }
+
+  #page-flip{
+    width:100%;
+    display:flex;
+    justify-content:center;
+  }
+
+  #open-book{
+    font-size:18px;
+    padding:14px 22px;
+  }
+}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
