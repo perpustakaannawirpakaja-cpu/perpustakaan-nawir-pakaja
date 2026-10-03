@@ -184,6 +184,7 @@
 <body>
 
   <audio id="bismillah-audio" src="Bismillah_final_natural.m4a" preload="auto"></audio>
+  <audio id="page-flip-audio" src="page_flip_paper.m4a" preload="auto"></audio>
   <header class="reader-header">
     <h2>📖 Perpustakaan Nawir Pakaja</h2>
 
@@ -228,49 +229,17 @@ let audioCtx = null;
 function playPageFlipSound() {
   if (!soundEnabled) return;
 
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
+  const flipAudio = document.getElementById("page-flip-audio");
 
-  if (audioCtx.state === "suspended") {
-    audioCtx.resume();
-  }
+  flipAudio.currentTime = 0;
+  flipAudio.volume = 0.45;
 
-  const duration = 0.35;
-  const length = Math.floor(audioCtx.sampleRate * duration);
-  const buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-
-  for (let i = 0; i < length; i++) {
-    const envelope = Math.sin(Math.PI * i / length);
-    data[i] = (Math.random() * 2 - 1) * envelope;
-  }
-
-  const source = audioCtx.createBufferSource();
-  const filter = audioCtx.createBiquadFilter();
-  const gain = audioCtx.createGain();
-
-  source.buffer = buffer;
-
-  filter.type = "bandpass";
-  filter.frequency.value = 1400;
-  filter.Q.value = 0.8;
-
-  gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.14, audioCtx.currentTime + 0.02);
-  gain.gain.exponentialRampToValueAtTime(
-    0.0001,
-    audioCtx.currentTime + duration
-  );
-
-  source.connect(filter);
-  filter.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  source.start();
+  flipAudio.play().catch((error) => {
+    console.log("Suara kertas gagal diputar:", error);
+  });
 }
-  
-async function renderPDFPages() {
+
+  async function renderPDFPages() {
   const images = [];
 
   for (let num = 1; num <= pdfDoc.numPages; num++) {
