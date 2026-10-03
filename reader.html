@@ -183,6 +183,7 @@
     </span>
 
     <button id="next-page">Berikutnya ▶</button>
+    <button id="sound-toggle">🔊 Sound ON</button>
   </div>
 
   <div id="page-flip"></div>
@@ -195,10 +196,55 @@
 
   const params = new URLSearchParams(window.location.search);
   const pdfUrl = params.get("file");
+  let soundEnabled = true;
+let audioCtx = null;
 
   let pdfDoc = null;
   let pageNum = 1;
+function playPageFlipSound() {
+  if (!soundEnabled) return;
 
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+
+  const duration = 0.35;
+  const length = Math.floor(audioCtx.sampleRate * duration);
+  const buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  for (let i = 0; i < length; i++) {
+    const envelope = Math.sin(Math.PI * i / length);
+    data[i] = (Math.random() * 2 - 1) * envelope;
+  }
+
+  const source = audioCtx.createBufferSource();
+  const filter = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+
+  source.buffer = buffer;
+
+  filter.type = "bandpass";
+  filter.frequency.value = 1400;
+  filter.Q.value = 0.8;
+
+  gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.14, audioCtx.currentTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    audioCtx.currentTime + duration
+  );
+
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  source.start();
+}
   
 async function renderPDFPages() {
   const images = [];
@@ -268,6 +314,7 @@ async function loadPDF() {
   pageFlip.on("flip", (e) => {
     pageNum = Number(e.data) + 1;
     document.getElementById("page-num").textContent = pageNum;
+    playPageFlipSound();
   });
 
   pageFlip.loadFromImages(images);
@@ -285,6 +332,12 @@ document.getElementById("next-page").addEventListener("click", () => {
   ) return;
 
   pageFlip.flipNext("bottom");
+});
+  document.getElementById("sound-toggle").addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+
+  document.getElementById("sound-toggle").textContent =
+    soundEnabled ? "🔊 Sound ON" : "🔇 Sound OFF";
 });
   loadPDF();
 </script>
