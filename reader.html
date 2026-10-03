@@ -200,16 +200,17 @@
   let pdfDoc = null;
   let pageNum = 1;
 
-  async function renderPage(num) {
+  
+async function renderPDFPages() {
+  const images = [];
 
-    pageNum = num;
-document.getElementById("page-num").textContent = pageNum;
+  for (let num = 1; num <= pdfDoc.numPages; num++) {
     const page = await pdfDoc.getPage(num);
 
-    const canvas = document.getElementById("pdf-page");
-    const context = canvas.getContext("2d");
-
     const viewport = page.getViewport({ scale: 1.4 });
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
 
     canvas.width = viewport.width;
     canvas.height = viewport.height;
@@ -218,45 +219,73 @@ document.getElementById("page-num").textContent = pageNum;
       canvasContext: context,
       viewport: viewport
     }).promise;
+
+    images.push(canvas.toDataURL("image/jpeg", 0.92));
   }
 
-  async function loadPDF() {
-    if (!pdfUrl) {
-      alert("File PDF tidak ditemukan.");
-      return;
+  return images;
+}
+  let pageFlip = null;
+
+async function loadPDF() {
+  if (!pdfUrl) {
+    alert("File PDF tidak ditemukan.");
+    return;
+  }
+
+  pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+
+  document.getElementById("page-count").textContent = pdfDoc.numPages;
+
+  const firstPage = await pdfDoc.getPage(1);
+  const firstViewport = firstPage.getViewport({ scale: 1 });
+
+  const ratio = firstViewport.height / firstViewport.width;
+  const pageWidth = 480;
+  const pageHeight = Math.round(pageWidth * ratio);
+
+  const images = await renderPDFPages();
+
+  pageFlip = new St.PageFlip(
+    document.getElementById("page-flip"),
+    {
+      width: pageWidth,
+      height: pageHeight,
+      size: "stretch",
+      minWidth: 280,
+      maxWidth: pageWidth,
+      minHeight: Math.round(280 * ratio),
+      maxHeight: pageHeight,
+      drawShadow: true,
+      flippingTime: 900,
+      usePortrait: true,
+      autoSize: true,
+      maxShadowOpacity: 0.5,
+      showCover: true,
+      mobileScrollSupport: false
     }
+  );
 
-    pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
-    document.getElementById("page-count").textContent = pdfDoc.numPages;
-    renderPage(pageNum);
-  }
-function flipToPage(targetPage, direction) {
-  const canvas = document.getElementById("pdf-page");
-  const flipClass = direction === "next" ? "flip-next" : "flip-prev";
+  pageFlip.on("flip", (e) => {
+    pageNum = Number(e.data) + 1;
+    document.getElementById("page-num").textContent = pageNum;
+  });
 
-  canvas.classList.remove("flip-next", "flip-prev");
-
-  void canvas.offsetWidth;
-
-  canvas.classList.add(flipClass);
-
-  setTimeout(() => {
-    renderPage(targetPage);
-  }, 325);
-
-  setTimeout(() => {
-    canvas.classList.remove(flipClass);
-  }, 650);
+  pageFlip.loadFromImages(images);
 }
 
 document.getElementById("prev-page").addEventListener("click", () => {
-  if (pageNum <= 1) return;
-  flipToPage(pageNum - 1, "prev");
+  if (!pageFlip || pageFlip.getCurrentPageIndex() <= 0) return;
+  pageFlip.flipPrev("bottom");
 });
 
 document.getElementById("next-page").addEventListener("click", () => {
-  if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
-  flipToPage(pageNum + 1, "next");
+  if (
+    !pageFlip ||
+    pageFlip.getCurrentPageIndex() >= pageFlip.getPageCount() - 1
+  ) return;
+
+  pageFlip.flipNext("bottom");
 });
   loadPDF();
 </script>
