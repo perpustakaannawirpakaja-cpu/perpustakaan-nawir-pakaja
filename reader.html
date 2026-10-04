@@ -373,6 +373,10 @@ async function loadPDF() {
     {
       width: pageWidth,
       height: pageHeight,
+      startPage: Math.min(
+  Math.max(savedPage - 1, 0),
+  pdfDoc.numPages - 1
+),
       size: "stretch",
       minWidth: 280,
       maxWidth: pageWidth,
@@ -389,32 +393,46 @@ async function loadPDF() {
   );
 
   pageFlip.on("flip", (e) => {
-  pageNum = Number(e.data) + 1;
-    localStorage.setItem(readingKey, pageNum);
-  document.getElementById("page-num").textContent = pageNum;
+  const currentIndex = Number(e.data);
+
+  pageNum = currentIndex + 1;
+  localStorage.setItem(readingKey, pageNum);
+
+  const orientation = pageFlip.getOrientation();
+
+  let pageLabel = String(pageNum);
+  let progressPage = pageNum;
+
+  if (
+    orientation === "landscape" &&
+    currentIndex > 0 &&
+    currentIndex < pdfDoc.numPages - 1
+  ) {
+    const endPage = Math.min(pageNum + 1, pdfDoc.numPages);
+
+    pageLabel = pageNum + "-" + endPage;
+    progressPage = endPage;
+  }
+
+  document.getElementById("page-num").textContent = pageLabel;
+
+  const progress = (progressPage / pdfDoc.numPages) * 100;
+  document.getElementById("reading-progress-bar").style.width =
+    progress + "%";
 });
 
 pageFlip.on("changeState", (e) => {
   if (e.data === "flipping") {
     playPageFlipSound();
   }
+});
 
   const progress = (pageNum / pdfDoc.numPages) * 100;
 document.getElementById("reading-progress-bar").style.width = progress + "%";
 });
 
   pageFlip.loadFromImages(images);
-  const targetPage = Math.min(Math.max(savedPage - 1, 0), pdfDoc.numPages - 1);
-
-if (targetPage > 0) {
-  pageFlip.turnToPage(targetPage);
-
-  pageNum = targetPage + 1;
-  document.getElementById("page-num").textContent = pageNum;
-
-  const progress = (pageNum / pdfDoc.numPages) * 100;
-  document.getElementById("reading-progress-bar").style.width = progress + "%";
-}
+  
 }
 
 document.getElementById("prev-page").addEventListener("click", () => {
