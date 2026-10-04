@@ -300,6 +300,20 @@
 
 #bookmark-search:focus{
   border-color:#2563eb;
+}  
+#favorite-filter{
+  width:100%;
+  margin-bottom:12px;
+  padding:9px 12px;
+  border:0;
+  border-radius:10px;
+  background:#e5e7eb;
+  cursor:pointer;
+  font-size:14px;
+}
+#favorite-filter.active{
+  background:#fef3c7;
+  font-weight:600;
 }
 #bookmark-items button{
   margin:0;
@@ -418,6 +432,8 @@
   type="text"
   placeholder="Cari bookmark..."
 >
+    <button id="favorite-filter">☆ Favorit saja</button>
+ 
     <div id="bookmark-items"></div>
   </div>
 </div>
@@ -679,8 +695,9 @@ if (!existingBookmark) {
   const items = document.getElementById("bookmark-items");
   const search = document.getElementById("bookmark-search");
   const keyword = search.value.trim().toLowerCase();
-
-  items.innerHTML = "";
+  const favoriteOnly =
+    document.getElementById("favorite-filter").classList.contains("active");
+    items.innerHTML = "";
 
   if (bookmarks.length === 0) {
     items.innerHTML = "<p>Belum ada bookmark.</p>";
@@ -689,7 +706,10 @@ if (!existingBookmark) {
   const text =
     ("halaman " + item.page + " " + (item.title || "")).toLowerCase();
 
-  return text.includes(keyword);
+  return (
+  text.includes(keyword) &&
+  (!favoriteOnly || item.favorite)
+);
 });
 
 if (filteredBookmarks.length === 0) {
@@ -787,6 +807,19 @@ row.appendChild(favorite);
 }
 document.getElementById("bookmark-search").addEventListener("input", () => {
   tampilkanBookmarks();
+
+  document.getElementById("favorite-filter").addEventListener("click", () => {
+  const tombol = document.getElementById("favorite-filter");
+
+  tombol.classList.toggle("active");
+
+  tombol.textContent =
+    tombol.classList.contains("active")
+      ? "⭐ Semua favorit"
+      : "☆ Favorit saja";
+
+  tampilkanBookmarks();
+});
 });
 
   document.getElementById("bookmark-list").addEventListener("click", () => {
