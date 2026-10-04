@@ -288,7 +288,19 @@
   padding:6px 10px;
   cursor:pointer;
 }
+#bookmark-search{
+  width:100%;
+  margin-bottom:12px;
+  padding:10px 12px;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  font-size:14px;
+  outline:none;
+}
 
+#bookmark-search:focus{
+  border-color:#2563eb;
+}
 #bookmark-items button{
   margin:0;
   padding:10px 12px;
@@ -392,7 +404,11 @@
       <strong>📑 Daftar Bookmark</strong>
       <button id="close-bookmarks">✕</button>
     </div>
-
+<input
+  id="bookmark-search"
+  type="text"
+  placeholder="Cari bookmark..."
+>
     <div id="bookmark-items"></div>
   </div>
 </div>
@@ -651,13 +667,25 @@ if (!existingBookmark) {
   function tampilkanBookmarks() {
   const panel = document.getElementById("bookmark-panel");
   const items = document.getElementById("bookmark-items");
+  const search = document.getElementById("bookmark-search");
+  const keyword = search.value.trim().toLowerCase();
 
   items.innerHTML = "";
 
   if (bookmarks.length === 0) {
     items.innerHTML = "<p>Belum ada bookmark.</p>";
   } else {
-    bookmarks.forEach((item) => {
+    const filteredBookmarks = bookmarks.filter((item) => {
+  const text =
+    ("halaman " + item.page + " " + (item.title || "")).toLowerCase();
+
+  return text.includes(keyword);
+});
+
+if (filteredBookmarks.length === 0) {
+  items.innerHTML = "<p>Bookmark tidak ditemukan.</p>";
+}
+    filteredBookmarks.forEach((item) => {
   const halaman = item.page;
   let bookmarkTitle = (item.title || "").trim();
 
@@ -733,8 +761,11 @@ row.appendChild(hapus);
 
   panel.style.display = "flex";
 }
+document.getElementById("bookmark-search").addEventListener("input", () => {
+  tampilkanBookmarks();
+});
 
-document.getElementById("bookmark-list").addEventListener("click", () => {
+  document.getElementById("bookmark-list").addEventListener("click", () => {
   tampilkanBookmarks();
 });
 
