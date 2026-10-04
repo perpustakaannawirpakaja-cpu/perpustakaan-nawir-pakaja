@@ -311,6 +311,16 @@
   cursor:pointer;
   font-size:14px;
 }
+  #bookmark-sort{
+  width:100%;
+  margin-bottom:12px;
+  padding:9px 12px;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  background:white;
+  font-size:14px;
+  cursor:pointer;
+}
 #favorite-filter.active{
   background:#fef3c7;
   font-weight:600;
@@ -433,7 +443,11 @@
   placeholder="Cari bookmark..."
 >
     <button id="favorite-filter">☆ Favorit saja</button>
- 
+ <select id="bookmark-sort">
+  <option value="page">Urut: Halaman</option>
+  <option value="title">Urut: Judul A-Z</option>
+  <option value="favorite">Urut: Favorit dulu</option>
+</select>
     <div id="bookmark-items"></div>
   </div>
 </div>
@@ -697,7 +711,9 @@ if (!existingBookmark) {
   const keyword = search.value.trim().toLowerCase();
   const favoriteOnly =
     document.getElementById("favorite-filter").classList.contains("active");
-    items.innerHTML = "";
+  const sortMode =
+    document.getElementById("bookmark-sort").value;
+      items.innerHTML = "";
 
   if (bookmarks.length === 0) {
     items.innerHTML = "<p>Belum ada bookmark.</p>";
@@ -712,6 +728,26 @@ if (!existingBookmark) {
 );
 });
 
+if (sortMode === "page") {
+  filteredBookmarks.sort((a, b) => a.page - b.page);
+}
+
+if (sortMode === "title") {
+  filteredBookmarks.sort((a, b) =>
+    (a.title || "").localeCompare(b.title || "")
+  );
+}
+
+if (sortMode === "favorite") {
+  filteredBookmarks.sort((a, b) => {
+    if (Boolean(b.favorite) !== Boolean(a.favorite)) {
+      return Number(Boolean(b.favorite)) - Number(Boolean(a.favorite));
+    }
+
+    return a.page - b.page;
+  });
+}
+    
 if (filteredBookmarks.length === 0) {
   items.innerHTML = "<p>Bookmark tidak ditemukan.</p>";
 }
@@ -809,6 +845,9 @@ document.getElementById("bookmark-search").addEventListener("input", () => {
   tampilkanBookmarks();
 
   document.getElementById("favorite-filter").addEventListener("click", () => {
+  document.getElementById("bookmark-sort").addEventListener("change", () => {
+  tampilkanBookmarks();
+});
   const tombol = document.getElementById("favorite-filter");
 
   tombol.classList.toggle("active");
@@ -821,7 +860,11 @@ document.getElementById("bookmark-search").addEventListener("input", () => {
   tampilkanBookmarks();
 });
 });
-
+  
+document.getElementById("bookmark-sort").addEventListener("change", () => {
+  tampilkanBookmarks();
+});
+  
   document.getElementById("bookmark-list").addEventListener("click", () => {
   tampilkanBookmarks();
 });
