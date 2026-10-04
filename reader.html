@@ -322,6 +322,13 @@
   padding:10px 12px;
   background:#fee2e2;
 }
+    .bookmark-row .bookmark-edit{
+  width:auto;
+  flex:0 0 auto;
+  margin:0;
+  padding:10px 12px;
+  background:#fef3c7;
+}
     .label-short{
   display:none;
 }
@@ -683,7 +690,24 @@ const judul = bookmarkTitle ? " — " + bookmarkTitle : "";
     pageFlip.flip(halaman - 1, "bottom");
     panel.style.display = "none";
   });
+const edit = document.createElement("button");
+edit.className = "bookmark-edit";
+edit.textContent = "✏️";
 
+edit.addEventListener("click", () => {
+  const newTitle = prompt(
+    "Ubah judul bookmark halaman " + halaman + ":",
+    item.title || ""
+  );
+
+  if (newTitle === null) return;
+
+  item.title = newTitle.trim();
+
+  localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+
+  tampilkanBookmarks();
+});
   const hapus = document.createElement("button");
   hapus.className = "bookmark-delete";
   hapus.textContent = "🗑️";
@@ -699,7 +723,8 @@ const judul = bookmarkTitle ? " — " + bookmarkTitle : "";
   });
 
   row.appendChild(tombol);
-  row.appendChild(hapus);
+row.appendChild(edit);
+row.appendChild(hapus);
 
   items.appendChild(row);
 });
