@@ -289,6 +289,7 @@
     <button id="next-page">Berikutnya ▶</button>
     <button id="sound-toggle">🔊 Sound ON</button>
     <button id="go-page" title="Lompat ke halaman">🔢</button>
+    <button id="bookmark-page" title="Bookmark halaman">🔖</button>
   </div>
 
   <div id="page-flip"></div>
@@ -303,6 +304,8 @@
   const pdfUrl = params.get("file");
 
   const readingKey = "lastPage:" + encodeURIComponent(pdfUrl || "");
+  const bookmarkKey = "bookmarks:" + encodeURIComponent(pdfUrl || "");
+let bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || "[]");
 const savedPage = parseInt(localStorage.getItem(readingKey), 10) || 1;
   let soundEnabled = true;
 let audioCtx = null;
@@ -485,6 +488,22 @@ document.getElementById("next-page").addEventListener("click", () => {
   const targetIndex = targetPage - 1;
 
   pageFlip.flip(targetIndex, "bottom");
+});
+  document.getElementById("bookmark-page").addEventListener("click", () => {
+  if (!pageFlip || !pdfDoc) return;
+
+  const currentPage = pageNum;
+
+  if (!bookmarks.includes(currentPage)) {
+    bookmarks.push(currentPage);
+    bookmarks.sort((a, b) => a - b);
+
+    localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+
+    alert("🔖 Halaman " + currentPage + " berhasil di-bookmark.");
+  } else {
+    alert("Halaman " + currentPage + " sudah ada di bookmark.");
+  }
 });
   document.getElementById("sound-toggle").addEventListener("click", () => {
   soundEnabled = !soundEnabled;
