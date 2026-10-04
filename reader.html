@@ -334,6 +334,15 @@
   padding:10px 12px;
   background:#fee2e2;
 }
+
+    .bookmark-row .bookmark-favorite{
+  width:auto;
+  flex:0 0 auto;
+  margin:0;
+  padding:10px 12px;
+  background:#fef9c3;
+}
+    
     .bookmark-row .bookmark-edit{
   width:auto;
   flex:0 0 auto;
@@ -645,9 +654,10 @@ if (!existingBookmark) {
   if (title === null) return;
 
   bookmarks.push({
-    page: currentPage,
-    title: title.trim()
-  });
+  page: currentPage,
+  title: title.trim(),
+  favorite: false
+});
 
   bookmarks.sort((a, b) => a.page - b.page);
 
@@ -718,6 +728,19 @@ const judul = bookmarkTitle ? " — " + bookmarkTitle : "";
     pageFlip.flip(halaman - 1, "bottom");
     panel.style.display = "none";
   });
+      
+const favorite = document.createElement("button");
+favorite.className = "bookmark-favorite";
+favorite.textContent = item.favorite ? "⭐" : "☆";
+
+favorite.addEventListener("click", () => {
+  item.favorite = !item.favorite;
+
+  localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+
+  tampilkanBookmarks();
+});
+      
 const edit = document.createElement("button");
 edit.className = "bookmark-edit";
 edit.textContent = "✏️";
@@ -753,6 +776,7 @@ edit.addEventListener("click", () => {
   row.appendChild(tombol);
 row.appendChild(edit);
 row.appendChild(hapus);
+row.appendChild(favorite);
 
   items.appendChild(row);
 });
