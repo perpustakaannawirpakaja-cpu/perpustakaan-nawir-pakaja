@@ -299,6 +299,25 @@
   cursor:pointer;
   text-align:left;
 }
+    .bookmark-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:5px 0;
+}
+
+.bookmark-row > button:first-child{
+  flex:1;
+  margin:0;
+}
+
+.bookmark-row .bookmark-delete{
+  width:auto;
+  flex:0 0 auto;
+  margin:0;
+  padding:10px 12px;
+  background:#fee2e2;
+}
     .label-short{
   display:none;
 }
@@ -591,16 +610,33 @@ document.getElementById("next-page").addEventListener("click", () => {
     items.innerHTML = "<p>Belum ada bookmark.</p>";
   } else {
     bookmarks.forEach((halaman) => {
-      const tombol = document.createElement("button");
+  const row = document.createElement("div");
+  row.className = "bookmark-row";
 
-      tombol.textContent = "🔖 Halaman " + halaman;
+  const tombol = document.createElement("button");
+  tombol.textContent = "🔖 Halaman " + halaman;
 
-      tombol.addEventListener("click", () => {
-        pageFlip.flip(halaman - 1, "bottom");
-        panel.style.display = "none";
-      });
+  tombol.addEventListener("click", () => {
+    pageFlip.flip(halaman - 1, "bottom");
+    panel.style.display = "none";
+  });
 
-      items.appendChild(tombol);
+  const hapus = document.createElement("button");
+  hapus.className = "bookmark-delete";
+  hapus.textContent = "🗑️";
+
+  hapus.addEventListener("click", () => {
+    bookmarks = bookmarks.filter((item) => item !== halaman);
+    localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+
+    tampilkanBookmarks();
+  });
+
+  row.appendChild(tombol);
+  row.appendChild(hapus);
+
+  items.appendChild(row);
+});
     });
   }
 
