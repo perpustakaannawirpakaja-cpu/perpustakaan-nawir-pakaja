@@ -648,7 +648,26 @@ if (!existingBookmark) {
   } else {
     bookmarks.forEach((item) => {
   const halaman = item.page;
-  const judul = item.title ? " — " + item.title : "";
+  let bookmarkTitle = (item.title || "").trim();
+
+const prefixes = [
+  "🔖 Halaman " + halaman,
+  "Halaman " + halaman,
+  "Hlm " + halaman
+];
+
+for (const prefix of prefixes) {
+  if (bookmarkTitle.toLowerCase().startsWith(prefix.toLowerCase())) {
+    bookmarkTitle = bookmarkTitle
+      .slice(prefix.length)
+      .replace(/^[\s—\-:]+/, "")
+      .trim();
+
+    break;
+  }
+}
+
+const judul = bookmarkTitle ? " — " + bookmarkTitle : "";
 
   const row = document.createElement("div");
   row.className = "bookmark-row";
