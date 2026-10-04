@@ -428,6 +428,10 @@
     <button id="go-page" title="Lompat ke halaman">🔢</button>
     <button id="bookmark-page" title="Bookmark halaman">🔖</button>
     <button id="bookmark-list" title="Daftar bookmark">📑</button>
+    <button id="zoom-out" title="Perkecil">−</button>
+    <button id="zoom-reset" title="Reset zoom">100%</button>
+    <button id="zoom-in" title="Perbesar">+</button>
+    <button id="fullscreen-toggle" title="Fullscreen">⛶</button>
   </div>
 
   <div id="page-flip"></div>
@@ -527,6 +531,17 @@ function playPageFlipSound() {
   return images;
 }
   let pageFlip = null;
+  let zoomLevel = 1;
+  
+  function applyZoom() {
+  const flipElement = document.getElementById("page-flip");
+
+  flipElement.style.transform = `scale(${zoomLevel})`;
+  flipElement.style.transformOrigin = "center top";
+
+  document.getElementById("zoom-reset").textContent =
+    Math.round(zoomLevel * 100) + "%";
+}
 
 async function loadPDF() {
   if (!pdfUrl) {
@@ -869,14 +884,49 @@ document.getElementById("bookmark-sort").addEventListener("change", () => {
   tampilkanBookmarks();
 });
 
-document.getElementById("close-bookmarks").addEventListener("click", () => {
+  document.getElementById("close-bookmarks").addEventListener("click", () => {
   document.getElementById("bookmark-panel").style.display = "none";
+});
+  document.getElementById("zoom-out").addEventListener("click", () => {
+  zoomLevel = Math.max(0.6, zoomLevel - 0.1);
+  applyZoom();
+});
+
+document.getElementById("zoom-reset").addEventListener("click", () => {
+  zoomLevel = 1;
+  applyZoom();
+});
+
+document.getElementById("zoom-in").addEventListener("click", () => {
+  zoomLevel = Math.min(2, zoomLevel + 0.1);
+  applyZoom();
 });
   document.getElementById("sound-toggle").addEventListener("click", () => {
   soundEnabled = !soundEnabled;
 
   document.getElementById("sound-toggle").textContent =
     soundEnabled ? "🔊 Sound ON" : "🔇 Sound OFF";
+});
+  document.getElementById("fullscreen-toggle").addEventListener("click", async () => {
+  const elem = document.documentElement;
+
+  try {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      if (elem.requestFullscreen) {
+        await elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  } catch (error) {
+    console.log("Fullscreen gagal:", error);
+  }
 });
   const openingScreen = document.getElementById("opening-screen");
 const openBookButton = document.getElementById("open-book");
