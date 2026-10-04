@@ -288,6 +288,7 @@
 
     <button id="next-page">Berikutnya ▶</button>
     <button id="sound-toggle">🔊 Sound ON</button>
+    <button id="go-page" title="Lompat ke halaman">🔢</button>
   </div>
 
   <div id="page-flip"></div>
@@ -459,6 +460,31 @@ document.getElementById("next-page").addEventListener("click", () => {
   ) return;
 
   pageFlip.flipNext("bottom");
+});
+  document.getElementById("go-page").addEventListener("click", () => {
+  if (!pageFlip || !pdfDoc) return;
+
+  const input = prompt(
+    "Masukkan nomor halaman (1-" + pdfDoc.numPages + "):",
+    pageNum
+  );
+
+  if (input === null) return;
+
+  const targetPage = parseInt(input, 10);
+
+  if (
+    Number.isNaN(targetPage) ||
+    targetPage < 1 ||
+    targetPage > pdfDoc.numPages
+  ) {
+    alert("Nomor halaman harus antara 1 sampai " + pdfDoc.numPages + ".");
+    return;
+  }
+
+  const targetIndex = targetPage - 1;
+
+  pageFlip.flip(targetIndex, "bottom");
 });
   document.getElementById("sound-toggle").addEventListener("click", () => {
   soundEnabled = !soundEnabled;
