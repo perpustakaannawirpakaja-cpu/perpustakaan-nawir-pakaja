@@ -392,33 +392,45 @@ async function loadPDF() {
     }
   );
 
-  pageFlip.on("flip", (e) => {
+  function updateReadingStatus(currentIndex = pageFlip.getCurrentPageIndex()) {
+  const orientation = pageFlip.getOrientation();
+  const startPage = currentIndex + 1;
+
+  let pageLabel = String(startPage);
+  let progressPage = startPage;
+
+  if (orientation === "landscape" && currentIndex > 0) {
+    const endPage = Math.min(startPage + 1, pdfDoc.numPages);
+
+    pageLabel =
+      startPage === endPage
+        ? String(startPage)
+        : startPage + "-" + endPage;
+
+    progressPage = endPage;
+  }
+
+  pageNum = startPage;
+
+  document.getElementById("page-num").textContent = pageLabel;
+
+  const progress = (progressPage / pdfDoc.numPages) * 100;
+
+  document.getElementById("reading-progress-bar").style.width =
+    progress + "%";
+}
+
+pageFlip.on("flip", (e) => {
   const currentIndex = Number(e.data);
 
   pageNum = currentIndex + 1;
   localStorage.setItem(readingKey, pageNum);
 
-  const orientation = pageFlip.getOrientation();
+  updateReadingStatus(currentIndex);
+});
 
-  let pageLabel = String(pageNum);
-  let progressPage = pageNum;
-
-  if (
-    orientation === "landscape" &&
-    currentIndex > 0 &&
-    currentIndex < pdfDoc.numPages - 1
-  ) {
-    const endPage = Math.min(pageNum + 1, pdfDoc.numPages);
-
-    pageLabel = pageNum + "-" + endPage;
-    progressPage = endPage;
-  }
-
-  document.getElementById("page-num").textContent = pageLabel;
-
-  const progress = (progressPage / pdfDoc.numPages) * 100;
-  document.getElementById("reading-progress-bar").style.width =
-    progress + "%";
+pageFlip.on("changeOrientation", () => {
+  updateReadingStatus();
 });
 
 pageFlip.on("changeState", (e) => {
@@ -427,10 +439,10 @@ pageFlip.on("changeState", (e) => {
   }
 });
 
-  const progress = (pageNum / pdfDoc.numPages) * 100;
-document.getElementById("reading-progress-bar").style.width = progress + "%";
+pageFlip.on("init", () => {
+  updateReadingStatus();
 });
-
+  
   pageFlip.loadFromImages(images);
   
 }
