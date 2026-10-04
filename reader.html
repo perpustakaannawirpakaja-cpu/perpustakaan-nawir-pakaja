@@ -403,6 +403,20 @@ let bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || "[]");
     ? { page: item, title: "" }
     : item
 );
+  const uniqueBookmarks = new Map();
+
+bookmarks.forEach((item) => {
+  const existing = uniqueBookmarks.get(item.page);
+
+  if (!existing || (!existing.title && item.title)) {
+    uniqueBookmarks.set(item.page, item);
+  }
+});
+
+bookmarks = Array.from(uniqueBookmarks.values())
+  .sort((a, b) => a.page - b.page);
+
+localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
 const savedPage = parseInt(localStorage.getItem(readingKey), 10) || 1;
   let soundEnabled = true;
 let audioCtx = null;
