@@ -362,10 +362,15 @@ async function loadPDF() {
   );
 
   pageFlip.on("flip", (e) => {
-    pageNum = Number(e.data) + 1;
-    document.getElementById("page-num").textContent = pageNum;
+  pageNum = Number(e.data) + 1;
+  document.getElementById("page-num").textContent = pageNum;
+});
+
+pageFlip.on("changeState", (e) => {
+  if (e.data === "flipping") {
     playPageFlipSound();
-  });
+  }
+});
 
   pageFlip.loadFromImages(images);
 }
