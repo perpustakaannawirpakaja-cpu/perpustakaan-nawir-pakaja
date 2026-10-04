@@ -397,6 +397,12 @@
   const readingKey = "lastPage:" + encodeURIComponent(pdfUrl || "");
   const bookmarkKey = "bookmarks:" + encodeURIComponent(pdfUrl || "");
 let bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || "[]");
+
+  bookmarks = bookmarks.map((item) =>
+  typeof item === "number"
+    ? { page: item, title: "" }
+    : item
+);
 const savedPage = parseInt(localStorage.getItem(readingKey), 10) || 1;
   let soundEnabled = true;
 let audioCtx = null;
@@ -585,15 +591,32 @@ document.getElementById("next-page").addEventListener("click", () => {
 
   const currentPage = pageNum;
 
-  if (!bookmarks.includes(currentPage)) {
-    bookmarks.push(currentPage);
-    bookmarks.sort((a, b) => a - b);
+  const existingBookmark = bookmarks.find(
+  (item) => item.page === currentPage
+);
 
-    localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+if (!existingBookmark) {
+  const title = prompt(
+    "Judul bookmark untuk halaman " + currentPage + ":",
+    ""
+  );
 
-    alert("🔖 Halaman " + currentPage + " berhasil di-bookmark.");
+  if (title === null) return;
+
+  bookmarks.push({
+    page: currentPage,
+    title: title.trim()
+  });
+
+  bookmarks.sort((a, b) => a.page - b.page);
+
+  localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+
+  alert("🔖 Halaman " + currentPage + " berhasil di-bookmark.");
   } else {
-  bookmarks = bookmarks.filter((halaman) => halaman !== currentPage);
+  bookmarks = bookmarks.filter(
+  (item) => item.page !== currentPage
+);
 
   localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
 
@@ -609,17 +632,40 @@ document.getElementById("next-page").addEventListener("click", () => {
   if (bookmarks.length === 0) {
     items.innerHTML = "<p>Belum ada bookmark.</p>";
   } else {
-    bookmarks.forEach((halaman) => {
+    bookmarks.forEach((item) => {
+  const halaman = item.page;
+  const judul = item.title ? " — " + item.title : "";
+
   const row = document.createElement("div");
   row.className = "bookmark-row";
 
   const tombol = document.createElement("button");
-  tombol.textContent = "🔖 Halaman " + halaman;
+  tombol.textContent = "🔖 Halaman " + halaman + judul;
 
   tombol.addEventListener("click", () => {
     pageFlip.flip(halaman - 1, "bottom");
     panel.style.display = "none";
   });
+
+  const hapus = document.createElement("button");
+  hapus.className = "bookmark-delete";
+  hapus.textContent = "🗑️";
+
+  hapus.addEventListener("click", () => {
+    bookmarks = bookmarks.filter(
+      (bookmark) => bookmark.page !== halaman
+    );
+
+    localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+
+    tampilkanBookmarks();
+  });
+
+  row.appendChild(tombol);
+  row.appendChild(hapus);
+
+  items.appendChild(row);
+});
 
   const hapus = document.createElement("button");
   hapus.className = "bookmark-delete";
