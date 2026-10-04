@@ -573,8 +573,12 @@ document.getElementById("next-page").addEventListener("click", () => {
 
     alert("🔖 Halaman " + currentPage + " berhasil di-bookmark.");
   } else {
-    alert("Halaman " + currentPage + " sudah ada di bookmark.");
-  }
+  bookmarks = bookmarks.filter((halaman) => halaman !== currentPage);
+
+  localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+
+  alert("🗑️ Bookmark halaman " + currentPage + " dihapus.");
+}
 });
   function tampilkanBookmarks() {
   const panel = document.getElementById("bookmark-panel");
