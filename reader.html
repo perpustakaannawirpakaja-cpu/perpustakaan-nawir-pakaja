@@ -666,24 +666,7 @@ if (!existingBookmark) {
 
   items.appendChild(row);
 });
-
-  const hapus = document.createElement("button");
-  hapus.className = "bookmark-delete";
-  hapus.textContent = "🗑️";
-
-  hapus.addEventListener("click", () => {
-    bookmarks = bookmarks.filter((item) => item !== halaman);
-    localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
-
-    tampilkanBookmarks();
-  });
-
-  row.appendChild(tombol);
-  row.appendChild(hapus);
-
-  items.appendChild(row);
-});
-    
+   
   }
 
   panel.style.display = "flex";
