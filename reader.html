@@ -107,6 +107,32 @@
   box-shadow:0 6px 18px rgba(0,0,0,.25);
 }
 
+    #brightness-panel{
+  position:fixed;
+  top:120px;
+  right:10px;
+  z-index:10000;
+  display:none;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  background:#0f172a;
+  color:white;
+  border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+}
+
+#brightness-slider{
+  width:130px;
+  cursor:pointer;
+}
+
+#brightness-value{
+  min-width:42px;
+  font-size:12px;
+  text-align:right;
+}
+
 .page-controls{
   transition:opacity .25s ease, transform .25s ease;
 }
@@ -260,37 +286,37 @@
     width:100%;
     display:flex;
     justify-content:center;
-  }
-      
-#page-flip{
-  transition:filter .3s ease;
-}
-
-#page-flip.mode-sepia{
-  filter:sepia(.35) brightness(.95) contrast(.95);
-}
-
-#page-flip.mode-night{
-  filter:invert(.88) hue-rotate(180deg) brightness(.82) contrast(.9);
-}
-      
+  }     
+    
   #open-book{
     font-size:18px;
     padding:14px 22px;
   }
 }
 
-    #page-flip{
+  #page-flip{
+  --reader-brightness:1;
   transition:filter .3s ease;
+  filter:brightness(var(--reader-brightness));
 }
 
 #page-flip.mode-sepia{
-  filter:sepia(.35) brightness(.95) contrast(.95);
+  filter:
+    sepia(.35)
+    brightness(.95)
+    brightness(var(--reader-brightness))
+    contrast(.95);
 }
 
 #page-flip.mode-night{
-  filter:invert(.88) hue-rotate(180deg) brightness(.82) contrast(.9);
+  filter:
+    invert(.88)
+    hue-rotate(180deg)
+    brightness(.82)
+    brightness(var(--reader-brightness))
+    contrast(.9);
 }
+    
   #reading-progress{
   position:fixed;
   top:60px;
@@ -488,8 +514,21 @@
     <button id="zoom-in" title="Perbesar">+</button>
     <button id="fullscreen-toggle" title="Fullscreen">⛶</button>
     <button id="reading-mode" title="Mode baca">☀️</button>
+    <button id="brightness-toggle" title="Kecerahan">🔆</button>
   </div>
     <button id="toolbar-toggle" title="Tampilkan/Sembunyikan menu">☰</button>
+    <div id="brightness-panel">
+  <span>🔅</span>
+  <input
+    id="brightness-slider"
+    type="range"
+    min="50"
+    max="130"
+    value="100"
+  >
+  <span>🔆</span>
+  <span id="brightness-value">100%</span>
+</div>
   <div id="page-flip"></div>
 <div id="bookmark-panel">
   <div class="bookmark-panel-box">
@@ -588,6 +627,9 @@ function playPageFlipSound() {
 }
   let pageFlip = null;
   const zoomKey = "readerZoom";
+  const brightnessKey = "readerBrightness";
+let brightnessLevel =
+  parseInt(localStorage.getItem(brightnessKey), 10) || 100;
 let zoomLevel = parseFloat(localStorage.getItem(zoomKey)) || 1;
   
   function applyZoom() {
@@ -1021,7 +1063,45 @@ document.getElementById("reading-mode").addEventListener("click", () => {
     button.title = "Mode Normal";
   }
 });
+  
+document.getElementById("brightness-toggle").addEventListener("click", () => {
+  const panel = document.getElementById("brightness-panel");
 
+  panel.style.display =
+    panel.style.display === "flex" ? "none" : "flex";
+});
+
+  document.getElementById("brightness-slider").addEventListener("input", (e) => {
+  const value = Number(e.target.value);
+  
+  brightnessLevel = value;
+  localStorage.setItem(brightnessKey, brightnessLevel);
+
+  document.getElementById("page-flip").style.setProperty(
+    "--reader-brightness",
+    value / 100
+  );
+
+  document.getElementById("brightness-value").textContent =
+    value + "%";
+});
+
+function applySavedBrightness() {
+  const slider = document.getElementById("brightness-slider");
+  const valueLabel = document.getElementById("brightness-value");
+  const page = document.getElementById("page-flip");
+
+  slider.value = brightnessLevel;
+  valueLabel.textContent = brightnessLevel + "%";
+
+  page.style.setProperty(
+    "--reader-brightness",
+    brightnessLevel / 100
+  );
+}
+
+applySavedBrightness();
+  
   function applySavedReadingMode() {
   const page = document.getElementById("page-flip");
   const button = document.getElementById("reading-mode");
