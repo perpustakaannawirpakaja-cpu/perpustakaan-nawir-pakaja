@@ -990,13 +990,15 @@ document.getElementById("fullscreen-toggle").addEventListener("click", () => {
   toggleFullscreen();
 });
 
-  let readingMode = 0;
+  const readingModeKey = "readingMode";
+let readingMode = parseInt(localStorage.getItem(readingModeKey), 10) || 0;
 
 document.getElementById("reading-mode").addEventListener("click", () => {
   const page = document.getElementById("page-flip");
   const button = document.getElementById("reading-mode");
 
   readingMode = (readingMode + 1) % 3;
+  localStorage.setItem(readingModeKey, readingMode);
 
   page.classList.remove("mode-sepia", "mode-night");
 
@@ -1013,6 +1015,28 @@ document.getElementById("reading-mode").addEventListener("click", () => {
     button.title = "Mode Normal";
   }
 });
+
+  function applySavedReadingMode() {
+  const page = document.getElementById("page-flip");
+  const button = document.getElementById("reading-mode");
+
+  page.classList.remove("mode-sepia", "mode-night");
+
+  if (readingMode === 1) {
+    page.classList.add("mode-sepia");
+    button.textContent = "📜";
+    button.title = "Mode Sepia";
+  } else if (readingMode === 2) {
+    page.classList.add("mode-night");
+    button.textContent = "🌙";
+    button.title = "Mode Malam";
+  } else {
+    button.textContent = "☀️";
+    button.title = "Mode Normal";
+  }
+}
+
+applySavedReadingMode();
   
   let toolbarTimer = null;
 
