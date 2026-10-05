@@ -158,6 +158,29 @@
   font-size:12px;
   text-align:right;
 }
+
+#preset-panel{
+  position:fixed;
+  top:220px;
+  right:10px;
+  z-index:10000;
+  display:none;
+  flex-direction:column;
+  gap:8px;
+  padding:10px;
+  background:#0f172a;
+  border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+}
+
+#preset-panel button{
+  padding:9px 12px;
+  border:0;
+  border-radius:8px;
+  cursor:pointer;
+  text-align:left;
+  white-space:nowrap;
+}
     
 .page-controls{
   transition:opacity .25s ease, transform .25s ease;
@@ -548,6 +571,7 @@
     <button id="brightness-toggle" title="Kecerahan">🔆</button>
     <button id="contrast-toggle" title="Kontras">◐</button>
     <button id="reader-reset" title="Reset tampilan">♻️</button>
+    <button id="preset-toggle" title="Preset tampilan">🎛️</button>
   </div>
     <button id="toolbar-toggle" title="Tampilkan/Sembunyikan menu">☰</button>
     <div id="brightness-panel">
@@ -574,6 +598,12 @@
   >
   <span>◐</span>
   <span id="contrast-value">100%</span>
+</div>
+
+<div id="preset-panel">
+  <button id="preset-save">💾 Simpan Preset</button>
+  <button id="preset-load">▶ Pakai Preset</button>
+  <button id="preset-delete">🗑️ Hapus Preset</button>
 </div>
       
   <div id="page-flip"></div>
@@ -678,6 +708,7 @@ function playPageFlipSound() {
   let brightnessLevel =
   parseInt(localStorage.getItem(brightnessKey), 10) || 100;
   const contrastKey = "readerContrast";
+  const presetKey = "readerDisplayPreset";
   let contrastLevel =
   parseInt(localStorage.getItem(contrastKey), 10) || 100;
   let zoomLevel = parseFloat(localStorage.getItem(zoomKey)) || 1;
@@ -1173,6 +1204,67 @@ applySavedContrast();
 
   document.getElementById("brightness-panel").style.display = "none";
   document.getElementById("contrast-panel").style.display = "none";
+});
+
+document.getElementById("preset-toggle").addEventListener("click", () => {
+  const panel = document.getElementById("preset-panel");
+
+  panel.style.display =
+    panel.style.display === "flex" ? "none" : "flex";
+});
+
+document.getElementById("preset-save").addEventListener("click", () => {
+  const preset = {
+    readingMode: readingMode,
+    zoomLevel: zoomLevel,
+    brightnessLevel: brightnessLevel,
+    contrastLevel: contrastLevel
+  };
+
+document.getElementById("preset-load").addEventListener("click", () => {
+  const savedPreset = localStorage.getItem(presetKey);
+
+  if (!savedPreset) {
+    alert("Belum ada preset tampilan yang disimpan.");
+    return;
+  }
+
+  const preset = JSON.parse(savedPreset);
+
+  readingMode = preset.readingMode ?? 0;
+  zoomLevel = preset.zoomLevel ?? 1;
+  brightnessLevel = preset.brightnessLevel ?? 100;
+  contrastLevel = preset.contrastLevel ?? 100;
+
+  localStorage.setItem(readingModeKey, readingMode);
+  localStorage.setItem(zoomKey, zoomLevel);
+  localStorage.setItem(brightnessKey, brightnessLevel);
+  localStorage.setItem(contrastKey, contrastLevel);
+
+  applySavedReadingMode();
+  applyZoom();
+  applySavedBrightness();
+  applySavedContrast();
+
+  alert("▶ Preset tampilan diterapkan.");
+});
+
+document.getElementById("preset-delete").addEventListener("click", () => {
+  const savedPreset = localStorage.getItem(presetKey);
+
+  if (!savedPreset) {
+    alert("Belum ada preset tampilan yang disimpan.");
+    return;
+  }
+
+  localStorage.removeItem(presetKey);
+
+  alert("🗑️ Preset tampilan berhasil dihapus.");
+});
+  
+  localStorage.setItem(presetKey, JSON.stringify(preset));
+
+  alert("💾 Preset tampilan berhasil disimpan.");
 });
   
   document.getElementById("contrast-value").textContent =
