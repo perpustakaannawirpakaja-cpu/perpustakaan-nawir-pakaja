@@ -1266,16 +1266,27 @@ document.getElementById("preset-load").addEventListener("click", () => {
 });
 
 document.getElementById("preset-delete").addEventListener("click", () => {
+  const deleteButton = document.getElementById("preset-delete");
+  const originalText = deleteButton.textContent;
   const savedPreset = localStorage.getItem(presetKey);
 
   if (!savedPreset) {
-    alert("Belum ada preset tampilan yang disimpan.");
+    deleteButton.textContent = "⚠️ Belum Ada Preset";
+
+    setTimeout(() => {
+      deleteButton.textContent = originalText;
+    }, 1500);
+
     return;
   }
 
   localStorage.removeItem(presetKey);
 
-  alert("🗑️ Preset tampilan berhasil dihapus.");
+  deleteButton.textContent = "✅ Preset Dihapus";
+
+  setTimeout(() => {
+    deleteButton.textContent = originalText;
+  }, 1500);
 });
   
   document.getElementById("brightness-slider").addEventListener("input", (e) => {
