@@ -547,6 +547,7 @@
     <button id="reading-mode" title="Mode baca">☀️</button>
     <button id="brightness-toggle" title="Kecerahan">🔆</button>
     <button id="contrast-toggle" title="Kontras">◐</button>
+    <button id="reader-reset" title="Reset tampilan">♻️</button>
   </div>
     <button id="toolbar-toggle" title="Tampilkan/Sembunyikan menu">☰</button>
     <div id="brightness-panel">
@@ -1153,6 +1154,26 @@ function applySavedContrast() {
 }
 
 applySavedContrast();
+
+  document.getElementById("reader-reset").addEventListener("click", () => {
+  readingMode = 0;
+  zoomLevel = 1;
+  brightnessLevel = 100;
+  contrastLevel = 100;
+
+  localStorage.setItem(readingModeKey, readingMode);
+  localStorage.setItem(zoomKey, zoomLevel);
+  localStorage.setItem(brightnessKey, brightnessLevel);
+  localStorage.setItem(contrastKey, contrastLevel);
+
+  applySavedReadingMode();
+  applyZoom();
+  applySavedBrightness();
+  applySavedContrast();
+
+  document.getElementById("brightness-panel").style.display = "none";
+  document.getElementById("contrast-panel").style.display = "none";
+});
   
   document.getElementById("contrast-value").textContent =
     value + "%";
