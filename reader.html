@@ -92,6 +92,31 @@
   border-radius:8px;
   cursor:pointer;
 }
+    #toolbar-toggle{
+  position:fixed;
+  top:70px;
+  right:10px;
+  z-index:10000;
+  border:0;
+  border-radius:10px;
+  padding:9px 12px;
+  cursor:pointer;
+  font-size:18px;
+  background:#0f172a;
+  color:white;
+  box-shadow:0 6px 18px rgba(0,0,0,.25);
+}
+
+.page-controls{
+  transition:opacity .25s ease, transform .25s ease;
+}
+
+.page-controls.toolbar-hidden{
+  opacity:0;
+  pointer-events:none;
+  transform:translateX(-50%) translateY(20px);
+}
+    
     .page-container{
   perspective:1800px;
 }
@@ -179,6 +204,10 @@
     @media (max-width:600px){
 #reading-progress{
   top:54px;
+}
+
+#toolbar-toggle{
+  top:64px;
 }
       
   .reader-header{
@@ -435,7 +464,7 @@
     <button id="zoom-in" title="Perbesar">+</button>
     <button id="fullscreen-toggle" title="Fullscreen">⛶</button>
   </div>
-
+    <button id="toolbar-toggle" title="Tampilkan/Sembunyikan menu">☰</button>
   <div id="page-flip"></div>
 <div id="bookmark-panel">
   <div class="bookmark-panel-box">
@@ -930,6 +959,17 @@ document.getElementById("zoom-in").addEventListener("click", () => {
     console.log("Fullscreen gagal:", error);
   }
 });
+  
+  document.getElementById("toolbar-toggle").addEventListener("click", () => {
+  const controls = document.querySelector(".page-controls");
+  const toggle = document.getElementById("toolbar-toggle");
+
+  controls.classList.toggle("toolbar-hidden");
+
+  toggle.textContent =
+    controls.classList.contains("toolbar-hidden") ? "☰" : "✕";
+});
+
   const openingScreen = document.getElementById("opening-screen");
 const openBookButton = document.getElementById("open-book");
 const bismillahAudio = document.getElementById("bismillah-audio");
