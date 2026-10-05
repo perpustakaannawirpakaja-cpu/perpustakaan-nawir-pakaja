@@ -959,7 +959,19 @@ document.getElementById("zoom-in").addEventListener("click", () => {
     console.log("Fullscreen gagal:", error);
   }
 });
-  
+  let toolbarTimer = null;
+
+function scheduleToolbarHide() {
+  clearTimeout(toolbarTimer);
+
+  toolbarTimer = setTimeout(() => {
+    const controls = document.querySelector(".page-controls");
+    const toggle = document.getElementById("toolbar-toggle");
+
+    controls.classList.add("toolbar-hidden");
+    toggle.textContent = "☰";
+  }, 5000);
+}
   document.getElementById("toolbar-toggle").addEventListener("click", () => {
   const controls = document.querySelector(".page-controls");
   const toggle = document.getElementById("toolbar-toggle");
@@ -968,6 +980,12 @@ document.getElementById("zoom-in").addEventListener("click", () => {
 
   toggle.textContent =
     controls.classList.contains("toolbar-hidden") ? "☰" : "✕";
+
+    if (controls.classList.contains("toolbar-hidden")) {
+  clearTimeout(toolbarTimer);
+} else {
+  scheduleToolbarHide();
+}
 });
 
   const openingScreen = document.getElementById("opening-screen");
@@ -983,6 +1001,7 @@ openBookButton.addEventListener("click", async () => {
   }
 
   openingScreen.style.display = "none";
+  scheduleToolbarHide();
 });
   loadPDF();
 </script>
