@@ -181,6 +181,25 @@
   text-align:left;
   white-space:nowrap;
 }
+
+#preset-name,
+#preset-list{
+  width:100%;
+  box-sizing:border-box;
+  padding:9px 10px;
+  border:0;
+  border-radius:8px;
+  outline:none;
+}
+
+#preset-name{
+  background:#ffffff;
+}
+
+#preset-list{
+  background:#f8fafc;
+  cursor:pointer;
+}
     
 .page-controls{
   transition:opacity .25s ease, transform .25s ease;
@@ -601,6 +620,16 @@
 </div>
 
 <div id="preset-panel">
+  <input
+    id="preset-name"
+    type="text"
+    placeholder="Nama preset..."
+  >
+
+  <select id="preset-list">
+    <option value="">Pilih preset...</option>
+  </select>
+
   <button id="preset-save">💾 Simpan Preset</button>
   <button id="preset-load">▶ Pakai Preset</button>
   <button id="preset-delete">🗑️ Hapus Preset</button>
@@ -709,6 +738,29 @@ function playPageFlipSound() {
   parseInt(localStorage.getItem(brightnessKey), 10) || 100;
   const contrastKey = "readerContrast";
   const presetKey = "readerDisplayPreset";
+  const presetsKey = "readerDisplayPresets";
+  let displayPresets = JSON.parse(
+  localStorage.getItem(presetsKey) || "{}"
+);
+
+function refreshPresetList() {
+  const presetList = document.getElementById("preset-list");
+
+  presetList.innerHTML =
+    '<option value="">Pilih preset...</option>';
+
+  Object.keys(displayPresets).forEach((name) => {
+    const option = document.createElement("option");
+
+    option.value = name;
+    option.textContent = name;
+
+    presetList.appendChild(option);
+  });
+}
+
+  refreshPresetList();
+  
   let contrastLevel =
   parseInt(localStorage.getItem(contrastKey), 10) || 100;
   let zoomLevel = parseFloat(localStorage.getItem(zoomKey)) || 1;
@@ -1218,34 +1270,64 @@ document.getElementById("preset-toggle").addEventListener("click", () => {
 });
 
 document.getElementById("preset-save").addEventListener("click", () => {
-  const preset = {
+  const nameInput = document.getElementById("preset-name");
+  const presetList = document.getElementById("preset-list");
+  const saveButton = document.getElementById("preset-save");
+  const originalText = saveButton.textContent;
+
+  const name = nameInput.value.trim();
+
+  if (!name) {
+    saveButton.textContent = "⚠️ Isi Nama Preset";
+
+    setTimeout(() => {
+      saveButton.textContent = originalText;
+    }, 1500);
+
+    return;
+  }
+
+  displayPresets[name] = {
     readingMode: readingMode,
     zoomLevel: zoomLevel,
     brightnessLevel: brightnessLevel,
     contrastLevel: contrastLevel
   };
 
-  localStorage.setItem(presetKey, JSON.stringify(preset));
+  localStorage.setItem(
+    presetsKey,
+    JSON.stringify(displayPresets)
+  );
 
-  const saveButton = document.getElementById("preset-save");
-const originalText = saveButton.textContent;
+  refreshPresetList();
+  presetList.value = name;
+  nameInput.value = "";
 
-saveButton.textContent = "✅ Preset Tersimpan";
+  saveButton.textContent = "✅ Preset Tersimpan";
 
-setTimeout(() => {
-  saveButton.textContent = originalText;
-}, 1500);
+  setTimeout(() => {
+    saveButton.textContent = originalText;
+  }, 1500);
 });
 
 document.getElementById("preset-load").addEventListener("click", () => {
-  const savedPreset = localStorage.getItem(presetKey);
+  const presetList = document.getElementById("preset-list");
+  const loadButton = document.getElementById("preset-load");
+  const originalText = loadButton.textContent;
 
-  if (!savedPreset) {
-    alert("Belum ada preset tampilan yang disimpan.");
+  const name = presetList.value;
+
+  if (!name || !displayPresets[name]) {
+    loadButton.textContent = "⚠️ Pilih Preset";
+
+    setTimeout(() => {
+      loadButton.textContent = originalText;
+    }, 1500);
+
     return;
   }
 
-  const preset = JSON.parse(savedPreset);
+  const preset = displayPresets[name];
 
   readingMode = preset.readingMode ?? 0;
   zoomLevel = preset.zoomLevel ?? 1;
@@ -1262,16 +1344,22 @@ document.getElementById("preset-load").addEventListener("click", () => {
   applySavedBrightness();
   applySavedContrast();
 
-  alert("▶ Preset tampilan diterapkan.");
+  loadButton.textContent = "✅ Preset Dipakai";
+
+  setTimeout(() => {
+    loadButton.textContent = originalText;
+  }, 1500);
 });
 
 document.getElementById("preset-delete").addEventListener("click", () => {
+  const presetList = document.getElementById("preset-list");
   const deleteButton = document.getElementById("preset-delete");
   const originalText = deleteButton.textContent;
-  const savedPreset = localStorage.getItem(presetKey);
 
-  if (!savedPreset) {
-    deleteButton.textContent = "⚠️ Belum Ada Preset";
+  const name = presetList.value;
+
+  if (!name || !displayPresets[name]) {
+    deleteButton.textContent = "⚠️ Pilih Preset";
 
     setTimeout(() => {
       deleteButton.textContent = originalText;
@@ -1280,7 +1368,14 @@ document.getElementById("preset-delete").addEventListener("click", () => {
     return;
   }
 
-  localStorage.removeItem(presetKey);
+  delete displayPresets[name];
+
+  localStorage.setItem(
+    presetsKey,
+    JSON.stringify(displayPresets)
+  );
+
+  refreshPresetList();
 
   deleteButton.textContent = "✅ Preset Dihapus";
 
