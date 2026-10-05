@@ -938,7 +938,8 @@ document.getElementById("zoom-in").addEventListener("click", () => {
   document.getElementById("sound-toggle").textContent =
     soundEnabled ? "🔊 Sound ON" : "🔇 Sound OFF";
 });
-  document.getElementById("fullscreen-toggle").addEventListener("click", async () => {
+  
+  async function toggleFullscreen() {
   const elem = document.documentElement;
 
   try {
@@ -958,7 +959,12 @@ document.getElementById("zoom-in").addEventListener("click", () => {
   } catch (error) {
     console.log("Fullscreen gagal:", error);
   }
+}
+
+document.getElementById("fullscreen-toggle").addEventListener("click", () => {
+  toggleFullscreen();
 });
+  
   let toolbarTimer = null;
 
 function scheduleToolbarHide() {
@@ -988,11 +994,25 @@ function scheduleToolbarHide() {
 }
 });
 
-  document.getElementById("flipbook").addEventListener(
+  let lastBookTap = 0;
+
+document.getElementById("flipbook").addEventListener(
   "pointerdown",
-  () => {
+  (event) => {
     const controls = document.querySelector(".page-controls");
     const toggle = document.getElementById("toolbar-toggle");
+
+    const now = Date.now();
+    const isDoubleTap = now - lastBookTap < 350;
+    lastBookTap = now;
+
+    if (isDoubleTap) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      toggleFullscreen();
+      return;
+    }
 
     controls.classList.remove("toolbar-hidden");
     toggle.textContent = "✕";
