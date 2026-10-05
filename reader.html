@@ -988,15 +988,19 @@ function scheduleToolbarHide() {
 }
 });
 
-  document.getElementById("page-flip").addEventListener("click", () => {
-  const controls = document.querySelector(".page-controls");
-  const toggle = document.getElementById("toolbar-toggle");
+  document.getElementById("flipbook").addEventListener(
+  "pointerdown",
+  () => {
+    const controls = document.querySelector(".page-controls");
+    const toggle = document.getElementById("toolbar-toggle");
 
-  controls.classList.remove("toolbar-hidden");
-  toggle.textContent = "✕";
+    controls.classList.remove("toolbar-hidden");
+    toggle.textContent = "✕";
 
-  scheduleToolbarHide();
-});
+    scheduleToolbarHide();
+  },
+  true
+);
 
   const openingScreen = document.getElementById("opening-screen");
   const openBookButton = document.getElementById("open-book");
