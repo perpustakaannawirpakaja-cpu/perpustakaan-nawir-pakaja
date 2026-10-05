@@ -133,6 +133,32 @@
   text-align:right;
 }
 
+#contrast-panel{
+  position:fixed;
+  top:170px;
+  right:10px;
+  z-index:10000;
+  display:none;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  background:#0f172a;
+  color:white;
+  border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+}
+
+#contrast-slider{
+  width:130px;
+  cursor:pointer;
+}
+
+#contrast-value{
+  min-width:42px;
+  font-size:12px;
+  text-align:right;
+}
+    
 .page-controls{
   transition:opacity .25s ease, transform .25s ease;
 }
@@ -296,8 +322,11 @@
 
   #page-flip{
   --reader-brightness:1;
+  --reader-contrast:1;
   transition:filter .3s ease;
-  filter:brightness(var(--reader-brightness));
+  filter:
+  brightness(var(--reader-brightness))
+  contrast(var(--reader-contrast));
 }
 
 #page-flip.mode-sepia{
@@ -305,7 +334,8 @@
     sepia(.35)
     brightness(.95)
     brightness(var(--reader-brightness))
-    contrast(.95);
+    contrast(.95)
+    contrast(var(--reader-contrast));
 }
 
 #page-flip.mode-night{
@@ -314,7 +344,8 @@
     hue-rotate(180deg)
     brightness(.82)
     brightness(var(--reader-brightness))
-    contrast(.9);
+    contrast(.9)
+    contrast(var(--reader-contrast));
 }
     
   #reading-progress{
@@ -515,6 +546,7 @@
     <button id="fullscreen-toggle" title="Fullscreen">⛶</button>
     <button id="reading-mode" title="Mode baca">☀️</button>
     <button id="brightness-toggle" title="Kecerahan">🔆</button>
+    <button id="contrast-toggle" title="Kontras">◐</button>
   </div>
     <button id="toolbar-toggle" title="Tampilkan/Sembunyikan menu">☰</button>
     <div id="brightness-panel">
@@ -529,6 +561,20 @@
   <span>🔆</span>
   <span id="brightness-value">100%</span>
 </div>
+
+      <div id="contrast-panel">
+  <span>◑</span>
+  <input
+    id="contrast-slider"
+    type="range"
+    min="70"
+    max="150"
+    value="100"
+  >
+  <span>◐</span>
+  <span id="contrast-value">100%</span>
+</div>
+      
   <div id="page-flip"></div>
 <div id="bookmark-panel">
   <div class="bookmark-panel-box">
@@ -628,9 +674,12 @@ function playPageFlipSound() {
   let pageFlip = null;
   const zoomKey = "readerZoom";
   const brightnessKey = "readerBrightness";
-let brightnessLevel =
+  let brightnessLevel =
   parseInt(localStorage.getItem(brightnessKey), 10) || 100;
-let zoomLevel = parseFloat(localStorage.getItem(zoomKey)) || 1;
+  const contrastKey = "readerContrast";
+  let contrastLevel =
+  parseInt(localStorage.getItem(contrastKey), 10) || 100;
+  let zoomLevel = parseFloat(localStorage.getItem(zoomKey)) || 1;
   
   function applyZoom() {
   const flipElement = document.getElementById("page-flip");
@@ -1071,6 +1120,44 @@ document.getElementById("brightness-toggle").addEventListener("click", () => {
     panel.style.display === "flex" ? "none" : "flex";
 });
 
+  document.getElementById("contrast-toggle").addEventListener("click", () => {
+  const panel = document.getElementById("contrast-panel");
+
+  panel.style.display =
+    panel.style.display === "flex" ? "none" : "flex";
+});
+
+document.getElementById("contrast-slider").addEventListener("input", (e) => {
+  const value = Number(e.target.value);
+
+  contrastLevel = value;
+  localStorage.setItem(contrastKey, contrastLevel);
+
+  document.getElementById("page-flip").style.setProperty(
+    "--reader-contrast",
+    value / 100
+  );
+
+function applySavedContrast() {
+  const slider = document.getElementById("contrast-slider");
+  const valueLabel = document.getElementById("contrast-value");
+  const page = document.getElementById("page-flip");
+
+  slider.value = contrastLevel;
+  valueLabel.textContent = contrastLevel + "%";
+
+  page.style.setProperty(
+    "--reader-contrast",
+    contrastLevel / 100
+  );
+}
+
+applySavedContrast();
+  
+  document.getElementById("contrast-value").textContent =
+    value + "%";
+});
+  
   document.getElementById("brightness-slider").addEventListener("input", (e) => {
   const value = Number(e.target.value);
   
