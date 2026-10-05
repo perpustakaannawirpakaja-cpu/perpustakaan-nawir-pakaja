@@ -261,11 +261,35 @@
     display:flex;
     justify-content:center;
   }
+      
+#page-flip{
+  transition:filter .3s ease;
+}
 
+#page-flip.mode-sepia{
+  filter:sepia(.35) brightness(.95) contrast(.95);
+}
+
+#page-flip.mode-night{
+  filter:invert(.88) hue-rotate(180deg) brightness(.82) contrast(.9);
+}
+      
   #open-book{
     font-size:18px;
     padding:14px 22px;
   }
+}
+
+    #page-flip{
+  transition:filter .3s ease;
+}
+
+#page-flip.mode-sepia{
+  filter:sepia(.35) brightness(.95) contrast(.95);
+}
+
+#page-flip.mode-night{
+  filter:invert(.88) hue-rotate(180deg) brightness(.82) contrast(.9);
 }
   #reading-progress{
   position:fixed;
@@ -463,6 +487,7 @@
     <button id="zoom-reset" title="Reset zoom">100%</button>
     <button id="zoom-in" title="Perbesar">+</button>
     <button id="fullscreen-toggle" title="Fullscreen">⛶</button>
+    <button id="reading-mode" title="Mode baca">☀️</button>
   </div>
     <button id="toolbar-toggle" title="Tampilkan/Sembunyikan menu">☰</button>
   <div id="page-flip"></div>
@@ -963,6 +988,30 @@ document.getElementById("zoom-in").addEventListener("click", () => {
 
 document.getElementById("fullscreen-toggle").addEventListener("click", () => {
   toggleFullscreen();
+});
+
+  let readingMode = 0;
+
+document.getElementById("reading-mode").addEventListener("click", () => {
+  const page = document.getElementById("page-flip");
+  const button = document.getElementById("reading-mode");
+
+  readingMode = (readingMode + 1) % 3;
+
+  page.classList.remove("mode-sepia", "mode-night");
+
+  if (readingMode === 1) {
+    page.classList.add("mode-sepia");
+    button.textContent = "📜";
+    button.title = "Mode Sepia";
+  } else if (readingMode === 2) {
+    page.classList.add("mode-night");
+    button.textContent = "🌙";
+    button.title = "Mode Malam";
+  } else {
+    button.textContent = "☀️";
+    button.title = "Mode Normal";
+  }
 });
   
   let toolbarTimer = null;
