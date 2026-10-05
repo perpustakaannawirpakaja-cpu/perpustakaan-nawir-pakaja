@@ -587,7 +587,8 @@ function playPageFlipSound() {
   return images;
 }
   let pageFlip = null;
-  let zoomLevel = 1;
+  const zoomKey = "readerZoom";
+let zoomLevel = parseFloat(localStorage.getItem(zoomKey)) || 1;
   
   function applyZoom() {
   const flipElement = document.getElementById("page-flip");
@@ -598,6 +599,8 @@ function playPageFlipSound() {
   document.getElementById("zoom-reset").textContent =
     Math.round(zoomLevel * 100) + "%";
 }
+
+  applyZoom();
 
 async function loadPDF() {
   if (!pdfUrl) {
@@ -945,16 +948,19 @@ document.getElementById("bookmark-sort").addEventListener("change", () => {
 });
   document.getElementById("zoom-out").addEventListener("click", () => {
   zoomLevel = Math.max(0.6, zoomLevel - 0.1);
+  localStorage.setItem(zoomKey, zoomLevel);
   applyZoom();
 });
 
 document.getElementById("zoom-reset").addEventListener("click", () => {
   zoomLevel = 1;
+  localStorage.setItem(zoomKey, zoomLevel);
   applyZoom();
 });
 
 document.getElementById("zoom-in").addEventListener("click", () => {
   zoomLevel = Math.min(2, zoomLevel + 0.1);
+  localStorage.setItem(zoomKey, zoomLevel);
   applyZoom();
 });
   document.getElementById("sound-toggle").addEventListener("click", () => {
