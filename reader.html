@@ -1170,6 +1170,10 @@ document.getElementById("contrast-slider").addEventListener("input", (e) => {
     value / 100
   );
 
+  document.getElementById("contrast-value").textContent =
+    value + "%";
+});
+
 function applySavedContrast() {
   const slider = document.getElementById("contrast-slider");
   const valueLabel = document.getElementById("contrast-value");
@@ -1186,7 +1190,7 @@ function applySavedContrast() {
 
 applySavedContrast();
 
-  document.getElementById("reader-reset").addEventListener("click", () => {
+document.getElementById("reader-reset").addEventListener("click", () => {
   readingMode = 0;
   zoomLevel = 1;
   brightnessLevel = 100;
@@ -1220,6 +1224,11 @@ document.getElementById("preset-save").addEventListener("click", () => {
     brightnessLevel: brightnessLevel,
     contrastLevel: contrastLevel
   };
+
+  localStorage.setItem(presetKey, JSON.stringify(preset));
+
+  alert("💾 Preset tampilan berhasil disimpan.");
+});
 
 document.getElementById("preset-load").addEventListener("click", () => {
   const savedPreset = localStorage.getItem(presetKey);
@@ -1260,15 +1269,6 @@ document.getElementById("preset-delete").addEventListener("click", () => {
   localStorage.removeItem(presetKey);
 
   alert("🗑️ Preset tampilan berhasil dihapus.");
-});
-  
-  localStorage.setItem(presetKey, JSON.stringify(preset));
-
-  alert("💾 Preset tampilan berhasil disimpan.");
-});
-  
-  document.getElementById("contrast-value").textContent =
-    value + "%";
 });
   
   document.getElementById("brightness-slider").addEventListener("input", (e) => {
