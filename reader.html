@@ -1227,7 +1227,14 @@ document.getElementById("preset-save").addEventListener("click", () => {
 
   localStorage.setItem(presetKey, JSON.stringify(preset));
 
-  alert("💾 Preset tampilan berhasil disimpan.");
+  const saveButton = document.getElementById("preset-save");
+const originalText = saveButton.textContent;
+
+saveButton.textContent = "✅ Preset Tersimpan";
+
+setTimeout(() => {
+  saveButton.textContent = originalText;
+}, 1500);
 });
 
 document.getElementById("preset-load").addEventListener("click", () => {
