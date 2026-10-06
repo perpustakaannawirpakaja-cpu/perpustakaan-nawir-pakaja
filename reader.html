@@ -633,6 +633,7 @@
   <button id="preset-save">💾 Simpan Preset</button>
   <button id="preset-load">▶ Pakai Preset</button>
   <button id="preset-rename">✏️ Rename Preset</button>
+  <button id="preset-duplicate">📑 Duplikat Preset</button>
   <button id="preset-default">⭐ Set Default</button>
   <button id="preset-clear-default">☆ Batalkan Default</button>
   <button id="preset-delete">🗑️ Hapus Preset</button>
@@ -1430,6 +1431,65 @@ if (currentDefaultPreset === oldName) {
   }, 1500);
 });
 
+document.getElementById("preset-duplicate").addEventListener("click", () => {
+  const presetList = document.getElementById("preset-list");
+  const nameInput = document.getElementById("preset-name");
+  const duplicateButton = document.getElementById("preset-duplicate");
+  const originalText = duplicateButton.textContent;
+
+  const sourceName = presetList.value;
+  const newName = nameInput.value.trim();
+
+  if (!sourceName || !displayPresets[sourceName]) {
+    duplicateButton.textContent = "⚠️ Pilih Preset";
+
+    setTimeout(() => {
+      duplicateButton.textContent = originalText;
+    }, 1500);
+
+    return;
+  }
+
+  if (!newName) {
+    duplicateButton.textContent = "⚠️ Isi Nama Baru";
+
+    setTimeout(() => {
+      duplicateButton.textContent = originalText;
+    }, 1500);
+
+    return;
+  }
+
+  if (displayPresets[newName]) {
+    duplicateButton.textContent = "⚠️ Nama Sudah Ada";
+
+    setTimeout(() => {
+      duplicateButton.textContent = originalText;
+    }, 1500);
+
+    return;
+  }
+
+  displayPresets[newName] = {
+    ...displayPresets[sourceName]
+  };
+
+  localStorage.setItem(
+    presetsKey,
+    JSON.stringify(displayPresets)
+  );
+
+  refreshPresetList();
+  presetList.value = newName;
+  nameInput.value = "";
+
+  duplicateButton.textContent = "✅ Preset Diduplikat";
+
+  setTimeout(() => {
+    duplicateButton.textContent = originalText;
+  }, 1500);
+});
+  
 document.getElementById("preset-default").addEventListener("click", () => {
   const presetList = document.getElementById("preset-list");
   const defaultButton = document.getElementById("preset-default");
