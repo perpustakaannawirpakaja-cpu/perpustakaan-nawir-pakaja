@@ -213,6 +213,17 @@
   text-align:center;
 }
 
+#preset-active-badge{
+  color:#86efac;
+  background:rgba(34,197,94,.12);
+  border:1px solid rgba(34,197,94,.35);
+  border-radius:8px;
+  padding:7px 9px;
+  font-size:12px;
+  font-weight:700;
+  text-align:center;
+}
+
 #preset-summary{
   color:#e2e8f0;
   background:rgba(255,255,255,.06);
@@ -663,6 +674,7 @@
 
   <div id="preset-count">🎛️ Total Preset: 0</div>
   <div id="preset-default-badge">☆ Belum ada preset default</div>
+  <div id="preset-active-badge">⚪ Belum ada preset aktif</div>
 
   <div id="preset-summary">
   Pilih preset untuk melihat ringkasan.
@@ -791,6 +803,7 @@ function playPageFlipSound() {
   const presetKey = "readerDisplayPreset";
   const presetsKey = "readerDisplayPresets";
   const defaultPresetKey = "readerDefaultPreset";
+  const activePresetKey = "readerActivePreset";
   let displayPresets = JSON.parse(
   localStorage.getItem(presetsKey) || "{}"
 );
@@ -802,12 +815,22 @@ function refreshPresetList() {
 
   const defaultBadge =
   document.getElementById("preset-default-badge");
+  const activeBadge =
+  document.getElementById("preset-active-badge");
+
+const activePresetName =
+  localStorage.getItem(activePresetKey);
 
 defaultBadge.textContent =
   defaultPresetName && displayPresets[defaultPresetName]
     ? `⭐ DEFAULT: ${defaultPresetName}`
     : "☆ Belum ada preset default";
 
+activeBadge.textContent =
+  activePresetName && displayPresets[activePresetName]
+    ? `🟢 AKTIF: ${activePresetName}`
+    : "⚪ Belum ada preset aktif";
+  
   presetList.innerHTML =
     '<option value="">Pilih preset...</option>';
 
@@ -1467,6 +1490,11 @@ document.getElementById("preset-load").addEventListener("click", () => {
   applySavedBrightness();
   applySavedContrast();
 
+  localStorage.setItem(activePresetKey, name);
+  refreshPresetList();
+  presetList.value = name;
+  updatePresetSummary();
+
   loadButton.textContent = "✅ Preset Dipakai";
 
   setTimeout(() => {
@@ -1520,6 +1548,13 @@ document.getElementById("preset-rename").addEventListener("click", () => {
 
 if (currentDefaultPreset === oldName) {
   localStorage.setItem(defaultPresetKey, newName);
+}
+
+const currentActivePreset =
+  localStorage.getItem(activePresetKey);
+
+if (currentActivePreset === oldName) {
+  localStorage.setItem(activePresetKey, newName);
 }
 
   if (newName !== oldName) {
@@ -1808,6 +1843,13 @@ if (currentDefaultPreset === name) {
   localStorage.removeItem(defaultPresetKey);
 }
 
+  const currentActivePreset =
+  localStorage.getItem(activePresetKey);
+
+if (currentActivePreset === name) {
+  localStorage.removeItem(activePresetKey);
+}
+
   localStorage.setItem(
     presetsKey,
     JSON.stringify(displayPresets)
@@ -1893,6 +1935,9 @@ if (defaultPresetName && displayPresets[defaultPresetName]) {
   applyZoom();
   applySavedBrightness();
   applySavedContrast();
+
+  localStorage.setItem(activePresetKey, defaultPresetName);
+refreshPresetList();
 }
   let toolbarTimer = null;
 
