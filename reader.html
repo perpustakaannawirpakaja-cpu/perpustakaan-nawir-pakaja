@@ -868,9 +868,12 @@ function updatePresetSummary() {
   const contrast =
     preset.contrastLevel ?? 100;
 
-  summary.textContent =
-    `Mode: ${modeName} · Zoom: ${zoomPercent}% · ` +
-    `Brightness: ${brightness}% · Contrast: ${contrast}%`;
+  summary.innerHTML = `
+  <div><strong>Mode:</strong> ${modeName}</div>
+  <div><strong>Zoom:</strong> ${zoomPercent}%</div>
+  <div><strong>Brightness:</strong> ${brightness}%</div>
+  <div><strong>Contrast:</strong> ${contrast}%</div>
+`;
 }
   
   refreshPresetList();
