@@ -184,6 +184,16 @@
   white-space:nowrap;
 }
 
+#preset-close{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#334155;
+  color:white;
+  font-weight:700;
+  text-align:center;
+}
+
 #preset-name,
 #preset-list{
   width:100%;
@@ -662,6 +672,7 @@
 </div>
 
 <div id="preset-panel">
+  <button id="preset-close">✕ Tutup Preset</button>
   <input
     id="preset-name"
     type="text"
@@ -1443,6 +1454,10 @@ document.getElementById("preset-toggle").addEventListener("click", () => {
     panel.style.display === "flex" ? "none" : "flex";
 });
 
+document.getElementById("preset-close").addEventListener("click", () => {
+  document.getElementById("preset-panel").style.display = "none";
+});
+
 document.getElementById("preset-save").addEventListener("click", () => {
   const nameInput = document.getElementById("preset-name");
   const presetList = document.getElementById("preset-list");
@@ -1979,6 +1994,8 @@ function scheduleToolbarHide() {
 
     controls.classList.add("toolbar-hidden");
     toggle.textContent = "☰";
+
+    document.getElementById("preset-panel").style.display = "none";
   }, 5000);
 }
   document.getElementById("toolbar-toggle").addEventListener("click", () => {
