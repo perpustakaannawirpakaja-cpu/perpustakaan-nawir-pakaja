@@ -756,7 +756,14 @@ function refreshPresetList() {
     const option = document.createElement("option");
 
     option.value = name;
-    option.textContent = name;
+
+const defaultPresetName =
+  localStorage.getItem(defaultPresetKey);
+
+option.textContent =
+  name === defaultPresetName
+    ? name + " ⭐"
+    : name;
 
     presetList.appendChild(option);
   });
@@ -1395,6 +1402,13 @@ document.getElementById("preset-rename").addEventListener("click", () => {
 
   displayPresets[newName] = displayPresets[oldName];
 
+  const currentDefaultPreset =
+  localStorage.getItem(defaultPresetKey);
+
+if (currentDefaultPreset === oldName) {
+  localStorage.setItem(defaultPresetKey, newName);
+}
+
   if (newName !== oldName) {
     delete displayPresets[oldName];
   }
@@ -1433,6 +1447,8 @@ document.getElementById("preset-default").addEventListener("click", () => {
   }
 
   localStorage.setItem(defaultPresetKey, name);
+  refreshPresetList();
+presetList.value = name;
 
   defaultButton.textContent = "✅ Default: " + name;
 
@@ -1459,6 +1475,13 @@ document.getElementById("preset-delete").addEventListener("click", () => {
   }
 
   delete displayPresets[name];
+
+  const currentDefaultPreset =
+  localStorage.getItem(defaultPresetKey);
+
+if (currentDefaultPreset === name) {
+  localStorage.removeItem(defaultPresetKey);
+}
 
   localStorage.setItem(
     presetsKey,
