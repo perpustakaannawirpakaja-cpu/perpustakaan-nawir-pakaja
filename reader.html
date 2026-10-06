@@ -184,6 +184,12 @@
   white-space:nowrap;
 }
 
+#preset-panel button:disabled{
+  opacity:0.4;
+  cursor:not-allowed;
+  filter:grayscale(1);
+}
+
 #preset-close{
   position:sticky;
   top:0;
@@ -923,14 +929,36 @@ function updatePresetSummary() {
   <div><strong>Contrast:</strong> ${contrast}%</div>
 `;
 }
+
+function updatePresetActionState() {
+  const presetList = document.getElementById("preset-list");
+
+  const hasSelection =
+    presetList.value &&
+    displayPresets[presetList.value];
+
+  const actionButtons = [
+    "preset-load",
+    "preset-rename",
+    "preset-duplicate",
+    "preset-default",
+    "preset-delete"
+  ];
+
+  actionButtons.forEach((id) => {
+    document.getElementById(id).disabled = !hasSelection;
+  });
+}  
   
   refreshPresetList();
 
   document.getElementById("preset-list").addEventListener("change", () => {
   updatePresetSummary();
+  updatePresetActionState();
 });
 
-updatePresetSummary();
+  updatePresetSummary();
+  updatePresetActionState();
   
   let contrastLevel =
   parseInt(localStorage.getItem(contrastKey), 10) || 100;
@@ -1457,6 +1485,7 @@ document.getElementById("preset-toggle").addEventListener("click", () => {
   if (panel.style.display === "flex") {
     presetList.value = "";
     updatePresetSummary();
+    updatePresetActionState();
   }
 });
 
