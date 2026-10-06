@@ -827,9 +827,11 @@ defaultBadge.textContent =
     : "☆ Belum ada preset default";
 
 activeBadge.textContent =
-  activePresetName && displayPresets[activePresetName]
-    ? `🟢 AKTIF: ${activePresetName}`
-    : "⚪ Belum ada preset aktif";
+  activePresetName === "__CUSTOM__"
+    ? "🟠 KUSTOM: Tampilan diubah manual"
+    : activePresetName && displayPresets[activePresetName]
+      ? `🟢 AKTIF: ${activePresetName}`
+      : "⚪ Belum ada preset aktif";
   
   presetList.innerHTML =
     '<option value="">Pilih preset...</option>';
@@ -864,6 +866,11 @@ option.textContent = name + statusIcons;
 
     presetList.appendChild(option);
   });
+}
+
+function markDisplayAsCustom() {
+  localStorage.setItem(activePresetKey, "__CUSTOM__");
+  refreshPresetList();
 }
 
 function updatePresetSummary() {
@@ -1274,23 +1281,31 @@ document.getElementById("bookmark-sort").addEventListener("change", () => {
   document.getElementById("close-bookmarks").addEventListener("click", () => {
   document.getElementById("bookmark-panel").style.display = "none";
 });
+  
   document.getElementById("zoom-out").addEventListener("click", () => {
   zoomLevel = Math.max(0.6, zoomLevel - 0.1);
   localStorage.setItem(zoomKey, zoomLevel);
   applyZoom();
+  
+  markDisplayAsCustom();
 });
 
 document.getElementById("zoom-reset").addEventListener("click", () => {
   zoomLevel = 1;
   localStorage.setItem(zoomKey, zoomLevel);
   applyZoom();
+  
+  markDisplayAsCustom();
 });
 
 document.getElementById("zoom-in").addEventListener("click", () => {
   zoomLevel = Math.min(2, zoomLevel + 0.1);
   localStorage.setItem(zoomKey, zoomLevel);
   applyZoom();
+  
+  markDisplayAsCustom();
 });
+  
   document.getElementById("sound-toggle").addEventListener("click", () => {
   soundEnabled = !soundEnabled;
 
@@ -1348,6 +1363,8 @@ document.getElementById("reading-mode").addEventListener("click", () => {
     button.textContent = "☀️";
     button.title = "Mode Normal";
   }
+  
+  markDisplayAsCustom();
 });
   
 document.getElementById("brightness-toggle").addEventListener("click", () => {
@@ -1377,6 +1394,8 @@ document.getElementById("contrast-slider").addEventListener("input", (e) => {
 
   document.getElementById("contrast-value").textContent =
     value + "%";
+  
+  markDisplayAsCustom();
 });
 
 function applySavedContrast() {
@@ -1413,6 +1432,8 @@ document.getElementById("reader-reset").addEventListener("click", () => {
 
   document.getElementById("brightness-panel").style.display = "none";
   document.getElementById("contrast-panel").style.display = "none";
+
+  markDisplayAsCustom();
 });
 
 document.getElementById("preset-toggle").addEventListener("click", () => {
@@ -1884,6 +1905,7 @@ if (currentActivePreset === name) {
 
   document.getElementById("brightness-value").textContent =
     value + "%";
+  markDisplayAsCustom();
 });
 
 function applySavedBrightness() {
