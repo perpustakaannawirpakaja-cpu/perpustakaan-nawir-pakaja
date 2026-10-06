@@ -634,6 +634,7 @@
   <button id="preset-load">▶ Pakai Preset</button>
   <button id="preset-rename">✏️ Rename Preset</button>
   <button id="preset-default">⭐ Set Default</button>
+  <button id="preset-clear-default">☆ Batalkan Default</button>
   <button id="preset-delete">🗑️ Hapus Preset</button>
 </div>
       
@@ -1454,6 +1455,40 @@ presetList.value = name;
 
   setTimeout(() => {
     defaultButton.textContent = originalText;
+  }, 1500);
+});
+
+document.getElementById("preset-clear-default").addEventListener("click", () => {
+  const presetList = document.getElementById("preset-list");
+  const clearButton = document.getElementById("preset-clear-default");
+  const originalText = clearButton.textContent;
+
+  const currentSelection = presetList.value;
+  const currentDefaultPreset =
+    localStorage.getItem(defaultPresetKey);
+
+  if (!currentDefaultPreset) {
+    clearButton.textContent = "ℹ️ Belum Ada Default";
+
+    setTimeout(() => {
+      clearButton.textContent = originalText;
+    }, 1500);
+
+    return;
+  }
+
+  localStorage.removeItem(defaultPresetKey);
+
+  refreshPresetList();
+
+  if (currentSelection && displayPresets[currentSelection]) {
+    presetList.value = currentSelection;
+  }
+
+  clearButton.textContent = "✅ Default Dibatalkan";
+
+  setTimeout(() => {
+    clearButton.textContent = originalText;
   }, 1500);
 });
   
