@@ -1449,9 +1449,15 @@ document.getElementById("reader-reset").addEventListener("click", () => {
 
 document.getElementById("preset-toggle").addEventListener("click", () => {
   const panel = document.getElementById("preset-panel");
+  const presetList = document.getElementById("preset-list");
 
   panel.style.display =
     panel.style.display === "flex" ? "none" : "flex";
+
+  if (panel.style.display === "flex") {
+    presetList.value = "";
+    updatePresetSummary();
+  }
 });
 
 function closePresetPanel() {
