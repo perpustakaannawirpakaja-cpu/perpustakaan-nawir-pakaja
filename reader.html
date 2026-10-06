@@ -850,10 +850,17 @@ activeBadge.textContent =
     const option = document.createElement("option");
 
     option.value = name;
-    option.textContent =
-      name === defaultPresetName
-        ? name + " ⭐"
-        : name;
+    let statusIcons = "";
+
+if (name === defaultPresetName) {
+  statusIcons += " ⭐";
+}
+
+if (name === activePresetName) {
+  statusIcons += " 🟢";
+}
+
+option.textContent = name + statusIcons;
 
     presetList.appendChild(option);
   });
