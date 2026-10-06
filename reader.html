@@ -213,6 +213,16 @@
   text-align:center;
 }
 
+#preset-summary{
+  color:#e2e8f0;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;
+  padding:8px 10px;
+  font-size:12px;
+  line-height:1.5;
+}
+
 #preset-name{
   background:#ffffff;
 }
@@ -654,6 +664,10 @@
   <div id="preset-count">🎛️ Total Preset: 0</div>
   <div id="preset-default-badge">☆ Belum ada preset default</div>
 
+  <div id="preset-summary">
+  Pilih preset untuk melihat ringkasan.
+</div>
+
   <button id="preset-save">💾 Simpan Preset</button>
   <button id="preset-load">▶ Pakai Preset</button>
   <button id="preset-rename">✏️ Rename Preset</button>
@@ -822,7 +836,50 @@ defaultBadge.textContent =
   });
 }
 
+function updatePresetSummary() {
+  const presetList = document.getElementById("preset-list");
+  const summary = document.getElementById("preset-summary");
+
+  const name = presetList.value;
+
+  if (!name || !displayPresets[name]) {
+    summary.textContent =
+      "Pilih preset untuk melihat ringkasan.";
+    return;
+  }
+
+  const preset = displayPresets[name];
+
+  const modeNames = [
+    "Normal",
+    "Sepia",
+    "Malam"
+  ];
+
+  const modeName =
+    modeNames[preset.readingMode ?? 0] || "Normal";
+
+  const zoomPercent =
+    Math.round((preset.zoomLevel ?? 1) * 100);
+
+  const brightness =
+    preset.brightnessLevel ?? 100;
+
+  const contrast =
+    preset.contrastLevel ?? 100;
+
+  summary.textContent =
+    `Mode: ${modeName} · Zoom: ${zoomPercent}% · ` +
+    `Brightness: ${brightness}% · Contrast: ${contrast}%`;
+}
+  
   refreshPresetList();
+
+  document.getElementById("preset-list").addEventListener("change", () => {
+  updatePresetSummary();
+});
+
+updatePresetSummary();
   
   let contrastLevel =
   parseInt(localStorage.getItem(contrastKey), 10) || 100;
