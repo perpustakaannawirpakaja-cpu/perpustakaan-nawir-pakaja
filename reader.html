@@ -750,22 +750,29 @@ function playPageFlipSound() {
 
 function refreshPresetList() {
   const presetList = document.getElementById("preset-list");
+  const defaultPresetName =
+    localStorage.getItem(defaultPresetKey);
 
   presetList.innerHTML =
     '<option value="">Pilih preset...</option>';
 
-  Object.keys(displayPresets).forEach((name) => {
+  const presetNames = Object.keys(displayPresets).sort((a, b) => {
+    if (a === defaultPresetName) return -1;
+    if (b === defaultPresetName) return 1;
+
+    return a.localeCompare(b, "id", {
+      sensitivity: "base"
+    });
+  });
+
+  presetNames.forEach((name) => {
     const option = document.createElement("option");
 
     option.value = name;
-
-const defaultPresetName =
-  localStorage.getItem(defaultPresetKey);
-
-option.textContent =
-  name === defaultPresetName
-    ? name + " ⭐"
-    : name;
+    option.textContent =
+      name === defaultPresetName
+        ? name + " ⭐"
+        : name;
 
     presetList.appendChild(option);
   });
