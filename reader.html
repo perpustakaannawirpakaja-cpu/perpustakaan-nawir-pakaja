@@ -633,6 +633,7 @@
   <button id="preset-save">💾 Simpan Preset</button>
   <button id="preset-load">▶ Pakai Preset</button>
   <button id="preset-rename">✏️ Rename Preset</button>
+  <button id="preset-default">⭐ Set Default</button>
   <button id="preset-delete">🗑️ Hapus Preset</button>
 </div>
       
@@ -740,6 +741,7 @@ function playPageFlipSound() {
   const contrastKey = "readerContrast";
   const presetKey = "readerDisplayPreset";
   const presetsKey = "readerDisplayPresets";
+  const defaultPresetKey = "readerDefaultPreset";
   let displayPresets = JSON.parse(
   localStorage.getItem(presetsKey) || "{}"
 );
@@ -1412,6 +1414,32 @@ document.getElementById("preset-rename").addEventListener("click", () => {
     renameButton.textContent = originalText;
   }, 1500);
 });
+
+document.getElementById("preset-default").addEventListener("click", () => {
+  const presetList = document.getElementById("preset-list");
+  const defaultButton = document.getElementById("preset-default");
+  const originalText = defaultButton.textContent;
+
+  const name = presetList.value;
+
+  if (!name || !displayPresets[name]) {
+    defaultButton.textContent = "⚠️ Pilih Preset";
+
+    setTimeout(() => {
+      defaultButton.textContent = originalText;
+    }, 1500);
+
+    return;
+  }
+
+  localStorage.setItem(defaultPresetKey, name);
+
+  defaultButton.textContent = "✅ Default: " + name;
+
+  setTimeout(() => {
+    defaultButton.textContent = originalText;
+  }, 1500);
+});
   
 document.getElementById("preset-delete").addEventListener("click", () => {
   const presetList = document.getElementById("preset-list");
@@ -1498,7 +1526,26 @@ applySavedBrightness();
 }
 
 applySavedReadingMode();
-  
+  const defaultPresetName = localStorage.getItem(defaultPresetKey);
+
+if (defaultPresetName && displayPresets[defaultPresetName]) {
+  const defaultPreset = displayPresets[defaultPresetName];
+
+  readingMode = defaultPreset.readingMode ?? 0;
+  zoomLevel = defaultPreset.zoomLevel ?? 1;
+  brightnessLevel = defaultPreset.brightnessLevel ?? 100;
+  contrastLevel = defaultPreset.contrastLevel ?? 100;
+
+  localStorage.setItem(readingModeKey, readingMode);
+  localStorage.setItem(zoomKey, zoomLevel);
+  localStorage.setItem(brightnessKey, brightnessLevel);
+  localStorage.setItem(contrastKey, contrastLevel);
+
+  applySavedReadingMode();
+  applyZoom();
+  applySavedBrightness();
+  applySavedContrast();
+}
   let toolbarTimer = null;
 
 function scheduleToolbarHide() {
