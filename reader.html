@@ -202,6 +202,17 @@
   padding:4px 6px;
 }
 
+#preset-default-badge{
+  color:#facc15;
+  background:rgba(250,204,21,.12);
+  border:1px solid rgba(250,204,21,.35);
+  border-radius:8px;
+  padding:7px 9px;
+  font-size:12px;
+  font-weight:700;
+  text-align:center;
+}
+
 #preset-name{
   background:#ffffff;
 }
@@ -641,6 +652,7 @@
   </select>
 
   <div id="preset-count">🎛️ Total Preset: 0</div>
+  <div id="preset-default-badge">☆ Belum ada preset default</div>
 
   <button id="preset-save">💾 Simpan Preset</button>
   <button id="preset-load">▶ Pakai Preset</button>
@@ -773,6 +785,14 @@ function refreshPresetList() {
   const presetList = document.getElementById("preset-list");
   const defaultPresetName =
     localStorage.getItem(defaultPresetKey);
+
+  const defaultBadge =
+  document.getElementById("preset-default-badge");
+
+defaultBadge.textContent =
+  defaultPresetName && displayPresets[defaultPresetName]
+    ? `⭐ DEFAULT: ${defaultPresetName}`
+    : "☆ Belum ada preset default";
 
   presetList.innerHTML =
     '<option value="">Pilih preset...</option>';
