@@ -1454,8 +1454,18 @@ document.getElementById("preset-toggle").addEventListener("click", () => {
     panel.style.display === "flex" ? "none" : "flex";
 });
 
-document.getElementById("preset-close").addEventListener("click", () => {
+function closePresetPanel() {
   document.getElementById("preset-panel").style.display = "none";
+}
+
+function closePresetPanelSoon() {
+  setTimeout(() => {
+    closePresetPanel();
+  }, 700);
+}
+
+document.getElementById("preset-close").addEventListener("click", () => {
+  closePresetPanel();
 });
 
 document.getElementById("preset-save").addEventListener("click", () => {
@@ -1493,6 +1503,8 @@ document.getElementById("preset-save").addEventListener("click", () => {
   nameInput.value = "";
 
   saveButton.textContent = "✅ Preset Tersimpan";
+
+  closePresetPanelSoon();
 
   setTimeout(() => {
     saveButton.textContent = originalText;
@@ -1539,6 +1551,8 @@ document.getElementById("preset-load").addEventListener("click", () => {
   updatePresetSummary();
 
   loadButton.textContent = "✅ Preset Dipakai";
+  
+  closePresetPanelSoon();
 
   setTimeout(() => {
     loadButton.textContent = originalText;
@@ -1615,6 +1629,8 @@ if (currentActivePreset === oldName) {
 
   renameButton.textContent = "✅ Preset Direname";
 
+  closePresetPanelSoon();
+
   setTimeout(() => {
     renameButton.textContent = originalText;
   }, 1500);
@@ -1674,6 +1690,8 @@ document.getElementById("preset-duplicate").addEventListener("click", () => {
 
   duplicateButton.textContent = "✅ Preset Diduplikat";
 
+  closePresetPanelSoon();
+
   setTimeout(() => {
     duplicateButton.textContent = originalText;
   }, 1500);
@@ -1701,6 +1719,8 @@ document.getElementById("preset-default").addEventListener("click", () => {
 presetList.value = name;
 
   defaultButton.textContent = "✅ Default: " + name;
+
+  closePresetPanelSoon();
 
   setTimeout(() => {
     defaultButton.textContent = originalText;
@@ -1735,6 +1755,8 @@ document.getElementById("preset-clear-default").addEventListener("click", () => 
   }
 
   clearButton.textContent = "✅ Default Dibatalkan";
+
+  closePresetPanelSoon();
 
   setTimeout(() => {
     clearButton.textContent = originalText;
@@ -1901,6 +1923,8 @@ if (currentActivePreset === name) {
   refreshPresetList();
 
   deleteButton.textContent = "✅ Preset Dihapus";
+
+  closePresetPanelSoon();
 
   setTimeout(() => {
     deleteButton.textContent = originalText;
