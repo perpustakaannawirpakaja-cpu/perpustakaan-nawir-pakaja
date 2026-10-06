@@ -636,6 +636,15 @@
   <button id="preset-duplicate">📑 Duplikat Preset</button>
   <button id="preset-default">⭐ Set Default</button>
   <button id="preset-clear-default">☆ Batalkan Default</button>
+  <button id="preset-export">📤 Export Preset</button>
+  <button id="preset-import">📥 Import Preset</button>
+
+<input
+  id="preset-import-file"
+  type="file"
+  accept=".json,application/json"
+  hidden
+>
   <button id="preset-delete">🗑️ Hapus Preset</button>
 </div>
       
@@ -1557,6 +1566,103 @@ document.getElementById("preset-clear-default").addEventListener("click", () => 
   setTimeout(() => {
     clearButton.textContent = originalText;
   }, 1500);
+});
+
+document.getElementById("preset-export").addEventListener("click", () => {
+  const exportButton = document.getElementById("preset-export");
+  const originalText = exportButton.textContent;
+
+  const exportData = {
+    version: 1,
+    presets: displayPresets,
+    defaultPreset:
+      localStorage.getItem(defaultPresetKey) || null
+  };
+
+  const jsonData = JSON.stringify(exportData, null, 2);
+
+  const blob = new Blob(
+    [jsonData],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "reader-presets.json";
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
+
+  exportButton.textContent = "✅ Preset Diexport";
+
+  setTimeout(() => {
+    exportButton.textContent = originalText;
+  }, 1500);
+});
+
+document.getElementById("preset-import").addEventListener("click", () => {
+  document.getElementById("preset-import-file").click();
+});
+
+document.getElementById("preset-import-file").addEventListener("change", async (e) => {
+  const importButton = document.getElementById("preset-import");
+  const originalText = importButton.textContent;
+  const file = e.target.files[0];
+
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const importData = JSON.parse(text);
+
+    if (
+      !importData ||
+      typeof importData.presets !== "object" ||
+      importData.presets === null
+    ) {
+      throw new Error("Format preset tidak valid");
+    }
+
+    displayPresets = {
+      ...displayPresets,
+      ...importData.presets
+    };
+
+    localStorage.setItem(
+      presetsKey,
+      JSON.stringify(displayPresets)
+    );
+
+    if (
+      importData.defaultPreset &&
+      displayPresets[importData.defaultPreset]
+    ) {
+      localStorage.setItem(
+        defaultPresetKey,
+        importData.defaultPreset
+      );
+    }
+
+    refreshPresetList();
+
+    importButton.textContent = "✅ Preset Diimport";
+  } catch (error) {
+    console.log("Import preset gagal:", error);
+    importButton.textContent = "⚠️ File Tidak Valid";
+  }
+
+  setTimeout(() => {
+    importButton.textContent = originalText;
+  }, 1500);
+
+  e.target.value = "";
 });
   
 document.getElementById("preset-delete").addEventListener("click", () => {
