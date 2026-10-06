@@ -632,6 +632,7 @@
 
   <button id="preset-save">💾 Simpan Preset</button>
   <button id="preset-load">▶ Pakai Preset</button>
+  <button id="preset-rename">✏️ Rename Preset</button>
   <button id="preset-delete">🗑️ Hapus Preset</button>
 </div>
       
@@ -1351,6 +1352,67 @@ document.getElementById("preset-load").addEventListener("click", () => {
   }, 1500);
 });
 
+document.getElementById("preset-rename").addEventListener("click", () => {
+  const presetList = document.getElementById("preset-list");
+  const nameInput = document.getElementById("preset-name");
+  const renameButton = document.getElementById("preset-rename");
+  const originalText = renameButton.textContent;
+
+  const oldName = presetList.value;
+  const newName = nameInput.value.trim();
+
+  if (!oldName || !displayPresets[oldName]) {
+    renameButton.textContent = "⚠️ Pilih Preset";
+
+    setTimeout(() => {
+      renameButton.textContent = originalText;
+    }, 1500);
+
+    return;
+  }
+
+  if (!newName) {
+    renameButton.textContent = "⚠️ Isi Nama Baru";
+
+    setTimeout(() => {
+      renameButton.textContent = originalText;
+    }, 1500);
+
+    return;
+  }
+
+  if (newName !== oldName && displayPresets[newName]) {
+    renameButton.textContent = "⚠️ Nama Sudah Ada";
+
+    setTimeout(() => {
+      renameButton.textContent = originalText;
+    }, 1500);
+
+    return;
+  }
+
+  displayPresets[newName] = displayPresets[oldName];
+
+  if (newName !== oldName) {
+    delete displayPresets[oldName];
+  }
+
+  localStorage.setItem(
+    presetsKey,
+    JSON.stringify(displayPresets)
+  );
+
+  refreshPresetList();
+  presetList.value = newName;
+  nameInput.value = "";
+
+  renameButton.textContent = "✅ Preset Direname";
+
+  setTimeout(() => {
+    renameButton.textContent = originalText;
+  }, 1500);
+});
+  
 document.getElementById("preset-delete").addEventListener("click", () => {
   const presetList = document.getElementById("preset-list");
   const deleteButton = document.getElementById("preset-delete");
