@@ -1991,7 +1991,7 @@ document.getElementById("preset-load").addEventListener("click", () => {
   }, 1500);
 });
 
-document.getElementById("preset-rename").addEventListener("click", () => {
+document.getElementById("preset-rename").addEventListener("click", async () => {
   const presetList = document.getElementById("preset-list");
   const nameInput = document.getElementById("preset-name");
   const renameButton = document.getElementById("preset-rename");
@@ -2055,7 +2055,7 @@ if (currentActivePreset === oldName) {
     JSON.stringify(displayPresets)
   );
 
-  schedulePresetCloudSave();
+  await savePresetsToCloud();
 
   refreshPresetList();
   presetList.value = newName;
