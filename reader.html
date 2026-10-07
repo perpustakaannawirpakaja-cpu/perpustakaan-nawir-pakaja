@@ -933,9 +933,17 @@ function updatePresetSummary() {
 function updatePresetActionState() {
   const presetList = document.getElementById("preset-list");
 
+  const selectedName = presetList.value;
+
   const hasSelection =
-    presetList.value &&
-    displayPresets[presetList.value];
+    selectedName &&
+    displayPresets[selectedName];
+
+  const defaultPresetName =
+    localStorage.getItem(defaultPresetKey);
+
+  const activePresetName =
+    localStorage.getItem(activePresetKey);
 
   const actionButtons = [
     "preset-load",
@@ -947,18 +955,32 @@ function updatePresetActionState() {
 
   actionButtons.forEach((id) => {
     document.getElementById(id).disabled = !hasSelection;
-    const hasDefault =
-  localStorage.getItem(defaultPresetKey);
-
-document.getElementById("preset-clear-default").disabled =
-  !hasDefault;
-
-const hasPresets =
-  Object.keys(displayPresets).length > 0;
-
-document.getElementById("preset-export").disabled =
-  !hasPresets;
   });
+
+  document.getElementById("preset-clear-default").disabled =
+    !defaultPresetName;
+
+  const hasPresets =
+    Object.keys(displayPresets).length > 0;
+
+  document.getElementById("preset-export").disabled =
+    !hasPresets;
+
+  const loadButton =
+    document.getElementById("preset-load");
+
+  const defaultButton =
+    document.getElementById("preset-default");
+
+  loadButton.textContent =
+    hasSelection && selectedName === activePresetName
+      ? "🟢 Sedang Dipakai"
+      : "▶ Pakai Preset";
+
+  defaultButton.textContent =
+    hasSelection && selectedName === defaultPresetName
+      ? "⭐ Sudah Default"
+      : "⭐ Set Default";
 }  
   
   refreshPresetList();
