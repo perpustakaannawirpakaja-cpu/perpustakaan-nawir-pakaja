@@ -920,6 +920,8 @@ async function updateReaderAuthUI() {
 
     loginButton.hidden = true;
     logoutButton.hidden = false;
+
+    await loadPresetsFromCloud();
   } else {
     userStatus.textContent = "Belum login";
 
@@ -1224,6 +1226,119 @@ function updatePresetActionState() {
     hasSelection && selectedName === defaultPresetName
       ? "⭐ Sudah Default"
       : "⭐ Set Default";
+}
+
+async function savePresetsToCloud() {
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (userError || !user) {
+    return;
+  }
+
+  const { error } = await db
+    .from("reader_presets")
+    .upsert(
+      {
+        user_id: user.id,
+        presets: displayPresets,
+        default_preset:
+          localStorage.getItem(defaultPresetKey),
+        active_preset:
+          localStorage.getItem(activePresetKey),
+        updated_at: new Date().toISOString()
+      },
+      {
+        onConflict: "user_id"
+      }
+    );
+
+  if (error) {
+    console.error(
+      "Gagal menyimpan preset ke cloud:",
+      error
+    );
+  }
+}
+
+let presetCloudSaveTimer = null;
+
+function schedulePresetCloudSave() {
+  clearTimeout(presetCloudSaveTimer);
+
+  presetCloudSaveTimer = setTimeout(() => {
+    savePresetsToCloud();
+  }, 800);
+}  
+
+async function loadPresetsFromCloud() {
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (userError || !user) {
+    return;
+  }
+
+  const { data, error } = await db
+    .from("reader_presets")
+    .select(
+      "presets, default_preset, active_preset"
+    )
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error(
+      "Gagal mengambil preset dari cloud:",
+      error
+    );
+    return;
+  }
+
+  if (data) {
+    displayPresets =
+      data.presets || {};
+
+    localStorage.setItem(
+      presetsKey,
+      JSON.stringify(displayPresets)
+    );
+
+    if (data.default_preset) {
+      localStorage.setItem(
+        defaultPresetKey,
+        data.default_preset
+      );
+    } else {
+      localStorage.removeItem(defaultPresetKey);
+    }
+
+    if (data.active_preset) {
+      localStorage.setItem(
+        activePresetKey,
+        data.active_preset
+      );
+    } else {
+      localStorage.removeItem(activePresetKey);
+    }
+
+    refreshPresetList();
+    updatePresetSummary();
+    updatePresetActionState();
+
+    return;
+  }
+
+  const hasLocalPresets =
+    Object.keys(displayPresets).length > 0;
+
+  if (hasLocalPresets) {
+    await savePresetsToCloud();
+  }
 }  
   
   refreshPresetList();
@@ -1809,6 +1924,8 @@ document.getElementById("preset-save").addEventListener("click", () => {
     JSON.stringify(displayPresets)
   );
 
+  schedulePresetCloudSave();
+
   refreshPresetList();
   presetList.value = name;
   nameInput.value = "";
@@ -1858,6 +1975,9 @@ document.getElementById("preset-load").addEventListener("click", () => {
   applySavedContrast();
 
   localStorage.setItem(activePresetKey, name);
+
+  schedulePresetCloudSave();
+  
   refreshPresetList();
   presetList.value = name;
   updatePresetSummary();
@@ -1935,6 +2055,8 @@ if (currentActivePreset === oldName) {
     JSON.stringify(displayPresets)
   );
 
+  schedulePresetCloudSave();
+
   refreshPresetList();
   presetList.value = newName;
   nameInput.value = "";
@@ -1996,6 +2118,8 @@ document.getElementById("preset-duplicate").addEventListener("click", () => {
     JSON.stringify(displayPresets)
   );
 
+  schedulePresetCloudSave();
+
   refreshPresetList();
   presetList.value = newName;
   nameInput.value = "";
@@ -2027,6 +2151,9 @@ document.getElementById("preset-default").addEventListener("click", () => {
   }
 
   localStorage.setItem(defaultPresetKey, name);
+
+  schedulePresetCloudSave();
+  
   refreshPresetList();
   presetList.value = name;
   updatePresetActionState();
@@ -2060,6 +2187,8 @@ document.getElementById("preset-clear-default").addEventListener("click", () => 
   }
 
   localStorage.removeItem(defaultPresetKey);
+
+  schedulePresetCloudSave();
 
   refreshPresetList();
 
@@ -2233,6 +2362,8 @@ if (currentActivePreset === name) {
     presetsKey,
     JSON.stringify(displayPresets)
   );
+
+  schedulePresetCloudSave();
 
   refreshPresetList();
   updatePresetActionState();
