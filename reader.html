@@ -2092,11 +2092,8 @@ function scheduleToolbarHide() {
   }
 
   toolbarTimer = setTimeout(() => {
-
-    // Jangan tutup selama user masih menyentuh kontrol
     if (toolbarInteractionActive || sliderDragging) {
-  return;
-}
+      return;
     }
 
     const controls =
@@ -2110,11 +2107,8 @@ function scheduleToolbarHide() {
 
     document.getElementById("preset-panel").style.display =
       "none";
-
   }, 10000);
 }
-
-let toolbarInteractionActive = false;
 
 function pauseToolbarHide() {
   toolbarInteractionActive = true;
@@ -2122,9 +2116,12 @@ function pauseToolbarHide() {
 }
 
 function restartToolbarHide() {
-  if (toolbarInteractionActive) return;
+  if (toolbarInteractionActive || sliderDragging) {
+    return;
+  }
 
-  const controls = document.querySelector(".page-controls");
+  const controls =
+    document.querySelector(".page-controls");
 
   if (!controls.classList.contains("toolbar-hidden")) {
     scheduleToolbarHide();
@@ -2133,7 +2130,10 @@ function restartToolbarHide() {
 
 function endToolbarInteraction() {
   toolbarInteractionActive = false;
-  restartToolbarHide();
+
+  if (!sliderDragging) {
+    restartToolbarHide();
+  }
 }
 
 const toolbarInteractiveAreas = [
@@ -2144,12 +2144,18 @@ const toolbarInteractiveAreas = [
 ];
 
 toolbarInteractiveAreas.forEach((area) => {
- area.addEventListener("pointerdown", (event) => {
-  event.stopPropagation();
-  pauseToolbarHide();
+  area.addEventListener("pointerdown", () => {
+    pauseToolbarHide();
+  });
+
+  area.addEventListener("input", restartToolbarHide);
+  area.addEventListener("change", restartToolbarHide);
+
+  area.addEventListener("keydown", pauseToolbarHide);
+  area.addEventListener("keyup", endToolbarInteraction);
 });
 
-  const readerSliders = [
+const readerSliders = [
   document.getElementById("brightness-slider"),
   document.getElementById("contrast-slider")
 ];
@@ -2163,30 +2169,23 @@ function endSliderDrag() {
   if (!sliderDragging) return;
 
   sliderDragging = false;
+  toolbarInteractionActive = false;
   scheduleToolbarHide();
 }
 
 readerSliders.forEach((slider) => {
-  slider.addEventListener("mousedown", startSliderDrag);
-  slider.addEventListener("touchstart", startSliderDrag, {
-    passive: true
-  });
+  slider.addEventListener("pointerdown", startSliderDrag);
 });
 
-window.addEventListener("mouseup", endSliderDrag);
-window.addEventListener("touchend", endSliderDrag, {
-  passive: true
+document.addEventListener("pointerup", () => {
+  endSliderDrag();
+  endToolbarInteraction();
 });
 
-  area.addEventListener("input", restartToolbarHide);
-  area.addEventListener("change", restartToolbarHide);
-
-  area.addEventListener("keydown", pauseToolbarHide);
-  area.addEventListener("keyup", endToolbarInteraction);
+document.addEventListener("pointercancel", () => {
+  endSliderDrag();
+  endToolbarInteraction();
 });
-
-document.addEventListener("pointerup", endToolbarInteraction);
-document.addEventListener("pointercancel", endToolbarInteraction);
   
   document.getElementById("toolbar-toggle").addEventListener("click", () => {
   const controls = document.querySelector(".page-controls");
