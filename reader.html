@@ -2455,20 +2455,29 @@ refreshPresetList();
 }
   
   let toolbarTimer = null;
-let toolbarInteractionActive = false;
-let sliderDragging = false;
+  let toolbarInteractionActive = false;
+  let sliderDragging = false;
+  let toolbarPinnedOpen = false;
 
 function scheduleToolbarHide() {
   clearTimeout(toolbarTimer);
 
-  if (toolbarInteractionActive || sliderDragging) {
-    return;
-  }
+  if (
+  toolbarPinnedOpen ||
+  toolbarInteractionActive ||
+  sliderDragging
+) {
+  return;
+}
 
   toolbarTimer = setTimeout(() => {
-    if (toolbarInteractionActive || sliderDragging) {
-      return;
-    }
+    if (
+  toolbarPinnedOpen ||
+  toolbarInteractionActive ||
+  sliderDragging
+) {
+  return;
+}
 
     const controls =
       document.querySelector(".page-controls");
@@ -2490,9 +2499,13 @@ function pauseToolbarHide() {
 }
 
 function restartToolbarHide() {
-  if (toolbarInteractionActive || sliderDragging) {
-    return;
-  }
+  if (
+  toolbarPinnedOpen ||
+  toolbarInteractionActive ||
+  sliderDragging
+) {
+  return;
+}
 
   const controls =
     document.querySelector(".page-controls");
@@ -2571,6 +2584,8 @@ document.addEventListener("pointercancel", () => {
     controls.classList.contains("toolbar-hidden");
 
   if (isHidden) {
+    toolbarPinnedOpen = true;
+    
     controls.classList.remove("toolbar-hidden");
     toggle.textContent = "✕";
 
@@ -2578,6 +2593,8 @@ document.addEventListener("pointercancel", () => {
     // jangan tutup otomatis.
     clearTimeout(toolbarTimer);
   } else {
+    toolbarPinnedOpen = false;
+    
     controls.classList.add("toolbar-hidden");
     toggle.textContent = "☰";
 
