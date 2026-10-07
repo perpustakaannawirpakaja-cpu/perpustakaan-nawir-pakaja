@@ -1529,7 +1529,7 @@ function closePresetPanel() {
 function closePresetPanelSoon() {
   setTimeout(() => {
     closePresetPanel();
-  }, 700);
+  }, 2000);
 }
 
 document.getElementById("preset-close").addEventListener("click", () => {
@@ -2079,21 +2079,115 @@ if (defaultPresetName && displayPresets[defaultPresetName]) {
   localStorage.setItem(activePresetKey, defaultPresetName);
 refreshPresetList();
 }
+  
   let toolbarTimer = null;
+let toolbarInteractionActive = false;
+let sliderDragging = false;
 
 function scheduleToolbarHide() {
   clearTimeout(toolbarTimer);
 
+  if (toolbarInteractionActive || sliderDragging) {
+    return;
+  }
+
   toolbarTimer = setTimeout(() => {
-    const controls = document.querySelector(".page-controls");
-    const toggle = document.getElementById("toolbar-toggle");
+
+    // Jangan tutup selama user masih menyentuh kontrol
+    if (toolbarInteractionActive || sliderDragging) {
+  return;
+}
+    }
+
+    const controls =
+      document.querySelector(".page-controls");
+
+    const toggle =
+      document.getElementById("toolbar-toggle");
 
     controls.classList.add("toolbar-hidden");
     toggle.textContent = "☰";
 
-    document.getElementById("preset-panel").style.display = "none";
-  }, 5000);
+    document.getElementById("preset-panel").style.display =
+      "none";
+
+  }, 10000);
 }
+
+let toolbarInteractionActive = false;
+
+function pauseToolbarHide() {
+  toolbarInteractionActive = true;
+  clearTimeout(toolbarTimer);
+}
+
+function restartToolbarHide() {
+  if (toolbarInteractionActive) return;
+
+  const controls = document.querySelector(".page-controls");
+
+  if (!controls.classList.contains("toolbar-hidden")) {
+    scheduleToolbarHide();
+  }
+}
+
+function endToolbarInteraction() {
+  toolbarInteractionActive = false;
+  restartToolbarHide();
+}
+
+const toolbarInteractiveAreas = [
+  document.querySelector(".page-controls"),
+  document.getElementById("brightness-panel"),
+  document.getElementById("contrast-panel"),
+  document.getElementById("preset-panel")
+];
+
+toolbarInteractiveAreas.forEach((area) => {
+ area.addEventListener("pointerdown", (event) => {
+  event.stopPropagation();
+  pauseToolbarHide();
+});
+
+  const readerSliders = [
+  document.getElementById("brightness-slider"),
+  document.getElementById("contrast-slider")
+];
+
+function startSliderDrag() {
+  sliderDragging = true;
+  clearTimeout(toolbarTimer);
+}
+
+function endSliderDrag() {
+  if (!sliderDragging) return;
+
+  sliderDragging = false;
+  scheduleToolbarHide();
+}
+
+readerSliders.forEach((slider) => {
+  slider.addEventListener("mousedown", startSliderDrag);
+  slider.addEventListener("touchstart", startSliderDrag, {
+    passive: true
+  });
+});
+
+window.addEventListener("mouseup", endSliderDrag);
+window.addEventListener("touchend", endSliderDrag, {
+  passive: true
+});
+
+  area.addEventListener("input", restartToolbarHide);
+  area.addEventListener("change", restartToolbarHide);
+
+  area.addEventListener("keydown", pauseToolbarHide);
+  area.addEventListener("keyup", endToolbarInteraction);
+});
+
+document.addEventListener("pointerup", endToolbarInteraction);
+document.addEventListener("pointercancel", endToolbarInteraction);
+  
   document.getElementById("toolbar-toggle").addEventListener("click", () => {
   const controls = document.querySelector(".page-controls");
   const toggle = document.getElementById("toolbar-toggle");
