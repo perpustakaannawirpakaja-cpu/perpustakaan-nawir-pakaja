@@ -41,6 +41,92 @@
       border-radius:8px;
     }
 
+    .reader-header-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+#reader-login-button,
+#reader-logout-button{
+  border:0;
+  border-radius:8px;
+  padding:9px 12px;
+  cursor:pointer;
+  background:#334155;
+  color:white;
+}
+
+#reader-user-status{
+  font-size:12px;
+  color:#cbd5e1;
+}
+
+#reader-login-modal{
+  position:fixed;
+  inset:0;
+  z-index:20000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(0,0,0,.65);
+  backdrop-filter:blur(6px);
+}
+
+.reader-login-box{
+  width:100%;
+  max-width:360px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding:20px;
+  border-radius:14px;
+  background:#0f172a;
+  color:white;
+  box-shadow:0 20px 60px rgba(0,0,0,.45);
+}
+
+.reader-login-box h3{
+  margin:0 0 4px;
+  text-align:center;
+}
+
+.reader-login-box input{
+  width:100%;
+  padding:11px 12px;
+  border:1px solid #475569;
+  border-radius:8px;
+  outline:none;
+  background:#f8fafc;
+  color:#111827;
+}
+
+.reader-login-box button{
+  padding:10px 12px;
+  border:0;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+#reader-login-submit{
+  background:#2563eb;
+  color:white;
+  font-weight:700;
+}
+
+#reader-login-cancel{
+  background:#334155;
+  color:white;
+}
+
+#reader-login-message{
+  min-height:18px;
+  font-size:12px;
+  text-align:center;
+  color:#fca5a5;
+}
+
     .reader-area{
       min-height:calc(100vh - 60px);
       display:flex;
@@ -602,6 +688,7 @@
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
@@ -609,12 +696,57 @@
   <audio id="bismillah-audio" src="Bismillah_final_natural.m4a" preload="auto"></audio>
   <audio id="page-flip-audio" src="page_flip_paper.m4a" preload="auto"></audio>
   <header class="reader-header">
-    <h2>📖 Perpustakaan Nawir Pakaja</h2>
+  <h2>📖 Perpustakaan Nawir Pakaja</h2>
+
+  <div class="reader-header-actions">
+    <button id="reader-login-button">
+      🔐 Login
+    </button>
+
+    <span id="reader-user-status">
+      Belum login
+    </span>
+
+    <button id="reader-logout-button" hidden>
+      🚪 Logout
+    </button>
 
     <a href="index.html" class="back-button">
       ← Kembali
     </a>
-  </header>
+  </div>
+</header>
+  <div id="reader-login-modal">
+  <div class="reader-login-box">
+
+    <h3>🔐 Login Sinkronisasi</h3>
+
+    <input
+      id="reader-login-email"
+      type="email"
+      placeholder="Email"
+      autocomplete="email"
+    >
+
+    <input
+      id="reader-login-password"
+      type="password"
+      placeholder="Password"
+      autocomplete="current-password"
+    >
+
+    <div id="reader-login-message"></div>
+
+    <button id="reader-login-submit">
+      🔐 Masuk
+    </button>
+
+    <button id="reader-login-cancel">
+      ✕ Batal
+    </button>
+
+  </div>
+</div>
   <div id="reading-progress">
   <div id="reading-progress-bar"></div>
 </div>
@@ -739,6 +871,117 @@
 </div>
   </main>
 <script>
+  const SUPABASE_URL =
+  "https://lacdmofkvrmygwczoeux.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_vu1p7MFzan_Dqx_58B8dmQ_V14Hm0Vj";
+
+const db =
+  supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const loginModal =
+  document.getElementById("reader-login-modal");
+
+const loginButton =
+  document.getElementById("reader-login-button");
+
+const logoutButton =
+  document.getElementById("reader-logout-button");
+
+const userStatus =
+  document.getElementById("reader-user-status");
+
+const loginEmail =
+  document.getElementById("reader-login-email");
+
+const loginPassword =
+  document.getElementById("reader-login-password");
+
+const loginMessage =
+  document.getElementById("reader-login-message");
+
+const loginSubmit =
+  document.getElementById("reader-login-submit");
+
+const loginCancel =
+  document.getElementById("reader-login-cancel");
+
+async function updateReaderAuthUI() {
+  const {
+    data: { session }
+  } = await db.auth.getSession();
+
+  const user = session?.user;
+
+  if (user) {
+    userStatus.textContent =
+      "✅ " + user.email;
+
+    loginButton.hidden = true;
+    logoutButton.hidden = false;
+  } else {
+    userStatus.textContent = "Belum login";
+
+    loginButton.hidden = false;
+    logoutButton.hidden = true;
+  }
+}
+
+loginButton.addEventListener("click", () => {
+  loginMessage.textContent = "";
+  loginModal.style.display = "flex";
+});
+
+loginCancel.addEventListener("click", () => {
+  loginModal.style.display = "none";
+});
+
+loginSubmit.addEventListener("click", async () => {
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value;
+
+  if (!email || !password) {
+    loginMessage.textContent =
+      "Email dan password harus diisi.";
+    return;
+  }
+
+  loginSubmit.disabled = true;
+  loginSubmit.textContent = "⏳ Masuk...";
+
+  const { error } =
+    await db.auth.signInWithPassword({
+      email,
+      password
+    });
+
+  loginSubmit.disabled = false;
+  loginSubmit.textContent = "🔐 Masuk";
+
+  if (error) {
+    loginMessage.textContent =
+      "Login gagal: " + error.message;
+    return;
+  }
+
+  loginPassword.value = "";
+  loginModal.style.display = "none";
+
+  await updateReaderAuthUI();
+});
+
+logoutButton.addEventListener("click", async () => {
+  await db.auth.signOut();
+  await updateReaderAuthUI();
+});
+
+db.auth.onAuthStateChange(() => {
+  updateReaderAuthUI();
+});
+
+updateReaderAuthUI();
+  
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
