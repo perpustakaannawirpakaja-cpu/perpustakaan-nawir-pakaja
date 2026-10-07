@@ -2561,20 +2561,31 @@ document.addEventListener("pointercancel", () => {
   endToolbarInteraction();
 });
   
-  document.getElementById("toolbar-toggle").addEventListener("click", () => {
+  document.getElementById("toolbar-toggle").addEventListener("click", (event) => {
+  event.stopPropagation();
+
   const controls = document.querySelector(".page-controls");
   const toggle = document.getElementById("toolbar-toggle");
 
-  controls.classList.toggle("toolbar-hidden");
+  const isHidden =
+    controls.classList.contains("toolbar-hidden");
 
-  toggle.textContent =
-    controls.classList.contains("toolbar-hidden") ? "☰" : "✕";
+  if (isHidden) {
+    controls.classList.remove("toolbar-hidden");
+    toggle.textContent = "✕";
 
-    if (controls.classList.contains("toolbar-hidden")) {
-  clearTimeout(toolbarTimer);
-} else {
-  scheduleToolbarHide();
-}
+    // Dibuka manual lewat Hamburger:
+    // jangan tutup otomatis.
+    clearTimeout(toolbarTimer);
+  } else {
+    controls.classList.add("toolbar-hidden");
+    toggle.textContent = "☰";
+
+    clearTimeout(toolbarTimer);
+
+    document.getElementById("preset-panel").style.display =
+      "none";
+  }
 });
 
   let lastBookTap = 0;
@@ -2582,6 +2593,13 @@ document.addEventListener("pointercancel", () => {
 document.getElementById("flipbook").addEventListener(
   "pointerdown",
   (event) => {
+    if (
+  event.target.closest(
+    "#toolbar-toggle, .page-controls, #brightness-panel, #contrast-panel, #preset-panel"
+  )
+) {
+  return;
+}
     const controls = document.querySelector(".page-controls");
     const toggle = document.getElementById("toolbar-toggle");
 
