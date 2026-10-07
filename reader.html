@@ -947,6 +947,17 @@ function updatePresetActionState() {
 
   actionButtons.forEach((id) => {
     document.getElementById(id).disabled = !hasSelection;
+    const hasDefault =
+  localStorage.getItem(defaultPresetKey);
+
+document.getElementById("preset-clear-default").disabled =
+  !hasDefault;
+
+const hasPresets =
+  Object.keys(displayPresets).length > 0;
+
+document.getElementById("preset-export").disabled =
+  !hasPresets;
   });
 }  
   
@@ -1536,6 +1547,7 @@ document.getElementById("preset-save").addEventListener("click", () => {
   refreshPresetList();
   presetList.value = name;
   nameInput.value = "";
+  updatePresetActionState();
 
   saveButton.textContent = "✅ Preset Tersimpan";
 
@@ -1751,7 +1763,8 @@ document.getElementById("preset-default").addEventListener("click", () => {
 
   localStorage.setItem(defaultPresetKey, name);
   refreshPresetList();
-presetList.value = name;
+  presetList.value = name;
+  updatePresetActionState();
 
   defaultButton.textContent = "✅ Default: " + name;
 
@@ -1786,6 +1799,7 @@ document.getElementById("preset-clear-default").addEventListener("click", () => 
   refreshPresetList();
 
   if (currentSelection && displayPresets[currentSelection]) {
+    updatePresetActionState();
     presetList.value = currentSelection;
   }
 
@@ -1956,6 +1970,7 @@ if (currentActivePreset === name) {
   );
 
   refreshPresetList();
+  updatePresetActionState();
 
   deleteButton.textContent = "✅ Preset Dihapus";
 
