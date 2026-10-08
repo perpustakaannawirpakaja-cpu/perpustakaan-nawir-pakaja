@@ -630,23 +630,60 @@ async function loginAdmin() {
       password
     });
 
+  if (error || !data.user) {
+    loginButton.disabled = false;
+    loginButton.textContent = "Masuk";
+
+    message.textContent =
+      "❌ Login gagal: " +
+      (error?.message || "User tidak ditemukan.");
+
+    return;
+  }
+
+  const { data: adminData, error: adminError } =
+    await db
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+
+  if (adminError) {
+
+    await db.auth.signOut();
+
+    loginButton.disabled = false;
+    loginButton.textContent = "Masuk";
+
+    message.textContent =
+      "❌ Gagal memeriksa hak akses Admin.";
+
+    console.error(
+      "Admin check error:",
+      adminError
+    );
+
+    return;
+  }
+
+  if (!adminData) {
+
+    await db.auth.signOut();
+
+    loginButton.disabled = false;
+    loginButton.textContent = "Masuk";
+
+    message.textContent =
+      "⛔ Akun ini bukan Admin.";
+
+    return;
+  }
+
   loginButton.disabled = false;
   loginButton.textContent = "Masuk";
 
-  if (error) {
-    message.textContent =
-      "❌ Login gagal: " + error.message;
-    return;
-  }
-
-  if (!data.user) {
-    message.textContent =
-      "❌ Login gagal.";
-    return;
-  }
-
   message.textContent =
-    "✅ Login berhasil.";
+    "✅ Login Admin berhasil.";
 
   document.getElementById("admin-password").value = "";
 
