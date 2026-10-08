@@ -450,6 +450,93 @@ footer{
 
 </div>
 
+<!-- PANEL ADMIN UPLOAD BUKU -->
+
+<div class="modal" id="adminPanel">
+
+  <div class="modal-box">
+
+    <h2>📚 Upload Buku</h2>
+
+    <p>
+      Tambahkan koleksi baru ke Perpustakaan Nawir Pakaja.
+    </p>
+
+    <form
+      id="book-upload-form"
+      onsubmit="uploadBuku(event)"
+    >
+
+      <input
+        id="book-title"
+        type="text"
+        placeholder="Judul Buku"
+        required
+      >
+
+      <input
+        id="book-author"
+        type="text"
+        placeholder="Penulis"
+      >
+
+      <input
+        id="book-category"
+        type="text"
+        placeholder="Kategori"
+      >
+
+      <textarea
+        id="book-description"
+        placeholder="Deskripsi Buku"
+        rows="4"
+      ></textarea>
+
+      <label>
+        Cover Buku
+        <input
+          id="book-cover"
+          type="file"
+          accept="image/*"
+        >
+      </label>
+
+      <label>
+        File Buku PDF
+        <input
+          id="book-file"
+          type="file"
+          accept="application/pdf,.pdf"
+          required
+        >
+      </label>
+
+      <p id="book-upload-message"></p>
+
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          class="close-btn"
+          onclick="tutupAdminPanel()">
+          Tutup
+        </button>
+
+        <button
+          id="book-upload-btn"
+          type="submit"
+          class="login-btn">
+          📤 Upload Buku
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
 <script>
 
 const alphabet =
@@ -599,6 +686,22 @@ function tutupAdmin(){
 }
 
 
+function bukaAdminPanel() {
+  document
+    .getElementById("adminPanel")
+    .classList
+    .add("show");
+}
+
+
+function tutupAdminPanel() {
+  document
+    .getElementById("adminPanel")
+    .classList
+    .remove("show");
+}
+
+
 async function loginAdmin() {
 
   const email =
@@ -688,8 +791,208 @@ async function loginAdmin() {
   document.getElementById("admin-password").value = "";
 
   setTimeout(() => {
-    tutupAdmin();
-  }, 800);
+  tutupAdmin();
+  bukaAdminPanel();
+}, 800);
+}
+
+async function uploadBuku(event) {
+  event.preventDefault();
+
+  const title =
+    document.getElementById("book-title").value.trim();
+
+  const author =
+    document.getElementById("book-author").value.trim();
+
+  const category =
+    document.getElementById("book-category").value.trim();
+
+  const description =
+    document.getElementById("book-description").value.trim();
+
+  const coverFile =
+    document.getElementById("book-cover").files[0];
+
+  const bookFile =
+    document.getElementById("book-file").files[0];
+
+  const message =
+    document.getElementById("book-upload-message");
+
+  const uploadButton =
+    document.getElementById("book-upload-btn");
+
+  message.textContent = "";
+
+  if (!title) {
+    message.textContent =
+      "⚠️ Judul buku harus diisi.";
+    return;
+  }
+
+  if (!bookFile) {
+    message.textContent =
+      "⚠️ File PDF harus dipilih.";
+    return;
+  }
+
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (userError || !user) {
+    message.textContent =
+      "❌ Sesi Admin tidak ditemukan. Silakan login kembali.";
+    return;
+  }
+
+  const { data: adminData, error: adminError } =
+    await db
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+  if (adminError || !adminData) {
+    message.textContent =
+      "⛔ Akun ini tidak memiliki akses Admin.";
+    return;
+  }
+
+  uploadButton.disabled = true;
+  uploadButton.textContent = "⏳ Mengupload...";
+
+  let uploadedBookPath = null;
+  let uploadedCoverPath = null;
+
+  try {
+
+    const safeBookName =
+      bookFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+
+    uploadedBookPath =
+  `${user.id}/${Date.now()}-${safeBookName}`;
+
+    const { error: bookUploadError } =
+      await db.storage
+        .from("book-files")
+        .upload(
+          uploadedBookPath,
+          bookFile,
+          {
+            cacheControl: "3600",
+            upsert: false,
+            contentType:
+              bookFile.type || "application/pdf"
+          }
+        );
+
+    if (bookUploadError) {
+      throw new Error(
+        "Upload PDF gagal: " +
+        bookUploadError.message
+      );
+    }
+
+    const {
+      data: bookPublicData
+    } = db.storage
+      .from("book-files")
+      .getPublicUrl(uploadedBookPath);
+
+    const fileUrl =
+      bookPublicData.publicUrl;
+
+    let coverUrl = null;
+
+    if (coverFile) {
+
+      const safeCoverName =
+        coverFile.name.replace(
+          /[^a-zA-Z0-9._-]/g,
+          "_"
+        );
+
+      uploadedCoverPath =
+  `${user.id}/${Date.now()}-${safeCoverName}`;
+
+      const { error: coverUploadError } =
+        await db.storage
+          .from("book-covers")
+          .upload(
+            uploadedCoverPath,
+            coverFile,
+            {
+              cacheControl: "3600",
+              upsert: false,
+              contentType:
+                coverFile.type || "image/jpeg"
+            }
+          );
+
+      if (coverUploadError) {
+        throw new Error(
+          "Upload cover gagal: " +
+          coverUploadError.message
+        );
+      }
+
+      const {
+        data: coverPublicData
+      } = db.storage
+        .from("book-covers")
+        .getPublicUrl(uploadedCoverPath);
+
+      coverUrl =
+        coverPublicData.publicUrl;
+    }
+
+    const { error: insertError } =
+      await db
+        .from("books")
+        .insert({
+          title: title,
+          author: author || null,
+          category: category || null,
+          description: description || null,
+          file_url: fileUrl,
+          cover_url: coverUrl
+        });
+
+    if (insertError) {
+      throw new Error(
+        "Penyimpanan data buku gagal: " +
+        insertError.message
+      );
+    }
+
+    document
+      .getElementById("book-upload-form")
+      .reset();
+
+    message.textContent =
+      "✅ Buku berhasil diupload.";
+
+    await tampilkanBuku();
+
+  } catch (error) {
+
+    console.error(
+      "Upload buku gagal:",
+      error
+    );
+
+    message.textContent =
+      "❌ " + error.message;
+
+  } finally {
+
+    uploadButton.disabled = false;
+    uploadButton.textContent =
+      "📤 Upload Buku";
+  }
 }
 
 
