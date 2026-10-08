@@ -414,14 +414,20 @@ footer{
     </p>
 
     <input
-      type="text"
-      placeholder="Nama pengguna"
+      id="admin-email"
+      type="email"
+      placeholder="Email Admin"
+      autocomplete="email"
     >
 
     <input
+      id="admin-password"
       type="password"
       placeholder="Password"
+      autocomplete="current-password"
     >
+
+    <p id="admin-login-message"></p>
 
     <div class="modal-actions">
 
@@ -432,6 +438,7 @@ footer{
       </button>
 
       <button
+        id="admin-login-btn"
         class="login-btn"
         onclick="loginAdmin()">
         Masuk
@@ -442,7 +449,6 @@ footer{
   </div>
 
 </div>
-
 
 <script>
 
@@ -593,12 +599,60 @@ function tutupAdmin(){
 }
 
 
-function loginAdmin(){
+async function loginAdmin() {
 
-  alert(
-    "Login Admin sudah aktif secara tampilan. Sistem keamanan Admin akan kita pasang pada tahap berikutnya."
-  );
+  const email =
+    document.getElementById("admin-email").value.trim();
 
+  const password =
+    document.getElementById("admin-password").value;
+
+  const message =
+    document.getElementById("admin-login-message");
+
+  const loginButton =
+    document.getElementById("admin-login-btn");
+
+  message.textContent = "";
+
+  if (!email || !password) {
+    message.textContent =
+      "⚠️ Email dan password harus diisi.";
+    return;
+  }
+
+  loginButton.disabled = true;
+  loginButton.textContent = "⏳ Masuk...";
+
+  const { data, error } =
+    await db.auth.signInWithPassword({
+      email,
+      password
+    });
+
+  loginButton.disabled = false;
+  loginButton.textContent = "Masuk";
+
+  if (error) {
+    message.textContent =
+      "❌ Login gagal: " + error.message;
+    return;
+  }
+
+  if (!data.user) {
+    message.textContent =
+      "❌ Login gagal.";
+    return;
+  }
+
+  message.textContent =
+    "✅ Login berhasil.";
+
+  document.getElementById("admin-password").value = "";
+
+  setTimeout(() => {
+    tutupAdmin();
+  }, 800);
 }
 
 
