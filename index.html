@@ -695,6 +695,46 @@ body[data-ui-style="glass"] .read-button {
   box-shadow:
     0 8px 22px rgba(37, 99, 235, 0.22);
 }
+
+  /* =========================================
+     MOBILE HEADER
+     ========================================= */
+
+@media (max-width: 600px) {
+
+  .topbar {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .logo {
+    width: 100%;
+  }
+
+  .actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto
+      auto;
+    gap: 8px;
+  }
+
+  .style-select {
+    width: 100%;
+    min-width: 0;
+    font-size: 13px;
+    padding: 9px 10px;
+  }
+
+  .admin-btn,
+  .theme-btn {
+    white-space: nowrap;
+    padding: 9px 10px;
+  }
+
+}
   
 </style>
 </head>
