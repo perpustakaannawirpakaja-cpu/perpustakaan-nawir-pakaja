@@ -945,11 +945,16 @@ body.dark[data-ui-style="neumorphism"] .read-button:active {
   <div class="search">
 
     <input
-      type="search"
-      id="searchInput"
-      placeholder="🔎 Cari berdasarkan abjad..."
-      oninput="cariKoleksi()"
-    >
+  type="search"
+  id="searchInput"
+  name="library-search"
+  placeholder="🔎 Cari berdasarkan abjad..."
+  autocomplete="off"
+  autocorrect="off"
+  spellcheck="false"
+  aria-autocomplete="none"
+  oninput="cariKoleksi()"
+>
 
   </div>
 
