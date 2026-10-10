@@ -208,6 +208,36 @@ button{
   border:1px solid var(--border);
 }
 
+/* === TAMBAHAN UI STYLE SELECTOR === */
+.style-select {
+  padding: 10px 12px;
+  border-radius: var(--ui-radius);
+  border: var(--ui-border-width) solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  box-shadow: var(--ui-shadow);
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  transition:
+    box-shadow .2s ease,
+    transform .2s ease,
+    background .3s ease;
+}
+
+.style-select:hover {
+  box-shadow: var(--ui-shadow-hover);
+}
+
+.style-select:focus {
+  border-color: var(--primary);
+}
+
+body[data-ui-style="glass"] .style-select {
+  backdrop-filter: blur(var(--ui-blur));
+  -webkit-backdrop-filter: blur(var(--ui-blur));
+}
+
 main{
   max-width:1100px;
   margin:auto;
@@ -467,15 +497,28 @@ footer{
 
     <div class="actions">
 
-      <button class="admin-btn" onclick="bukaAdmin()">
-        🔐 Admin
-      </button>
+  <select
+    id="ui-style-select"
+    class="style-select"
+    onchange="ubahGayaTampilan(this.value)"
+    aria-label="Pilih gaya tampilan"
+  >
+    <option value="glass">🎨 Glassmorphism</option>
+    <option value="neumorphism">🫧 Neumorphism</option>
+    <option value="clay">🧸 Claymorphism</option>
+    <option value="brutal">⚡ Neo-Brutalism</option>
+    <option value="minimal">◻️ Minimalist UI</option>
+  </select>
 
-      <button class="theme-btn" onclick="ubahTema()">
-        🌙 Dark
-      </button>
+  <button class="admin-btn" onclick="bukaAdmin()">
+    🔐 Admin
+  </button>
 
-    </div>
+  <button class="theme-btn" onclick="ubahTema()">
+    🌙 Dark
+  </button>
+
+</div>
 
   </div>
 </header>
@@ -761,11 +804,42 @@ function cariKoleksi() {
 
 const tombolTema =
 document.querySelector(".theme-btn");
-  const savedUiStyle =
+const savedUiStyle =
   localStorage.getItem("uiStyle") || "glass";
 
 document.body.dataset.uiStyle =
   savedUiStyle;
+
+const uiStyleSelect =
+  document.getElementById("ui-style-select");
+
+if (uiStyleSelect) {
+  uiStyleSelect.value = savedUiStyle;
+}
+
+
+function ubahGayaTampilan(style) {
+
+  const allowedStyles = [
+    "glass",
+    "neumorphism",
+    "clay",
+    "brutal",
+    "minimal"
+  ];
+
+  if (!allowedStyles.includes(style)) {
+    style = "glass";
+  }
+
+  document.body.dataset.uiStyle =
+    style;
+
+  localStorage.setItem(
+    "uiStyle",
+    style
+  );
+}
 
 
 if(
