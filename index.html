@@ -584,34 +584,53 @@ function bukaKoleksi(huruf){
 }
 
 
-function cariKoleksi(){
+function cariKoleksi() {
 
   const keyword =
-  document
-  .getElementById("searchInput")
-  .value
-  .trim()
-  .toUpperCase();
+    document
+      .getElementById("searchInput")
+      .value
+      .trim()
+      .toUpperCase();
 
   const cards =
-  document.querySelectorAll(".letter");
+    document.querySelectorAll(".letter");
+
+  const noResult =
+    document.getElementById("noResult");
+
+  // Kalau pencarian kosong:
+  // tampilkan semua kartu dan sembunyikan pesan kosong.
+  if (!keyword) {
+
+    cards.forEach(card => {
+      card.style.display = "block";
+    });
+
+    noResult.style.display = "none";
+
+    return;
+  }
 
   let ditemukan = false;
 
   cards.forEach(card => {
 
     const cocok =
-    card.dataset.letter.includes(keyword);
+      card.dataset.letter.includes(keyword);
 
     card.style.display =
-    cocok ? "block" : "none";
+      cocok ? "block" : "none";
 
-    if(cocok){
+    if (cocok) {
       ditemukan = true;
     }
 
   });
 
+  noResult.style.display =
+    ditemukan ? "none" : "block";
+}
   document
   .getElementById("noResult")
   .style.display =
