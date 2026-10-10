@@ -24,6 +24,127 @@ body.dark{
   --border:#334155;
 }
 
+/* =========================================
+   UI STYLE ENGINE
+   ========================================= */
+
+body {
+  --ui-radius: 18px;
+  --ui-border-width: 1px;
+  --ui-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+  --ui-shadow-hover: 0 14px 35px rgba(15, 23, 42, 0.16);
+  --ui-blur: 0px;
+  --ui-card-opacity: 1;
+  --ui-transform-hover: translateY(-2px);
+}
+
+/* 1. GLASSMORPHISM */
+
+body[data-ui-style="glass"] {
+  --ui-radius: 22px;
+  --ui-border-width: 1px;
+  --ui-shadow: 0 12px 35px rgba(15, 23, 42, 0.14);
+  --ui-shadow-hover: 0 18px 45px rgba(15, 23, 42, 0.20);
+  --ui-blur: 16px;
+  --ui-card-opacity: 0.78;
+  --ui-transform-hover: translateY(-3px);
+}
+
+
+/* 2. NEUMORPHISM */
+
+body[data-ui-style="neumorphism"] {
+  --ui-radius: 20px;
+  --ui-border-width: 0px;
+  --ui-shadow:
+    8px 8px 18px rgba(15, 23, 42, 0.14),
+    -8px -8px 18px rgba(255, 255, 255, 0.55);
+  --ui-shadow-hover:
+    5px 5px 12px rgba(15, 23, 42, 0.16),
+    -5px -5px 12px rgba(255, 255, 255, 0.60);
+  --ui-blur: 0px;
+  --ui-card-opacity: 1;
+  --ui-transform-hover: translateY(-1px);
+}
+
+
+/* 3. CLAYMORPHISM */
+
+body[data-ui-style="clay"] {
+  --ui-radius: 28px;
+  --ui-border-width: 1px;
+  --ui-shadow:
+    0 12px 22px rgba(15, 23, 42, 0.18),
+    inset 0 3px 6px rgba(255, 255, 255, 0.35);
+  --ui-shadow-hover:
+    0 16px 28px rgba(15, 23, 42, 0.22),
+    inset 0 3px 6px rgba(255, 255, 255, 0.42);
+  --ui-blur: 0px;
+  --ui-card-opacity: 1;
+  --ui-transform-hover: translateY(-4px) scale(1.01);
+}
+
+
+/* 4. NEO-BRUTALISM */
+
+body[data-ui-style="brutal"] {
+  --ui-radius: 8px;
+  --ui-border-width: 3px;
+  --ui-shadow: 7px 7px 0 var(--text);
+  --ui-shadow-hover: 4px 4px 0 var(--text);
+  --ui-blur: 0px;
+  --ui-card-opacity: 1;
+  --ui-transform-hover: translate(3px, 3px);
+}
+
+
+/* 5. MINIMALIST */
+
+body[data-ui-style="minimal"] {
+  --ui-radius: 12px;
+  --ui-border-width: 1px;
+  --ui-shadow: none;
+  --ui-shadow-hover: 0 6px 18px rgba(15, 23, 42, 0.08);
+  --ui-blur: 0px;
+  --ui-card-opacity: 1;
+  --ui-transform-hover: none;
+}
+
+/* Terapkan style ke komponen utama */
+
+.book-card,
+.modal-box,
+.search,
+.letter,
+.theme-btn,
+.admin-btn,
+.login-btn,
+.close-btn,
+.read-button {
+  border-radius: var(--ui-radius);
+  border-width: var(--ui-border-width);
+  box-shadow: var(--ui-shadow);
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    background .3s ease,
+    border-color .3s ease;
+}
+
+.book-card:hover,
+.letter:hover,
+.read-button:hover {
+  transform: var(--ui-transform-hover);
+  box-shadow: var(--ui-shadow-hover);
+}
+
+body[data-ui-style="glass"] .book-card,
+body[data-ui-style="glass"] .modal-box,
+body[data-ui-style="glass"] .search {
+  backdrop-filter: blur(var(--ui-blur));
+  -webkit-backdrop-filter: blur(var(--ui-blur));
+}
+  
 *{
   box-sizing:border-box;
 }
@@ -638,9 +759,13 @@ function cariKoleksi() {
 
 }
 
-
 const tombolTema =
 document.querySelector(".theme-btn");
+  const savedUiStyle =
+  localStorage.getItem("uiStyle") || "glass";
+
+document.body.dataset.uiStyle =
+  savedUiStyle;
 
 
 if(
