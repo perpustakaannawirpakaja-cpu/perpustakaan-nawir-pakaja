@@ -846,6 +846,178 @@ body.dark[data-ui-style="neumorphism"] .read-button:active {
     inset 4px 4px 8px rgba(0, 0, 0, 0.40),
     inset -4px -4px 8px rgba(51, 65, 85, 0.28);
 }
+
+
+  /* =========================================
+   CLAYMORPHISM - VISUAL LAYER
+   ========================================= */
+
+body[data-ui-style="clay"] {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(96, 165, 250, 0.18),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(244, 114, 182, 0.16),
+      transparent 35%
+    ),
+    var(--bg);
+
+  background-attachment: fixed;
+}
+
+
+/* Header */
+
+body[data-ui-style="clay"] header {
+  background: var(--card);
+
+  border-bottom:
+    1px solid var(--border);
+
+  box-shadow:
+    0 8px 18px rgba(15, 23, 42, 0.10),
+    inset 0 3px 5px rgba(255, 255, 255, 0.55);
+}
+
+
+/* Card dan Panel */
+
+body[data-ui-style="clay"] .hero,
+body[data-ui-style="clay"] .book-card,
+body[data-ui-style="clay"] .modal-box,
+body[data-ui-style="clay"] .search,
+body[data-ui-style="clay"] .letter {
+
+  background: var(--card);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.55);
+
+  border-radius: 28px;
+
+  box-shadow:
+    0 12px 22px rgba(15, 23, 42, 0.16),
+    inset 0 4px 7px rgba(255, 255, 255, 0.55),
+    inset 0 -4px 7px rgba(15, 23, 42, 0.05);
+}
+
+
+/* Dark Mode */
+
+body.dark[data-ui-style="clay"] .hero,
+body.dark[data-ui-style="clay"] .book-card,
+body.dark[data-ui-style="clay"] .modal-box,
+body.dark[data-ui-style="clay"] .search,
+body.dark[data-ui-style="clay"] .letter {
+
+  background: var(--card);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  box-shadow:
+    0 14px 26px rgba(0, 0, 0, 0.35),
+    inset 0 4px 7px rgba(255, 255, 255, 0.06),
+    inset 0 -4px 7px rgba(0, 0, 0, 0.18);
+}
+
+
+/* Input dan Dropdown */
+
+body[data-ui-style="clay"] input,
+body[data-ui-style="clay"] textarea,
+body[data-ui-style="clay"] .style-select {
+
+  background: var(--card);
+  color: var(--text);
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 18px;
+
+  box-shadow:
+    inset 0 3px 6px rgba(255, 255, 255, 0.55),
+    0 6px 12px rgba(15, 23, 42, 0.10);
+}
+
+
+body.dark[data-ui-style="clay"] input,
+body.dark[data-ui-style="clay"] textarea,
+body.dark[data-ui-style="clay"] .style-select {
+
+  box-shadow:
+    inset 0 3px 6px rgba(255, 255, 255, 0.05),
+    0 7px 14px rgba(0, 0, 0, 0.25);
+}
+
+
+/* Tombol */
+
+body[data-ui-style="clay"] .admin-btn,
+body[data-ui-style="clay"] .theme-btn,
+body[data-ui-style="clay"] .login-btn,
+body[data-ui-style="clay"] .close-btn,
+body[data-ui-style="clay"] .read-button {
+
+  border-radius: 18px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.35);
+
+  box-shadow:
+    0 7px 14px rgba(15, 23, 42, 0.16),
+    inset 0 3px 5px rgba(255, 255, 255, 0.35);
+}
+
+
+/* Tombol utama */
+
+body[data-ui-style="clay"] .theme-btn,
+body[data-ui-style="clay"] .login-btn,
+body[data-ui-style="clay"] .read-button {
+
+  background:
+    linear-gradient(
+      145deg,
+      #3b82f6,
+      #2563eb
+    );
+
+  color: white;
+}
+
+
+/* Tombol sekunder */
+
+body[data-ui-style="clay"] .admin-btn,
+body[data-ui-style="clay"] .close-btn {
+
+  background: var(--card);
+  color: var(--text);
+}
+
+
+/* Efek ditekan */
+
+body[data-ui-style="clay"] .admin-btn:active,
+body[data-ui-style="clay"] .theme-btn:active,
+body[data-ui-style="clay"] .login-btn:active,
+body[data-ui-style="clay"] .close-btn:active,
+body[data-ui-style="clay"] .read-button:active {
+
+  transform:
+    translateY(2px)
+    scale(0.98);
+
+  box-shadow:
+    0 3px 7px rgba(15, 23, 42, 0.14),
+    inset 0 2px 5px rgba(0, 0, 0, 0.10);
+}
   
 
   /* =========================================
