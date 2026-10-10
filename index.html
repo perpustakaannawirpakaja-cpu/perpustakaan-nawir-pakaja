@@ -1239,6 +1239,157 @@ body[data-ui-style="brutal"] .read-button:active {
   box-shadow:
     0 0 0 transparent;
 }
+
+
+  /* =========================================
+   MINIMALIST UI - VISUAL LAYER
+   ========================================= */
+
+body[data-ui-style="minimal"] {
+  background: var(--bg);
+}
+
+
+/* Header */
+
+body[data-ui-style="minimal"] header {
+  background: var(--card);
+
+  border-bottom:
+    1px solid var(--border);
+
+  box-shadow: none;
+}
+
+
+/* Card dan Panel */
+
+body[data-ui-style="minimal"] .hero,
+body[data-ui-style="minimal"] .book-card,
+body[data-ui-style="minimal"] .modal-box,
+body[data-ui-style="minimal"] .search,
+body[data-ui-style="minimal"] .letter {
+
+  background: var(--card);
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 12px;
+
+  box-shadow: none;
+}
+
+
+/* Hover Card */
+
+body[data-ui-style="minimal"] .book-card:hover,
+body[data-ui-style="minimal"] .letter:hover {
+
+  transform: none;
+
+  border-color:
+    var(--primary);
+
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+
+/* Input, Textarea dan Dropdown */
+
+body[data-ui-style="minimal"] input,
+body[data-ui-style="minimal"] textarea,
+body[data-ui-style="minimal"] .style-select {
+
+  background: var(--card);
+  color: var(--text);
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 10px;
+
+  box-shadow: none;
+}
+
+
+/* Focus */
+
+body[data-ui-style="minimal"] input:focus,
+body[data-ui-style="minimal"] textarea:focus,
+body[data-ui-style="minimal"] .style-select:focus {
+
+  border-color:
+    var(--primary);
+
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+
+/* Tombol */
+
+body[data-ui-style="minimal"] .admin-btn,
+body[data-ui-style="minimal"] .theme-btn,
+body[data-ui-style="minimal"] .login-btn,
+body[data-ui-style="minimal"] .close-btn,
+body[data-ui-style="minimal"] .read-button {
+
+  border-radius: 9px;
+
+  box-shadow: none;
+
+  transform: none;
+}
+
+
+/* Tombol Utama */
+
+body[data-ui-style="minimal"] .theme-btn,
+body[data-ui-style="minimal"] .login-btn,
+body[data-ui-style="minimal"] .read-button {
+
+  background:
+    var(--primary);
+
+  color: white;
+
+  border:
+    1px solid var(--primary);
+}
+
+
+/* Tombol Sekunder */
+
+body[data-ui-style="minimal"] .admin-btn,
+body[data-ui-style="minimal"] .close-btn {
+
+  background:
+    var(--card);
+
+  color:
+    var(--text);
+
+  border:
+    1px solid var(--border);
+}
+
+
+/* Hover Tombol */
+
+body[data-ui-style="minimal"] .admin-btn:hover,
+body[data-ui-style="minimal"] .theme-btn:hover,
+body[data-ui-style="minimal"] .login-btn:hover,
+body[data-ui-style="minimal"] .close-btn:hover,
+body[data-ui-style="minimal"] .read-button:hover {
+
+  transform: none;
+
+  opacity: 0.88;
+
+  box-shadow: none;
+}
   
 
   /* =========================================
