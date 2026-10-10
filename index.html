@@ -696,6 +696,158 @@ body[data-ui-style="glass"] .read-button {
     0 8px 22px rgba(37, 99, 235, 0.22);
 }
 
+
+/* =========================================
+   NEUMORPHISM - VISUAL LAYER
+   ========================================= */
+
+body[data-ui-style="neumorphism"] {
+  background: var(--bg);
+}
+
+
+/* Header */
+
+body[data-ui-style="neumorphism"] header {
+  background: var(--bg);
+  border-bottom: none;
+
+  box-shadow:
+    0 8px 18px rgba(15, 23, 42, 0.10);
+}
+
+
+/* Card dan Panel Utama */
+
+body[data-ui-style="neumorphism"] .hero,
+body[data-ui-style="neumorphism"] .book-card,
+body[data-ui-style="neumorphism"] .modal-box,
+body[data-ui-style="neumorphism"] .search,
+body[data-ui-style="neumorphism"] .letter {
+
+  background: var(--bg);
+
+  border: none;
+
+  border-radius: 20px;
+
+  box-shadow:
+    9px 9px 18px rgba(15, 23, 42, 0.14),
+    -9px -9px 18px rgba(255, 255, 255, 0.78);
+}
+
+
+/* Dark Mode */
+
+body.dark[data-ui-style="neumorphism"] .hero,
+body.dark[data-ui-style="neumorphism"] .book-card,
+body.dark[data-ui-style="neumorphism"] .modal-box,
+body.dark[data-ui-style="neumorphism"] .search,
+body.dark[data-ui-style="neumorphism"] .letter {
+
+  background: var(--bg);
+
+  box-shadow:
+    9px 9px 18px rgba(0, 0, 0, 0.42),
+    -7px -7px 16px rgba(51, 65, 85, 0.42);
+}
+
+
+/* Input, Textarea dan Dropdown */
+
+body[data-ui-style="neumorphism"] input,
+body[data-ui-style="neumorphism"] textarea,
+body[data-ui-style="neumorphism"] .style-select {
+
+  background: var(--bg);
+  color: var(--text);
+
+  border: none;
+
+  border-radius: 16px;
+
+  box-shadow:
+    inset 5px 5px 10px rgba(15, 23, 42, 0.12),
+    inset -5px -5px 10px rgba(255, 255, 255, 0.78);
+}
+
+
+/* Input - Dark Mode */
+
+body.dark[data-ui-style="neumorphism"] input,
+body.dark[data-ui-style="neumorphism"] textarea,
+body.dark[data-ui-style="neumorphism"] .style-select {
+
+  box-shadow:
+    inset 5px 5px 10px rgba(0, 0, 0, 0.38),
+    inset -5px -5px 10px rgba(51, 65, 85, 0.32);
+}
+
+
+/* Tombol */
+
+body[data-ui-style="neumorphism"] .admin-btn,
+body[data-ui-style="neumorphism"] .theme-btn,
+body[data-ui-style="neumorphism"] .login-btn,
+body[data-ui-style="neumorphism"] .close-btn,
+body[data-ui-style="neumorphism"] .read-button {
+
+  border: none;
+
+  background: var(--bg);
+  color: var(--text);
+
+  box-shadow:
+    6px 6px 12px rgba(15, 23, 42, 0.14),
+    -6px -6px 12px rgba(255, 255, 255, 0.78);
+}
+
+
+/* Tombol - Dark Mode */
+
+body.dark[data-ui-style="neumorphism"] .admin-btn,
+body.dark[data-ui-style="neumorphism"] .theme-btn,
+body.dark[data-ui-style="neumorphism"] .login-btn,
+body.dark[data-ui-style="neumorphism"] .close-btn,
+body.dark[data-ui-style="neumorphism"] .read-button {
+
+  background: var(--bg);
+  color: var(--text);
+
+  box-shadow:
+    6px 6px 12px rgba(0, 0, 0, 0.42),
+    -5px -5px 10px rgba(51, 65, 85, 0.38);
+}
+
+
+/* Efek ditekan */
+
+body[data-ui-style="neumorphism"] .admin-btn:active,
+body[data-ui-style="neumorphism"] .theme-btn:active,
+body[data-ui-style="neumorphism"] .login-btn:active,
+body[data-ui-style="neumorphism"] .close-btn:active,
+body[data-ui-style="neumorphism"] .read-button:active {
+
+  transform: translateY(1px);
+
+  box-shadow:
+    inset 4px 4px 8px rgba(15, 23, 42, 0.15),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.65);
+}
+
+
+body.dark[data-ui-style="neumorphism"] .admin-btn:active,
+body.dark[data-ui-style="neumorphism"] .theme-btn:active,
+body.dark[data-ui-style="neumorphism"] .login-btn:active,
+body.dark[data-ui-style="neumorphism"] .close-btn:active,
+body.dark[data-ui-style="neumorphism"] .read-button:active {
+
+  box-shadow:
+    inset 4px 4px 8px rgba(0, 0, 0, 0.40),
+    inset -4px -4px 8px rgba(51, 65, 85, 0.28);
+}
+  
+
   /* =========================================
      MOBILE HEADER
      ========================================= */
