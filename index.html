@@ -424,7 +424,15 @@ body.dark .read-button{
   margin-top:0;
 }
 
-.modal-box input{
+/* === FORM MODAL === */
+
+.modal-box,
+.modal-box *{
+  box-sizing:border-box;
+}
+
+.modal-box input,
+.modal-box textarea{
   width:100%;
   padding:14px;
   margin-bottom:12px;
@@ -433,11 +441,40 @@ body.dark .read-button{
   background:var(--bg);
   color:var(--text);
   font-size:16px;
+  font-family:inherit;
+}
+
+.modal-box textarea{
+  min-height:110px;
+  resize:vertical;
+}
+
+.modal-box label{
+  display:block;
+  width:100%;
+  margin:6px 0 8px;
+  color:var(--text);
+  font-size:14px;
+  font-weight:600;
+}
+
+.modal-box label input[type="file"]{
+  display:block;
+  width:100%;
+  margin-top:8px;
+  margin-bottom:14px;
+}
+
+#adminPanel .modal-box{
+  max-width:520px;
+  max-height:90vh;
+  overflow-y:auto;
 }
 
 .modal-actions{
   display:flex;
   gap:10px;
+  margin-top:8px;
 }
 
 .login-btn,
