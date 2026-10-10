@@ -953,6 +953,8 @@ body.dark[data-ui-style="neumorphism"] .read-button:active {
   autocorrect="off"
   spellcheck="false"
   aria-autocomplete="none"
+  readonly
+  onfocus="this.removeAttribute('readonly')"
   oninput="cariKoleksi()"
 >
 
