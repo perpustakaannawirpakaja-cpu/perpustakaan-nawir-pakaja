@@ -709,6 +709,119 @@ body{
     display:inline;
   }
 }
+
+/* =========================================
+   READER UI BASE THEME
+   ========================================= */
+
+.reader-header{
+  background:var(--reader-surface);
+  color:var(--reader-text);
+  border-bottom:1px solid var(--reader-border);
+}
+
+
+/* Toolbar utama */
+
+.page-controls{
+  background:var(--reader-surface);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+
+/* Hamburger */
+
+#toolbar-toggle{
+  background:var(--reader-surface);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+
+/* Panel Brightness */
+
+#brightness-panel{
+  background:var(--reader-surface);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+
+/* Panel Contrast */
+
+#contrast-panel{
+  background:var(--reader-surface);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+
+/* Panel Preset */
+
+#preset-panel{
+  background:var(--reader-surface);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+
+/* Tombol umum Reader */
+
+.back-button,
+#reader-login-button,
+#reader-logout-button,
+.reader-login-box button,
+.page-controls button,
+#preset-panel button,
+#bookmark-items button{
+  background:var(--reader-surface-2);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+
+/* Input dan pilihan di panel */
+
+#preset-panel input,
+#preset-panel select,
+.reader-login-box input{
+  background:var(--reader-surface-2);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+
+/* Login box */
+
+.reader-login-box{
+  background:var(--reader-surface);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+
+/* Transisi Light / Dark */
+
+.reader-header,
+.page-controls,
+#toolbar-toggle,
+#brightness-panel,
+#contrast-panel,
+#preset-panel,
+.reader-login-box,
+.back-button,
+#reader-login-button,
+#reader-logout-button,
+.page-controls button,
+#preset-panel button{
+  transition:
+    background .3s ease,
+    color .3s ease,
+    border-color .3s ease,
+    box-shadow .3s ease;
+}    
+    
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
