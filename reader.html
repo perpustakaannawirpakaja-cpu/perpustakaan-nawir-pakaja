@@ -11,37 +11,61 @@
       box-sizing:border-box;
     }
 
-    body{
-      margin:0;
-      font-family:Arial, sans-serif;
-      background:#111827;
-      color:white;
-    }
+    /* =========================================
+   READER THEME ENGINE
+   ========================================= */
 
-    .reader-header{
-      height:60px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:0 20px;
-      background:#0f172a;
-      border-bottom:1px solid #334155;
-    }
+:root{
+  --reader-bg:#f4f7fb;
+  --reader-surface:#ffffff;
+  --reader-surface-2:#f8fafc;
+  --reader-text:#172033;
+  --reader-muted:#667085;
+  --reader-border:#e4e7ec;
+  --reader-primary:#2563eb;
+}
 
-    .reader-header h2{
-      margin:0;
-      font-size:18px;
-    }
+body.dark{
+  --reader-bg:#111827;
+  --reader-surface:#0f172a;
+  --reader-surface-2:#1f2937;
+  --reader-text:#ffffff;
+  --reader-muted:#cbd5e1;
+  --reader-border:#334155;
+  --reader-primary:#2563eb;
+}
+    
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:var(--reader-bg);
+  color:var(--reader-text);
+}
 
-    .back-button{
-      color:white;
-      text-decoration:none;
-      background:#2563eb;
-      padding:9px 14px;
-      border-radius:8px;
-    }
+.reader-header{
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  background:#0f172a;
+  border-bottom:1px solid #334155;
+}
 
-    .reader-header-actions{
+.reader-header h2{
+  margin:0;
+  font-size:18px;
+}
+
+.back-button{
+  color:white;
+  text-decoration:none;
+  background:#2563eb;
+  padding:9px 14px;
+  border-radius:8px;
+}
+
+.reader-header-actions{
   display:flex;
   align-items:center;
   gap:8px;
@@ -127,33 +151,34 @@
   color:#fca5a5;
 }
 
-    .reader-area{
-      min-height:calc(100vh - 60px);
-      display:flex;
-     align-items:flex-start;
-      justify-content:center;
-      padding:20px;
-    }
+.reader-area{
+  min-height:calc(100vh - 60px);
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:20px;
+}
 
-    .book{
-      width:90%;
-      max-width:1000px;
-      min-height:600px;
-      background:white;
-      color:#111827;
-      border-radius:12px;
-      display:flex;
-      flex-direction:column;
-      gap:16px;
-      align-items:center;
-      justify-content:center;
-      box-shadow:0 20px 60px rgba(0,0,0,.35);
-    }
+.book{
+  width:90%;
+  max-width:1000px;
+  min-height:600px;
+  background:white;
+  color:#111827;
+  border-radius:12px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
 
-    .book p{
-      font-size:22px;
-    }
-    .page-controls{
+.book p{
+  font-size:22px;
+}
+    
+.page-controls{
   position:fixed;
   top:75px;
   left:50%;
@@ -178,7 +203,7 @@
   border-radius:8px;
   cursor:pointer;
 }
-    #toolbar-toggle{
+#toolbar-toggle{
   position:fixed;
   top:70px;
   right:10px;
@@ -193,7 +218,7 @@
   box-shadow:0 6px 18px rgba(0,0,0,.25);
 }
 
-    #brightness-panel{
+#brightness-panel{
   position:fixed;
   top:120px;
   right:10px;
@@ -295,8 +320,7 @@
   border-radius:8px;
   outline:none;
 }
-
-  #preset-count{
+#preset-count{
   color:white;
   font-size:13px;
   font-weight:700;
@@ -355,7 +379,7 @@
   transform:translateX(-50%) translateY(20px);
 }
     
-    .page-container{
+.page-container{
   perspective:1800px;
 }
 
@@ -871,6 +895,26 @@
 </div>
   </main>
 <script>
+
+/* =========================================
+   LOAD READER UI STYLE
+   ========================================= */
+
+const savedReaderUiStyle =
+  localStorage.getItem("uiStyle") || "glass";
+
+const savedReaderTheme =
+  localStorage.getItem("tema") || "light";
+
+document.body.dataset.uiStyle =
+  savedReaderUiStyle;
+
+if (savedReaderTheme === "dark") {
+  document.body.classList.add("dark");
+} else {
+  document.body.classList.remove("dark");
+}
+  
   const SUPABASE_URL =
   "https://lacdmofkvrmygwczoeux.supabase.co";
 
