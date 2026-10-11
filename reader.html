@@ -825,6 +825,116 @@ body{
 }
 
 /* =========================================
+   READER BOOKMARK BASE THEME
+   ========================================= */
+
+/* Light */
+
+body:not(.dark) .bookmark-panel-box{
+  background:#ffffff;
+  color:#172033;
+
+  border:
+    1px solid #e4e7ec;
+
+  box-shadow:
+    0 20px 60px rgba(15, 23, 42, 0.18);
+}
+
+body:not(.dark) #bookmark-search,
+body:not(.dark) #bookmark-sort,
+body:not(.dark) #favorite-filter,
+body:not(.dark) #close-bookmarks,
+body:not(.dark) #bookmark-items button{
+  background:#f8fafc;
+  color:#172033;
+
+  border:
+    1px solid #e4e7ec;
+}
+
+
+/* Dark */
+
+body.dark .bookmark-panel-box{
+  background:#0f172a;
+  color:#f8fafc;
+
+  border:
+    1px solid #334155;
+
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.48);
+}
+
+body.dark #bookmark-search,
+body.dark #bookmark-sort,
+body.dark #favorite-filter,
+body.dark #close-bookmarks,
+body.dark #bookmark-items button{
+  background:#1f2937;
+  color:#f8fafc;
+
+  border:
+    1px solid #334155;
+}
+
+
+/* Delete */
+
+.bookmark-row .bookmark-delete{
+  background:#fee2e2 !important;
+  color:#991b1b !important;
+}
+
+body.dark .bookmark-row .bookmark-delete{
+  background:#450a0a !important;
+  color:#fecaca !important;
+}
+
+
+/* Favorite */
+
+.bookmark-row .bookmark-favorite{
+  background:#fef9c3 !important;
+  color:#854d0e !important;
+}
+
+body.dark .bookmark-row .bookmark-favorite{
+  background:#422006 !important;
+  color:#fde68a !important;
+}
+
+
+/* Edit */
+
+.bookmark-row .bookmark-edit{
+  background:#fef3c7 !important;
+  color:#92400e !important;
+}
+
+body.dark .bookmark-row .bookmark-edit{
+  background:#451a03 !important;
+  color:#fed7aa !important;
+}
+
+
+/* Transisi */
+
+.bookmark-panel-box,
+#bookmark-search,
+#bookmark-sort,
+#favorite-filter,
+#close-bookmarks,
+#bookmark-items button{
+  transition:
+    background .3s ease,
+    color .3s ease,
+    border-color .3s ease,
+    box-shadow .3s ease;
+}
+
+/* =========================================
    READER GLASSMORPHISM
    ========================================= */
 
