@@ -3270,22 +3270,7 @@ document.getElementById("bookmark-page")
   );
 
 });
-
-  bookmarks.sort((a, b) => a.page - b.page);
-
-  localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
-
-  alert("🔖 Halaman " + currentPage + " berhasil di-bookmark.");
-  } else {
-  bookmarks = bookmarks.filter(
-  (item) => item.page !== currentPage
-);
-
-  localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
-
-  alert("🗑️ Bookmark halaman " + currentPage + " dihapus.");
-}
-});
+  
   function tampilkanBookmarks() {
   const panel = document.getElementById("bookmark-panel");
   const items = document.getElementById("bookmark-items");
