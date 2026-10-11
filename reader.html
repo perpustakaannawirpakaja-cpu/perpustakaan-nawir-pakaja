@@ -1258,6 +1258,101 @@ body[data-ui-style="brutal"] #reader-logout-button:active {
   box-shadow:
     0 0 0 transparent;
 }
+
+/* =========================================
+   READER MINIMALIST
+   ========================================= */
+
+body[data-ui-style="minimal"] .page-controls,
+body[data-ui-style="minimal"] #toolbar-toggle,
+body[data-ui-style="minimal"] #brightness-panel,
+body[data-ui-style="minimal"] #contrast-panel,
+body[data-ui-style="minimal"] #preset-panel,
+body[data-ui-style="minimal"] .reader-login-box {
+
+  background:var(--reader-surface);
+  color:var(--reader-text);
+
+  border:
+    1px solid var(--reader-border);
+
+  border-radius:12px;
+
+  box-shadow:none;
+}
+
+
+/* Tombol Minimalist */
+
+body[data-ui-style="minimal"] .page-controls button,
+body[data-ui-style="minimal"] #preset-panel button,
+body[data-ui-style="minimal"] .back-button,
+body[data-ui-style="minimal"] #reader-login-button,
+body[data-ui-style="minimal"] #reader-logout-button {
+
+  background:var(--reader-surface-2);
+  color:var(--reader-text);
+
+  border:
+    1px solid var(--reader-border);
+
+  border-radius:9px;
+
+  box-shadow:none;
+}
+
+
+/* Input dan Select */
+
+body[data-ui-style="minimal"] #preset-panel input,
+body[data-ui-style="minimal"] #preset-panel select,
+body[data-ui-style="minimal"] .reader-login-box input {
+
+  background:var(--reader-surface-2);
+  color:var(--reader-text);
+
+  border:
+    1px solid var(--reader-border);
+
+  border-radius:9px;
+
+  box-shadow:none;
+}
+
+
+/* Focus */
+
+body[data-ui-style="minimal"] #preset-panel input:focus,
+body[data-ui-style="minimal"] #preset-panel select:focus,
+body[data-ui-style="minimal"] .reader-login-box input:focus {
+
+  border-color:var(--reader-primary);
+
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+
+/* Hover tombol */
+
+body[data-ui-style="minimal"] .page-controls button:hover,
+body[data-ui-style="minimal"] #preset-panel button:hover,
+body[data-ui-style="minimal"] .back-button:hover,
+body[data-ui-style="minimal"] #reader-login-button:hover,
+body[data-ui-style="minimal"] #reader-logout-button:hover {
+
+  opacity:0.88;
+  box-shadow:none;
+}
+
+
+/* Minimalist Light - teks preset */
+
+body:not(.dark)[data-ui-style="minimal"] #preset-count,
+body:not(.dark)[data-ui-style="minimal"] #preset-summary {
+
+  color:var(--reader-text);
+}
     
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
