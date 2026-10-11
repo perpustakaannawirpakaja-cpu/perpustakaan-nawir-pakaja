@@ -1503,6 +1503,78 @@ body[data-ui-style="minimal"] .read-button:hover {
   }
 
 }
+
+/* =========================================
+   READER GLASSMORPHISM
+   ========================================= */
+
+body[data-ui-style="glass"] .page-controls,
+body[data-ui-style="glass"] #toolbar-toggle,
+body[data-ui-style="glass"] #brightness-panel,
+body[data-ui-style="glass"] #contrast-panel,
+body[data-ui-style="glass"] #preset-panel,
+body[data-ui-style="glass"] .reader-login-box {
+
+  background:
+    rgba(15, 23, 42, 0.72);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.14);
+
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.28);
+
+  backdrop-filter:
+    blur(16px)
+    saturate(140%);
+
+  -webkit-backdrop-filter:
+    blur(16px)
+    saturate(140%);
+
+  border-radius:18px;
+}
+
+
+/* Glass Light Mode */
+
+body:not(.dark)[data-ui-style="glass"] .page-controls,
+body:not(.dark)[data-ui-style="glass"] #toolbar-toggle,
+body:not(.dark)[data-ui-style="glass"] #brightness-panel,
+body:not(.dark)[data-ui-style="glass"] #contrast-panel,
+body:not(.dark)[data-ui-style="glass"] #preset-panel,
+body:not(.dark)[data-ui-style="glass"] .reader-login-box {
+
+  background:
+    rgba(255, 255, 255, 0.72);
+
+  color:
+    var(--reader-text);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.78);
+
+  box-shadow:
+    0 12px 30px rgba(15, 23, 42, 0.14);
+}
+
+
+/* Tombol Glass */
+
+body[data-ui-style="glass"] .page-controls button,
+body[data-ui-style="glass"] #preset-panel button,
+body[data-ui-style="glass"] .back-button,
+body[data-ui-style="glass"] #reader-login-button,
+body[data-ui-style="glass"] #reader-logout-button {
+
+  border-radius:12px;
+
+  backdrop-filter:
+    blur(10px);
+
+  -webkit-backdrop-filter:
+    blur(10px);
+}  
   
 </style>
 </head>
