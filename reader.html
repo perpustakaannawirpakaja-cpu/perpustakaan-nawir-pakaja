@@ -1227,6 +1227,101 @@ body[data-ui-style="neumorphism"] .back-button:active {
 }
 
 /* =========================================
+   READER BOOKMARK NEUMORPHISM
+   ========================================= */
+
+body[data-ui-style="neumorphism"] .bookmark-panel-box{
+
+  background:var(--reader-bg);
+
+  border:none;
+
+  border-radius:20px;
+
+  box-shadow:
+    9px 9px 18px rgba(15, 23, 42, 0.14),
+    -9px -9px 18px rgba(255, 255, 255, 0.76);
+}
+
+
+/* Dark */
+
+body.dark[data-ui-style="neumorphism"] .bookmark-panel-box{
+
+  background:var(--reader-bg);
+
+  box-shadow:
+    9px 9px 18px rgba(0, 0, 0, 0.42),
+    -7px -7px 16px rgba(51, 65, 85, 0.38);
+}
+
+
+/* Search, Sort, Favorite, Close */
+
+body[data-ui-style="neumorphism"] #bookmark-search,
+body[data-ui-style="neumorphism"] #bookmark-sort,
+body[data-ui-style="neumorphism"] #favorite-filter,
+body[data-ui-style="neumorphism"] #close-bookmarks,
+body[data-ui-style="neumorphism"] #bookmark-items > button{
+
+  background:var(--reader-bg);
+  color:var(--reader-text);
+
+  border:none;
+
+  border-radius:14px;
+
+  box-shadow:
+    5px 5px 10px rgba(15, 23, 42, 0.13),
+    -5px -5px 10px rgba(255, 255, 255, 0.72);
+}
+
+
+/* Dark controls */
+
+body.dark[data-ui-style="neumorphism"] #bookmark-search,
+body.dark[data-ui-style="neumorphism"] #bookmark-sort,
+body.dark[data-ui-style="neumorphism"] #favorite-filter,
+body.dark[data-ui-style="neumorphism"] #close-bookmarks,
+body.dark[data-ui-style="neumorphism"] #bookmark-items > button{
+
+  box-shadow:
+    5px 5px 10px rgba(0, 0, 0, 0.40),
+    -5px -5px 10px rgba(51, 65, 85, 0.32);
+}
+
+
+/* Search input dibuat cekung */
+
+body[data-ui-style="neumorphism"] #bookmark-search{
+
+  box-shadow:
+    inset 4px 4px 8px rgba(15, 23, 42, 0.12),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.72);
+}
+
+body.dark[data-ui-style="neumorphism"] #bookmark-search{
+
+  box-shadow:
+    inset 4px 4px 8px rgba(0, 0, 0, 0.38),
+    inset -4px -4px 8px rgba(51, 65, 85, 0.30);
+}
+
+
+/* Efek ditekan */
+
+body[data-ui-style="neumorphism"] #favorite-filter:active,
+body[data-ui-style="neumorphism"] #close-bookmarks:active,
+body[data-ui-style="neumorphism"] #bookmark-items > button:active{
+
+  transform:translateY(1px);
+
+  box-shadow:
+    inset 3px 3px 6px rgba(15, 23, 42, 0.14),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.60);
+}
+
+/* =========================================
    NEUMORPHISM LIGHT - TEXT CONTRAST FIX
    ========================================= */
 
