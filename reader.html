@@ -1007,6 +1007,109 @@ body[data-ui-style="glass"] #reader-logout-button {
 }
 
 /* =========================================
+   READER BOOKMARK GLASSMORPHISM
+   ========================================= */
+
+body[data-ui-style="glass"] .bookmark-panel-box{
+
+  background:
+    rgba(255, 255, 255, 0.72);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.78);
+
+  border-radius:22px;
+
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.20);
+
+  backdrop-filter:
+    blur(14px)
+    saturate(135%);
+
+  -webkit-backdrop-filter:
+    blur(14px)
+    saturate(135%);
+}
+
+
+/* Glass Dark */
+
+body.dark[data-ui-style="glass"] .bookmark-panel-box{
+
+  background:
+    rgba(15, 23, 42, 0.78);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.12);
+
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.38);
+}
+
+
+/* Search, Sort, Favorite dan Close */
+
+body[data-ui-style="glass"] #bookmark-search,
+body[data-ui-style="glass"] #bookmark-sort,
+body[data-ui-style="glass"] #favorite-filter,
+body[data-ui-style="glass"] #close-bookmarks,
+body[data-ui-style="glass"] #bookmark-items > button{
+
+  background:
+    rgba(255, 255, 255, 0.52);
+
+  color:
+    var(--reader-text);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.70);
+
+  border-radius:14px;
+
+  box-shadow:
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+body.dark[data-ui-style="glass"] #bookmark-search,
+body.dark[data-ui-style="glass"] #bookmark-sort,
+body.dark[data-ui-style="glass"] #favorite-filter,
+body.dark[data-ui-style="glass"] #close-bookmarks,
+body.dark[data-ui-style="glass"] #bookmark-items > button{
+
+  background:
+    rgba(30, 41, 59, 0.62);
+
+  color:
+    var(--reader-text);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.10);
+
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.20);
+}
+
+
+/* HP - blur sedikit diringankan */
+
+@media (max-width:600px){
+
+  body[data-ui-style="glass"] .bookmark-panel-box{
+
+    backdrop-filter:
+      blur(8px)
+      saturate(120%);
+
+    -webkit-backdrop-filter:
+      blur(8px)
+      saturate(120%);
+  }
+
+}
+
+/* =========================================
    READER NEUMORPHISM
    ========================================= */
 
