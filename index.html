@@ -1574,6 +1574,123 @@ body[data-ui-style="glass"] #reader-logout-button {
 
   -webkit-backdrop-filter:
     blur(10px);
+}
+
+/* =========================================
+   READER NEUMORPHISM
+   ========================================= */
+
+body[data-ui-style="neumorphism"] .page-controls,
+body[data-ui-style="neumorphism"] #toolbar-toggle,
+body[data-ui-style="neumorphism"] #brightness-panel,
+body[data-ui-style="neumorphism"] #contrast-panel,
+body[data-ui-style="neumorphism"] #preset-panel,
+body[data-ui-style="neumorphism"] .reader-login-box {
+
+  background:var(--reader-bg);
+
+  border:none;
+
+  border-radius:18px;
+
+  box-shadow:
+    8px 8px 18px rgba(15, 23, 42, 0.16),
+    -8px -8px 18px rgba(255, 255, 255, 0.75);
+}
+
+
+/* Dark Mode */
+
+body.dark[data-ui-style="neumorphism"] .page-controls,
+body.dark[data-ui-style="neumorphism"] #toolbar-toggle,
+body.dark[data-ui-style="neumorphism"] #brightness-panel,
+body.dark[data-ui-style="neumorphism"] #contrast-panel,
+body.dark[data-ui-style="neumorphism"] #preset-panel,
+body.dark[data-ui-style="neumorphism"] .reader-login-box {
+
+  background:var(--reader-bg);
+
+  box-shadow:
+    8px 8px 18px rgba(0, 0, 0, 0.42),
+    -7px -7px 16px rgba(51, 65, 85, 0.38);
+}
+
+
+/* Tombol */
+
+body[data-ui-style="neumorphism"] .page-controls button,
+body[data-ui-style="neumorphism"] #preset-panel button,
+body[data-ui-style="neumorphism"] .back-button,
+body[data-ui-style="neumorphism"] #reader-login-button,
+body[data-ui-style="neumorphism"] #reader-logout-button {
+
+  background:var(--reader-bg);
+  color:var(--reader-text);
+
+  border:none;
+
+  border-radius:12px;
+
+  box-shadow:
+    5px 5px 10px rgba(15, 23, 42, 0.14),
+    -5px -5px 10px rgba(255, 255, 255, 0.70);
+}
+
+
+/* Tombol Dark */
+
+body.dark[data-ui-style="neumorphism"] .page-controls button,
+body.dark[data-ui-style="neumorphism"] #preset-panel button,
+body.dark[data-ui-style="neumorphism"] .back-button,
+body.dark[data-ui-style="neumorphism"] #reader-login-button,
+body.dark[data-ui-style="neumorphism"] #reader-logout-button {
+
+  box-shadow:
+    5px 5px 10px rgba(0, 0, 0, 0.40),
+    -5px -5px 10px rgba(51, 65, 85, 0.34);
+}
+
+
+/* Input Preset */
+
+body[data-ui-style="neumorphism"] #preset-panel input,
+body[data-ui-style="neumorphism"] #preset-panel select,
+body[data-ui-style="neumorphism"] .reader-login-box input {
+
+  background:var(--reader-bg);
+  color:var(--reader-text);
+
+  border:none;
+
+  border-radius:12px;
+
+  box-shadow:
+    inset 4px 4px 8px rgba(15, 23, 42, 0.12),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.72);
+}
+
+
+body.dark[data-ui-style="neumorphism"] #preset-panel input,
+body.dark[data-ui-style="neumorphism"] #preset-panel select,
+body.dark[data-ui-style="neumorphism"] .reader-login-box input {
+
+  box-shadow:
+    inset 4px 4px 8px rgba(0, 0, 0, 0.38),
+    inset -4px -4px 8px rgba(51, 65, 85, 0.30);
+}
+
+
+/* Efek tombol ditekan */
+
+body[data-ui-style="neumorphism"] .page-controls button:active,
+body[data-ui-style="neumorphism"] #preset-panel button:active,
+body[data-ui-style="neumorphism"] .back-button:active {
+
+  transform:translateY(1px);
+
+  box-shadow:
+    inset 3px 3px 6px rgba(15, 23, 42, 0.15),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.60);
 }  
   
 </style>
