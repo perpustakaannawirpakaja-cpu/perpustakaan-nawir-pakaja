@@ -1024,8 +1024,106 @@ body:not(.dark)[data-ui-style="neumorphism"]
 #preset-summary{
   color:var(--reader-text);
 }
+
+/* =========================================
+   READER CLAYMORPHISM
+   ========================================= */
+
+body[data-ui-style="clay"] .page-controls,
+body[data-ui-style="clay"] #toolbar-toggle,
+body[data-ui-style="clay"] #brightness-panel,
+body[data-ui-style="clay"] #contrast-panel,
+body[data-ui-style="clay"] #preset-panel,
+body[data-ui-style="clay"] .reader-login-box {
+
+  background:var(--reader-surface);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.35);
+
+  border-radius:24px;
+
+  box-shadow:
+    0 12px 22px rgba(15, 23, 42, 0.16),
+    inset 0 4px 7px rgba(255, 255, 255, 0.42),
+    inset 0 -4px 7px rgba(15, 23, 42, 0.06);
+}
+
+
+/* Clay Dark Mode */
+
+body.dark[data-ui-style="clay"] .page-controls,
+body.dark[data-ui-style="clay"] #toolbar-toggle,
+body.dark[data-ui-style="clay"] #brightness-panel,
+body.dark[data-ui-style="clay"] #contrast-panel,
+body.dark[data-ui-style="clay"] #preset-panel,
+body.dark[data-ui-style="clay"] .reader-login-box {
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  box-shadow:
+    0 14px 26px rgba(0, 0, 0, 0.34),
+    inset 0 4px 7px rgba(255, 255, 255, 0.05),
+    inset 0 -4px 7px rgba(0, 0, 0, 0.18);
+}
+
+
+/* Tombol Clay */
+
+body[data-ui-style="clay"] .page-controls button,
+body[data-ui-style="clay"] #preset-panel button,
+body[data-ui-style="clay"] .back-button,
+body[data-ui-style="clay"] #reader-login-button,
+body[data-ui-style="clay"] #reader-logout-button {
+
+  border-radius:16px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.25);
+
+  box-shadow:
+    0 7px 14px rgba(15, 23, 42, 0.15),
+    inset 0 3px 5px rgba(255, 255, 255, 0.30);
+}
+
+
+/* Input Clay */
+
+body[data-ui-style="clay"] #preset-panel input,
+body[data-ui-style="clay"] #preset-panel select,
+body[data-ui-style="clay"] .reader-login-box input {
+
+  background:var(--reader-surface-2);
+  color:var(--reader-text);
+
+  border:
+    1px solid var(--reader-border);
+
+  border-radius:16px;
+
+  box-shadow:
+    inset 0 3px 6px rgba(255, 255, 255, 0.30),
+    0 5px 10px rgba(15, 23, 42, 0.10);
+}
+
+
+/* Efek tombol ditekan */
+
+body[data-ui-style="clay"] .page-controls button:active,
+body[data-ui-style="clay"] #preset-panel button:active,
+body[data-ui-style="clay"] .back-button:active {
+
+  transform:
+    translateY(2px)
+    scale(0.98);
+
+  box-shadow:
+    0 3px 7px rgba(15, 23, 42, 0.12),
+    inset 0 2px 5px rgba(0, 0, 0, 0.10);
+}
     
-  </style>
+</style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
