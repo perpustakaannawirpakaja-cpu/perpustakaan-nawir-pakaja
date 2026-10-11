@@ -12,8 +12,8 @@
     }
 
     /* =========================================
-   READER THEME ENGINE
-   ========================================= */
+       READER THEME ENGINE
+       ========================================= */
 
 :root{
   --reader-bg:#f4f7fb;
@@ -820,7 +820,21 @@ body{
     color .3s ease,
     border-color .3s ease,
     box-shadow .3s ease;
-}    
+}
+
+/* =========================================
+   NEUMORPHISM LIGHT - TEXT CONTRAST FIX
+   ========================================= */
+
+body:not(.dark)[data-ui-style="neumorphism"]
+#preset-count{
+  color:var(--reader-text);
+}
+
+body:not(.dark)[data-ui-style="neumorphism"]
+#preset-summary{
+  color:var(--reader-text);
+}
     
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
