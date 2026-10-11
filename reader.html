@@ -823,6 +823,85 @@ body{
 }
 
 /* =========================================
+   READER BOOKMARK BASE THEME
+   ========================================= */
+
+.bookmark-panel-box{
+  background:var(--reader-surface);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+#bookmark-search,
+#bookmark-sort,
+#favorite-filter{
+  background:var(--reader-surface-2);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+#close-bookmarks{
+  background:var(--reader-surface-2);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+#bookmark-items button{
+  background:var(--reader-surface-2);
+  color:var(--reader-text);
+  border:1px solid var(--reader-border);
+}
+
+.bookmark-row .bookmark-delete{
+  background:#fee2e2;
+  color:#991b1b;
+}
+
+.bookmark-row .bookmark-favorite{
+  background:#fef9c3;
+  color:#854d0e;
+}
+
+.bookmark-row .bookmark-edit{
+  background:#fef3c7;
+  color:#92400e;
+}
+
+
+/* Dark Mode */
+
+body.dark .bookmark-row .bookmark-delete{
+  background:#450a0a;
+  color:#fecaca;
+}
+
+body.dark .bookmark-row .bookmark-favorite{
+  background:#422006;
+  color:#fde68a;
+}
+
+body.dark .bookmark-row .bookmark-edit{
+  background:#451a03;
+  color:#fed7aa;
+}
+
+
+/* Transisi */
+
+.bookmark-panel-box,
+#bookmark-search,
+#bookmark-sort,
+#favorite-filter,
+#close-bookmarks,
+#bookmark-items button{
+  transition:
+    background .3s ease,
+    color .3s ease,
+    border-color .3s ease,
+    box-shadow .3s ease;
+}
+
+/* =========================================
    READER GLASSMORPHISM
    ========================================= */
 
