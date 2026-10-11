@@ -3188,27 +3188,87 @@ document.getElementById("go-page")
 
 });
   
-  document.getElementById("bookmark-page").addEventListener("click", () => {
+  /* =========================================
+   BUAT / HAPUS BOOKMARK
+   ========================================= */
+
+document.getElementById("bookmark-page")
+.addEventListener("click", () => {
+
   if (!pageFlip || !pdfDoc) return;
 
   const currentPage = pageNum;
 
   const existingBookmark = bookmarks.find(
-  (item) => item.page === currentPage
-);
-
-if (!existingBookmark) {
-  const title = prompt(
-    "Judul bookmark untuk halaman " + currentPage + ":",
-    ""
+    (item) => item.page === currentPage
   );
 
-  if (title === null) return;
 
-  bookmarks.push({
-  page: currentPage,
-  title: title.trim(),
-  favorite: false
+  /* Buat Bookmark */
+
+  if (!existingBookmark) {
+
+    openReaderDialog({
+
+      title:"🔖 Buat Bookmark",
+
+      message:
+        "Masukkan judul bookmark untuk halaman " +
+        currentPage + ".",
+
+      value:"",
+
+      type:"text",
+
+      action:(value) => {
+
+        bookmarks.push({
+          page:currentPage,
+          title:value.trim(),
+          favorite:false
+        });
+
+        bookmarks.sort(
+          (a, b) => a.page - b.page
+        );
+
+        localStorage.setItem(
+          bookmarkKey,
+          JSON.stringify(bookmarks)
+        );
+
+        alert(
+          "🔖 Halaman " +
+          currentPage +
+          " berhasil di-bookmark."
+        );
+
+        return true;
+      }
+
+    });
+
+    return;
+  }
+
+
+  /* Hapus Bookmark */
+
+  bookmarks = bookmarks.filter(
+    (item) => item.page !== currentPage
+  );
+
+  localStorage.setItem(
+    bookmarkKey,
+    JSON.stringify(bookmarks)
+  );
+
+  alert(
+    "🗑️ Bookmark halaman " +
+    currentPage +
+    " dihapus."
+  );
+
 });
 
   bookmarks.sort((a, b) => a.page - b.page);
