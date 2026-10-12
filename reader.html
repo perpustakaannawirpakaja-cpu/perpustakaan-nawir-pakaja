@@ -4259,6 +4259,24 @@ document.getElementById("bookmark-sort")
   document.getElementById("close-bookmarks").addEventListener("click", () => {
   document.getElementById("bookmark-panel").style.display = "none";
 });
+
+  /* =========================================
+   BOOKMARK PANEL BACKDROP CLOSE
+   ========================================= */
+
+const bookmarkPanel =
+  document.getElementById("bookmark-panel");
+
+bookmarkPanel.addEventListener("click", (event) => {
+
+  if (event.target === bookmarkPanel) {
+
+    bookmarkPanel.style.display =
+      "none";
+
+  }
+
+});
   
   document.getElementById("zoom-out").addEventListener("click", () => {
   zoomLevel = Math.max(0.6, zoomLevel - 0.1);
