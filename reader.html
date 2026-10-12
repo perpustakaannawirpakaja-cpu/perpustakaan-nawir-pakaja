@@ -4137,19 +4137,47 @@ edit.addEventListener("click", () => {
   });
 
 });
+      
 const hapus = document.createElement("button");
   hapus.className = "bookmark-delete";
   hapus.textContent = "🗑️";
 
   hapus.addEventListener("click", () => {
-    bookmarks = bookmarks.filter(
-      (bookmark) => bookmark.page !== halaman
-    );
 
-    localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+  showReaderConfirm(
 
-    tampilkanBookmarks();
-  });
+    "🗑️ Hapus Bookmark?",
+
+    "Yakin ingin menghapus bookmark halaman " +
+    halaman + "?",
+
+    "Hapus",
+
+    () => {
+
+      bookmarks = bookmarks.filter(
+        (bookmark) => bookmark.page !== halaman
+      );
+
+      localStorage.setItem(
+        bookmarkKey,
+        JSON.stringify(bookmarks)
+      );
+
+      tampilkanBookmarks();
+
+      showReaderNotice(
+        "🗑️ Bookmark Dihapus",
+        "Bookmark halaman " +
+        halaman +
+        " berhasil dihapus."
+      );
+
+    }
+
+  );
+
+});
 
   row.appendChild(tombol);
 row.appendChild(edit);
