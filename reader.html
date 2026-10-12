@@ -3943,11 +3943,22 @@ document.getElementById("bookmark-page")
 
       action:(value) => {
 
-        bookmarks.push({
-          page:currentPage,
-          title:value.trim(),
-          favorite:false
-        });
+  const bookmarkTitle =
+    value.trim();
+
+  if (!bookmarkTitle) {
+
+    readerDialogError.textContent =
+      "Judul bookmark tidak boleh kosong.";
+
+    return false;
+  }
+
+  bookmarks.push({
+    page:currentPage,
+    title:bookmarkTitle,
+    favorite:false
+  });
 
         bookmarks.sort(
           (a, b) => a.page - b.page
@@ -4122,9 +4133,21 @@ edit.addEventListener("click", () => {
 
     action:(value) => {
 
-      item.title = value.trim();
+  const bookmarkTitle =
+    value.trim();
 
-      localStorage.setItem(
+  if (!bookmarkTitle) {
+
+    readerDialogError.textContent =
+      "Judul bookmark tidak boleh kosong.";
+
+    return false;
+  }
+
+  item.title =
+    bookmarkTitle;
+
+  localStorage.setItem(
         bookmarkKey,
         JSON.stringify(bookmarks)
       );
