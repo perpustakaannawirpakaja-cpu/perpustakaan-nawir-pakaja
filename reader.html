@@ -3530,7 +3530,12 @@ async function loadPresetsFromCloud() {
 
 async function loadPDF() {
   if (!pdfUrl) {
-    alert("File PDF tidak ditemukan.");
+
+    showReaderNotice(
+      "⚠️ File Tidak Ditemukan",
+      "File PDF tidak ditemukan."
+    );
+
     return;
   }
 
