@@ -3215,6 +3215,42 @@ bookmarks = Array.from(uniqueBookmarks.values())
   .sort((a, b) => a.page - b.page);
 
 localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+
+/* =========================================
+   BOOKMARK COUNT BUTTON
+   ========================================= */
+
+function updateBookmarkListButton(){
+
+  const button =
+    document.getElementById("bookmark-list");
+
+  if (!button) return;
+
+  if (bookmarks.length > 0) {
+
+    button.textContent =
+      "📑 " + bookmarks.length;
+
+    button.title =
+      "Daftar bookmark (" +
+      bookmarks.length +
+      ")";
+
+  } else {
+
+    button.textContent =
+      "📑";
+
+    button.title =
+      "Daftar bookmark";
+
+  }
+
+}
+
+updateBookmarkListButton();
+  
 const savedPage = parseInt(localStorage.getItem(readingKey), 10) || 1;
   let soundEnabled = true;
 let audioCtx = null;
@@ -4010,6 +4046,8 @@ document.getElementById("bookmark-page")
           JSON.stringify(bookmarks)
         );
 
+        updateBookmarkListButton();
+
         showReaderNotice(
   "🔖 Bookmark Berhasil",
   "Halaman " +
@@ -4047,6 +4085,8 @@ showReaderConfirm(
       bookmarkKey,
       JSON.stringify(bookmarks)
     );
+
+    updateBookmarkListButton();
 
     showReaderNotice(
       "🗑️ Bookmark Dihapus",
@@ -4227,6 +4267,8 @@ const hapus = document.createElement("button");
         bookmarkKey,
         JSON.stringify(bookmarks)
       );
+
+      updateBookmarkListButton();
 
       tampilkanBookmarks();
 
