@@ -3050,7 +3050,11 @@ function openReaderDialog({
 
   readerDialogError.textContent = "";
 
-  readerDialogAction = action;
+readerDialogInput.style.display = "";
+readerDialogCancel.style.display = "";
+readerDialogConfirm.textContent = "OK";
+
+readerDialogAction = action;
 
   readerDialog.classList.add("show");
 
@@ -3070,6 +3074,36 @@ function closeReaderDialog(){
   readerDialogError.textContent = "";
 
   readerDialogAction = null;
+}
+
+/* =========================================
+   READER NOTICE
+   ========================================= */
+
+function showReaderNotice(
+  title,
+  message
+){
+
+  openReaderDialog({
+
+    title:title,
+    message:message,
+    value:"",
+    type:"text",
+
+    action:() => true
+
+  });
+
+  readerDialogInput.style.display =
+    "none";
+
+  readerDialogCancel.style.display =
+    "none";
+
+  readerDialogConfirm.textContent =
+    "OK";
 }
 
 
@@ -3237,11 +3271,12 @@ document.getElementById("bookmark-page")
           JSON.stringify(bookmarks)
         );
 
-        alert(
-          "🔖 Halaman " +
-          currentPage +
-          " berhasil di-bookmark."
-        );
+        showReaderNotice(
+  "🔖 Bookmark Berhasil",
+  "Halaman " +
+  currentPage +
+  " berhasil di-bookmark."
+);
 
         return true;
       }
@@ -3263,11 +3298,12 @@ document.getElementById("bookmark-page")
     JSON.stringify(bookmarks)
   );
 
-  alert(
-    "🗑️ Bookmark halaman " +
-    currentPage +
-    " dihapus."
-  );
+  showReaderNotice(
+  "🗑️ Bookmark Dihapus",
+  "Bookmark halaman " +
+  currentPage +
+  " berhasil dihapus."
+);
 
 });
   
