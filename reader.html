@@ -4277,6 +4277,29 @@ bookmarkPanel.addEventListener("click", (event) => {
   }
 
 });
+
+  /* =========================================
+   BOOKMARK PANEL ESCAPE CLOSE
+   ========================================= */
+
+document.addEventListener(
+  "keydown",
+  (event) => {
+
+    if (
+      event.key === "Escape" &&
+      !readerDialog.classList.contains("show") &&
+      bookmarkPanel.style.display !== "none"
+    ) {
+
+      bookmarkPanel.style.display =
+        "none";
+
+    }
+
+  },
+  true
+);
   
   document.getElementById("zoom-out").addEventListener("click", () => {
   zoomLevel = Math.max(0.6, zoomLevel - 0.1);
@@ -4286,7 +4309,7 @@ bookmarkPanel.addEventListener("click", (event) => {
   markDisplayAsCustom();
 });
 
-document.getElementById("zoom-reset").addEventListener("click", () => {
+  document.getElementById("zoom-reset").addEventListener("click", () => {
   zoomLevel = 1;
   localStorage.setItem(zoomKey, zoomLevel);
   applyZoom();
