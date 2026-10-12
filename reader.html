@@ -2670,6 +2670,112 @@ body[data-ui-style="minimal"] #bookmark-items > button:active{
 
   box-shadow:none;
 }
+
+/* =========================================
+   READER CUSTOM DIALOG MINIMALIST
+   ========================================= */
+
+body[data-ui-style="minimal"]
+.reader-dialog-box{
+
+  background:var(--reader-surface);
+  color:var(--reader-text);
+
+  border:
+    1px solid var(--reader-border);
+
+  border-radius:12px;
+
+  box-shadow:none;
+}
+
+
+/* Input, Close dan Cancel */
+
+body[data-ui-style="minimal"]
+#reader-dialog-input,
+
+body[data-ui-style="minimal"]
+#reader-dialog-close,
+
+body[data-ui-style="minimal"]
+#reader-dialog-cancel{
+
+  background:var(--reader-surface-2);
+  color:var(--reader-text);
+
+  border:
+    1px solid var(--reader-border);
+
+  border-radius:9px;
+
+  box-shadow:none;
+}
+
+
+/* Tombol OK */
+
+body[data-ui-style="minimal"]
+#reader-dialog-confirm{
+
+  background:var(--reader-primary);
+  color:#ffffff;
+
+  border:
+    1px solid var(--reader-primary);
+
+  border-radius:9px;
+
+  box-shadow:none;
+
+  font-weight:700;
+}
+
+
+/* Focus */
+
+body[data-ui-style="minimal"]
+#reader-dialog-input:focus{
+
+  border-color:var(--reader-primary);
+
+  box-shadow:
+    0 0 0 3px rgba(37,99,235,.10);
+}
+
+
+/* Hover */
+
+body[data-ui-style="minimal"]
+#reader-dialog-confirm:hover,
+
+body[data-ui-style="minimal"]
+#reader-dialog-cancel:hover,
+
+body[data-ui-style="minimal"]
+#reader-dialog-close:hover{
+
+  opacity:.88;
+
+  box-shadow:none;
+}
+
+
+/* Active */
+
+body[data-ui-style="minimal"]
+#reader-dialog-confirm:active,
+
+body[data-ui-style="minimal"]
+#reader-dialog-cancel:active,
+
+body[data-ui-style="minimal"]
+#reader-dialog-close:active{
+
+  transform:none;
+
+  box-shadow:none;
+}
     
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
