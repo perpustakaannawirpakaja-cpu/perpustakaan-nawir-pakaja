@@ -4293,8 +4293,29 @@ document.getElementById("bookmark-sort")
 
 });
   
-  document.getElementById("bookmark-list").addEventListener("click", () => {
+  /* =========================================
+   BOOKMARK PANEL OPEN FOCUS
+   ========================================= */
+
+document.getElementById("bookmark-list")
+.addEventListener("click", () => {
+
   tampilkanBookmarks();
+
+  if (
+    window.matchMedia("(min-width: 601px)").matches
+  ) {
+
+    setTimeout(() => {
+
+      document.getElementById(
+        "bookmark-search"
+      ).focus();
+
+    }, 50);
+
+  }
+
 });
 
   document.getElementById("close-bookmarks").addEventListener("click", () => {
