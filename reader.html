@@ -2015,6 +2015,126 @@ body[data-ui-style="clay"] #bookmark-items > button:active{
 }
 
 /* =========================================
+   READER CUSTOM DIALOG CLAYMORPHISM
+   ========================================= */
+
+body[data-ui-style="clay"]
+.reader-dialog-box{
+
+  background:var(--reader-surface);
+  color:var(--reader-text);
+
+  border:
+    1px solid rgba(255,255,255,.40);
+
+  border-radius:28px;
+
+  box-shadow:
+    0 14px 28px rgba(15,23,42,.17),
+    inset 0 4px 7px rgba(255,255,255,.42),
+    inset 0 -4px 7px rgba(15,23,42,.06);
+}
+
+
+/* Dark */
+
+body.dark[data-ui-style="clay"]
+.reader-dialog-box{
+
+  border:
+    1px solid rgba(255,255,255,.08);
+
+  box-shadow:
+    0 16px 30px rgba(0,0,0,.36),
+    inset 0 4px 7px rgba(255,255,255,.05),
+    inset 0 -4px 7px rgba(0,0,0,.18);
+}
+
+
+/* Input, Close dan Cancel */
+
+body[data-ui-style="clay"]
+#reader-dialog-input,
+
+body[data-ui-style="clay"]
+#reader-dialog-close,
+
+body[data-ui-style="clay"]
+#reader-dialog-cancel{
+
+  background:var(--reader-surface-2);
+  color:var(--reader-text);
+
+  border:
+    1px solid var(--reader-border);
+
+  border-radius:18px;
+
+  box-shadow:
+    0 7px 14px rgba(15,23,42,.12),
+    inset 0 3px 5px rgba(255,255,255,.30);
+}
+
+
+/* Dark controls */
+
+body.dark[data-ui-style="clay"]
+#reader-dialog-input,
+
+body.dark[data-ui-style="clay"]
+#reader-dialog-close,
+
+body.dark[data-ui-style="clay"]
+#reader-dialog-cancel{
+
+  box-shadow:
+    0 7px 14px rgba(0,0,0,.28),
+    inset 0 3px 5px rgba(255,255,255,.05);
+}
+
+
+/* Tombol OK */
+
+body[data-ui-style="clay"]
+#reader-dialog-confirm{
+
+  background:var(--reader-primary);
+  color:#ffffff;
+
+  border:
+    1px solid rgba(255,255,255,.28);
+
+  border-radius:18px;
+
+  box-shadow:
+    0 8px 16px rgba(37,99,235,.24),
+    inset 0 3px 5px rgba(255,255,255,.20);
+
+  font-weight:700;
+}
+
+
+/* Efek ditekan */
+
+body[data-ui-style="clay"]
+#reader-dialog-confirm:active,
+
+body[data-ui-style="clay"]
+#reader-dialog-cancel:active,
+
+body[data-ui-style="clay"]
+#reader-dialog-close:active{
+
+  transform:
+    translateY(2px)
+    scale(.98);
+
+  box-shadow:
+    0 3px 7px rgba(15,23,42,.12),
+    inset 0 2px 5px rgba(0,0,0,.10);
+}
+
+/* =========================================
    READER NEO-BRUTALISM
    ========================================= */
 
