@@ -3755,6 +3755,45 @@ function showReaderNotice(
 }
 
 
+/* =========================================
+   READER CONFIRM
+   ========================================= */
+
+function showReaderConfirm(
+  title,
+  message,
+  confirmText,
+  onConfirm
+){
+
+  openReaderDialog({
+
+    title:title,
+    message:message,
+    value:"",
+    type:"text",
+
+    action:() => {
+
+      if (typeof onConfirm === "function") {
+        onConfirm();
+      }
+
+      return true;
+    }
+
+  });
+
+  readerDialogInput.style.display =
+    "none";
+
+  readerDialogCancel.style.display =
+    "";
+
+  readerDialogConfirm.textContent =
+    confirmText || "OK";
+}
+
 /* OK */
 
 readerDialogConfirm.addEventListener("click", () => {
@@ -3937,20 +3976,35 @@ document.getElementById("bookmark-page")
 
   /* Hapus Bookmark */
 
-  bookmarks = bookmarks.filter(
-    (item) => item.page !== currentPage
-  );
+showReaderConfirm(
 
-  localStorage.setItem(
-    bookmarkKey,
-    JSON.stringify(bookmarks)
-  );
+  "🗑️ Hapus Bookmark?",
 
-  showReaderNotice(
-  "🗑️ Bookmark Dihapus",
-  "Bookmark halaman " +
-  currentPage +
-  " berhasil dihapus."
+  "Yakin ingin menghapus bookmark halaman " +
+  currentPage + "?",
+
+  "Hapus",
+
+  () => {
+
+    bookmarks = bookmarks.filter(
+      (item) => item.page !== currentPage
+    );
+
+    localStorage.setItem(
+      bookmarkKey,
+      JSON.stringify(bookmarks)
+    );
+
+    showReaderNotice(
+      "🗑️ Bookmark Dihapus",
+      "Bookmark halaman " +
+      currentPage +
+      " berhasil dihapus."
+    );
+
+  }
+
 );
 
 });
