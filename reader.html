@@ -3369,20 +3369,37 @@ edit.className = "bookmark-edit";
 edit.textContent = "✏️";
 
 edit.addEventListener("click", () => {
-  const newTitle = prompt(
-    "Ubah judul bookmark halaman " + halaman + ":",
-    item.title || ""
-  );
 
-  if (newTitle === null) return;
+  openReaderDialog({
 
-  item.title = newTitle.trim();
+    title:"✏️ Edit Bookmark",
 
-  localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+    message:
+      "Ubah judul bookmark halaman " +
+      halaman + ".",
 
-  tampilkanBookmarks();
+    value:item.title || "",
+
+    type:"text",
+
+    action:(value) => {
+
+      item.title = value.trim();
+
+      localStorage.setItem(
+        bookmarkKey,
+        JSON.stringify(bookmarks)
+      );
+
+      tampilkanBookmarks();
+
+      return true;
+    }
+
+  });
+
 });
-  const hapus = document.createElement("button");
+const hapus = document.createElement("button");
   hapus.className = "bookmark-delete";
   hapus.textContent = "🗑️";
 
