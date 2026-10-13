@@ -820,7 +820,34 @@ body.dark #bookmark-list{
   box-shadow:
     0 6px 18px rgba(59, 130, 246, 0.30);
 }
+    
+/* =========================================
+   CURRENT PAGE BOOKMARK STATUS
+   ========================================= */
 
+#bookmark-page.bookmarked{
+  background:#f59e0b;
+  color:#111827;
+
+  border:
+    1px solid #d97706;
+
+  box-shadow:
+    0 6px 16px rgba(245, 158, 11, 0.30);
+
+  font-weight:700;
+}
+
+body.dark #bookmark-page.bookmarked{
+  background:#fbbf24;
+  color:#111827;
+
+  border:
+    1px solid #f59e0b;
+
+  box-shadow:
+    0 6px 18px rgba(251, 191, 36, 0.28);
+}
 
 /* Input dan pilihan di panel */
 
@@ -3257,6 +3284,35 @@ let audioCtx = null;
 
   let pdfDoc = null;
   let pageNum = savedPage;
+
+/* =========================================
+   CURRENT PAGE BOOKMARK STATUS
+   ========================================= */
+
+function updateCurrentPageBookmarkStatus(){
+
+  const button =
+    document.getElementById("bookmark-page");
+
+  if (!button) return;
+
+  const isBookmarked =
+    bookmarks.some(
+      (item) => item.page === pageNum
+    );
+
+  button.classList.toggle(
+    "bookmarked",
+    isBookmarked
+  );
+
+  button.title =
+    isBookmarked
+      ? "Halaman ini sudah di-bookmark"
+      : "Bookmark halaman";
+
+}
+  
 function playPageFlipSound() {
   if (!soundEnabled) return;
 
@@ -3690,10 +3746,13 @@ pageFlip.on("flip", (e) => {
   localStorage.setItem(readingKey, pageNum);
 
   updateReadingStatus(currentIndex);
+
+  updateCurrentPageBookmarkStatus();
 });
 
 pageFlip.on("changeOrientation", () => {
   updateReadingStatus();
+  updateCurrentPageBookmarkStatus();
 });
 
 pageFlip.on("changeState", (e) => {
@@ -3704,6 +3763,8 @@ pageFlip.on("changeState", (e) => {
 
 pageFlip.on("init", () => {
   updateReadingStatus();
+
+  updateCurrentPageBookmarkStatus();
 });
   
   pageFlip.loadFromImages(images);
@@ -4048,6 +4109,8 @@ document.getElementById("bookmark-page")
 
         updateBookmarkListButton();
 
+        updateCurrentPageBookmarkStatus();
+
         showReaderNotice(
   "🔖 Bookmark Berhasil",
   "Halaman " +
@@ -4087,6 +4150,8 @@ showReaderConfirm(
     );
 
     updateBookmarkListButton();
+
+    updateCurrentPageBookmarkStatus();
 
     showReaderNotice(
       "🗑️ Bookmark Dihapus",
@@ -4269,6 +4334,8 @@ const hapus = document.createElement("button");
       );
 
       updateBookmarkListButton();
+
+      updateCurrentPageBookmarkStatus();
 
       tampilkanBookmarks();
 
