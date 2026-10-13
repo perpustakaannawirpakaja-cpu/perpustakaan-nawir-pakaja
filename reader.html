@@ -662,6 +662,36 @@ body{
 #bookmark-reset-filter:hover{
   filter:brightness(1.05);
 }
+
+/* =========================================
+   BOOKMARK FILTER STATUS
+   ========================================= */
+
+#bookmark-filter-status{
+  width:100%;
+
+  margin:
+    -2px 0 12px;
+
+  padding:
+    8px 10px;
+
+  background:
+    var(--reader-surface-2);
+
+  color:
+    var(--reader-muted);
+
+  border:
+    1px solid var(--reader-border);
+
+  border-radius:10px;
+
+  font-size:12px;
+  font-weight:600;
+
+  text-align:center;
+}
     
   #bookmark-sort{
   width:100%;
@@ -3108,6 +3138,10 @@ body[data-ui-style="minimal"]
 <button id="bookmark-reset-filter">
   ↺ Reset Filter
 </button>
+
+<div id="bookmark-filter-status">
+  Menampilkan 0 dari 0 bookmark
+</div>
     
     <div id="bookmark-items"></div>
   </div>
