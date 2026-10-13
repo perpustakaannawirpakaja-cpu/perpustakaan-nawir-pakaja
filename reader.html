@@ -633,6 +633,36 @@ body{
   cursor:pointer;
   font-size:14px;
 }
+
+/* =========================================
+   READER BOOKMARK RESET FILTER
+   ========================================= */
+
+#bookmark-reset-filter{
+  width:100%;
+  margin-bottom:12px;
+  padding:9px 12px;
+
+  border:
+    1px solid var(--reader-border);
+
+  border-radius:10px;
+
+  background:
+    var(--reader-surface-2);
+
+  color:
+    var(--reader-text);
+
+  cursor:pointer;
+  font-size:14px;
+  font-weight:600;
+}
+
+#bookmark-reset-filter:hover{
+  filter:brightness(1.05);
+}
+    
   #bookmark-sort{
   width:100%;
   margin-bottom:12px;
@@ -933,6 +963,7 @@ body:not(.dark) .bookmark-panel-box{
 body:not(.dark) #bookmark-search,
 body:not(.dark) #bookmark-sort,
 body:not(.dark) #favorite-filter,
+body:not(.dark) #bookmark-reset-filter,
 body:not(.dark) #close-bookmarks,
 body:not(.dark) #bookmark-items button{
   background:#f8fafc;
@@ -959,6 +990,7 @@ body.dark .bookmark-panel-box{
 body.dark #bookmark-search,
 body.dark #bookmark-sort,
 body.dark #favorite-filter,
+body.dark #bookmark-reset-filter,
 body.dark #close-bookmarks,
 body.dark #bookmark-items button{
   background:#1f2937;
@@ -1014,6 +1046,7 @@ body.dark .bookmark-row .bookmark-edit{
 #bookmark-search,
 #bookmark-sort,
 #favorite-filter,
+#bookmark-reset-filter,
 #close-bookmarks,
 #bookmark-items button{
   transition:
@@ -1358,6 +1391,7 @@ body.dark[data-ui-style="glass"] .bookmark-panel-box{
 body[data-ui-style="glass"] #bookmark-search,
 body[data-ui-style="glass"] #bookmark-sort,
 body[data-ui-style="glass"] #favorite-filter,
+body[data-ui-style="glass"] #bookmark-reset-filter,
 body[data-ui-style="glass"] #close-bookmarks,
 body[data-ui-style="glass"] #bookmark-items > button{
 
@@ -1380,6 +1414,7 @@ body[data-ui-style="glass"] #bookmark-items > button{
 body.dark[data-ui-style="glass"] #bookmark-search,
 body.dark[data-ui-style="glass"] #bookmark-sort,
 body.dark[data-ui-style="glass"] #favorite-filter,
+body.dark[data-ui-style="glass"] #bookmark-reset-filter,
 body.dark[data-ui-style="glass"] #close-bookmarks,
 body.dark[data-ui-style="glass"] #bookmark-items > button{
 
@@ -1710,6 +1745,7 @@ body.dark[data-ui-style="neumorphism"] .bookmark-panel-box{
 body[data-ui-style="neumorphism"] #bookmark-search,
 body[data-ui-style="neumorphism"] #bookmark-sort,
 body[data-ui-style="neumorphism"] #favorite-filter,
+body[data-ui-style="neumorphism"] #bookmark-reset-filter,
 body[data-ui-style="neumorphism"] #close-bookmarks,
 body[data-ui-style="neumorphism"] #bookmark-items > button{
 
@@ -1731,6 +1767,7 @@ body[data-ui-style="neumorphism"] #bookmark-items > button{
 body.dark[data-ui-style="neumorphism"] #bookmark-search,
 body.dark[data-ui-style="neumorphism"] #bookmark-sort,
 body.dark[data-ui-style="neumorphism"] #favorite-filter,
+body.dark[data-ui-style="neumorphism"] #bookmark-reset-filter,
 body.dark[data-ui-style="neumorphism"] #close-bookmarks,
 body.dark[data-ui-style="neumorphism"] #bookmark-items > button{
 
@@ -1760,6 +1797,7 @@ body.dark[data-ui-style="neumorphism"] #bookmark-search{
 /* Efek ditekan */
 
 body[data-ui-style="neumorphism"] #favorite-filter:active,
+body[data-ui-style="neumorphism"] #bookmark-reset-filter:active,
 body[data-ui-style="neumorphism"] #close-bookmarks:active,
 body[data-ui-style="neumorphism"] #bookmark-items > button:active{
 
@@ -2059,6 +2097,7 @@ body.dark[data-ui-style="clay"] .bookmark-panel-box{
 body[data-ui-style="clay"] #bookmark-search,
 body[data-ui-style="clay"] #bookmark-sort,
 body[data-ui-style="clay"] #favorite-filter,
+body[data-ui-style="clay"] #bookmark-reset-filter,
 body[data-ui-style="clay"] #close-bookmarks,
 body[data-ui-style="clay"] #bookmark-items > button{
 
@@ -2081,6 +2120,7 @@ body[data-ui-style="clay"] #bookmark-items > button{
 body.dark[data-ui-style="clay"] #bookmark-search,
 body.dark[data-ui-style="clay"] #bookmark-sort,
 body.dark[data-ui-style="clay"] #favorite-filter,
+body.dark[data-ui-style="clay"] #bookmark-reset-filter,
 body.dark[data-ui-style="clay"] #close-bookmarks,
 body.dark[data-ui-style="clay"] #bookmark-items > button{
 
@@ -2093,6 +2133,7 @@ body.dark[data-ui-style="clay"] #bookmark-items > button{
 /* Efek ditekan */
 
 body[data-ui-style="clay"] #favorite-filter:active,
+body[data-ui-style="clay"] #bookmark-reset-filter:active,
 body[data-ui-style="clay"] #close-bookmarks:active,
 body[data-ui-style="clay"] #bookmark-items > button:active{
 
@@ -2399,6 +2440,7 @@ body.dark[data-ui-style="brutal"] .bookmark-panel-box{
 body[data-ui-style="brutal"] #bookmark-search,
 body[data-ui-style="brutal"] #bookmark-sort,
 body[data-ui-style="brutal"] #favorite-filter,
+body[data-ui-style="brutal"] #bookmark-reset-filter,
 body[data-ui-style="brutal"] #close-bookmarks,
 body[data-ui-style="brutal"] #bookmark-items > button{
 
@@ -2422,6 +2464,7 @@ body[data-ui-style="brutal"] #bookmark-items > button{
 body.dark[data-ui-style="brutal"] #bookmark-search,
 body.dark[data-ui-style="brutal"] #bookmark-sort,
 body.dark[data-ui-style="brutal"] #favorite-filter,
+body.dark[data-ui-style="brutal"] #bookmark-reset-filter,
 body.dark[data-ui-style="brutal"] #close-bookmarks,
 body.dark[data-ui-style="brutal"] #bookmark-items > button{
 
@@ -2448,6 +2491,7 @@ body[data-ui-style="brutal"] #favorite-filter{
 /* Efek ditekan */
 
 body[data-ui-style="brutal"] #favorite-filter:active,
+body[data-ui-style="brutal"] #bookmark-reset-filter:active,
 body[data-ui-style="brutal"] #close-bookmarks:active,
 body[data-ui-style="brutal"] #bookmark-items > button:active{
 
@@ -2712,6 +2756,7 @@ body[data-ui-style="minimal"] .bookmark-panel-box{
 body[data-ui-style="minimal"] #bookmark-search,
 body[data-ui-style="minimal"] #bookmark-sort,
 body[data-ui-style="minimal"] #favorite-filter,
+body[data-ui-style="minimal"] #bookmark-reset-filter,
 body[data-ui-style="minimal"] #close-bookmarks,
 body[data-ui-style="minimal"] #bookmark-items > button{
 
@@ -2742,6 +2787,7 @@ body[data-ui-style="minimal"] #bookmark-sort:focus{
 /* Hover */
 
 body[data-ui-style="minimal"] #favorite-filter:hover,
+body[data-ui-style="minimal"] #bookmark-reset-filter:hover,
 body[data-ui-style="minimal"] #close-bookmarks:hover,
 body[data-ui-style="minimal"] #bookmark-items > button:hover{
 
@@ -2754,6 +2800,7 @@ body[data-ui-style="minimal"] #bookmark-items > button:hover{
 /* Active */
 
 body[data-ui-style="minimal"] #favorite-filter:active,
+body[data-ui-style="minimal"] #bookmark-reset-filter:active,
 body[data-ui-style="minimal"] #close-bookmarks:active,
 body[data-ui-style="minimal"] #bookmark-items > button:active{
 
@@ -3048,6 +3095,11 @@ body[data-ui-style="minimal"]
   <option value="title">Urut: Judul A-Z</option>
   <option value="favorite">Urut: Favorit dulu</option>
 </select>
+
+<button id="bookmark-reset-filter">
+  ↺ Reset Filter
+</button>
+    
     <div id="bookmark-items"></div>
   </div>
 </div>
@@ -4462,6 +4514,31 @@ document.getElementById("favorite-filter")
 
 document.getElementById("bookmark-sort")
 .addEventListener("change", () => {
+  tampilkanBookmarks();
+
+});
+
+document.getElementById("bookmark-reset-filter")
+.addEventListener("click", () => {
+
+  document.getElementById(
+    "bookmark-search"
+  ).value = "";
+
+  const favoriteButton =
+    document.getElementById(
+      "favorite-filter"
+    );
+
+  favoriteButton.classList.remove(
+    "active"
+  );
+
+  document.getElementById(
+    "bookmark-sort"
+  ).value = "page";
+
+  updateFavoriteFilterButton();
 
   tampilkanBookmarks();
 
@@ -4473,7 +4550,6 @@ document.getElementById("bookmark-sort")
 
 document.getElementById("bookmark-list")
 .addEventListener("click", () => {
-
   tampilkanBookmarks();
 
   if (
