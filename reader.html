@@ -3276,7 +3276,46 @@ function updateBookmarkListButton(){
 
 }
 
+/* =========================================
+   FAVORITE BOOKMARK COUNT
+   ========================================= */
+
+function updateFavoriteFilterButton(){
+
+  const button =
+    document.getElementById("favorite-filter");
+
+  if (!button) return;
+
+  const favoriteCount =
+    bookmarks.filter(
+      (item) => item.favorite
+    ).length;
+
+  const isActive =
+    button.classList.contains("active");
+
+  if (isActive) {
+
+    button.textContent =
+      "⭐ Semua favorit (" +
+      favoriteCount +
+      ")";
+
+  } else {
+
+    button.textContent =
+      "☆ Favorit saja (" +
+      favoriteCount +
+      ")";
+
+  }
+
+}
+
 updateBookmarkListButton();
+
+updateFavoriteFilterButton();
   
 const savedPage = parseInt(localStorage.getItem(readingKey), 10) || 1;
   let soundEnabled = true;
@@ -4108,7 +4147,7 @@ document.getElementById("bookmark-page")
         );
 
         updateBookmarkListButton();
-
+        updateFavoriteFilterButton();
         updateCurrentPageBookmarkStatus();
 
         showReaderNotice(
@@ -4256,6 +4295,8 @@ favorite.addEventListener("click", () => {
 
   localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
 
+  updateFavoriteFilterButton();
+
   tampilkanBookmarks();
 });
       
@@ -4334,7 +4375,7 @@ const hapus = document.createElement("button");
       );
 
       updateBookmarkListButton();
-
+      updateFavoriteFilterButton();
       updateCurrentPageBookmarkStatus();
 
       tampilkanBookmarks();
@@ -4385,10 +4426,7 @@ document.getElementById("favorite-filter")
 
   tombol.classList.toggle("active");
 
-  tombol.textContent =
-    tombol.classList.contains("active")
-      ? "⭐ Semua favorit"
-      : "☆ Favorit saja";
+  updateFavoriteFilterButton();
 
   tampilkanBookmarks();
 
