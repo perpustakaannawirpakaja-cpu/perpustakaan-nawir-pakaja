@@ -3254,6 +3254,8 @@ const loginSubmit =
 const loginCancel =
   document.getElementById("reader-login-cancel");
 
+let bookmarkCloudReady = false;
+  
 async function updateReaderAuthUI() {
   const {
     data: { session }
@@ -3269,6 +3271,11 @@ async function updateReaderAuthUI() {
     logoutButton.hidden = false;
 
     await loadPresetsFromCloud();
+
+    if (bookmarkCloudReady) {
+    await loadBookmarksFromCloud();
+}
+    
   } else {
     userStatus.textContent = "Belum login";
 
@@ -3329,8 +3336,6 @@ db.auth.onAuthStateChange(() => {
   updateReaderAuthUI();
 });
 
-updateReaderAuthUI();
-  
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
@@ -3359,7 +3364,129 @@ bookmarks.forEach((item) => {
 bookmarks = Array.from(uniqueBookmarks.values())
   .sort((a, b) => a.page - b.page);
 
-localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+localStorage.setItem(
+  bookmarkKey,
+  JSON.stringify(bookmarks)
+);
+
+/* =========================================
+   READER BOOKMARK CLOUD SYNC
+   ========================================= */
+
+async function saveBookmarksToCloud() {
+
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (userError || !user) {
+    return;
+  }
+
+  const { error } = await db
+    .from("reader_bookmarks")
+    .upsert(
+      {
+        user_id: user.id,
+        book_key: bookmarkKey,
+        bookmarks: bookmarks,
+        updated_at: new Date().toISOString()
+      },
+      {
+        onConflict: "user_id,book_key"
+      }
+    );
+
+  if (error) {
+    console.error(
+      "Gagal menyimpan bookmark ke cloud:",
+      error
+    );
+  }
+}
+
+
+let bookmarkCloudSaveTimer = null;
+
+function scheduleBookmarkCloudSave() {
+
+  clearTimeout(
+    bookmarkCloudSaveTimer
+  );
+
+  bookmarkCloudSaveTimer =
+    setTimeout(() => {
+
+      saveBookmarksToCloud();
+
+    }, 800);
+}
+
+
+async function loadBookmarksFromCloud() {
+
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (userError || !user) {
+    return;
+  }
+
+  const { data, error } = await db
+    .from("reader_bookmarks")
+    .select("bookmarks")
+    .eq("user_id", user.id)
+    .eq("book_key", bookmarkKey)
+    .maybeSingle();
+
+  if (error) {
+
+    console.error(
+      "Gagal mengambil bookmark dari cloud:",
+      error
+    );
+
+    return;
+  }
+
+  if (data) {
+
+    bookmarks =
+      Array.isArray(data.bookmarks)
+        ? data.bookmarks
+        : [];
+
+    localStorage.setItem(
+      bookmarkKey,
+      JSON.stringify(bookmarks)
+    );
+
+    updateBookmarkListButton();
+    updateFavoriteFilterButton();
+    updateCurrentPageBookmarkStatus();
+
+    const bookmarkPanel =
+      document.getElementById(
+        "bookmark-panel"
+      );
+
+    if (
+      bookmarkPanel &&
+      bookmarkPanel.style.display === "flex"
+    ) {
+      tampilkanBookmarks();
+    }
+
+    return;
+  }
+
+  if (bookmarks.length > 0) {
+    await saveBookmarksToCloud();
+  }
+}
 
 /* =========================================
    BOOKMARK COUNT BUTTON
@@ -3469,6 +3596,9 @@ function updateCurrentPageBookmarkStatus(){
       : "Bookmark halaman";
 
 }
+
+bookmarkCloudReady = true;
+updateReaderAuthUI();
   
 function playPageFlipSound() {
   if (!soundEnabled) return;
@@ -4264,6 +4394,8 @@ document.getElementById("bookmark-page")
           JSON.stringify(bookmarks)
         );
 
+        scheduleBookmarkCloudSave();
+
         updateBookmarkListButton();
         updateFavoriteFilterButton();
         updateCurrentPageBookmarkStatus();
@@ -4305,6 +4437,8 @@ showReaderConfirm(
       bookmarkKey,
       JSON.stringify(bookmarks)
     );
+
+    scheduleBookmarkCloudSave();
 
     updateBookmarkListButton();
     updateFavoriteFilterButton();
@@ -4429,7 +4563,12 @@ favorite.textContent = item.favorite ? "⭐" : "☆";
 favorite.addEventListener("click", () => {
   item.favorite = !item.favorite;
 
-  localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks));
+  localStorage.setItem(
+  bookmarkKey,
+  JSON.stringify(bookmarks)
+);
+
+  scheduleBookmarkCloudSave();
 
   updateFavoriteFilterButton();
 
@@ -4471,9 +4610,11 @@ edit.addEventListener("click", () => {
     bookmarkTitle;
 
   localStorage.setItem(
-        bookmarkKey,
-        JSON.stringify(bookmarks)
-      );
+  bookmarkKey,
+  JSON.stringify(bookmarks)
+);
+
+      scheduleBookmarkCloudSave();
 
       tampilkanBookmarks();
 
@@ -4509,6 +4650,8 @@ const hapus = document.createElement("button");
         bookmarkKey,
         JSON.stringify(bookmarks)
       );
+
+      scheduleBookmarkCloudSave();
 
       updateBookmarkListButton();
       updateFavoriteFilterButton();
