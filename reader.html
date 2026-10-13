@@ -3255,6 +3255,7 @@ const loginCancel =
   document.getElementById("reader-login-cancel");
 
 let bookmarkCloudReady = false;
+let readingProgressCloudReady = false;
   
 async function updateReaderAuthUI() {
   const {
@@ -3273,7 +3274,11 @@ async function updateReaderAuthUI() {
     await loadPresetsFromCloud();
 
     if (bookmarkCloudReady) {
-    await loadBookmarksFromCloud();
+      await loadBookmarksFromCloud();
+}
+
+    if (readingProgressCloudReady) {
+      await loadReadingProgressFromCloud();
 }
     
   } else {
@@ -3562,7 +3567,8 @@ updateBookmarkListButton();
 
 updateFavoriteFilterButton();
   
-const savedPage = parseInt(localStorage.getItem(readingKey), 10) || 1;
+let savedPage =
+  parseInt(localStorage.getItem(readingKey), 10) || 1;
   let soundEnabled = true;
 let audioCtx = null;
 
@@ -3598,7 +3604,6 @@ function updateCurrentPageBookmarkStatus(){
 }
 
 bookmarkCloudReady = true;
-updateReaderAuthUI();
   
 function playPageFlipSound() {
   if (!soundEnabled) return;
@@ -3638,6 +3643,140 @@ function playPageFlipSound() {
   return images;
 }
   let pageFlip = null;
+  
+  /* =========================================
+     READER PROGRESS CLOUD SYNC
+     ========================================= */
+
+async function saveReadingProgressToCloud() {
+
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (userError || !user) {
+    return;
+  }
+
+  const { error } = await db
+    .from("reader_progress")
+    .upsert(
+      {
+        user_id: user.id,
+        book_key: readingKey,
+        page_number: pageNum,
+        updated_at: new Date().toISOString()
+      },
+      {
+        onConflict: "user_id,book_key"
+      }
+    );
+
+  if (error) {
+    console.error(
+      "Gagal menyimpan progress baca ke cloud:",
+      error
+    );
+  }
+}
+
+
+let readingProgressCloudSaveTimer = null;
+
+function scheduleReadingProgressCloudSave() {
+
+  clearTimeout(
+    readingProgressCloudSaveTimer
+  );
+
+  readingProgressCloudSaveTimer =
+    setTimeout(() => {
+
+      saveReadingProgressToCloud();
+
+    }, 800);
+}
+
+
+async function loadReadingProgressFromCloud() {
+
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (userError || !user) {
+    return;
+  }
+
+  const { data, error } = await db
+    .from("reader_progress")
+    .select("page_number")
+    .eq("user_id", user.id)
+    .eq("book_key", readingKey)
+    .maybeSingle();
+
+  if (error) {
+
+    console.error(
+      "Gagal mengambil progress baca dari cloud:",
+      error
+    );
+
+    return;
+  }
+
+  if (data) {
+
+    const cloudPage =
+      Math.max(
+        1,
+        parseInt(data.page_number, 10) || 1
+      );
+
+    savedPage = cloudPage;
+    pageNum = cloudPage;
+
+    localStorage.setItem(
+      readingKey,
+      cloudPage
+    );
+
+    if (pageFlip && pdfDoc) {
+
+      const targetPage =
+        Math.min(
+          cloudPage,
+          pdfDoc.numPages
+        ) - 1;
+
+      pageFlip.flip(
+        targetPage,
+        "bottom"
+      );
+    }
+
+    updateCurrentPageBookmarkStatus();
+
+    return;
+  }
+
+
+  const localPage =
+    parseInt(
+      localStorage.getItem(readingKey),
+      10
+    ) || 1;
+
+  savedPage = localPage;
+  pageNum = localPage;
+
+  if (localPage > 1) {
+    await saveReadingProgressToCloud();
+  }
+}
+  
   const zoomKey = "readerZoom";
   const brightnessKey = "readerBrightness";
   let brightnessLevel =
@@ -4030,7 +4169,13 @@ pageFlip.on("flip", (e) => {
   const currentIndex = Number(e.data);
 
   pageNum = currentIndex + 1;
-  localStorage.setItem(readingKey, pageNum);
+
+  localStorage.setItem(
+    readingKey,
+    pageNum
+  );
+
+  scheduleReadingProgressCloudSave();
 
   updateReadingStatus(currentIndex);
 
@@ -5774,7 +5919,16 @@ openBookButton.addEventListener("click", async () => {
   openingScreen.style.display = "none";
   scheduleToolbarHide();
 });
-  loadPDF();
+  readingProgressCloudReady = true;
+
+async function initializeReader() {
+
+  await updateReaderAuthUI();
+
+  await loadPDF();
+}
+
+initializeReader();
 </script>
 </body>
   
