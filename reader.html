@@ -663,6 +663,29 @@ body{
   margin:5px 0;
 }
 
+/* =========================================
+   CURRENT BOOKMARK ROW HIGHLIGHT
+   ========================================= */
+
+.bookmark-row.current-page{
+  padding:6px;
+  border-radius:12px;
+
+  background:
+    rgba(245, 158, 11, 0.12);
+
+  outline:
+    2px solid rgba(245, 158, 11, 0.55);
+}
+
+body.dark .bookmark-row.current-page{
+  background:
+    rgba(251, 191, 36, 0.10);
+
+  outline:
+    2px solid rgba(251, 191, 36, 0.50);
+}
+
 .bookmark-row > button:first-child{
   flex:1;
   width:0;
@@ -4277,6 +4300,10 @@ const judul = bookmarkTitle ? " — " + bookmarkTitle : "";
 
   const row = document.createElement("div");
   row.className = "bookmark-row";
+
+  if (halaman === pageNum) {
+  row.classList.add("current-page");
+}
 
   const tombol = document.createElement("button");
   tombol.textContent = "🔖 Halaman " + halaman + judul;
