@@ -4490,6 +4490,24 @@ document.getElementById("bookmark-list")
 
   }
 
+  setTimeout(() => {
+
+    const currentRow =
+      document.querySelector(
+        "#bookmark-items .bookmark-row.current-page"
+      );
+
+    if (currentRow) {
+
+      currentRow.scrollIntoView({
+        behavior:"smooth",
+        block:"center"
+      });
+
+    }
+
+  }, 100);
+
 });
 
   document.getElementById("close-bookmarks").addEventListener("click", () => {
