@@ -307,6 +307,21 @@ main{
 .letter:active{
   transform:scale(.96);
 }
+
+/* =========================================
+   EMPTY A-Z STATE
+   ========================================= */
+
+.letter.empty{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+.letter.empty:hover,
+.letter.empty:active{
+  transform:none;
+}
+  
 #bookList{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -1833,6 +1848,12 @@ function updateJumlahBukuPerHuruf() {
         `${jumlah} buku`;
     }
 
+    /* Tandai huruf yang tidak memiliki buku */
+card.classList.toggle(
+  "empty",
+  jumlah === 0
+);
+
   });
 }
 
@@ -1926,6 +1947,17 @@ function tampilkanDaftarBuku(daftarBuku) {
 }
 
 function bukaKoleksi(huruf) {
+  const cardAktif =
+  document.querySelector(
+    `.letter[data-letter="${huruf}"]`
+  );
+
+if (
+  cardAktif &&
+  cardAktif.classList.contains("empty")
+) {
+  return;
+}
 
   filterHurufAktif = huruf;
 
