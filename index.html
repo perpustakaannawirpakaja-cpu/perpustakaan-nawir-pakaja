@@ -1789,7 +1789,7 @@ alphabet.forEach(huruf => {
   card.innerHTML = `
     <div class="icon">📖</div>
     <h3>${huruf}</h3>
-    <p>Koleksi huruf ${huruf}</p>
+    <p class="letter-count">0 buku</p>
   `;
 
   card.onclick = function(){
@@ -1799,6 +1799,42 @@ alphabet.forEach(huruf => {
   container.appendChild(card);
 
 });
+
+/* =========================================
+   UPDATE BOOK COUNT A-Z
+   ========================================= */
+
+function updateJumlahBukuPerHuruf() {
+
+  const cards =
+    document.querySelectorAll(".letter");
+
+  cards.forEach((card) => {
+
+    const huruf =
+      card.dataset.letter;
+
+    const jumlah =
+      semuaBuku.filter((buku) => {
+
+        const judul =
+          (buku.title || "")
+            .trim()
+            .toUpperCase();
+
+        return judul.startsWith(huruf);
+      }).length;
+
+    const countElement =
+      card.querySelector(".letter-count");
+
+    if (countElement) {
+      countElement.textContent =
+        `${jumlah} buku`;
+    }
+
+  });
+}
 
 /* =========================================
    RENDER BOOK LIST
@@ -2578,6 +2614,9 @@ async function tampilkanLanjutMembaca(books) {
 
 /* Simpan seluruh data buku untuk Smart Search */
 semuaBuku = data;
+
+/* Update jumlah buku pada kartu A-Z */
+updateJumlahBukuPerHuruf();
 
 /* Tampilkan buku yang terakhir dibaca */
 await tampilkanLanjutMembaca(semuaBuku);
