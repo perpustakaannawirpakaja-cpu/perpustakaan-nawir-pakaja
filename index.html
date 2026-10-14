@@ -337,6 +337,13 @@ main{
   color:var(--primary);
   font-weight:800;
 }
+
+#book-result-status{
+  margin:18px 0 6px;
+  color:var(--muted);
+  font-size:14px;
+  font-weight:600;
+}
   
 #bookList{
   display:grid;
@@ -1641,6 +1648,11 @@ body[data-ui-style="minimal"] .read-button:hover {
   </h2>
 
   <section class="alphabet" id="alphabet"></section>
+
+<div id="book-result-status">
+  Menampilkan 0 buku
+</div>
+
 <section id="bookList"></section>
   <div
   class="no-result"
@@ -1874,6 +1886,40 @@ card.classList.toggle(
 }
 
 /* =========================================
+   BOOK RESULT STATUS
+   ========================================= */
+
+function updateBookResultStatus(daftarBuku) {
+
+  const status =
+    document.getElementById("book-result-status");
+
+  if (!status) return;
+
+  const jumlahTampil =
+    daftarBuku ? daftarBuku.length : 0;
+
+  const jumlahTotal =
+    semuaBuku ? semuaBuku.length : 0;
+
+  const keyword =
+    document.getElementById("searchInput")
+      .value
+      .trim();
+
+  let tambahan = "";
+
+  if (filterHurufAktif) {
+    tambahan = ` • Filter: ${filterHurufAktif}`;
+  } else if (keyword) {
+    tambahan = ` • Pencarian: "${keyword}"`;
+  }
+
+  status.textContent =
+    `Menampilkan ${jumlahTampil} dari ${jumlahTotal} buku${tambahan}`;
+}
+  
+/* =========================================
    RENDER BOOK LIST
    ========================================= */
 
@@ -1886,6 +1932,8 @@ function tampilkanDaftarBuku(daftarBuku) {
     document.getElementById("noResult");
 
   bookList.innerHTML = "";
+
+  updateBookResultStatus(daftarBuku);
 
   if (
     !daftarBuku ||
