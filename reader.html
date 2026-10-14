@@ -3256,6 +3256,7 @@ const loginCancel =
 
 let bookmarkCloudReady = false;
 let readingProgressCloudReady = false;
+let readerSettingsCloudReady = false;
   
 async function updateReaderAuthUI() {
   const {
@@ -3279,6 +3280,10 @@ async function updateReaderAuthUI() {
 
     if (readingProgressCloudReady) {
       await loadReadingProgressFromCloud();
+}
+
+    if (readerSettingsCloudReady) {
+  await loadReaderSettingsFromCloud();
 }
     
   } else {
@@ -3852,6 +3857,9 @@ option.textContent = name + statusIcons;
 
 function markDisplayAsCustom() {
   localStorage.setItem(activePresetKey, "__CUSTOM__");
+
+  scheduleReaderSettingsCloudSave();
+  
   refreshPresetList();
 }
 
@@ -5130,6 +5138,7 @@ document.getElementById("reader-reset").addEventListener("click", () => {
   markDisplayAsCustom();
 });
 
+
 document.getElementById("preset-toggle").addEventListener("click", () => {
   const panel = document.getElementById("preset-panel");
   const presetList = document.getElementById("preset-list");
@@ -5144,9 +5153,11 @@ document.getElementById("preset-toggle").addEventListener("click", () => {
   }
 });
 
+
 function closePresetPanel() {
   document.getElementById("preset-panel").style.display = "none";
 }
+
 
 function closePresetPanelSoon() {
   setTimeout(() => {
@@ -5154,9 +5165,11 @@ function closePresetPanelSoon() {
   }, 2000);
 }
 
+
 document.getElementById("preset-close").addEventListener("click", () => {
   closePresetPanel();
 });
+
 
 document.getElementById("preset-save").addEventListener("click", () => {
   const nameInput = document.getElementById("preset-name");
@@ -5204,6 +5217,7 @@ document.getElementById("preset-save").addEventListener("click", () => {
   }, 1500);
 });
 
+
 document.getElementById("preset-load").addEventListener("click", () => {
   const presetList = document.getElementById("preset-list");
   const loadButton = document.getElementById("preset-load");
@@ -5241,13 +5255,14 @@ document.getElementById("preset-load").addEventListener("click", () => {
   localStorage.setItem(activePresetKey, name);
 
   schedulePresetCloudSave();
-  
+  scheduleReaderSettingsCloudSave();
+
   refreshPresetList();
   presetList.value = name;
   updatePresetSummary();
 
   loadButton.textContent = "✅ Preset Dipakai";
-  
+
   closePresetPanelSoon();
 
   setTimeout(() => {
@@ -5693,6 +5708,138 @@ applySavedBrightness();
   }
 }
 
+/* =========================================
+   READER SETTINGS CLOUD SYNC
+   ========================================= */
+
+async function saveReaderSettingsToCloud() {
+
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (userError || !user) {
+    return;
+  }
+
+  const { error } = await db
+    .from("reader_settings")
+    .upsert(
+      {
+        user_id: user.id,
+        reading_mode: readingMode,
+        zoom_level: zoomLevel,
+        brightness_level: brightnessLevel,
+        contrast_level: contrastLevel,
+        updated_at: new Date().toISOString()
+      },
+      {
+        onConflict: "user_id"
+      }
+    );
+
+  if (error) {
+    console.error(
+      "Gagal menyimpan pengaturan Reader ke cloud:",
+      error
+    );
+  }
+}
+
+
+let readerSettingsCloudSaveTimer = null;
+
+function scheduleReaderSettingsCloudSave() {
+
+  clearTimeout(
+    readerSettingsCloudSaveTimer
+  );
+
+  readerSettingsCloudSaveTimer =
+    setTimeout(() => {
+
+      saveReaderSettingsToCloud();
+
+    }, 800);
+}
+
+
+async function loadReaderSettingsFromCloud() {
+
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (userError || !user) {
+    return;
+  }
+
+  const { data, error } = await db
+    .from("reader_settings")
+    .select(
+      "reading_mode, zoom_level, brightness_level, contrast_level"
+    )
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+
+    console.error(
+      "Gagal mengambil pengaturan Reader dari cloud:",
+      error
+    );
+
+    return;
+  }
+
+  if (data) {
+
+    readingMode =
+      Number(data.reading_mode ?? 0);
+
+    zoomLevel =
+      Number(data.zoom_level ?? 1);
+
+    brightnessLevel =
+      Number(data.brightness_level ?? 100);
+
+    contrastLevel =
+      Number(data.contrast_level ?? 100);
+
+    localStorage.setItem(
+      readingModeKey,
+      readingMode
+    );
+
+    localStorage.setItem(
+      zoomKey,
+      zoomLevel
+    );
+
+    localStorage.setItem(
+      brightnessKey,
+      brightnessLevel
+    );
+
+    localStorage.setItem(
+      contrastKey,
+      contrastLevel
+    );
+
+    applySavedReadingMode();
+    applyZoom();
+    applySavedBrightness();
+    applySavedContrast();
+
+    return;
+  }
+
+
+  await saveReaderSettingsToCloud();
+}
+
 applySavedReadingMode();
   const defaultPresetName = localStorage.getItem(defaultPresetKey);
 
@@ -5920,6 +6067,7 @@ openBookButton.addEventListener("click", async () => {
   scheduleToolbarHide();
 });
   readingProgressCloudReady = true;
+readerSettingsCloudReady = true;
 
 async function initializeReader() {
 
