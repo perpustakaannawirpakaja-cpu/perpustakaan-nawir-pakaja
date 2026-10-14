@@ -1770,6 +1770,13 @@ const alphabet =
 const container =
 document.getElementById("alphabet");
 
+/* =========================================
+   SMART BOOK FILTER
+   ========================================= */
+
+let semuaBuku = [];
+let filterHurufAktif = "";
+
 alphabet.forEach(huruf => {
 
   const card =
@@ -1793,15 +1800,116 @@ alphabet.forEach(huruf => {
 
 });
 
+/* =========================================
+   RENDER BOOK LIST
+   ========================================= */
 
-function bukaKoleksi(huruf){
+function tampilkanDaftarBuku(daftarBuku) {
 
-  alert(
-    "Koleksi buku huruf " +
-    huruf +
-    " akan kita isi pada tahap berikutnya."
-  );
+  const bookList =
+    document.getElementById("bookList");
 
+  const noResult =
+    document.getElementById("noResult");
+
+  bookList.innerHTML = "";
+
+  if (
+    !daftarBuku ||
+    daftarBuku.length === 0
+  ) {
+
+    noResult.style.display = "block";
+    return;
+  }
+
+  noResult.style.display = "none";
+
+  daftarBuku.forEach((buku) => {
+
+    const card =
+      document.createElement("div");
+
+    card.className = "book-card";
+
+    card.innerHTML = `
+      ${
+        buku.cover_url
+          ? `
+            <img
+              class="book-cover"
+              src="${buku.cover_url}"
+              alt="Cover ${buku.title || "Buku"}"
+            >
+          `
+          : ""
+      }
+
+      <div class="book-info">
+
+        <h3>
+          ${buku.title || "Tanpa Judul"}
+        </h3>
+
+        <p>
+          Penulis:
+          ${buku.author || "-"}
+        </p>
+
+        <p>
+          Kategori:
+          ${buku.category || "-"}
+        </p>
+
+        <p>
+          ${buku.description || ""}
+        </p>
+
+        ${
+          buku.file_url
+            ? `
+              <a
+                class="read-button"
+                href="reader.html?file=${
+                  encodeURIComponent(
+                    buku.file_url
+                  )
+                }"
+              >
+                📖 Baca Buku
+              </a>
+            `
+            : ""
+        }
+
+      </div>
+    `;
+
+    bookList.appendChild(card);
+  });
+}
+
+function bukaKoleksi(huruf) {
+
+  filterHurufAktif = huruf;
+
+  const searchInput =
+    document.getElementById("searchInput");
+
+  searchInput.value = "";
+
+  const hasil =
+    semuaBuku.filter((buku) => {
+
+      const judul =
+        (buku.title || "")
+          .trim()
+          .toUpperCase();
+
+      return judul.startsWith(huruf);
+    });
+
+  tampilkanDaftarBuku(hasil);
 }
 
 
@@ -1812,49 +1920,49 @@ function cariKoleksi() {
       .getElementById("searchInput")
       .value
       .trim()
-      .toUpperCase();
+      .toLowerCase();
 
-  const cards =
-    document.querySelectorAll(".letter");
+  /* Saat mengetik Search,
+     filter huruf A-Z dibatalkan */
+  filterHurufAktif = "";
 
-  const noResult =
-    document.getElementById("noResult");
-
-  // Kalau pencarian kosong:
-  // tampilkan semua kartu dan sembunyikan pesan kosong.
   if (!keyword) {
 
-    cards.forEach(card => {
-      card.style.display = "block";
-    });
-
-    noResult.style.display = "none";
-
+    tampilkanDaftarBuku(semuaBuku);
     return;
   }
 
-  let ditemukan = false;
+  const hasil =
+    semuaBuku.filter((buku) => {
 
-  cards.forEach(card => {
+      const judul =
+        (buku.title || "")
+          .toLowerCase();
 
-    const cocok =
-      card.dataset.letter.includes(keyword);
+      const penulis =
+        (buku.author || "")
+          .toLowerCase();
 
-    card.style.display =
-      cocok ? "block" : "none";
+      const kategori =
+        (buku.category || "")
+          .toLowerCase();
 
-    if (cocok) {
-      ditemukan = true;
-    }
+      const deskripsi =
+        (buku.description || "")
+          .toLowerCase();
 
-  });
+      return (
+        judul.includes(keyword) ||
+        penulis.includes(keyword) ||
+        kategori.includes(keyword) ||
+        deskripsi.includes(keyword)
+      );
+    });
 
-  noResult.style.display =
-    ditemukan ? "none" : "block";
+  tampilkanDaftarBuku(hasil);
 }
   
-
-const tombolTema =
+  const tombolTema =
 document.querySelector(".theme-btn");
 const savedUiStyle =
   localStorage.getItem("uiStyle") || "glass";
@@ -2468,28 +2576,14 @@ async function tampilkanLanjutMembaca(books) {
   return;
 }
 
-bookList.innerHTML = "";
+/* Simpan seluruh data buku untuk Smart Search */
+semuaBuku = data;
 
 /* Tampilkan buku yang terakhir dibaca */
-await tampilkanLanjutMembaca(data);
+await tampilkanLanjutMembaca(semuaBuku);
 
-data.forEach((buku) => {
-    const card = document.createElement("div");
-    card.className = "book-card";
-
-    card.innerHTML = `
-    ${buku.cover_url ? `<img class="book-cover" src="${buku.cover_url}" alt="Cover ${buku.title || 'Buku'}">` : ""}
-    <div class="book-info">
-      <h3>${buku.title || "Tanpa Judul"}</h3>
-      <p>Penulis: ${buku.author || "-"}</p>
-      <p>Kategori: ${buku.category || "-"}</p>
-      <p>${buku.description || ""}</p>
-      ${buku.file_url ? `<a class="read-button" href="reader.html?file=${encodeURIComponent(buku.file_url)}">📖 Baca Buku</a>` : ""}
-      </div>
-    `;
-
-    bookList.appendChild(card);
-  });
+/* Tampilkan seluruh koleksi */
+tampilkanDaftarBuku(semuaBuku);
 }
 
 tampilkanBuku();
