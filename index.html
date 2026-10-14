@@ -265,17 +265,34 @@ main{
 
 .search{
   margin:20px 0;
+  position:relative;
 }
 
 .search input{
   width:100%;
-  padding:16px 18px;
+  padding:16px 58px 16px 18px;
   border:1px solid var(--border);
   border-radius:15px;
   background:var(--card);
   color:var(--text);
   font-size:16px;
   outline:none;
+}
+
+  #clear-search{
+  position:absolute;
+  top:50%;
+  right:12px;
+  transform:translateY(-50%);
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  background:var(--bg);
+  color:var(--muted);
+  font-size:18px;
+  display:none;
+  align-items:center;
+  justify-content:center;
 }
 
 .search input:focus{
@@ -1610,9 +1627,9 @@ body[data-ui-style="minimal"] .read-button:hover {
 
   <div class="search">
 
-    <input
-  type="search"
-  id="searchInput"
+  <input
+    type="search"
+    id="searchInput"
   name="library-search"
   placeholder="🔎 Cari berdasarkan abjad..."
   autocomplete="off"
@@ -1623,6 +1640,15 @@ body[data-ui-style="minimal"] .read-button:hover {
   onfocus="this.removeAttribute('readonly')"
   oninput="cariKoleksi()"
 >
+
+    <button
+  type="button"
+  id="clear-search"
+  onclick="hapusPencarian()"
+  aria-label="Hapus pencarian"
+>
+  ✕
+</button>
 
   </div>
 
@@ -2032,7 +2058,17 @@ if (
 
   filterHurufAktif = "";
 
-  document.getElementById("searchInput").value = "";
+  const searchInput =
+  document.getElementById("searchInput");
+
+searchInput.value = "";
+
+const clearButton =
+  document.getElementById("clear-search");
+
+if (clearButton) {
+  clearButton.style.display = "none";
+}
 
   tampilkanDaftarBuku(semuaBuku);
 
@@ -2057,6 +2093,13 @@ if (cardAktif) {
 
   searchInput.value = "";
 
+  const clearButton =
+  document.getElementById("clear-search");
+
+if (clearButton) {
+  clearButton.style.display = "none";
+}
+
   const hasil =
     semuaBuku.filter((buku) => {
 
@@ -2080,6 +2123,14 @@ function cariKoleksi() {
       .value
       .trim()
       .toLowerCase();
+  
+  const clearButton =
+    document.getElementById("clear-search");
+
+if (clearButton) {
+  clearButton.style.display =
+    keyword ? "flex" : "none";
+}
 
   /* Saat mengetik Search,
      filter huruf A-Z dibatalkan */
@@ -2126,6 +2177,33 @@ document
     });
 
   tampilkanDaftarBuku(hasil);
+}
+
+function hapusPencarian() {
+
+  const searchInput =
+    document.getElementById("searchInput");
+
+  const clearButton =
+    document.getElementById("clear-search");
+
+  searchInput.value = "";
+
+  if (clearButton) {
+    clearButton.style.display = "none";
+  }
+
+  filterHurufAktif = "";
+
+  document
+    .querySelectorAll(".letter")
+    .forEach((card) => {
+      card.classList.remove("active-letter");
+    });
+
+  tampilkanDaftarBuku(semuaBuku);
+
+  searchInput.focus();
 }
   
   const tombolTema =
