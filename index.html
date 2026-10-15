@@ -295,6 +295,31 @@ main{
   justify-content:center;
 }
 
+  .book-sort{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  margin:4px 0 18px;
+}
+
+.book-sort label{
+  color:var(--muted);
+  font-size:14px;
+  font-weight:600;
+}
+
+#book-sort-select{
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--card);
+  color:var(--text);
+  font-size:14px;
+  outline:none;
+  cursor:pointer;
+}
+
 .search input:focus{
   border-color:var(--primary);
   box-shadow:0 0 0 3px rgba(37,99,235,.15);
@@ -1652,9 +1677,27 @@ body[data-ui-style="minimal"] .read-button:hover {
 
   </div>
 
+  <div class="book-sort">
+
+  <label for="book-sort-select">
+    Urutkan:
+  </label>
+
+    <select
+  id="book-sort-select"
+  onchange="urutkanKoleksi()"
+>
+    <option value="az">Judul A–Z</option>
+    <option value="za">Judul Z–A</option>
+    <option value="newest">Terbaru</option>
+    <option value="oldest">Terlama</option>
+  </select>
+
+</div>
+
   <!-- =========================================
-     CONTINUE READING
-     ========================================= -->
+       CONTINUE READING
+       ========================================= -->
 
 <section
   id="continue-reading-section"
@@ -1957,6 +2000,38 @@ function tampilkanDaftarBuku(daftarBuku) {
   const noResult =
     document.getElementById("noResult");
 
+  const modeUrut =
+  document.getElementById("book-sort-select")
+    ?.value || "az";
+
+daftarBuku =
+  daftarBuku ? [...daftarBuku] : [];
+
+daftarBuku.sort((a, b) => {
+
+  if (modeUrut === "za") {
+    return (b.title || "")
+      .localeCompare(a.title || "");
+  }
+
+  if (modeUrut === "newest") {
+    return (
+      new Date(b.created_at || 0) -
+      new Date(a.created_at || 0)
+    );
+  }
+
+  if (modeUrut === "oldest") {
+    return (
+      new Date(a.created_at || 0) -
+      new Date(b.created_at || 0)
+    );
+  }
+
+  return (a.title || "")
+    .localeCompare(b.title || "");
+});
+
   bookList.innerHTML = "";
 
   updateBookResultStatus(daftarBuku);
@@ -2204,6 +2279,54 @@ function hapusPencarian() {
   tampilkanDaftarBuku(semuaBuku);
 
   searchInput.focus();
+}
+
+  function urutkanKoleksi() {
+
+  const keyword =
+    document
+      .getElementById("searchInput")
+      .value
+      .trim()
+      .toLowerCase();
+
+  let daftar = [...semuaBuku];
+
+  if (filterHurufAktif) {
+
+    daftar = daftar.filter((buku) =>
+      (buku.title || "")
+        .trim()
+        .toUpperCase()
+        .startsWith(filterHurufAktif)
+    );
+
+  } else if (keyword) {
+
+    daftar = daftar.filter((buku) => {
+
+      const judul =
+        (buku.title || "").toLowerCase();
+
+      const penulis =
+        (buku.author || "").toLowerCase();
+
+      const kategori =
+        (buku.category || "").toLowerCase();
+
+      const deskripsi =
+        (buku.description || "").toLowerCase();
+
+      return (
+        judul.includes(keyword) ||
+        penulis.includes(keyword) ||
+        kategori.includes(keyword) ||
+        deskripsi.includes(keyword)
+      );
+    });
+  }
+
+  tampilkanDaftarBuku(daftar);
 }
   
   const tombolTema =
