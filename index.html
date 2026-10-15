@@ -2095,6 +2095,23 @@ daftarBuku.sort((a, b) => {
         </p>
 
         <p>
+  Ditambahkan:
+  ${
+    buku.created_at
+      ? new Date(buku.created_at)
+          .toLocaleDateString(
+            "id-ID",
+            {
+              day: "2-digit",
+              month: "long",
+              year: "numeric"
+            }
+          )
+      : "-"
+  }
+</p>
+
+        <p>
           ${buku.description || ""}
         </p>
 
