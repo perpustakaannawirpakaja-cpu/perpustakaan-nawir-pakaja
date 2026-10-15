@@ -2030,29 +2030,37 @@ function updateJumlahBukuPerHuruf() {
   const cards =
     document.querySelectorAll(".letter");
 
-  cards.forEach((card) => {
+    cards.forEach((card) => {
 
-    const huruf =
-      card.dataset.letter;
+  const huruf =
+    card.dataset.letter;
 
-    const jumlah =
-      semuaBuku.filter((buku) => {
+  const sumberBuku =
+    filterKategoriAktif
+      ? semuaBuku.filter((buku) =>
+        (buku.category || "").trim() ===
+        filterKategoriAktif
+      )
+    : semuaBuku;
 
-        const judul =
-          (buku.title || "")
-            .trim()
-            .toUpperCase();
+  const jumlah =
+    sumberBuku.filter((buku) => {
 
-        return judul.startsWith(huruf);
-      }).length;
+  const judul =
+    (buku.title || "")
+      .trim()
+      .toUpperCase();
 
-    const countElement =
-      card.querySelector(".letter-count");
+      return judul.startsWith(huruf);
+    }).length;
 
-    if (countElement) {
-      countElement.textContent =
-        `${jumlah} buku`;
-    }
+  const countElement =
+    card.querySelector(".letter-count");
+
+  if (countElement) {
+    countElement.textContent =
+      `${jumlah} buku`;
+  }
 
     /* Tandai huruf yang tidak memiliki buku */
 card.classList.toggle(
@@ -2463,6 +2471,24 @@ function filterKategoriBuku() {
 
   filterKategoriAktif =
     select ? select.value : "";
+
+  updateJumlahBukuPerHuruf();
+
+  if (filterHurufAktif) {
+
+  const cardAktif =
+    document.querySelector(
+      `.letter[data-letter="${filterHurufAktif}"]`
+    );
+
+  if (
+    cardAktif &&
+    cardAktif.classList.contains("empty")
+  ) {
+    cardAktif.classList.remove("active-letter");
+    filterHurufAktif = "";
+  }
+}
 
   const keyword =
     document
