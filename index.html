@@ -406,6 +406,24 @@ main{
   margin-bottom:30px;
 }
 
+  /* =========================================
+   SMART BOOK RECOMMENDATIONS
+   ========================================= */
+
+#book-recommendation-list{
+  display:grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
+  margin-bottom:30px;
+}
+
+.recommendation-subtitle{
+  margin:-6px 0 16px;
+  color:var(--muted);
+  font-size:14px;
+}
+
 .book-card{
   background:var(--card);
   border:1px solid var(--border);
@@ -1721,6 +1739,27 @@ body[data-ui-style="minimal"] .read-button:hover {
   </h2>
 
   <div id="continue-reading-list"></div>
+
+</section>
+
+  <!-- =========================================
+     SMART BOOK RECOMMENDATIONS
+     ========================================= -->
+
+<section
+  id="book-recommendation-section"
+  style="display:none;"
+>
+
+  <h2 class="section-title">
+    ✨ Rekomendasi Untuk Anda
+  </h2>
+
+  <p class="recommendation-subtitle">
+    Berdasarkan buku yang pernah Anda baca
+  </p>
+
+  <div id="book-recommendation-list"></div>
 
 </section>
 
