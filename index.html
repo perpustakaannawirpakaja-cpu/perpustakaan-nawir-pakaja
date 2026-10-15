@@ -279,6 +279,13 @@ main{
   outline:none;
 }
 
+/* Sembunyikan tombol X bawaan input search */
+.search input[type="search"]::-webkit-search-cancel-button{
+  -webkit-appearance:none;
+  appearance:none;
+  display:none;
+}
+
   #clear-search{
   position:absolute;
   top:50%;
