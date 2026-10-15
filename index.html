@@ -2994,6 +2994,196 @@ async function tampilkanLanjutMembaca(books) {
 
   section.style.display = "block";
 }
+
+    /* =========================================
+   SMART BOOK RECOMMENDATIONS
+   ========================================= */
+
+async function tampilkanRekomendasiBuku(books) {
+
+  const section =
+    document.getElementById(
+      "book-recommendation-section"
+    );
+
+  const list =
+    document.getElementById(
+      "book-recommendation-list"
+    );
+
+  section.style.display = "none";
+  list.innerHTML = "";
+
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (userError || !user) {
+    return;
+  }
+
+  const {
+    data: progressData,
+    error: progressError
+  } = await db
+    .from("reader_progress")
+    .select(
+      "book_key, updated_at"
+    )
+    .eq("user_id", user.id)
+    .order(
+      "updated_at",
+      { ascending: false }
+    );
+
+  if (progressError) {
+    console.error(
+      "Gagal mengambil data rekomendasi:",
+      progressError
+    );
+
+    return;
+  }
+
+  if (
+    !progressData ||
+    progressData.length === 0
+  ) {
+    return;
+  }
+
+  const bukuDibaca =
+    progressData
+      .map((progress) => {
+
+        return books.find((item) => {
+
+          const key =
+            "lastPage:" +
+            encodeURIComponent(
+              item.file_url || ""
+            );
+
+          return key === progress.book_key;
+        });
+
+      })
+      .filter(Boolean);
+
+  if (bukuDibaca.length === 0) {
+    return;
+  }
+
+  const kategoriDibaca =
+    [
+      ...new Set(
+        bukuDibaca
+          .map((buku) =>
+            (buku.category || "").trim()
+          )
+          .filter(Boolean)
+      )
+    ];
+
+  if (kategoriDibaca.length === 0) {
+    return;
+  }
+
+  const bookKeysDibaca =
+    new Set(
+      progressData.map(
+        (progress) =>
+          progress.book_key
+      )
+    );
+
+  const rekomendasi =
+    books
+      .filter((buku) => {
+
+        const kategori =
+          (buku.category || "").trim();
+
+        const bookKey =
+          "lastPage:" +
+          encodeURIComponent(
+            buku.file_url || ""
+          );
+
+        return (
+          kategoriDibaca.includes(kategori) &&
+          !bookKeysDibaca.has(bookKey)
+        );
+
+      })
+      .slice(0, 4);
+
+  if (rekomendasi.length === 0) {
+    return;
+  }
+
+  rekomendasi.forEach((buku) => {
+
+    const card =
+      document.createElement("div");
+
+    card.className = "book-card";
+
+    card.innerHTML = `
+      ${
+        buku.cover_url
+          ? `
+            <img
+              class="book-cover"
+              src="${buku.cover_url}"
+              alt="Cover ${buku.title || "Buku"}"
+            >
+          `
+          : ""
+      }
+
+      <div class="book-info">
+
+        <h3>
+          ${buku.title || "Tanpa Judul"}
+        </h3>
+
+        <p>
+          Penulis:
+          ${buku.author || "-"}
+        </p>
+
+        <p>
+          Kategori:
+          ${buku.category || "-"}
+        </p>
+
+        ${
+          buku.file_url
+            ? `
+              <a
+                class="read-button"
+                href="reader.html?file=${
+                  encodeURIComponent(
+                    buku.file_url
+                  )
+                }"
+              >
+                📖 Baca Buku
+              </a>
+            `
+            : ""
+        }
+
+      </div>
+    `;
+
+    list.appendChild(card);
+  });
+
+  section.style.display = "block";
+}
     
     async function tampilkanBuku() {
   const { data, error } = await db
@@ -3022,6 +3212,9 @@ updateJumlahBukuPerHuruf();
 
 /* Tampilkan buku yang terakhir dibaca */
 await tampilkanLanjutMembaca(semuaBuku);
+
+/* Tampilkan rekomendasi buku */
+await tampilkanRekomendasiBuku(semuaBuku);
 
 /* Tampilkan seluruh koleksi */
 tampilkanDaftarBuku(semuaBuku);
