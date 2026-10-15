@@ -2283,6 +2283,16 @@ function hapusPencarian() {
 
   function urutkanKoleksi() {
 
+  const bookSortSelect =
+    document.getElementById("book-sort-select");
+
+if (bookSortSelect) {
+  localStorage.setItem(
+    "bookSortMode",
+    bookSortSelect.value
+  );
+}
+
   const keyword =
     document
       .getElementById("searchInput")
@@ -2954,6 +2964,23 @@ await tampilkanLanjutMembaca(semuaBuku);
 
 /* Tampilkan seluruh koleksi */
 tampilkanDaftarBuku(semuaBuku);
+}
+
+    const savedBookSortMode =
+  localStorage.getItem("bookSortMode");
+
+const savedBookSortSelect =
+  document.getElementById("book-sort-select");
+
+const allowedBookSortModes =
+  ["az", "za", "newest", "oldest"];
+
+if (
+  savedBookSortSelect &&
+  allowedBookSortModes.includes(savedBookSortMode)
+) {
+  savedBookSortSelect.value =
+    savedBookSortMode;
 }
 
 tampilkanBuku();
