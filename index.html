@@ -320,6 +320,35 @@ main{
   cursor:pointer;
 }
 
+  /* =========================================
+   BOOK CATEGORY FILTER
+   ========================================= */
+
+.book-category-filter{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  margin:4px 0 18px;
+}
+
+.book-category-filter label{
+  color:var(--muted);
+  font-size:14px;
+  font-weight:600;
+}
+
+#book-category-select{
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--card);
+  color:var(--text);
+  font-size:14px;
+  outline:none;
+  cursor:pointer;
+}
+
 .search input:focus{
   border-color:var(--primary);
   box-shadow:0 0 0 3px rgba(37,99,235,.15);
@@ -1726,6 +1755,27 @@ body[data-ui-style="minimal"] .read-button:hover {
 </div>
 
   <!-- =========================================
+     BOOK CATEGORY FILTER
+     ========================================= -->
+
+<div class="book-category-filter">
+
+  <label for="book-category-select">
+    Kategori:
+  </label>
+
+  <select
+    id="book-category-select"
+    onchange="filterKategoriBuku()"
+  >
+    <option value="">
+      Semua Kategori
+    </option>
+  </select>
+
+</div>
+
+  <!-- =========================================
        CONTINUE READING
        ========================================= -->
 
@@ -1939,6 +1989,7 @@ document.getElementById("alphabet");
 
 let semuaBuku = [];
 let filterHurufAktif = "";
+let filterKategoriAktif = "";
 
 alphabet.forEach(huruf => {
 
@@ -2006,6 +2057,52 @@ card.classList.toggle(
 }
 
 /* =========================================
+   UPDATE BOOK CATEGORY FILTER
+   ========================================= */
+
+function updateKategoriBuku() {
+
+  const select =
+    document.getElementById(
+      "book-category-select"
+    );
+
+  if (!select) return;
+
+  const kategori =
+    [
+      ...new Set(
+        semuaBuku
+          .map((buku) =>
+            (buku.category || "").trim()
+          )
+          .filter(Boolean)
+      )
+    ]
+      .sort((a, b) =>
+        a.localeCompare(b)
+      );
+
+  select.innerHTML = `
+    <option value="">
+      Semua Kategori
+    </option>
+  `;
+
+  kategori.forEach((namaKategori) => {
+
+    const option =
+      document.createElement("option");
+
+    option.value = namaKategori;
+    option.textContent = namaKategori;
+
+    select.appendChild(option);
+  });
+
+}
+
+/* =========================================
    BOOK RESULT STATUS
    ========================================= */
 
@@ -2040,11 +2137,20 @@ const labelUrut = {
 
   let tambahan = "";
 
-  if (filterHurufAktif) {
-    tambahan = ` • Filter: ${filterHurufAktif}`;
-  } else if (keyword) {
-    tambahan = ` • Pencarian: "${keyword}"`;
-  }
+if (filterHurufAktif) {
+  tambahan +=
+    ` • Filter: ${filterHurufAktif}`;
+}
+
+if (keyword) {
+  tambahan +=
+    ` • Pencarian: "${keyword}"`;
+}
+
+if (filterKategoriAktif) {
+  tambahan +=
+    ` • Kategori: ${filterKategoriAktif}`;
+}
 
   status.textContent =
   `Menampilkan ${jumlahTampil} dari ${jumlahTotal} buku${tambahan} • Urut: ${labelUrut[modeUrut]}`;
@@ -2245,7 +2351,7 @@ if (clearButton) {
   clearButton.style.display = "none";
 }
 
-  tampilkanDaftarBuku(semuaBuku);
+  filterKategoriBuku();
 
   return;
 }
@@ -2275,18 +2381,7 @@ if (clearButton) {
   clearButton.style.display = "none";
 }
 
-  const hasil =
-    semuaBuku.filter((buku) => {
-
-      const judul =
-        (buku.title || "")
-          .trim()
-          .toUpperCase();
-
-      return judul.startsWith(huruf);
-    });
-
-  tampilkanDaftarBuku(hasil);
+  filterKategoriBuku();
 }
 
 
@@ -2318,40 +2413,7 @@ document
     card.classList.remove("active-letter");
   });
 
-  if (!keyword) {
-
-    tampilkanDaftarBuku(semuaBuku);
-    return;
-  }
-
-  const hasil =
-    semuaBuku.filter((buku) => {
-
-      const judul =
-        (buku.title || "")
-          .toLowerCase();
-
-      const penulis =
-        (buku.author || "")
-          .toLowerCase();
-
-      const kategori =
-        (buku.category || "")
-          .toLowerCase();
-
-      const deskripsi =
-        (buku.description || "")
-          .toLowerCase();
-
-      return (
-        judul.includes(keyword) ||
-        penulis.includes(keyword) ||
-        kategori.includes(keyword) ||
-        deskripsi.includes(keyword)
-      );
-    });
-
-  tampilkanDaftarBuku(hasil);
+filterKategoriBuku();
 }
 
 function hapusPencarian() {
@@ -2376,22 +2438,24 @@ function hapusPencarian() {
       card.classList.remove("active-letter");
     });
 
-  tampilkanDaftarBuku(semuaBuku);
+  filterKategoriBuku();
 
   searchInput.focus();
 }
 
-  function urutkanKoleksi() {
+/* =========================================
+   FILTER BOOK CATEGORY
+   ========================================= */
 
-  const bookSortSelect =
-    document.getElementById("book-sort-select");
+function filterKategoriBuku() {
 
-if (bookSortSelect) {
-  localStorage.setItem(
-    "bookSortMode",
-    bookSortSelect.value
-  );
-}
+  const select =
+    document.getElementById(
+      "book-category-select"
+    );
+
+  filterKategoriAktif =
+    select ? select.value : "";
 
   const keyword =
     document
@@ -2402,6 +2466,7 @@ if (bookSortSelect) {
 
   let daftar = [...semuaBuku];
 
+  /* Pertahankan filter A-Z jika aktif */
   if (filterHurufAktif) {
 
     daftar = daftar.filter((buku) =>
@@ -2410,8 +2475,10 @@ if (bookSortSelect) {
         .toUpperCase()
         .startsWith(filterHurufAktif)
     );
+  }
 
-  } else if (keyword) {
+  /* Pertahankan Smart Search jika aktif */
+  if (keyword) {
 
     daftar = daftar.filter((buku) => {
 
@@ -2436,7 +2503,31 @@ if (bookSortSelect) {
     });
   }
 
+  /* Terapkan kategori */
+  if (filterKategoriAktif) {
+
+    daftar = daftar.filter((buku) =>
+      (buku.category || "").trim() ===
+      filterKategoriAktif
+    );
+  }
+
   tampilkanDaftarBuku(daftar);
+}
+
+  function urutkanKoleksi() {
+
+  const bookSortSelect =
+    document.getElementById("book-sort-select");
+
+if (bookSortSelect) {
+  localStorage.setItem(
+    "bookSortMode",
+    bookSortSelect.value
+  );
+}
+
+  filterKategoriBuku();
 }
   
   const tombolTema =
@@ -3248,6 +3339,9 @@ semuaBuku = data;
 
 /* Update jumlah buku pada kartu A-Z */
 updateJumlahBukuPerHuruf();
+
+/* Update pilihan kategori */
+updateKategoriBuku();
 
 /* Tampilkan buku yang terakhir dibaca */
 await tampilkanLanjutMembaca(semuaBuku);
