@@ -422,6 +422,18 @@ align-items:flex-start;
   margin-bottom:14px;
 }
 
+  .book-new-badge{
+  display:inline-block;
+  margin-left:8px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#16a34a;
+  color:#ffffff;
+  font-size:11px;
+  font-weight:800;
+  vertical-align:middle;
+}
+
 .book-card p{
   margin:8px 0;
 }
@@ -2060,6 +2072,21 @@ daftarBuku.sort((a, b) => {
 
   daftarBuku.forEach((buku) => {
 
+    const waktuDibuat =
+  buku.created_at
+    ? new Date(buku.created_at)
+    : null;
+
+const batasBukuBaru =
+  30 * 24 * 60 * 60 * 1000;
+
+const isBukuBaru =
+  waktuDibuat &&
+  (
+    Date.now() -
+    waktuDibuat.getTime()
+  ) <= batasBukuBaru;
+    
     const card =
       document.createElement("div");
 
@@ -2081,8 +2108,14 @@ daftarBuku.sort((a, b) => {
       <div class="book-info">
 
         <h3>
-          ${buku.title || "Tanpa Judul"}
-        </h3>
+  ${buku.title || "Tanpa Judul"}
+
+  ${
+    isBukuBaru
+      ? `<span class="book-new-badge">BARU</span>`
+      : ""
+  }
+</h3>
 
         <p>
           Penulis:
