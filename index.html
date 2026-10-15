@@ -1976,6 +1976,17 @@ function updateBookResultStatus(daftarBuku) {
       .value
       .trim();
 
+  const modeUrut =
+    document.getElementById("book-sort-select")
+      ?.value || "az";
+
+const labelUrut = {
+  az: "Judul A–Z",
+  za: "Judul Z–A",
+  newest: "Terbaru",
+  oldest: "Terlama"
+};
+
   let tambahan = "";
 
   if (filterHurufAktif) {
@@ -1985,7 +1996,7 @@ function updateBookResultStatus(daftarBuku) {
   }
 
   status.textContent =
-    `Menampilkan ${jumlahTampil} dari ${jumlahTotal} buku${tambahan}`;
+  `Menampilkan ${jumlahTampil} dari ${jumlahTotal} buku${tambahan} • Urut: ${labelUrut[modeUrut]}`;
 }
   
 /* =========================================
