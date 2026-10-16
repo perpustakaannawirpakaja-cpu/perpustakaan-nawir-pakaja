@@ -2106,14 +2106,22 @@ function updateKategoriBuku() {
 
   kategori.forEach((namaKategori) => {
 
-    const option =
-      document.createElement("option");
+  const option =
+    document.createElement("option");
 
-    option.value = namaKategori;
-    option.textContent = namaKategori;
+  const jumlahBukuKategori =
+    semuaBuku.filter((buku) =>
+      (buku.category || "").trim() ===
+      namaKategori
+    ).length;
 
-    select.appendChild(option);
-  });
+  option.value = namaKategori;
+
+  option.textContent =
+    `${namaKategori} (${jumlahBukuKategori} buku)`;
+
+  select.appendChild(option);
+});
 
 }
 
