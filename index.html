@@ -2490,7 +2490,15 @@ if (
 ) {
   cardAktif.classList.remove("active-letter");
 
-  filterHurufAktif = "";
+filterHurufAktif = "";
+
+localStorage.removeItem(
+  "bookLetterFilter"
+);
+
+  localStorage.removeItem(
+  "bookLetterFilter"
+);
 
   const searchInput =
   document.getElementById("searchInput");
@@ -2521,6 +2529,11 @@ if (cardAktif) {
 }
 
   filterHurufAktif = huruf;
+
+  localStorage.setItem(
+  "bookLetterFilter",
+  huruf
+);
 
   const searchInput =
     document.getElementById("searchInput");
@@ -2559,6 +2572,10 @@ if (clearButton) {
      filter huruf A-Z dibatalkan */
   filterHurufAktif = "";
 
+localStorage.removeItem(
+  "bookLetterFilter"
+);
+
   /* Hapus highlight A-Z saat Smart Search digunakan */
 document
   .querySelectorAll(".letter")
@@ -2584,6 +2601,10 @@ function hapusPencarian() {
   }
 
   filterHurufAktif = "";
+
+  localStorage.removeItem(
+  "bookLetterFilter"
+);
 
   document
     .querySelectorAll(".letter")
@@ -2627,7 +2648,12 @@ function resetSemuaFilterBuku() {
   }
 
   filterHurufAktif = "";
-  filterKategoriAktif = "";
+
+localStorage.removeItem(
+  "bookLetterFilter"
+);
+
+filterKategoriAktif = "";
 
   document
     .querySelectorAll(".letter")
@@ -2833,6 +2859,10 @@ if (filterHurufAktif) {
     () => {
 
       filterHurufAktif = "";
+
+      localStorage.removeItem(
+        "bookLetterFilter"
+);
 
       document
         .querySelectorAll(".letter")
