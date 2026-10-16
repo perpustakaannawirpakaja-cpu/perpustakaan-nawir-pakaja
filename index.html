@@ -443,6 +443,21 @@ transition:
   transform:translateY(0);
 }
 
+.active-filter-chip::after{
+  content:"✕";
+
+  margin-left:4px;
+
+  font-size:11px;
+  font-weight:800;
+
+  opacity:.65;
+}
+
+.active-filter-chip:hover::after{
+  opacity:1;
+}
+
 .active-book-filters:empty{
   display:none;
 }
@@ -2742,27 +2757,32 @@ function updateActiveFilterChips() {
     const chip =
       document.createElement("span");
 
-    chip.className =
+  chip.className =
       "active-filter-chip";
 
-    chip.textContent = teks;
+  chip.textContent = teks;
 
-    chip.setAttribute(
+  chip.setAttribute(
+      "aria-label",
+      `Hapus filter ${teks}`
+  );
+
+  chip.setAttribute(
       "role",
       "button"
-    );
+  );
 
-    chip.setAttribute(
+  chip.setAttribute(
       "tabindex",
       "0"
-    );
+  );
 
-    chip.addEventListener(
+  chip.addEventListener(
       "click",
       onClick
-    );
+  );
 
-    chip.addEventListener(
+  chip.addEventListener(
       "keydown",
       (event) => {
         if (
@@ -2773,7 +2793,7 @@ function updateActiveFilterChips() {
           onClick();
         }
       }
-    );
+  );
 
     container.appendChild(chip);
   };
