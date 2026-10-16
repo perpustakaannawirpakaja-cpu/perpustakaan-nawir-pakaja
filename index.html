@@ -356,6 +356,32 @@ main{
   cursor:pointer;
 }
 
+/* =========================================
+   RESET BOOK FILTERS
+   ========================================= */
+
+.book-filter-reset{
+  display:flex;
+  justify-content:flex-end;
+  margin:-6px 0 18px;
+}
+
+#reset-book-filters{
+  padding:10px 14px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--card);
+  color:var(--text);
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+#reset-book-filters:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+}
+
 .search input:focus{
   border-color:var(--primary);
   box-shadow:0 0 0 3px rgba(37,99,235,.15);
@@ -1782,6 +1808,20 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 </div>
 
+<!-- =========================================
+     RESET BOOK FILTERS
+     ========================================= -->
+
+<div class="book-filter-reset">
+  <button
+    type="button"
+    id="reset-book-filters"
+    onclick="resetSemuaFilterBuku()"
+  >
+    ↺ Reset Semua Filter
+  </button>
+</div>
+
   <!-- =========================================
        CONTINUE READING
        ========================================= -->
@@ -2464,6 +2504,64 @@ function hapusPencarian() {
   filterKategoriBuku();
 
   searchInput.focus();
+}
+
+/* =========================================
+   RESET ALL BOOK FILTERS
+   ========================================= */
+
+function resetSemuaFilterBuku() {
+
+  const searchInput =
+    document.getElementById("searchInput");
+
+  const clearButton =
+    document.getElementById("clear-search");
+
+  const categorySelect =
+    document.getElementById(
+      "book-category-select"
+    );
+
+  const sortSelect =
+    document.getElementById(
+      "book-sort-select"
+    );
+
+  if (searchInput) {
+    searchInput.value = "";
+  }
+
+  if (clearButton) {
+    clearButton.style.display = "none";
+  }
+
+  filterHurufAktif = "";
+  filterKategoriAktif = "";
+
+  document
+    .querySelectorAll(".letter")
+    .forEach((card) => {
+      card.classList.remove("active-letter");
+    });
+
+  if (categorySelect) {
+    categorySelect.value = "";
+  }
+
+  if (sortSelect) {
+    sortSelect.value = "az";
+  }
+
+  localStorage.removeItem(
+    "bookCategoryFilter"
+  );
+
+  localStorage.removeItem(
+    "bookSortMode"
+  );
+
+  filterKategoriBuku();
 }
 
 /* =========================================
