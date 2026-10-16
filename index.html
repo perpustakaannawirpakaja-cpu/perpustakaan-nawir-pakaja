@@ -3877,6 +3877,30 @@ if (
     savedBookCategorySelect.value;
 }
 
+const savedBookLetter =
+  localStorage.getItem(
+    "bookLetterFilter"
+  );
+
+if (savedBookLetter) {
+  filterHurufAktif =
+    savedBookLetter;
+
+  const savedLetterCard =
+    document.querySelector(
+      `.letter[data-letter="${savedBookLetter}"]`
+    );
+
+  if (
+    savedLetterCard &&
+    !savedLetterCard.classList.contains("empty")
+  ) {
+    savedLetterCard.classList.add(
+      "active-letter"
+    );
+  }
+}
+
 /* Tampilkan buku yang terakhir dibaca */
 await tampilkanLanjutMembaca(semuaBuku);
 
