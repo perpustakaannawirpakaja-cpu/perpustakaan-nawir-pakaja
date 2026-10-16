@@ -382,6 +382,20 @@ main{
   color:var(--primary);
 }
 
+#reset-book-filters:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+  border-color:var(--border);
+  color:var(--muted);
+}
+
+#reset-book-filters.active{
+  border-color:var(--primary);
+  color:var(--primary);
+  box-shadow:
+    0 0 0 3px rgba(37,99,235,.12);
+}
+
 .search input:focus{
   border-color:var(--primary);
   box-shadow:0 0 0 3px rgba(37,99,235,.15);
@@ -2565,6 +2579,58 @@ function resetSemuaFilterBuku() {
 }
 
 /* =========================================
+   UPDATE RESET FILTER BUTTON
+   ========================================= */
+
+function updateResetFilterButton() {
+
+  const resetButton =
+    document.getElementById(
+      "reset-book-filters"
+    );
+
+  const searchInput =
+    document.getElementById(
+      "searchInput"
+    );
+
+  const sortSelect =
+    document.getElementById(
+      "book-sort-select"
+    );
+
+  if (!resetButton) return;
+
+  const adaSearch =
+    searchInput &&
+    searchInput.value.trim() !== "";
+
+  const adaHuruf =
+    filterHurufAktif !== "";
+
+  const adaKategori =
+    filterKategoriAktif !== "";
+
+  const adaSort =
+    sortSelect &&
+    sortSelect.value !== "az";
+
+  const adaFilterAktif =
+    adaSearch ||
+    adaHuruf ||
+    adaKategori ||
+    adaSort;
+
+  resetButton.disabled =
+    !adaFilterAktif;
+
+  resetButton.classList.toggle(
+    "active",
+    adaFilterAktif
+  );
+}
+
+/* =========================================
    FILTER BOOK CATEGORY
    ========================================= */
 
@@ -2657,6 +2723,8 @@ function filterKategoriBuku() {
   }
 
   tampilkanDaftarBuku(daftar);
+
+  updateResetFilterButton();
 }
 
   function urutkanKoleksi() {
