@@ -424,6 +424,23 @@ main{
 
   font-size:13px;
   font-weight:600;
+
+  cursor:pointer;
+
+transition:
+  border-color .2s ease,
+  color .2s ease,
+  transform .2s ease;
+}
+
+.active-filter-chip:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+  transform:translateY(-1px);
+}
+
+.active-filter-chip:active{
+  transform:translateY(0);
 }
 
 .active-book-filters:empty{
@@ -2719,7 +2736,8 @@ function updateActiveFilterChips() {
       ? searchInput.value.trim()
       : "";
 
-  const tambahChip = (teks) => {
+  const tambahChip =
+  (teks, onClick) => {
 
     const chip =
       document.createElement("span");
@@ -2729,42 +2747,139 @@ function updateActiveFilterChips() {
 
     chip.textContent = teks;
 
+    chip.setAttribute(
+      "role",
+      "button"
+    );
+
+    chip.setAttribute(
+      "tabindex",
+      "0"
+    );
+
+    chip.addEventListener(
+      "click",
+      onClick
+    );
+
+    chip.addEventListener(
+      "keydown",
+      (event) => {
+        if (
+          event.key === "Enter" ||
+          event.key === " "
+        ) {
+          event.preventDefault();
+          onClick();
+        }
+      }
+    );
+
     container.appendChild(chip);
   };
 
-  if (keyword) {
-    tambahChip(
-      `🔎 Pencarian: ${keyword}`
-    );
-  }
+if (keyword) {
+  tambahChip(
+    `🔎 Pencarian: ${keyword}`,
+    () => {
 
-  if (filterHurufAktif) {
-    tambahChip(
-      `🔤 Huruf: ${filterHurufAktif}`
-    );
-  }
+      const searchInput =
+        document.getElementById(
+          "searchInput"
+        );
 
-  if (filterKategoriAktif) {
-    tambahChip(
-      `🏷️ ${filterKategoriAktif}`
-    );
-  }
+      const clearButton =
+        document.getElementById(
+          "clear-search"
+        );
 
-  if (
-    sortSelect &&
-    sortSelect.value !== "az"
-  ) {
+      if (searchInput) {
+        searchInput.value = "";
+      }
 
-    const labelUrut = {
-      za: "Judul Z–A",
-      newest: "Terbaru",
-      oldest: "Terlama"
-    };
+      if (clearButton) {
+        clearButton.style.display =
+          "none";
+      }
 
-    tambahChip(
-      `↕️ ${labelUrut[sortSelect.value]}`
-    );
-  }
+      filterKategoriBuku();
+    }
+  );
+}
+
+if (filterHurufAktif) {
+  tambahChip(
+    `🔤 Huruf: ${filterHurufAktif}`,
+    () => {
+
+      filterHurufAktif = "";
+
+      document
+        .querySelectorAll(".letter")
+        .forEach((card) => {
+          card.classList.remove(
+            "active-letter"
+          );
+        });
+
+      filterKategoriBuku();
+    }
+  );
+}
+
+if (filterKategoriAktif) {
+  tambahChip(
+    `🏷️ ${filterKategoriAktif}`,
+    () => {
+
+      const categorySelect =
+        document.getElementById(
+          "book-category-select"
+        );
+
+      filterKategoriAktif = "";
+
+      if (categorySelect) {
+        categorySelect.value = "";
+      }
+
+      localStorage.setItem(
+        "bookCategoryFilter",
+        ""
+      );
+
+      filterKategoriBuku();
+    }
+  );
+}
+
+if (
+  sortSelect &&
+  sortSelect.value !== "az"
+) {
+
+  const labelUrut = {
+    za: "Judul Z–A",
+    newest: "Terbaru",
+    oldest: "Terlama"
+  };
+
+  tambahChip(
+    `↕️ ${labelUrut[sortSelect.value]}`,
+    () => {
+
+      sortSelect.value = "az";
+
+      localStorage.setItem(
+        "bookSortMode",
+        "az"
+      );
+
+      filterKategoriBuku();
+    }
+  );
+}
+}
 }
 
 /* =========================================
