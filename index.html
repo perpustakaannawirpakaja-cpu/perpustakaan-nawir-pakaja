@@ -2472,6 +2472,11 @@ function filterKategoriBuku() {
   filterKategoriAktif =
     select ? select.value : "";
 
+  localStorage.setItem(
+  "bookCategoryFilter",
+  filterKategoriAktif
+);
+
   updateJumlahBukuPerHuruf();
 
   if (filterHurufAktif) {
@@ -3376,14 +3381,35 @@ updateJumlahBukuPerHuruf();
 /* Update pilihan kategori */
 updateKategoriBuku();
 
+const savedBookCategory =
+  localStorage.getItem(
+    "bookCategoryFilter"
+  );
+
+const savedBookCategorySelect =
+  document.getElementById(
+    "book-category-select"
+  );
+
+if (
+  savedBookCategorySelect &&
+  savedBookCategory
+) {
+  savedBookCategorySelect.value =
+    savedBookCategory;
+
+  filterKategoriAktif =
+    savedBookCategorySelect.value;
+}
+
 /* Tampilkan buku yang terakhir dibaca */
 await tampilkanLanjutMembaca(semuaBuku);
 
 /* Tampilkan rekomendasi buku */
 await tampilkanRekomendasiBuku(semuaBuku);
 
-/* Tampilkan seluruh koleksi */
-tampilkanDaftarBuku(semuaBuku);
+/* Tampilkan koleksi sesuai filter tersimpan */
+filterKategoriBuku();
 }
 
     const savedBookSortMode =
