@@ -396,6 +396,40 @@ main{
     0 0 0 3px rgba(37,99,235,.12);
 }
 
+/* =========================================
+   ACTIVE BOOK FILTER CHIPS
+   ========================================= */
+
+.active-book-filters{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:-6px 0 18px;
+}
+
+.active-filter-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+
+  padding:7px 10px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:999px;
+
+  background:var(--card);
+  color:var(--text);
+
+  font-size:13px;
+  font-weight:600;
+}
+
+.active-book-filters:empty{
+  display:none;
+}
+
 .search input:focus{
   border-color:var(--primary);
   box-shadow:0 0 0 3px rgba(37,99,235,.15);
@@ -1836,6 +1870,16 @@ body[data-ui-style="minimal"] .read-button:hover {
   </button>
 </div>
 
+<!-- =========================================
+     ACTIVE BOOK FILTER CHIPS
+     ========================================= -->
+
+<div
+  id="active-book-filters"
+  class="active-book-filters"
+  aria-live="polite"
+></div>
+
   <!-- =========================================
        CONTINUE READING
        ========================================= -->
@@ -2641,6 +2685,86 @@ resetButton.disabled =
     "active",
     adaFilterAktif
   );
+
+updateActiveFilterChips();
+}
+
+/* =========================================
+   UPDATE ACTIVE BOOK FILTER CHIPS
+   ========================================= */
+
+function updateActiveFilterChips() {
+
+  const container =
+    document.getElementById(
+      "active-book-filters"
+    );
+
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const searchInput =
+    document.getElementById(
+      "searchInput"
+    );
+
+  const sortSelect =
+    document.getElementById(
+      "book-sort-select"
+    );
+
+  const keyword =
+    searchInput
+      ? searchInput.value.trim()
+      : "";
+
+  const tambahChip = (teks) => {
+
+    const chip =
+      document.createElement("span");
+
+    chip.className =
+      "active-filter-chip";
+
+    chip.textContent = teks;
+
+    container.appendChild(chip);
+  };
+
+  if (keyword) {
+    tambahChip(
+      `🔎 Pencarian: ${keyword}`
+    );
+  }
+
+  if (filterHurufAktif) {
+    tambahChip(
+      `🔤 Huruf: ${filterHurufAktif}`
+    );
+  }
+
+  if (filterKategoriAktif) {
+    tambahChip(
+      `🏷️ ${filterKategoriAktif}`
+    );
+  }
+
+  if (
+    sortSelect &&
+    sortSelect.value !== "az"
+  ) {
+
+    const labelUrut = {
+      za: "Judul Z–A",
+      newest: "Terbaru",
+      oldest: "Terlama"
+    };
+
+    tambahChip(
+      `↕️ ${labelUrut[sortSelect.value]}`
+    );
+  }
 }
 
 /* =========================================
