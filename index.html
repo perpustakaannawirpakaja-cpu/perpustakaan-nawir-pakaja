@@ -2616,13 +2616,26 @@ function updateResetFilterButton() {
     sortSelect.value !== "az";
 
   const adaFilterAktif =
-    adaSearch ||
-    adaHuruf ||
-    adaKategori ||
-    adaSort;
+  adaSearch ||
+  adaHuruf ||
+  adaKategori ||
+  adaSort;
 
-  resetButton.disabled =
-    !adaFilterAktif;
+const jumlahFilterAktif =
+  [
+    adaSearch,
+    adaHuruf,
+    adaKategori,
+    adaSort
+  ].filter(Boolean).length;
+
+resetButton.textContent =
+  adaFilterAktif
+    ? `↺ Reset Semua Filter (${jumlahFilterAktif})`
+    : "↺ Reset Semua Filter";
+
+resetButton.disabled =
+  !adaFilterAktif;
 
   resetButton.classList.toggle(
     "active",
