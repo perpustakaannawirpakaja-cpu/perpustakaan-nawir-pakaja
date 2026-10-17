@@ -3771,23 +3771,29 @@ async function simpanEditBuku(event) {
   saveButton.textContent =
     "⏳ Menyimpan...";
 
-  const {
-    error
-  } = await db
-    .from("books")
-    .update({
-      title,
-      author: author || null,
-      category: category || null,
-      description: description || null
-    })
-    .eq("id", bookId);
+const {
+  data: updatedBook,
+  error
+} = await db
+  .from("books")
+  .update({
+    title,
+    author: author || null,
+    category: category || null,
+    description: description || null
+  })
+  .eq("id", bookId)
+  .select("id")
+  .maybeSingle();
 
   saveButton.disabled = false;
   saveButton.textContent =
     "💾 Simpan Perubahan";
 
-  if (error) {
+  if (
+  error ||
+  !updatedBook
+) {
 
     editMessage.textContent =
       "❌ Gagal menyimpan perubahan.";
