@@ -1988,43 +1988,53 @@ body[data-ui-style="minimal"] .read-button:hover {
       Area pengelolaan Perpustakaan Nawir Pakaja.
     </p>
 
-    <input
-      id="admin-email"
-      type="email"
-      placeholder="Email Admin"
-      autocomplete="email"
+    <form
+      id="admin-login-form"
+      onsubmit="event.preventDefault(); loginAdmin();"
     >
 
-    <input
-      id="admin-password"
-      type="password"
-      placeholder="Password"
-      autocomplete="current-password"
-    >
+      <input
+        id="admin-email"
+        type="email"
+        placeholder="Email Admin"
+        autocomplete="email"
+        required
+      >
 
-    <p id="admin-login-message"></p>
+      <input
+        id="admin-password"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+        required
+      >
 
-    <div class="modal-actions">
+      <p id="admin-login-message"></p>
 
-      <button
-        class="close-btn"
-        onclick="tutupAdmin()">
-        Batal
-      </button>
-  
-      <button
-        id="admin-login-btn"
-        class="login-btn"
-        onclick="loginAdmin()">
-        Masuk
-      </button>
+      <div class="modal-actions">
 
-    </div>
+        <button
+          type="button"
+          class="close-btn"
+          onclick="tutupAdmin()">
+          Batal
+        </button>
+
+        <button
+          id="admin-login-btn"
+          type="submit"
+          class="login-btn">
+          Masuk
+        </button>
+
+      </div>
+
+    </form>
 
   </div>
 
 </div>
-
+  
 <!-- PANEL ADMIN UPLOAD BUKU -->
 
 <div class="modal" id="adminPanel">
