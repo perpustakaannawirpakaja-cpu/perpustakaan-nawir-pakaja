@@ -2366,12 +2366,30 @@ body[data-ui-style="minimal"] .read-button:hover {
       >
 
       <textarea
-        id="edit-book-description"
-        placeholder="Deskripsi Buku"
-        rows="4"
-      ></textarea>
+  id="edit-book-description"
+  placeholder="Deskripsi Buku"
+  rows="4"
+></textarea>
 
-      <p id="edit-book-message"></p>
+<label>
+  Ganti Cover Buku
+  <input
+    id="edit-book-cover"
+    type="file"
+    accept="image/*"
+  >
+</label>
+
+<label>
+  Ganti File Buku PDF
+  <input
+    id="edit-book-file"
+    type="file"
+    accept="application/pdf,.pdf"
+  >
+</label>
+
+<p id="edit-book-message"></p>
 
       <div class="modal-actions">
 
@@ -3749,6 +3767,16 @@ async function simpanEditBuku(event) {
       .value
       .trim();
 
+  const newCoverFile =
+  document
+    .getElementById("edit-book-cover")
+    .files[0];
+
+const newBookFile =
+  document
+    .getElementById("edit-book-file")
+    .files[0];
+
   const editMessage =
     document.getElementById(
       "edit-book-message"
@@ -3767,9 +3795,304 @@ async function simpanEditBuku(event) {
     return;
   }
 
-  saveButton.disabled = true;
-  saveButton.textContent =
-    "⏳ Menyimpan...";
+  if (newBookFile) {
+
+  const namaPdfValid =
+    newBookFile.name
+      .toLowerCase()
+      .endsWith(".pdf");
+
+  if (
+    newBookFile.type !== "application/pdf" &&
+    !namaPdfValid
+  ) {
+
+    editMessage.textContent =
+      "⚠️ File buku pengganti harus berupa PDF.";
+
+    return;
+  }
+
+}
+
+if (newCoverFile) {
+
+  const namaCoverValid =
+    /\.(jpg|jpeg|png|webp|gif|avif|heic|heif)$/i
+      .test(newCoverFile.name);
+
+  const tipeCoverValid =
+    newCoverFile.type
+      .startsWith("image/");
+
+  if (
+    !tipeCoverValid &&
+    !namaCoverValid
+  ) {
+
+    editMessage.textContent =
+      "⚠️ Cover pengganti harus berupa gambar.";
+
+    return;
+  }
+
+}
+
+const MAX_PDF_SIZE =
+  50 * 1024 * 1024;
+
+const MAX_COVER_SIZE =
+  10 * 1024 * 1024;
+
+if (
+  newBookFile &&
+  newBookFile.size > MAX_PDF_SIZE
+) {
+
+  editMessage.textContent =
+    "⚠️ Ukuran PDF pengganti maksimal 50 MB.";
+
+  return;
+}
+
+if (
+  newCoverFile &&
+  newCoverFile.size > MAX_COVER_SIZE
+) {
+
+  editMessage.textContent =
+    "⚠️ Ukuran cover pengganti maksimal 10 MB.";
+
+  return;
+}
+
+  const {
+  data: currentBook,
+  error: currentBookError
+} = await db
+  .from("books")
+  .select(`
+    id,
+    file_url,
+    cover_url
+  `)
+  .eq("id", bookId)
+  .maybeSingle();
+
+if (
+  currentBookError ||
+  !currentBook
+) {
+
+  editMessage.textContent =
+    "❌ Data buku lama gagal dimuat.";
+
+  console.error(
+    "Gagal memuat data buku lama:",
+    currentBookError
+  );
+
+  return;
+}
+
+const {
+  data: { user },
+  error: userError
+} = await db.auth.getUser();
+
+if (
+  userError ||
+  !user
+) {
+
+  editMessage.textContent =
+    "❌ Sesi Admin tidak ditemukan. Silakan login kembali.";
+
+  return;
+}
+
+const {
+  data: adminData,
+  error: adminError
+} = await db
+  .from("admin_users")
+  .select("user_id")
+  .eq("user_id", user.id)
+  .maybeSingle();
+
+if (
+  adminError ||
+  !adminData
+) {
+
+  editMessage.textContent =
+    "⛔ Akun ini tidak memiliki akses Admin.";
+
+  console.error(
+    "Gagal memeriksa akses Admin:",
+    adminError
+  );
+
+  return;
+}
+
+saveButton.disabled = true;
+saveButton.textContent =
+  "⏳ Menyimpan...";
+
+if (
+  newBookFile ||
+  newCoverFile
+) {
+
+  editMessage.textContent =
+    "⏳ Mengupload file pengganti...";
+
+} else {
+
+  editMessage.textContent =
+    "⏳ Menyimpan perubahan...";
+
+}
+
+let nextFileUrl =
+  currentBook.file_url;
+
+let nextCoverUrl =
+  currentBook.cover_url;
+
+let uploadedNewBookPath = null;
+let uploadedNewCoverPath = null;
+
+if (newBookFile) {
+
+  const safeBookName =
+    newBookFile.name.replace(
+      /[^a-zA-Z0-9._-]/g,
+      "_"
+    );
+
+  uploadedNewBookPath =
+    `${user.id}/${Date.now()}-${safeBookName}`;
+
+  const {
+    error: newBookUploadError
+  } = await db
+    .storage
+    .from("book-files")
+    .upload(
+      uploadedNewBookPath,
+      newBookFile,
+      {
+        cacheControl: "3600",
+        upsert: false,
+        contentType:
+          newBookFile.type ||
+          "application/pdf"
+      }
+    );
+
+  if (newBookUploadError) {
+
+    console.error(
+      "Gagal upload PDF pengganti:",
+      newBookUploadError
+    );
+
+    editMessage.textContent =
+      "❌ PDF pengganti gagal diupload.";
+
+    saveButton.disabled = false;
+    saveButton.textContent =
+      "💾 Simpan Perubahan";
+
+    return;
+  }
+
+  const {
+    data: newBookPublicData
+  } = db
+    .storage
+    .from("book-files")
+    .getPublicUrl(
+      uploadedNewBookPath
+    );
+
+  nextFileUrl =
+    newBookPublicData.publicUrl;
+
+}
+
+if (newCoverFile) {
+
+  const safeCoverName =
+    newCoverFile.name.replace(
+      /[^a-zA-Z0-9._-]/g,
+      "_"
+    );
+
+  uploadedNewCoverPath =
+    `${user.id}/${Date.now()}-${safeCoverName}`;
+
+  const {
+    error: newCoverUploadError
+  } = await db
+    .storage
+    .from("book-covers")
+    .upload(
+      uploadedNewCoverPath,
+      newCoverFile,
+      {
+        cacheControl: "3600",
+        upsert: false,
+        contentType:
+          newCoverFile.type ||
+          "image/jpeg"
+      }
+    );
+
+  if (newCoverUploadError) {
+
+    console.error(
+      "Gagal upload cover pengganti:",
+      newCoverUploadError
+    );
+
+    if (uploadedNewBookPath) {
+      await db
+        .storage
+        .from("book-files")
+        .remove([
+          uploadedNewBookPath
+        ]);
+    }
+
+    editMessage.textContent =
+      "❌ Cover pengganti gagal diupload.";
+
+    saveButton.disabled = false;
+    saveButton.textContent =
+      "💾 Simpan Perubahan";
+
+    return;
+  }
+
+  const {
+    data: newCoverPublicData
+  } = db
+    .storage
+    .from("book-covers")
+    .getPublicUrl(
+      uploadedNewCoverPath
+    );
+
+  nextCoverUrl =
+    newCoverPublicData.publicUrl;
+
+}
+
+editMessage.textContent =
+  "⏳ Menyimpan data buku...";
 
 const {
   data: updatedBook,
@@ -3777,45 +4100,162 @@ const {
 } = await db
   .from("books")
   .update({
-    title,
-    author: author || null,
-    category: category || null,
-    description: description || null
-  })
+  title,
+  author: author || null,
+  category: category || null,
+  description: description || null,
+  file_url: nextFileUrl,
+  cover_url: nextCoverUrl
+})
   .eq("id", bookId)
   .select("id")
   .maybeSingle();
 
-  saveButton.disabled = false;
-  saveButton.textContent =
-    "💾 Simpan Perubahan";
-
   if (
-  error ||
-  !updatedBook
+    error ||
+    !updatedBook
 ) {
 
-    editMessage.textContent =
-      "❌ Gagal menyimpan perubahan.";
+  if (uploadedNewBookPath) {
 
-    console.error(
-      "Gagal mengedit buku:",
-      error
-    );
+    await db
+      .storage
+      .from("book-files")
+      .remove([
+        uploadedNewBookPath
+      ]);
 
-    return;
+  }
+
+  if (uploadedNewCoverPath) {
+
+    await db
+      .storage
+      .from("book-covers")
+      .remove([
+        uploadedNewCoverPath
+      ]);
+
   }
 
   editMessage.textContent =
-    "✅ Perubahan berhasil disimpan.";
+    "❌ Gagal menyimpan perubahan.";
 
-  await tampilkanBuku();
+  console.error(
+  "Gagal mengedit buku:",
+  error
+);
 
-  await muatDaftarBukuAdmin();
+saveButton.disabled = false;
+saveButton.textContent =
+  "💾 Simpan Perubahan";
 
-  setTimeout(() => {
-    tutupEditBukuAdmin();
-  }, 700);
+return;
+}
+
+function ambilPathFileLama(
+  publicUrl,
+  bucketName
+) {
+
+  if (!publicUrl) {
+    return null;
+  }
+
+  const marker =
+    `/storage/v1/object/public/${bucketName}/`;
+
+  const posisi =
+    publicUrl.indexOf(marker);
+
+  if (posisi === -1) {
+    return null;
+  }
+
+  return decodeURIComponent(
+    publicUrl.substring(
+      posisi + marker.length
+    )
+  );
+
+}
+
+/* Hapus PDF lama jika diganti */
+if (newBookFile) {
+
+  const oldBookPath =
+    ambilPathFileLama(
+      currentBook.file_url,
+      "book-files"
+    );
+
+  if (oldBookPath) {
+
+    const {
+      error: oldBookDeleteError
+    } = await db
+      .storage
+      .from("book-files")
+      .remove([
+        oldBookPath
+      ]);
+
+    if (oldBookDeleteError) {
+      console.error(
+        "PDF baru sudah aktif, tetapi PDF lama gagal dibersihkan:",
+        oldBookDeleteError
+      );
+    }
+
+  }
+
+}
+
+/* Hapus cover lama jika diganti */
+if (newCoverFile) {
+
+  const oldCoverPath =
+    ambilPathFileLama(
+      currentBook.cover_url,
+      "book-covers"
+    );
+
+  if (oldCoverPath) {
+
+    const {
+      error: oldCoverDeleteError
+    } = await db
+      .storage
+      .from("book-covers")
+      .remove([
+        oldCoverPath
+      ]);
+
+    if (oldCoverDeleteError) {
+      console.error(
+        "Cover baru sudah aktif, tetapi cover lama gagal dibersihkan:",
+        oldCoverDeleteError
+      );
+    }
+
+  }
+
+}
+
+  editMessage.textContent =
+  "✅ Perubahan berhasil disimpan.";
+
+await tampilkanBuku();
+
+await muatDaftarBukuAdmin();
+
+saveButton.disabled = false;
+saveButton.textContent =
+  "💾 Simpan Perubahan";
+
+setTimeout(() => {
+  tutupEditBukuAdmin();
+}, 700);
 
 }
 
