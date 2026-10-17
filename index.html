@@ -735,6 +735,169 @@ body.dark .read-button{
   overflow-y:auto;
 }
 
+/* =========================================
+   ADMIN DASHBOARD SUMMARY
+   ========================================= */
+
+.admin-summary{
+  display:grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap:12px;
+  margin:18px 0 22px;
+}
+
+.admin-summary-card{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+
+  padding:14px;
+
+  background:var(--bg);
+
+  border:
+    1px solid var(--border);
+
+  border-radius:14px;
+}
+
+.admin-summary-card span{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+}
+
+.admin-summary-card strong{
+  color:var(--text);
+  font-size:15px;
+  overflow-wrap:anywhere;
+}
+
+.admin-section-title{
+  margin:
+    4px 0 16px;
+
+  font-size:17px;
+}
+
+/* =========================================
+   ADMIN COLLECTION MANAGEMENT
+   ========================================= */
+
+.admin-collection-management{
+  margin-top:24px;
+  padding-top:20px;
+
+  border-top:
+    1px solid var(--border);
+}
+
+#admin-book-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.admin-book-loading{
+  margin:0;
+
+  padding:14px;
+
+  background:var(--bg);
+
+  border:
+    1px solid var(--border);
+
+  border-radius:12px;
+
+  color:var(--muted);
+
+  font-size:14px;
+  text-align:center;
+}
+
+.admin-book-item{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+
+  padding:14px;
+
+  background:var(--bg);
+
+  border:
+    1px solid var(--border);
+
+  border-radius:12px;
+}
+
+.admin-book-item strong{
+  color:var(--text);
+  font-size:14px;
+  line-height:1.4;
+}
+
+.admin-book-item span{
+  color:var(--muted);
+  font-size:12px;
+}
+
+.admin-book-actions{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+
+.admin-book-actions button{
+  flex:1;
+
+  padding:9px 10px;
+
+  border-radius:10px;
+
+  font-size:12px;
+  font-weight:700;
+}
+
+.admin-book-edit{
+  background:#dbeafe;
+  color:#1d4ed8;
+
+  border:
+    1px solid #93c5fd;
+}
+
+.admin-book-delete{
+  background:#fee2e2;
+  color:#b91c1c;
+
+  border:
+    1px solid #fca5a5;
+}
+
+body.dark .admin-book-edit{
+  background:#1e3a8a;
+  color:#dbeafe;
+
+  border-color:#3b82f6;
+}
+
+body.dark .admin-book-delete{
+  background:#7f1d1d;
+  color:#fee2e2;
+
+  border-color:#ef4444;
+}
+
+@media(max-width:500px){
+
+  .admin-summary{
+    grid-template-columns:1fr;
+  }
+
+}
+
 /* === ADMIN PANEL DESKTOP === */
 
 @media (min-width: 700px){
@@ -2041,11 +2204,33 @@ body[data-ui-style="minimal"] .read-button:hover {
 
   <div class="modal-box">
 
-    <h2>📚 Upload Buku</h2>
+<h2>🛠️ Dashboard Admin</h2>
 
-    <p>
-      Tambahkan koleksi baru ke Perpustakaan Nawir Pakaja.
-    </p>
+<p>
+  Kelola koleksi Perpustakaan Nawir Pakaja.
+</p>
+
+<div class="admin-summary">
+
+  <div class="admin-summary-card">
+    <span>👤 Admin Aktif</span>
+    <strong id="admin-user-email">
+      -
+    </strong>
+  </div>
+
+  <div class="admin-summary-card">
+    <span>📚 Total Koleksi</span>
+    <strong id="admin-total-books">
+      0 buku
+    </strong>
+  </div>
+
+</div>
+
+<h3 class="admin-section-title">
+  📤 Upload Buku Baru
+</h3>
 
     <form
       id="book-upload-form"
@@ -2119,6 +2304,89 @@ body[data-ui-style="minimal"] .read-button:hover {
           type="submit"
           class="login-btn">
           📤 Upload Buku
+        </button>
+
+      </div>
+
+    </form>
+
+    <div class="admin-collection-management">
+
+      <h3 class="admin-section-title">
+        📚 Kelola Koleksi
+      </h3>
+
+      <div id="admin-book-list">
+        <p class="admin-book-loading">
+          Memuat koleksi...
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- MODAL EDIT BUKU -->
+
+<div class="modal" id="editBookModal">
+
+  <div class="modal-box">
+
+    <h2>✏️ Edit Buku</h2>
+
+    <form
+      id="edit-book-form"
+      onsubmit="simpanEditBuku(event)"
+    >
+
+      <input
+        id="edit-book-id"
+        type="hidden"
+      >
+
+      <input
+        id="edit-book-title"
+        type="text"
+        placeholder="Judul Buku"
+        required
+      >
+
+      <input
+        id="edit-book-author"
+        type="text"
+        placeholder="Penulis"
+      >
+
+      <input
+        id="edit-book-category"
+        type="text"
+        placeholder="Kategori"
+      >
+
+      <textarea
+        id="edit-book-description"
+        placeholder="Deskripsi Buku"
+        rows="4"
+      ></textarea>
+
+      <p id="edit-book-message"></p>
+
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          class="close-btn"
+          onclick="tutupEditBukuAdmin()">
+          Batal
+        </button>
+
+        <button
+          id="edit-book-save-btn"
+          type="submit"
+          class="login-btn">
+          💾 Simpan Perubahan
         </button>
 
       </div>
@@ -3193,14 +3461,528 @@ function tutupAdmin(){
 
 }
 
+async function bukaAdminPanel() {
 
-function bukaAdminPanel() {
   document
     .getElementById("adminPanel")
     .classList
     .add("show");
+
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+
+  const adminEmail =
+    document.getElementById(
+      "admin-user-email"
+    );
+
+  if (adminEmail) {
+    adminEmail.textContent =
+      user?.email || "-";
 }
 
+const adminTotalBooks =
+  document.getElementById(
+    "admin-total-books"
+  );
+
+const {
+  count: totalBooks,
+  error: countError
+} = await db
+  .from("books")
+  .select("*", {
+    count: "exact",
+    head: true
+  });
+
+if (adminTotalBooks) {
+
+  if (countError) {
+
+    adminTotalBooks.textContent =
+      "Gagal memuat";
+
+    console.error(
+      "Gagal menghitung koleksi:",
+      countError
+    );
+
+  } else {
+
+    adminTotalBooks.textContent =
+      `${totalBooks || 0} buku`;
+
+  }
+
+}
+
+await muatDaftarBukuAdmin();
+
+}
+
+async function muatDaftarBukuAdmin() {
+
+  const adminBookList =
+    document.getElementById(
+      "admin-book-list"
+    );
+
+  if (!adminBookList) {
+    return;
+  }
+
+  adminBookList.innerHTML = `
+    <p class="admin-book-loading">
+      Memuat koleksi...
+    </p>
+  `;
+
+  const {
+    data: books,
+    error
+  } = await db
+    .from("books")
+    .select(`
+      id,
+      title,
+      author,
+      category,
+      cover_url,
+      file_url,
+      created_at
+    `)
+    .order("title", {
+      ascending: true
+    });
+
+  if (error) {
+
+    console.error(
+      "Gagal memuat koleksi Admin:",
+      error
+    );
+
+    adminBookList.innerHTML = `
+      <p class="admin-book-loading">
+        Gagal memuat koleksi.
+      </p>
+    `;
+
+    return;
+  }
+
+  if (!books || books.length === 0) {
+
+    adminBookList.innerHTML = `
+      <p class="admin-book-loading">
+        Belum ada buku.
+      </p>
+    `;
+
+    return;
+  }
+
+  adminBookList.innerHTML =
+    books.map((book) => `
+      <div class="admin-book-item">
+        <strong>
+          ${book.title || "Tanpa Judul"}
+        </strong>
+
+        <span>
+          ${book.author || "Penulis tidak tersedia"}
+        </span>
+
+        <span>
+          🏷️ ${book.category || "Tanpa kategori"}
+        </span>
+
+        <div class="admin-book-actions">
+
+<button
+  type="button"
+  class="admin-book-edit"
+  data-book-id="${book.id}"
+  onclick="bukaEditBukuAdmin(${book.id})">
+  ✏️ Edit
+</button>
+
+  <button
+  type="button"
+  class="admin-book-delete"
+  data-book-id="${book.id}"
+  onclick="hapusBukuAdmin(${book.id})">
+  🗑️ Hapus
+</button>
+
+</div>
+      </div>
+    `).join("");
+
+}
+
+async function bukaEditBukuAdmin(bookId) {
+
+  const editModal =
+    document.getElementById(
+      "editBookModal"
+    );
+
+  const editMessage =
+    document.getElementById(
+      "edit-book-message"
+    );
+
+  editModal
+    .classList
+    .add("show");
+
+  editMessage.textContent =
+    "Memuat data buku...";
+
+  const {
+    data: book,
+    error
+  } = await db
+    .from("books")
+    .select(`
+      id,
+      title,
+      author,
+      category,
+      description
+    `)
+    .eq("id", bookId)
+    .maybeSingle();
+
+  if (error || !book) {
+
+    editMessage.textContent =
+      "❌ Gagal memuat data buku.";
+
+    console.error(
+      "Gagal memuat buku:",
+      error
+    );
+
+    return;
+  }
+
+  document
+    .getElementById("edit-book-id")
+    .value = book.id;
+
+  document
+    .getElementById("edit-book-title")
+    .value = book.title || "";
+
+  document
+    .getElementById("edit-book-author")
+    .value = book.author || "";
+
+  document
+    .getElementById("edit-book-category")
+    .value = book.category || "";
+
+  document
+    .getElementById("edit-book-description")
+    .value = book.description || "";
+
+  editMessage.textContent = "";
+
+}
+
+function tutupEditBukuAdmin() {
+
+  document
+    .getElementById("editBookModal")
+    .classList
+    .remove("show");
+
+  document
+    .getElementById("edit-book-form")
+    ?.reset();
+
+  const editMessage =
+    document.getElementById(
+      "edit-book-message"
+    );
+
+  if (editMessage) {
+    editMessage.textContent = "";
+  }
+
+}
+
+async function simpanEditBuku(event) {
+
+  event.preventDefault();
+
+  const bookId =
+    document
+      .getElementById("edit-book-id")
+      .value;
+
+  const title =
+    document
+      .getElementById("edit-book-title")
+      .value
+      .trim();
+
+  const author =
+    document
+      .getElementById("edit-book-author")
+      .value
+      .trim();
+
+  const category =
+    document
+      .getElementById("edit-book-category")
+      .value
+      .trim();
+
+  const description =
+    document
+      .getElementById("edit-book-description")
+      .value
+      .trim();
+
+  const editMessage =
+    document.getElementById(
+      "edit-book-message"
+    );
+
+  const saveButton =
+    document.getElementById(
+      "edit-book-save-btn"
+    );
+
+  if (!bookId || !title) {
+
+    editMessage.textContent =
+      "⚠️ Judul buku harus diisi.";
+
+    return;
+  }
+
+  saveButton.disabled = true;
+  saveButton.textContent =
+    "⏳ Menyimpan...";
+
+  const {
+    error
+  } = await db
+    .from("books")
+    .update({
+      title,
+      author: author || null,
+      category: category || null,
+      description: description || null
+    })
+    .eq("id", bookId);
+
+  saveButton.disabled = false;
+  saveButton.textContent =
+    "💾 Simpan Perubahan";
+
+  if (error) {
+
+    editMessage.textContent =
+      "❌ Gagal menyimpan perubahan.";
+
+    console.error(
+      "Gagal mengedit buku:",
+      error
+    );
+
+    return;
+  }
+
+  editMessage.textContent =
+    "✅ Perubahan berhasil disimpan.";
+
+  await tampilkanBuku();
+
+  await muatDaftarBukuAdmin();
+
+  setTimeout(() => {
+    tutupEditBukuAdmin();
+  }, 700);
+
+}
+
+async function hapusBukuAdmin(bookId) {
+
+  const {
+    data: book,
+    error: loadError
+  } = await db
+    .from("books")
+    .select(`
+      id,
+      title,
+      file_url,
+      cover_url
+    `)
+    .eq("id", bookId)
+    .maybeSingle();
+
+  if (loadError || !book) {
+
+    console.error(
+      "Gagal mengambil data buku:",
+      loadError
+    );
+
+    alert(
+      "❌ Data buku gagal dimuat."
+    );
+
+    return;
+  }
+
+  const yakinHapus =
+    confirm(
+      `Hapus buku "${book.title || "Tanpa Judul"}"?\n\n` +
+      `PDF, cover, dan data buku akan dihapus permanen.`
+    );
+
+  if (!yakinHapus) {
+    return;
+  }
+
+  function ambilStoragePath(
+    publicUrl,
+    bucketName
+  ) {
+
+    if (!publicUrl) {
+      return null;
+    }
+
+    const marker =
+      `/storage/v1/object/public/${bucketName}/`;
+
+    const posisi =
+      publicUrl.indexOf(marker);
+
+    if (posisi === -1) {
+      return null;
+    }
+
+    return decodeURIComponent(
+      publicUrl.substring(
+        posisi + marker.length
+      )
+    );
+
+  }
+
+  const pdfPath =
+    ambilStoragePath(
+      book.file_url,
+      "book-files"
+    );
+
+  const coverPath =
+    ambilStoragePath(
+      book.cover_url,
+      "book-covers"
+    );
+
+const {
+  error: deleteError
+} = await db
+  .from("books")
+  .delete()
+  .eq("id", bookId);
+
+if (deleteError) {
+
+  console.error(
+    "Gagal menghapus data buku:",
+    deleteError
+  );
+
+  alert(
+    "❌ Data buku gagal dihapus."
+  );
+
+  return;
+}
+
+/* Bersihkan PDF dari Storage */
+if (pdfPath) {
+
+  const {
+    error: pdfDeleteError
+  } = await db
+    .storage
+    .from("book-files")
+    .remove([pdfPath]);
+
+  if (pdfDeleteError) {
+
+    console.error(
+      "Data buku sudah dihapus, tetapi PDF gagal dibersihkan:",
+      pdfDeleteError
+    );
+
+  }
+
+}
+
+/* Bersihkan cover dari Storage */
+if (coverPath) {
+
+  const {
+    error: coverDeleteError
+  } = await db
+    .storage
+    .from("book-covers")
+    .remove([coverPath]);
+
+  if (coverDeleteError) {
+
+    console.error(
+      "Data buku sudah dihapus, tetapi cover gagal dibersihkan:",
+      coverDeleteError
+    );
+
+  }
+
+}
+  
+  await tampilkanBuku();
+
+  await muatDaftarBukuAdmin();
+
+  const adminTotalBooks =
+    document.getElementById(
+      "admin-total-books"
+    );
+
+  const {
+    count: totalBooks
+  } = await db
+    .from("books")
+    .select("*", {
+      count: "exact",
+      head: true
+    });
+
+  if (adminTotalBooks) {
+    adminTotalBooks.textContent =
+      `${totalBooks || 0} buku`;
+  }
+
+  alert(
+    "✅ Buku berhasil dihapus."
+  );
+
+}
 
 function tutupAdminPanel() {
   document
@@ -3518,6 +4300,27 @@ async function uploadBuku(event) {
       "✅ Buku berhasil diupload.";
 
     await tampilkanBuku();
+
+    await muatDaftarBukuAdmin();
+
+  const adminTotalBooks =
+  document.getElementById(
+    "admin-total-books"
+  );
+
+const {
+  count: totalBooks
+} = await db
+  .from("books")
+  .select("*", {
+    count: "exact",
+    head: true
+  });
+
+if (adminTotalBooks) {
+  adminTotalBooks.textContent =
+    `${totalBooks || 0} buku`;
+}
 
   } catch (error) {
 
