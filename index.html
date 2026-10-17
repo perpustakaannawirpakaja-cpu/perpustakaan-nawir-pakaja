@@ -3893,13 +3893,19 @@ async function hapusBukuAdmin(bookId) {
     );
 
 const {
+  data: deletedBook,
   error: deleteError
 } = await db
   .from("books")
   .delete()
-  .eq("id", bookId);
+  .eq("id", bookId)
+  .select("id")
+  .maybeSingle();
 
-if (deleteError) {
+if (
+  deleteError ||
+  !deletedBook
+) {
 
   console.error(
     "Gagal menghapus data buku:",
@@ -3912,7 +3918,6 @@ if (deleteError) {
 
   return;
 }
-
 /* Bersihkan PDF dari Storage */
 if (pdfPath) {
 
