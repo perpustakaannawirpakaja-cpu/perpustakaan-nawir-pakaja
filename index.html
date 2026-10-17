@@ -2011,7 +2011,7 @@ body[data-ui-style="minimal"] .read-button:hover {
         onclick="tutupAdmin()">
         Batal
       </button>
-
+  
       <button
         id="admin-login-btn"
         class="login-btn"
@@ -2095,6 +2095,13 @@ body[data-ui-style="minimal"] .read-button:hover {
           class="close-btn"
           onclick="tutupAdminPanel()">
           Tutup
+        </button>
+
+        <button
+          type="button"
+          class="close-btn"
+          onclick="logoutAdmin()">
+          🚪 Logout
         </button>
 
         <button
@@ -3128,16 +3135,44 @@ function ubahTema(){
 
 }
 
+async function bukaAdmin(){
 
-function bukaAdmin(){
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
 
+  /* Jika ada sesi login,
+     cek apakah user adalah Admin */
+  if (!userError && user) {
+
+    const {
+      data: adminData,
+      error: adminError
+    } = await db
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (
+      !adminError &&
+      adminData
+    ) {
+
+      bukaAdminPanel();
+      return;
+    }
+  }
+
+  /* Belum login Admin:
+     tampilkan form login */
   document
-  .getElementById("adminModal")
-  .classList
-  .add("show");
+    .getElementById("adminModal")
+    .classList
+    .add("show");
 
 }
-
 
 function tutupAdmin(){
 
@@ -3164,6 +3199,40 @@ function tutupAdminPanel() {
     .remove("show");
 }
 
+async function logoutAdmin() {
+
+  const { error } =
+    await db.auth.signOut();
+
+  if (error) {
+    console.error(
+      "Logout Admin gagal:",
+      error
+    );
+
+    return;
+  }
+
+  tutupAdminPanel();
+
+  document
+    .getElementById("book-upload-form")
+    ?.reset();
+
+  document
+    .getElementById("admin-password")
+    .value = "";
+
+  const loginMessage =
+    document.getElementById(
+      "admin-login-message"
+    );
+
+  if (loginMessage) {
+    loginMessage.textContent =
+      "✅ Admin berhasil logout.";
+  }
+}
 
 async function loginAdmin() {
 
