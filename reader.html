@@ -2986,7 +2986,11 @@ body[data-ui-style="minimal"]
   </div>
 </header>
   <div id="reader-login-modal">
-  <div class="reader-login-box">
+
+  <form
+    id="reader-login-form"
+    class="reader-login-box"
+  >
 
     <h3>🔐 Login Sinkronisasi</h3>
 
@@ -2995,6 +2999,7 @@ body[data-ui-style="minimal"]
       type="email"
       placeholder="Email"
       autocomplete="email"
+      required
     >
 
     <input
@@ -3002,19 +3007,25 @@ body[data-ui-style="minimal"]
       type="password"
       placeholder="Password"
       autocomplete="current-password"
+      required
     >
 
     <div id="reader-login-message"></div>
 
-    <button id="reader-login-submit">
+    <button
+      id="reader-login-submit"
+      type="submit">
       🔐 Masuk
     </button>
 
-    <button id="reader-login-cancel">
+    <button
+      id="reader-login-cancel"
+      type="button">
       ✕ Batal
     </button>
 
-  </div>
+  </form>
+
 </div>
   <div id="reading-progress">
   <div id="reading-progress-bar"></div>
@@ -3251,6 +3262,9 @@ const loginMessage =
 const loginSubmit =
   document.getElementById("reader-login-submit");
 
+const loginForm =
+  document.getElementById("reader-login-form");
+
 const loginCancel =
   document.getElementById("reader-login-cancel");
 
@@ -3303,7 +3317,10 @@ loginCancel.addEventListener("click", () => {
   loginModal.style.display = "none";
 });
 
-loginSubmit.addEventListener("click", async () => {
+loginForm.addEventListener("submit", async (event) => {
+
+  event.preventDefault();
+  
   const email = loginEmail.value.trim();
   const password = loginPassword.value;
 
