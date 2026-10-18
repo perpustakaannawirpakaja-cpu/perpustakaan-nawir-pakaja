@@ -941,6 +941,14 @@ body.dark .read-button{
   display:none;
 }
 
+.admin-book-search-status{
+  min-height:16px;
+  margin:-2px 0 12px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+}
+
 #admin-book-list{
   display:flex;
   flex-direction:column;
@@ -2485,6 +2493,12 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 </div>
 
+<p
+  id="admin-book-search-status"
+  class="admin-book-search-status"
+  aria-live="polite"
+></p>
+
       <div id="admin-book-list">
         <p class="admin-book-loading">
           Memuat koleksi...
@@ -3858,6 +3872,23 @@ if (cocok) {
 
   }
 
+const status =
+  document.getElementById(
+    "admin-book-search-status"
+  );
+
+if (status) {
+
+  const totalBuku =
+    items.length;
+
+  status.textContent =
+    keyword
+      ? `${jumlahTampil} dari ${totalBuku} buku ditemukan`
+      : `${totalBuku} buku`;
+
+}
+
 }
 
 function hapusPencarianAdmin() {
@@ -3889,6 +3920,16 @@ async function muatDaftarBukuAdmin() {
   if (!adminBookList) {
     return;
   }
+
+  const status =
+  document.getElementById(
+    "admin-book-search-status"
+  );
+
+if (status) {
+  status.textContent =
+    "Memuat jumlah buku...";
+}
 
   adminBookList.innerHTML = `
     <p class="admin-book-loading">
@@ -3927,6 +3968,16 @@ async function muatDaftarBukuAdmin() {
       </p>
     `;
 
+  const status =
+  document.getElementById(
+    "admin-book-search-status"
+  );
+
+if (status) {
+  status.textContent =
+    "Gagal memuat jumlah buku";
+}
+
     return;
   }
 
@@ -3937,6 +3988,16 @@ async function muatDaftarBukuAdmin() {
         Belum ada buku.
       </p>
     `;
+
+  const status =
+  document.getElementById(
+    "admin-book-search-status"
+  );
+
+if (status) {
+  status.textContent =
+    "0 buku";
+}
 
     return;
   }
