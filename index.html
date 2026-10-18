@@ -1011,6 +1011,29 @@ body.dark .read-button{
     0 0 0 3px rgba(37,99,235,.12);
 }
 
+.admin-book-filter-reset{
+  display:flex;
+  justify-content:flex-end;
+  margin:-4px 0 10px;
+}
+
+#admin-book-filter-reset{
+  display:none;
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--bg);
+  color:var(--text);
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+#admin-book-filter-reset:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+}
+
 #admin-book-list{
   display:flex;
   flex-direction:column;
@@ -2601,6 +2624,18 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 </div>
 
+<div class="admin-book-filter-reset">
+
+  <button
+    type="button"
+    id="admin-book-filter-reset"
+    onclick="resetFilterBukuAdmin()"
+  >
+    ↺ Reset Filter
+  </button>
+
+</div>
+
 <p
   id="admin-book-search-status"
   class="admin-book-search-status"
@@ -4055,6 +4090,8 @@ if (status) {
 
 }
 
+updateResetFilterBukuAdmin();
+
 }
 
 function hapusPencarianAdmin() {
@@ -4093,6 +4130,103 @@ function filterKategoriBukuAdmin() {
   );
 
   cariBukuAdmin();
+
+}
+
+function resetFilterBukuAdmin() {
+
+  const searchInput =
+    document.getElementById(
+      "admin-book-search"
+    );
+
+  const clearButton =
+    document.getElementById(
+      "admin-book-search-clear"
+    );
+
+  const categorySelect =
+    document.getElementById(
+      "admin-book-category"
+    );
+
+  const sortSelect =
+    document.getElementById(
+      "admin-book-sort"
+    );
+
+  if (searchInput) {
+    searchInput.value = "";
+  }
+
+  if (clearButton) {
+    clearButton.style.display = "none";
+  }
+
+  if (categorySelect) {
+    categorySelect.value = "";
+  }
+
+  if (sortSelect) {
+    sortSelect.value = "title-asc";
+  }
+
+  localStorage.removeItem(
+    "adminBookCategory"
+  );
+
+  localStorage.removeItem(
+    "adminBookSort"
+  );
+
+  urutkanBukuAdmin();
+
+}
+
+function updateResetFilterBukuAdmin() {
+
+  const resetButton =
+    document.getElementById(
+      "admin-book-filter-reset"
+    );
+
+  const searchInput =
+    document.getElementById(
+      "admin-book-search"
+    );
+
+  const categorySelect =
+    document.getElementById(
+      "admin-book-category"
+    );
+
+  const sortSelect =
+    document.getElementById(
+      "admin-book-sort"
+    );
+
+  if (!resetButton) {
+    return;
+  }
+
+  const adaSearch =
+    searchInput &&
+    searchInput.value.trim() !== "";
+
+  const adaKategori =
+    categorySelect &&
+    categorySelect.value !== "";
+
+  const adaSort =
+    sortSelect &&
+    sortSelect.value !== "title-asc";
+
+  resetButton.style.display =
+    adaSearch ||
+    adaKategori ||
+    adaSort
+      ? "inline-flex"
+      : "none";
 
 }
 
@@ -4182,6 +4316,8 @@ function urutkanBukuAdmin() {
   });
 
   cariBukuAdmin();
+
+  updateResetFilterBukuAdmin();
 
 }
 
