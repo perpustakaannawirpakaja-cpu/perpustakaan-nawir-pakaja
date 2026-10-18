@@ -949,6 +949,37 @@ body.dark .read-button{
   font-weight:600;
 }
 
+.admin-book-sort{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  margin:-4px 0 10px;
+}
+
+.admin-book-sort label{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+}
+
+#admin-book-sort{
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--bg);
+  color:var(--text);
+  font-size:12px;
+  outline:none;
+  cursor:pointer;
+}
+
+#admin-book-sort:focus{
+  border-color:var(--primary);
+  box-shadow:
+    0 0 0 3px rgba(37,99,235,.12);
+}
+
 #admin-book-list{
   display:flex;
   flex-direction:column;
@@ -2493,6 +2524,35 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 </div>
 
+<div class="admin-book-sort">
+
+  <label for="admin-book-sort">
+    Urutkan:
+  </label>
+
+  <select
+    id="admin-book-sort"
+    onchange="urutkanBukuAdmin()"
+  >
+    <option value="title-asc">
+      Judul A–Z
+    </option>
+
+    <option value="title-desc">
+      Judul Z–A
+    </option>
+
+    <option value="newest">
+      Terbaru
+    </option>
+
+    <option value="oldest">
+      Terlama
+    </option>
+  </select>
+
+</div>
+
 <p
   id="admin-book-search-status"
   class="admin-book-search-status"
@@ -3910,6 +3970,95 @@ function hapusPencarianAdmin() {
 
 }
 
+function urutkanBukuAdmin() {
+
+  const select =
+    document.getElementById(
+      "admin-book-sort"
+    );
+
+  const adminBookList =
+    document.getElementById(
+      "admin-book-list"
+    );
+
+  if (!select || !adminBookList) {
+    return;
+  }
+
+  const items =
+    Array.from(
+      adminBookList.querySelectorAll(
+        ".admin-book-item"
+      )
+    );
+
+  const mode =
+    select.value;
+
+  localStorage.setItem(
+  "adminBookSort",
+  mode
+);
+
+  items.sort((a, b) => {
+
+    const titleA =
+      (
+        a.querySelector("strong")
+          ?.textContent || ""
+      )
+        .trim();
+
+    const titleB =
+      (
+        b.querySelector("strong")
+          ?.textContent || ""
+      )
+        .trim();
+
+    const dateA =
+      Date.parse(
+        a.dataset.createdAt || ""
+      ) || 0;
+
+    const dateB =
+      Date.parse(
+        b.dataset.createdAt || ""
+      ) || 0;
+
+    if (mode === "title-desc") {
+      return titleB.localeCompare(
+        titleA,
+        "id",
+        { sensitivity: "base" }
+      );
+    }
+
+    if (mode === "newest") {
+      return dateB - dateA;
+    }
+
+    if (mode === "oldest") {
+      return dateA - dateB;
+    }
+
+    return titleA.localeCompare(
+      titleB,
+      "id",
+      { sensitivity: "base" }
+    );
+
+  });
+
+  items.forEach((item) => {
+    adminBookList.appendChild(item);
+  });
+
+  cariBukuAdmin();
+
+}
+
 async function muatDaftarBukuAdmin() {
 
   const adminBookList =
@@ -3920,6 +4069,32 @@ async function muatDaftarBukuAdmin() {
   if (!adminBookList) {
     return;
   }
+
+  const sortSelect =
+  document.getElementById(
+    "admin-book-sort"
+  );
+
+const savedSort =
+  localStorage.getItem(
+    "adminBookSort"
+  );
+
+if (
+  sortSelect &&
+  savedSort &&
+  [
+    "title-asc",
+    "title-desc",
+    "newest",
+    "oldest"
+  ].includes(savedSort)
+) {
+
+  sortSelect.value =
+    savedSort;
+
+}
 
   const status =
   document.getElementById(
@@ -4004,7 +4179,10 @@ if (status) {
 
   adminBookList.innerHTML =
     books.map((book) => `
-      <div class="admin-book-item">
+      <div
+  class="admin-book-item"
+  data-created-at="${book.created_at || ""}"
+>
         <strong>
           ${book.title || "Tanpa Judul"}
         </strong>
@@ -4039,7 +4217,7 @@ if (status) {
       </div>
     `).join("");
 
-  cariBukuAdmin();
+  urutkanBukuAdmin();
 
 }
 
