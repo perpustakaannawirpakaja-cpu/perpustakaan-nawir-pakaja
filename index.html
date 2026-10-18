@@ -980,6 +980,37 @@ body.dark .read-button{
     0 0 0 3px rgba(37,99,235,.12);
 }
 
+.admin-book-category-filter{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  margin:-4px 0 10px;
+}
+
+.admin-book-category-filter label{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+}
+
+#admin-book-category{
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--bg);
+  color:var(--text);
+  font-size:12px;
+  outline:none;
+  cursor:pointer;
+}
+
+#admin-book-category:focus{
+  border-color:var(--primary);
+  box-shadow:
+    0 0 0 3px rgba(37,99,235,.12);
+}
+
 #admin-book-list{
   display:flex;
   flex-direction:column;
@@ -2553,6 +2584,23 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 </div>
 
+<div class="admin-book-category-filter">
+
+  <label for="admin-book-category">
+    Kategori:
+  </label>
+
+  <select
+    id="admin-book-category"
+    onchange="filterKategoriBukuAdmin()"
+  >
+    <option value="">
+      Semua kategori
+    </option>
+  </select>
+
+</div>
+
 <p
   id="admin-book-search-status"
   class="admin-book-search-status"
@@ -3842,6 +3890,18 @@ function cariBukuAdmin() {
       .trim()
       .toLowerCase();
 
+  const categorySelect =
+  document.getElementById(
+    "admin-book-category"
+  );
+
+const selectedCategory =
+  (
+    categorySelect?.value || ""
+  )
+    .trim()
+    .toLowerCase();
+
   const clearButton =
   document.getElementById(
     "admin-book-search-clear"
@@ -3877,8 +3937,23 @@ if (clearButton) {
     .join(" ")
     .toLowerCase();
 
-    const cocok =
+    const itemCategory =
+  (
+    item.dataset.category || ""
+  )
+    .trim()
+    .toLowerCase();
+
+const cocokKeyword =
   text.includes(keyword);
+
+const cocokKategori =
+  !selectedCategory ||
+  itemCategory === selectedCategory;
+
+const cocok =
+  cocokKeyword &&
+  cocokKategori;
 
 item.style.display =
   cocok
@@ -3902,9 +3977,9 @@ if (cocok) {
     );
 
   if (
-    keyword &&
-    jumlahTampil === 0
-  ) {
+  (keyword || selectedCategory) &&
+  jumlahTampil === 0
+) {
 
     if (!emptyMessage) {
 
@@ -3923,8 +3998,22 @@ if (cocok) {
 
     }
 
-    emptyMessage.textContent =
-      `Tidak ada buku yang cocok dengan "${input.value.trim()}".`;
+    if (keyword && selectedCategory) {
+
+  emptyMessage.textContent =
+    `Tidak ada buku yang cocok dengan "${input.value.trim()}" pada kategori "${categorySelect.value}".`;
+
+} else if (keyword) {
+
+  emptyMessage.textContent =
+    `Tidak ada buku yang cocok dengan "${input.value.trim()}".`;
+
+} else {
+
+  emptyMessage.textContent =
+    `Tidak ada buku pada kategori "${categorySelect.value}".`;
+
+}
 
   } else if (emptyMessage) {
 
@@ -3942,10 +4031,27 @@ if (status) {
   const totalBuku =
     items.length;
 
-  status.textContent =
-    keyword
-      ? `${jumlahTampil} dari ${totalBuku} buku ditemukan`
-      : `${totalBuku} buku`;
+  if (keyword && selectedCategory) {
+
+    status.textContent =
+      `${jumlahTampil} dari ${totalBuku} buku ditemukan pada kategori "${categorySelect.value}"`;
+
+  } else if (keyword) {
+
+    status.textContent =
+      `${jumlahTampil} dari ${totalBuku} buku ditemukan`;
+
+  } else if (selectedCategory) {
+
+    status.textContent =
+      `${jumlahTampil} dari ${totalBuku} buku pada kategori "${categorySelect.value}"`;
+
+  } else {
+
+    status.textContent =
+      `${totalBuku} buku`;
+
+  }
 
 }
 
@@ -3967,6 +4073,26 @@ function hapusPencarianAdmin() {
   cariBukuAdmin();
 
   input.focus();
+
+}
+
+function filterKategoriBukuAdmin() {
+
+  const select =
+    document.getElementById(
+      "admin-book-category"
+    );
+
+  if (!select) {
+    return;
+  }
+
+  localStorage.setItem(
+    "adminBookCategory",
+    select.value
+  );
+
+  cariBukuAdmin();
 
 }
 
@@ -4177,11 +4303,80 @@ if (status) {
     return;
   }
 
+const categorySelect =
+  document.getElementById(
+    "admin-book-category"
+  );
+
+if (categorySelect) {
+
+  const savedCategory =
+  localStorage.getItem(
+    "adminBookCategory"
+  ) || "";
+
+const currentCategory =
+  categorySelect.value ||
+  savedCategory;
+
+  const categories =
+    [
+      ...new Set(
+        books
+          .map((book) =>
+            (book.category || "").trim()
+          )
+          .filter(Boolean)
+      )
+    ]
+      .sort((a, b) =>
+        a.localeCompare(
+          b,
+          "id",
+          { sensitivity: "base" }
+        )
+      );
+
+  categorySelect.innerHTML = `
+    <option value="">
+      Semua kategori
+    </option>
+
+    ${categories
+      .map((category) => `
+        <option value="${category}">
+          ${category}
+        </option>
+      `)
+      .join("")}
+  `;
+
+  if (
+  currentCategory &&
+  categories.includes(currentCategory)
+) {
+
+  categorySelect.value =
+    currentCategory;
+
+} else {
+
+  categorySelect.value = "";
+
+  localStorage.removeItem(
+    "adminBookCategory"
+  );
+
+}
+
+}
+
   adminBookList.innerHTML =
     books.map((book) => `
       <div
   class="admin-book-item"
   data-created-at="${book.created_at || ""}"
+  data-category="${book.category || ""}"
 >
         <strong>
           ${book.title || "Tanpa Judul"}
