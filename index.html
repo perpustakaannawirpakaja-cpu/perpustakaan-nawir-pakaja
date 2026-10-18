@@ -2366,30 +2366,73 @@ body[data-ui-style="minimal"] .read-button:hover {
       >
 
       <textarea
-  id="edit-book-description"
-  placeholder="Deskripsi Buku"
-  rows="4"
-></textarea>
+        id="edit-book-description"
+        placeholder="Deskripsi Buku"
+        rows="4"
+      ></textarea>
 
-<label>
-  Ganti Cover Buku
-  <input
-    id="edit-book-cover"
-    type="file"
-    accept="image/*"
+      <div id="edit-book-current-cover">
+        <p id="edit-book-cover-label">
+  Cover Saat Ini:
+</p>
+
+        <img
+          id="edit-book-cover-preview"
+          alt="Cover buku saat ini"
+          style="
+            display:none;
+            width:120px;
+            max-height:170px;
+            object-fit:cover;
+            border-radius:10px;
+            margin-bottom:14px;
+          "
+        >
+        </div>
+
+        <label>
+          Ganti Cover Buku
+        <input
+  id="edit-book-cover"
+  type="file"
+  accept="image/*"
+  onchange="previewCoverPengganti(event)"
+>
+      </label>
+
+      <div
+  id="edit-book-current-file"
+  style="margin-bottom:14px;"
+>
+  <p>PDF Saat Ini:</p>
+
+  <a
+    id="edit-book-file-link"
+    href="#"
+    target="_blank"
+    rel="noopener noreferrer"
   >
-</label>
+    📄 Buka PDF Saat Ini
+  </a>
+</div>
 
-<label>
-  Ganti File Buku PDF
-  <input
-    id="edit-book-file"
-    type="file"
-    accept="application/pdf,.pdf"
-  >
-</label>
+      <label>
+        Ganti File Buku PDF
+        
+        <input
+  id="edit-book-file"
+  type="file"
+  accept="application/pdf,.pdf"
+  onchange="previewPdfPengganti(event)"
+        >
+      </label>
 
-<p id="edit-book-message"></p>
+      <p
+  id="edit-book-new-file-name"
+  style="display:none;"
+></p>
+
+      <p id="edit-book-message"></p>
 
       <div class="modal-actions">
 
@@ -3660,18 +3703,54 @@ async function bukaEditBukuAdmin(bookId) {
   editMessage.textContent =
     "Memuat data buku...";
 
+  const oldCoverPreview =
+  document.getElementById(
+    "edit-book-cover-preview"
+  );
+
+const oldCurrentCover =
+  document.getElementById(
+    "edit-book-current-cover"
+  );
+
+const oldCurrentFile =
+  document.getElementById(
+    "edit-book-current-file"
+  );
+
+const oldNewFileName =
+  document.getElementById(
+    "edit-book-new-file-name"
+  );
+
+oldCoverPreview.removeAttribute(
+  "src"
+);
+
+oldCurrentCover.style.display =
+  "none";
+
+oldCurrentFile.style.display =
+  "none";
+
+oldNewFileName.textContent = "";
+oldNewFileName.style.display =
+  "none";
+
   const {
     data: book,
     error
   } = await db
     .from("books")
     .select(`
-      id,
-      title,
-      author,
-      category,
-      description
-    `)
+  id,
+  title,
+  author,
+  category,
+  description,
+  file_url,
+  cover_url
+`)
     .eq("id", bookId)
     .maybeSingle();
 
@@ -3708,6 +3787,93 @@ async function bukaEditBukuAdmin(bookId) {
     .getElementById("edit-book-description")
     .value = book.description || "";
 
+  const coverPreview =
+  document.getElementById(
+    "edit-book-cover-preview"
+  );
+
+const currentCover =
+  document.getElementById(
+    "edit-book-current-cover"
+  );
+
+  const coverLabel =
+  document.getElementById(
+    "edit-book-cover-label"
+  );
+
+coverLabel.textContent =
+  "Cover Saat Ini:";
+
+if (book.cover_url) {
+
+  coverPreview.src =
+    book.cover_url;
+
+  coverPreview.dataset.originalSrc =
+  book.cover_url;
+
+  coverPreview.style.display =
+    "block";
+
+  currentCover.style.display =
+    "block";
+
+} else {
+
+  coverPreview.removeAttribute(
+    "src"
+  );
+
+  coverPreview.dataset.originalSrc =
+  "";
+
+  coverPreview.style.display =
+    "none";
+
+  currentCover.style.display =
+    "none";
+
+}
+
+const currentFile =
+  document.getElementById(
+    "edit-book-current-file"
+  );
+
+const currentFileLink =
+  document.getElementById(
+    "edit-book-file-link"
+  );
+
+if (book.file_url) {
+
+  currentFileLink.href =
+    book.file_url;
+
+  currentFile.style.display =
+    "block";
+
+} else {
+
+  currentFileLink.removeAttribute(
+    "href"
+  );
+
+  currentFile.style.display =
+    "none";
+
+}
+
+const newFileName =
+  document.getElementById(
+    "edit-book-new-file-name"
+  );
+
+newFileName.textContent = "";
+newFileName.style.display =
+  "none";
+
   editMessage.textContent = "";
 
 }
@@ -3723,6 +3889,51 @@ function tutupEditBukuAdmin() {
     .getElementById("edit-book-form")
     ?.reset();
 
+  const coverPreview =
+  document.getElementById(
+    "edit-book-cover-preview"
+  );
+
+const currentCover =
+  document.getElementById(
+    "edit-book-current-cover"
+  );
+
+const currentFile =
+  document.getElementById(
+    "edit-book-current-file"
+  );
+
+const newFileName =
+  document.getElementById(
+    "edit-book-new-file-name"
+  );
+
+const coverLabel =
+  document.getElementById(
+    "edit-book-cover-label"
+  );
+
+coverPreview.removeAttribute(
+  "src"
+);
+
+coverPreview.dataset.originalSrc =
+  "";
+
+currentCover.style.display =
+  "none";
+
+currentFile.style.display =
+  "none";
+
+newFileName.textContent = "";
+newFileName.style.display =
+  "none";
+
+coverLabel.textContent =
+  "Cover Saat Ini:";
+
   const editMessage =
     document.getElementById(
       "edit-book-message"
@@ -3731,6 +3942,80 @@ function tutupEditBukuAdmin() {
   if (editMessage) {
     editMessage.textContent = "";
   }
+
+}
+
+function previewCoverPengganti(event) {
+
+  const file =
+    event.target.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  const coverPreview =
+    document.getElementById(
+      "edit-book-cover-preview"
+    );
+
+  const currentCover =
+    document.getElementById(
+      "edit-book-current-cover"
+    );
+
+  const coverLabel =
+  document.getElementById(
+    "edit-book-cover-label"
+  );
+
+  const reader =
+    new FileReader();
+
+  reader.onload = function(e) {
+
+    coverPreview.src =
+      e.target.result;
+
+    coverPreview.style.display =
+      "block";
+
+    currentCover.style.display =
+      "block";
+
+    coverLabel.textContent =
+  "Preview Cover Pengganti:";
+
+  };
+
+  reader.readAsDataURL(file);
+
+}
+
+function previewPdfPengganti(event) {
+
+  const file =
+    event.target.files[0];
+
+  const fileName =
+    document.getElementById(
+      "edit-book-new-file-name"
+    );
+
+  if (!file) {
+
+    fileName.textContent = "";
+    fileName.style.display =
+      "none";
+
+    return;
+  }
+
+  fileName.textContent =
+    `📄 PDF pengganti: ${file.name}`;
+
+  fileName.style.display =
+    "block";
 
 }
 
