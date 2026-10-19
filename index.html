@@ -2625,6 +2625,7 @@ body[data-ui-style="minimal"] .read-button:hover {
     placeholder="🔎 Cari judul, penulis, atau kategori..."
     autocomplete="off"
     oninput="cariBukuAdmin()"
+    onkeydown="keyboardPencarianAdmin(event)"
   >
 
         <button
@@ -4191,6 +4192,18 @@ function hapusPencarianAdmin() {
   cariBukuAdmin();
 
   input.focus();
+
+}
+
+function keyboardPencarianAdmin(event) {
+
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  event.preventDefault();
+
+  hapusPencarianAdmin();
 
 }
 
