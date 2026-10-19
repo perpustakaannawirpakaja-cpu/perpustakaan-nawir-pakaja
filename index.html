@@ -2319,7 +2319,8 @@ body[data-ui-style="minimal"] .read-button:hover {
   readonly
   onfocus="this.removeAttribute('readonly')"
   oninput="cariKoleksi()"
->
+  onkeydown="keyboardPencarian(event)"
+  >
 
     <button
   type="button"
@@ -3377,6 +3378,18 @@ function hapusPencarian() {
   filterKategoriBuku();
 
   searchInput.focus();
+}
+
+function keyboardPencarian(event) {
+
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  event.preventDefault();
+
+  hapusPencarian();
+
 }
 
 /* =========================================
