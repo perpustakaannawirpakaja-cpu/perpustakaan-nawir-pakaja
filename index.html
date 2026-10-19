@@ -941,6 +941,18 @@ body.dark .read-button{
   display:none;
 }
 
+.admin-book-search-hint{
+  margin:-4px 0 12px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.4;
+}
+
+.admin-book-search:focus-within
++ .admin-book-search-hint{
+  color:var(--primary);
+}
+
 .admin-book-search-status{
   min-height:16px;
   margin:-2px 0 12px;
@@ -2638,6 +2650,10 @@ body[data-ui-style="minimal"] .read-button:hover {
 </button>
 
 </div>
+
+<p class="admin-book-search-hint">
+  ⌨️ / Fokus Search · Esc Hapus Search
+</p>
 
 <div class="admin-book-sort">
 
