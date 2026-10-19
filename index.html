@@ -4207,6 +4207,49 @@ function keyboardPencarianAdmin(event) {
 
 }
 
+function fokusPencarianAdmin(event) {
+
+  if (event.key !== "/") {
+    return;
+  }
+
+  const target =
+  event.target;
+
+if (
+  target &&
+  target.closest &&
+  target.closest(
+    'input, textarea, select, [contenteditable="true"]'
+  )
+) {
+  return;
+}
+
+  const adminPanel =
+    document.getElementById(
+      "adminPanel"
+    );
+
+  const searchInput =
+    document.getElementById(
+      "admin-book-search"
+    );
+
+  if (
+    !adminPanel ||
+    !searchInput ||
+    !adminPanel.classList.contains("show")
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+
+  searchInput.focus();
+
+}
+
 function filterKategoriBukuAdmin() {
 
   const select =
@@ -6718,6 +6761,11 @@ if (
 }
 
 tampilkanBuku();
+
+window.addEventListener(
+  "keydown",
+  fokusPencarianAdmin
+);
     </script>
 
 </body>
