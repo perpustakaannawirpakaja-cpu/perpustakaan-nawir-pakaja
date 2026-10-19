@@ -1034,6 +1034,13 @@ body.dark .read-button{
   color:var(--primary);
 }
 
+#admin-book-filter-reset.active{
+  border-color:var(--primary);
+  color:var(--primary);
+  box-shadow:
+    0 0 0 3px rgba(37,99,235,.12);
+}
+
 .admin-active-book-filters{
   display:flex;
   flex-wrap:wrap;
@@ -3462,7 +3469,7 @@ const jumlahFilterAktif =
     adaSort
   ].filter(Boolean).length;
 
-resetButton.textContent =
+  resetButton.textContent =
   adaFilterAktif
     ? `↺ Reset Semua Filter (${jumlahFilterAktif})`
     : "↺ Reset Semua Filter";
@@ -4280,12 +4287,29 @@ function updateResetFilterBukuAdmin() {
     sortSelect &&
     sortSelect.value !== "title-asc";
 
+  const jumlahFilterAktif =
+  [
+    adaSearch,
+    adaKategori,
+    adaSort
+  ].filter(Boolean).length;
+
     resetButton.style.display =
     adaSearch ||
     adaKategori ||
     adaSort
       ? "inline-flex"
       : "none";
+
+  resetButton.textContent =
+  jumlahFilterAktif > 0
+    ? `↺ Reset Filter (${jumlahFilterAktif})`
+    : "↺ Reset Filter";
+
+  resetButton.classList.toggle(
+  "active",
+  jumlahFilterAktif > 0
+);
 
   updateAdminActiveFilterChips();
 
