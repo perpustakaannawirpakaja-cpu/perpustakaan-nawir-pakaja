@@ -1034,6 +1034,59 @@ body.dark .read-button{
   color:var(--primary);
 }
 
+.admin-active-book-filters{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:-2px 0 10px;
+}
+
+.admin-active-filter-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+
+  padding:6px 9px;
+
+  border:1px solid var(--border);
+  border-radius:999px;
+
+  background:var(--bg);
+  color:var(--text);
+
+  font-size:12px;
+  font-weight:600;
+
+  cursor:pointer;
+
+  transition:
+    border-color .2s ease,
+    color .2s ease,
+    transform .2s ease;
+}
+
+.admin-active-filter-chip:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+  transform:translateY(-1px);
+}
+
+.admin-active-filter-chip::after{
+  content:"✕";
+  margin-left:3px;
+  font-size:10px;
+  font-weight:800;
+  opacity:.65;
+}
+
+.admin-active-filter-chip:hover::after{
+  opacity:1;
+}
+
+.admin-active-book-filters:empty{
+  display:none;
+}
+
 #admin-book-list{
   display:flex;
   flex-direction:column;
@@ -2636,6 +2689,12 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 </div>
 
+<div
+  id="admin-active-book-filters"
+  class="admin-active-book-filters"
+  aria-live="polite"
+></div>
+
 <p
   id="admin-book-search-status"
   class="admin-book-search-status"
@@ -4221,12 +4280,183 @@ function updateResetFilterBukuAdmin() {
     sortSelect &&
     sortSelect.value !== "title-asc";
 
-  resetButton.style.display =
+    resetButton.style.display =
     adaSearch ||
     adaKategori ||
     adaSort
       ? "inline-flex"
       : "none";
+
+  updateAdminActiveFilterChips();
+
+}
+
+/* =========================================
+   UPDATE ADMIN ACTIVE FILTER CHIPS
+   ========================================= */
+
+function updateAdminActiveFilterChips() {
+
+  const container =
+    document.getElementById(
+      "admin-active-book-filters"
+    );
+
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = "";
+
+  const searchInput =
+    document.getElementById(
+      "admin-book-search"
+    );
+
+  const categorySelect =
+    document.getElementById(
+      "admin-book-category"
+    );
+
+  const sortSelect =
+    document.getElementById(
+      "admin-book-sort"
+    );
+
+  const keyword =
+    searchInput
+      ? searchInput.value.trim()
+      : "";
+
+  const tambahChip =
+    (teks, onClick) => {
+
+      const chip =
+        document.createElement("span");
+
+      chip.className =
+        "admin-active-filter-chip";
+
+      chip.textContent = teks;
+
+      chip.setAttribute(
+        "role",
+        "button"
+      );
+
+      chip.setAttribute(
+        "tabindex",
+        "0"
+      );
+
+      chip.setAttribute(
+        "aria-label",
+        `Hapus filter ${teks}`
+      );
+
+      chip.addEventListener(
+        "click",
+        onClick
+      );
+
+      chip.addEventListener(
+        "keydown",
+        (event) => {
+
+          if (
+            event.key === "Enter" ||
+            event.key === " "
+          ) {
+
+            event.preventDefault();
+
+            onClick();
+
+          }
+
+        }
+      );
+
+      container.appendChild(chip);
+
+    };
+
+  if (keyword) {
+
+    tambahChip(
+      `🔎 Pencarian: ${keyword}`,
+      () => {
+
+        if (searchInput) {
+          searchInput.value = "";
+        }
+
+        const clearButton =
+          document.getElementById(
+            "admin-book-search-clear"
+          );
+
+        if (clearButton) {
+          clearButton.style.display =
+            "none";
+        }
+
+        cariBukuAdmin();
+
+      }
+    );
+
+  }
+
+if (
+  categorySelect &&
+  categorySelect.value !== ""
+) {
+
+  tambahChip(
+    `🏷️ ${categorySelect.value}`,
+    () => {
+
+      categorySelect.value = "";
+
+      localStorage.removeItem(
+        "adminBookCategory"
+      );
+
+      cariBukuAdmin();
+
+    }
+  );
+
+}
+
+if (
+  sortSelect &&
+  sortSelect.value !== "title-asc"
+) {
+
+  const labelUrut = {
+    "title-desc": "Judul Z–A",
+    newest: "Terbaru",
+    oldest: "Terlama"
+  };
+
+  tambahChip(
+    `↕️ ${labelUrut[sortSelect.value]}`,
+    () => {
+
+      sortSelect.value = "title-asc";
+
+      localStorage.removeItem(
+        "adminBookSort"
+      );
+
+      urutkanBukuAdmin();
+
+    }
+  );
+
+}
 
 }
 
