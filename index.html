@@ -3991,6 +3991,21 @@ function cariBukuAdmin() {
       .trim()
       .toLowerCase();
 
+  if (keyword) {
+
+  localStorage.setItem(
+    "adminBookSearch",
+    input.value
+  );
+
+} else {
+
+  localStorage.removeItem(
+    "adminBookSearch"
+  );
+
+}
+
   const categorySelect =
   document.getElementById(
     "admin-book-category"
@@ -4239,6 +4254,10 @@ function resetFilterBukuAdmin() {
 
   localStorage.removeItem(
     "adminBookCategory"
+  );
+
+  localStorage.removeItem(
+    "adminBookSearch"
   );
 
   localStorage.removeItem(
@@ -4609,6 +4628,23 @@ if (
 
   sortSelect.value =
     savedSort;
+
+}
+
+const searchInput =
+  document.getElementById(
+    "admin-book-search"
+  );
+
+const savedSearch =
+  localStorage.getItem(
+    "adminBookSearch"
+  ) || "";
+
+if (searchInput) {
+
+  searchInput.value =
+    savedSearch;
 
 }
 
