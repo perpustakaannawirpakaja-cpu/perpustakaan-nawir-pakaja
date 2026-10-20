@@ -2323,11 +2323,14 @@ body[data-ui-style="minimal"] .read-button:hover {
     type="search"
     id="searchInput"
   name="library-search"
+  aria-label="Cari koleksi buku"
   placeholder="🔎 Cari berdasarkan abjad..."
   autocomplete="off"
   autocorrect="off"
   spellcheck="false"
   aria-autocomplete="none"
+  aria-describedby="public-search-hint"
+  aria-controls="bookList book-result-status"
   readonly
   onfocus="this.removeAttribute('readonly')"
   oninput="cariKoleksi()"
@@ -2345,7 +2348,10 @@ body[data-ui-style="minimal"] .read-button:hover {
 
   </div>
 
-<p class="public-search-hint">
+<p
+  id="public-search-hint"
+  class="public-search-hint"
+>
   ⌨️ / Fokus Search · Esc Hapus Search
 </p>
 
@@ -2456,11 +2462,20 @@ body[data-ui-style="minimal"] .read-button:hover {
 
   <section class="alphabet" id="alphabet"></section>
 
-<div id="book-result-status">
+<div
+  id="book-result-status"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+>
   Menampilkan 0 buku
 </div>
 
-<section id="bookList"></section>
+<section
+  id="bookList"
+  aria-label="Daftar koleksi buku"
+></section>
+  
   <div
   class="no-result"
   id="noResult"
