@@ -302,6 +302,18 @@ main{
   justify-content:center;
 }
 
+.public-search-hint{
+  margin:-10px 0 14px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.4;
+}
+
+.search:focus-within
++ .public-search-hint{
+  color:var(--primary);
+}
+
   .book-sort{
   display:flex;
   align-items:center;
@@ -2332,6 +2344,10 @@ body[data-ui-style="minimal"] .read-button:hover {
 </button>
 
   </div>
+
+<p class="public-search-hint">
+  ⌨️ / Fokus Search · Esc Hapus Search
+</p>
 
   <div class="book-sort">
 
