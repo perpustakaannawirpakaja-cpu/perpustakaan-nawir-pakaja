@@ -3284,6 +3284,10 @@ localStorage.removeItem(
 
 searchInput.value = "";
 
+localStorage.removeItem(
+  "bookSearch"
+);
+
 const clearButton =
   document.getElementById("clear-search");
 
@@ -3319,6 +3323,10 @@ if (cardAktif) {
 
   searchInput.value = "";
 
+  localStorage.removeItem(
+  "bookSearch"
+);
+
   const clearButton =
   document.getElementById("clear-search");
 
@@ -3338,6 +3346,23 @@ function cariKoleksi() {
       .value
       .trim()
       .toLowerCase();
+
+  if (keyword) {
+
+  localStorage.setItem(
+    "bookSearch",
+    document
+      .getElementById("searchInput")
+      .value
+  );
+
+} else {
+
+  localStorage.removeItem(
+    "bookSearch"
+  );
+
+}
   
   const clearButton =
     document.getElementById("clear-search");
@@ -3374,6 +3399,10 @@ function hapusPencarian() {
     document.getElementById("clear-search");
 
   searchInput.value = "";
+
+  localStorage.removeItem(
+  "bookSearch"
+);
 
   if (clearButton) {
     clearButton.style.display = "none";
@@ -3476,6 +3505,10 @@ function resetSemuaFilterBuku() {
   if (searchInput) {
     searchInput.value = "";
   }
+
+  localStorage.removeItem(
+  "bookSearch"
+);
 
   if (clearButton) {
     clearButton.style.display = "none";
@@ -3676,6 +3709,10 @@ if (keyword) {
       if (searchInput) {
         searchInput.value = "";
       }
+
+      localStorage.removeItem(
+  "bookSearch"
+);
 
       if (clearButton) {
         clearButton.style.display =
@@ -6791,6 +6828,37 @@ updateJumlahBukuPerHuruf();
 
 /* Update pilihan kategori */
 updateKategoriBuku();
+
+const savedBookSearch =
+  localStorage.getItem(
+    "bookSearch"
+  ) || "";
+
+const savedBookSearchInput =
+  document.getElementById(
+    "searchInput"
+  );
+
+if (savedBookSearchInput) {
+
+  savedBookSearchInput.value =
+    savedBookSearch;
+
+  const savedBookSearchClear =
+    document.getElementById(
+      "clear-search"
+    );
+
+  if (savedBookSearchClear) {
+
+    savedBookSearchClear.style.display =
+      savedBookSearch
+        ? "flex"
+        : "none";
+
+  }
+
+}
 
 const savedBookCategory =
   localStorage.getItem(
