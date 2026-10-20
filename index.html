@@ -1,3 +1,5 @@
+index.html - CHECKPOINT 64
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -3389,6 +3391,49 @@ function keyboardPencarian(event) {
   event.preventDefault();
 
   hapusPencarian();
+
+}
+
+function fokusPencarianUtama(event) {
+
+  if (event.key !== "/") {
+    return;
+  }
+
+  const target =
+    event.target;
+
+  if (
+    target &&
+    target.closest &&
+    target.closest(
+      'input, textarea, select, [contenteditable="true"]'
+    )
+  ) {
+    return;
+  }
+
+  const modalTerbuka =
+    document.querySelector(
+      ".modal.show"
+    );
+
+  if (modalTerbuka) {
+    return;
+  }
+
+  const searchInput =
+    document.getElementById(
+      "searchInput"
+    );
+
+  if (!searchInput) {
+    return;
+  }
+
+  event.preventDefault();
+
+  searchInput.focus();
 
 }
 
@@ -6801,6 +6846,11 @@ tampilkanBuku();
 window.addEventListener(
   "keydown",
   fokusPencarianAdmin
+);
+
+window.addEventListener(
+  "keydown",
+  fokusPencarianUtama
 );
     </script>
 
