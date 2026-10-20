@@ -302,6 +302,11 @@ main{
   justify-content:center;
 }
 
+#clear-search:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
+}
+
 .public-search-hint{
   margin:-10px 0 14px;
   color:var(--muted);
@@ -339,6 +344,12 @@ main{
   cursor:pointer;
 }
 
+#book-sort-select:focus-visible{
+  border-color:var(--primary);
+  box-shadow:
+    0 0 0 3px rgba(37,99,235,.15);
+}
+
   /* =========================================
    BOOK CATEGORY FILTER
    ========================================= */
@@ -368,6 +379,12 @@ main{
   cursor:pointer;
 }
 
+#book-category-select:focus-visible{
+  border-color:var(--primary);
+  box-shadow:
+    0 0 0 3px rgba(37,99,235,.15);
+}
+
 /* =========================================
    RESET BOOK FILTERS
    ========================================= */
@@ -392,6 +409,11 @@ main{
 #reset-book-filters:hover{
   border-color:var(--primary);
   color:var(--primary);
+}
+
+#reset-book-filters:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
 }
 
 #reset-book-filters:disabled{
@@ -455,6 +477,11 @@ transition:
   transform:translateY(0);
 }
 
+.active-filter-chip:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
+}
+
 .active-filter-chip::after{
   content:"✕";
 
@@ -477,6 +504,11 @@ transition:
 .search input:focus{
   border-color:var(--primary);
   box-shadow:0 0 0 3px rgba(37,99,235,.15);
+}
+
+.search input:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
 }
 
 .section-title{
@@ -2336,6 +2368,7 @@ body[data-ui-style="minimal"] .read-button:hover {
   aria-autocomplete="none"
   aria-describedby="public-search-hint"
   aria-controls="bookList book-result-status"
+  aria-keyshortcuts="/ Escape"
   readonly
   onfocus="this.removeAttribute('readonly')"
   oninput="cariKoleksi()"
@@ -2347,6 +2380,7 @@ body[data-ui-style="minimal"] .read-button:hover {
   id="clear-search"
   onclick="hapusPencarian()"
   aria-label="Hapus pencarian"
+  aria-controls="bookList book-result-status active-book-filters"
 >
   ✕
 </button>
@@ -2368,6 +2402,7 @@ body[data-ui-style="minimal"] .read-button:hover {
 
     <select
   id="book-sort-select"
+  aria-controls="bookList book-result-status"
   onchange="urutkanKoleksi()"
 >
     <option value="az">Judul A–Z</option>
@@ -2379,8 +2414,8 @@ body[data-ui-style="minimal"] .read-button:hover {
 </div>
 
   <!-- =========================================
-     BOOK CATEGORY FILTER
-     ========================================= -->
+       BOOK CATEGORY FILTER
+       ========================================= -->
 
 <div class="book-category-filter">
 
@@ -2389,9 +2424,10 @@ body[data-ui-style="minimal"] .read-button:hover {
   </label>
 
   <select
-    id="book-category-select"
-    onchange="filterKategoriBuku()"
-  >
+  id="book-category-select"
+  aria-controls="bookList book-result-status"
+  onchange="filterKategoriBuku()"
+>
     <option value="">
       Semua Kategori
     </option>
@@ -2405,10 +2441,11 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 <div class="book-filter-reset">
   <button
-    type="button"
-    id="reset-book-filters"
-    onclick="resetSemuaFilterBuku()"
-  >
+  type="button"
+  id="reset-book-filters"
+  aria-controls="bookList book-result-status active-book-filters"
+  onclick="resetSemuaFilterBuku()"
+>
     ↺ Reset Semua Filter
   </button>
 </div>
@@ -2951,6 +2988,11 @@ card.setAttribute(
   "false"
 );
 
+  card.setAttribute(
+  "aria-controls",
+  "bookList book-result-status"
+);
+
   card.innerHTML = `
     <div class="icon">📖</div>
     <h3>${huruf}</h3>
@@ -3486,7 +3528,7 @@ document
       "false"
     );
 
-  });
+    });
 
 filterKategoriBuku();
 }
@@ -3788,6 +3830,11 @@ function updateActiveFilterChips() {
       "tabindex",
       "0"
   );
+
+  chip.setAttribute(
+  "aria-controls",
+  "bookList book-result-status active-book-filters"
+);
 
   chip.addEventListener(
       "click",
