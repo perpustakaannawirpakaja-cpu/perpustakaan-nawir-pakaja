@@ -963,6 +963,11 @@ body.dark .read-button{
     0 0 0 3px rgba(37,99,235,.12);
 }
 
+#admin-book-search:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
+}
+
 #admin-book-search-clear{
   position:absolute;
   top:50%;
@@ -982,6 +987,11 @@ body.dark .read-button{
 #admin-book-search-clear:hover{
   background:var(--border);
   color:var(--text);
+}
+
+#admin-book-search-clear:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
 }
 
 #admin-book-search::-webkit-search-cancel-button{
@@ -1041,6 +1051,11 @@ body.dark .read-button{
     0 0 0 3px rgba(37,99,235,.12);
 }
 
+#admin-book-sort:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
+}
+
 .admin-book-category-filter{
   display:flex;
   align-items:center;
@@ -1072,6 +1087,11 @@ body.dark .read-button{
     0 0 0 3px rgba(37,99,235,.12);
 }
 
+#admin-book-category:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
+}
+
 .admin-book-filter-reset{
   display:flex;
   justify-content:flex-end;
@@ -1093,6 +1113,11 @@ body.dark .read-button{
 #admin-book-filter-reset:hover{
   border-color:var(--primary);
   color:var(--primary);
+}
+
+#admin-book-filter-reset:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
 }
 
 #admin-book-filter-reset.active{
@@ -1137,6 +1162,11 @@ body.dark .read-button{
   border-color:var(--primary);
   color:var(--primary);
   transform:translateY(-1px);
+}
+
+.admin-active-filter-chip:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
 }
 
 .admin-active-filter-chip::after{
@@ -2715,24 +2745,32 @@ body[data-ui-style="minimal"] .read-button:hover {
   <input
     type="search"
     id="admin-book-search"
+    aria-label="Cari koleksi Admin"
+    aria-describedby="admin-book-search-hint"
     placeholder="🔎 Cari judul, penulis, atau kategori..."
     autocomplete="off"
+    aria-controls="admin-book-list admin-book-search-status admin-active-book-filters"
+    aria-keyshortcuts="/ Escape"
     oninput="cariBukuAdmin()"
     onkeydown="keyboardPencarianAdmin(event)"
   >
 
         <button
-  type="button"
-  id="admin-book-search-clear"
-  onclick="hapusPencarianAdmin()"
-  aria-label="Hapus pencarian koleksi Admin"
->
+          type="button"
+          id="admin-book-search-clear"
+          onclick="hapusPencarianAdmin()"
+          aria-label="Hapus pencarian koleksi Admin"
+          aria-controls="admin-book-list admin-book-search-status admin-active-book-filters"
+        >
   ✕
 </button>
 
 </div>
 
-<p class="admin-book-search-hint">
+<p
+  id="admin-book-search-hint"
+  class="admin-book-search-hint"
+>
   ⌨️ / Fokus Search · Esc Hapus Search
 </p>
 
@@ -2744,6 +2782,7 @@ body[data-ui-style="minimal"] .read-button:hover {
 
   <select
     id="admin-book-sort"
+    aria-controls="admin-book-list admin-book-search-status admin-active-book-filters"
     onchange="urutkanBukuAdmin()"
   >
     <option value="title-asc">
@@ -2773,6 +2812,7 @@ body[data-ui-style="minimal"] .read-button:hover {
 
   <select
     id="admin-book-category"
+    aria-controls="admin-book-list admin-book-search-status admin-active-book-filters"
     onchange="filterKategoriBukuAdmin()"
   >
     <option value="">
@@ -2787,6 +2827,7 @@ body[data-ui-style="minimal"] .read-button:hover {
   <button
     type="button"
     id="admin-book-filter-reset"
+    aria-controls="admin-book-list admin-book-search-status admin-active-book-filters"
     onclick="resetFilterBukuAdmin()"
   >
     ↺ Reset Filter
@@ -2803,7 +2844,9 @@ body[data-ui-style="minimal"] .read-button:hover {
 <p
   id="admin-book-search-status"
   class="admin-book-search-status"
+  role="status"
   aria-live="polite"
+  aria-atomic="true"
 ></p>
 
       <div id="admin-book-list">
@@ -4776,6 +4819,11 @@ function updateAdminActiveFilterChips() {
         "aria-label",
         `Hapus filter ${teks}`
       );
+
+      chip.setAttribute(
+  "aria-controls",
+  "admin-book-list admin-book-search-status admin-active-book-filters"
+);
 
       chip.addEventListener(
         "click",
