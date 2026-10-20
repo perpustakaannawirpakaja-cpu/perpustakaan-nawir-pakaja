@@ -1,5 +1,3 @@
-index.html - CHECKPOINT 64
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -4304,6 +4302,15 @@ if (
     'input, textarea, select, [contenteditable="true"]'
   )
 ) {
+  return;
+}
+
+const modalLainTerbuka =
+  document.querySelector(
+    ".modal.show:not(#adminPanel)"
+  );
+
+if (modalLainTerbuka) {
   return;
 }
 
