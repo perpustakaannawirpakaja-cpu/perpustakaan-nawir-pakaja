@@ -4280,6 +4280,22 @@ async function bukaAdminPanel() {
     .classList
     .add("show");
 
+  document
+  .querySelector("header")
+  ?.setAttribute("inert", "");
+
+document
+  .querySelector("main")
+  ?.setAttribute("inert", "");
+
+document
+  .querySelector("footer")
+  ?.setAttribute("inert", "");
+
+    document
+    .getElementById("admin-book-search")
+    ?.focus();
+
   const {
     data: { user }
   } = await db.auth.getUser();
@@ -6307,10 +6323,24 @@ if (coverPath) {
 }
 
 function tutupAdminPanel() {
+
   document
     .getElementById("adminPanel")
     .classList
     .remove("show");
+
+  document
+    .querySelector("header")
+    ?.removeAttribute("inert");
+
+  document
+    .querySelector("main")
+    ?.removeAttribute("inert");
+
+  document
+    .querySelector("footer")
+    ?.removeAttribute("inert");
+
 }
 
 async function logoutAdmin() {
