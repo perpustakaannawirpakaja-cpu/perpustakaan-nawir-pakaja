@@ -2863,11 +2863,19 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 <!-- MODAL EDIT BUKU -->
 
-<div class="modal" id="editBookModal">
+<div
+  class="modal"
+  id="editBookModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="edit-book-modal-title"
+>
 
   <div class="modal-box">
 
-    <h2>✏️ Edit Buku</h2>
+    <h2 id="edit-book-modal-title">
+  ✏️ Edit Buku
+</h2>
 
     <form
       id="edit-book-form"
@@ -2882,27 +2890,31 @@ body[data-ui-style="minimal"] .read-button:hover {
       <input
         id="edit-book-title"
         type="text"
+        aria-label="Judul Buku"
         placeholder="Judul Buku"
         required
       >
 
       <input
-        id="edit-book-author"
-        type="text"
-        placeholder="Penulis"
-      >
+  id="edit-book-author"
+  type="text"
+  aria-label="Penulis"
+  placeholder="Penulis"
+>
 
       <input
-        id="edit-book-category"
-        type="text"
-        placeholder="Kategori"
-      >
+  id="edit-book-category"
+  type="text"
+  aria-label="Kategori"
+  placeholder="Kategori"
+>
 
       <textarea
-        id="edit-book-description"
-        placeholder="Deskripsi Buku"
-        rows="4"
-      ></textarea>
+  id="edit-book-description"
+  aria-label="Deskripsi Buku"
+  placeholder="Deskripsi Buku"
+  rows="4"
+></textarea>
 
       <div id="edit-book-current-cover">
         <p id="edit-book-cover-label">
@@ -2965,7 +2977,12 @@ body[data-ui-style="minimal"] .read-button:hover {
   style="display:none;"
 ></p>
 
-      <p id="edit-book-message"></p>
+      <p
+  id="edit-book-message"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+></p>
 
       <div class="modal-actions">
 
@@ -5433,7 +5450,11 @@ const currentCategory =
 
 }
 
+let idFokusEditBuku = null;
+
 async function bukaEditBukuAdmin(bookId) {
+
+  idFokusEditBuku = bookId;
 
   const editModal =
     document.getElementById(
@@ -5448,6 +5469,10 @@ async function bukaEditBukuAdmin(bookId) {
   editModal
     .classList
     .add("show");
+
+  document
+  .getElementById("edit-book-title")
+  ?.focus();
 
   editMessage.textContent =
     "Memuat data buku...";
@@ -5691,6 +5716,42 @@ coverLabel.textContent =
   if (editMessage) {
     editMessage.textContent = "";
   }
+
+if (idFokusEditBuku !== null) {
+
+  const tombolEdit =
+    document.querySelector(
+      `.admin-book-edit[data-book-id="${idFokusEditBuku}"]`
+    );
+
+  tombolEdit?.focus();
+
+  idFokusEditBuku = null;
+}
+
+}
+
+function tutupEditBukuDenganEscape(event) {
+
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  const editModal =
+    document.getElementById(
+      "editBookModal"
+    );
+
+  if (
+    !editModal ||
+    !editModal.classList.contains("show")
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+
+  tutupEditBukuAdmin();
 
 }
 
@@ -7362,6 +7423,11 @@ window.addEventListener(
 window.addEventListener(
   "keydown",
   jagaFokusEditBuku
+);
+
+window.addEventListener(
+  "keydown",
+  tutupEditBukuDenganEscape
 );
 
 window.addEventListener(
