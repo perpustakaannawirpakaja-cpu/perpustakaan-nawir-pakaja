@@ -4702,6 +4702,84 @@ if (modalLainTerbuka) {
 
 }
 
+function jagaFokusEditBuku(event) {
+
+  if (event.key !== "Tab") {
+    return;
+  }
+
+  const editModal =
+    document.getElementById(
+      "editBookModal"
+    );
+
+  if (
+    !editModal ||
+    !editModal.classList.contains("show")
+  ) {
+    return;
+  }
+
+  const fokusable =
+    Array.from(
+      editModal.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(
+      (element) =>
+        element.getClientRects().length > 0
+    );
+
+  if (fokusable.length === 0) {
+    return;
+  }
+
+  const pertama =
+    fokusable[0];
+
+  const terakhir =
+    fokusable[
+      fokusable.length - 1
+    ];
+
+  const fokusDiModal =
+    editModal.contains(
+      document.activeElement
+    );
+
+  if (!fokusDiModal) {
+
+    event.preventDefault();
+
+    if (event.shiftKey) {
+      terakhir.focus();
+    } else {
+      pertama.focus();
+    }
+
+    return;
+  }
+
+  if (
+    event.shiftKey &&
+    document.activeElement === pertama
+  ) {
+
+    event.preventDefault();
+    terakhir.focus();
+
+  } else if (
+    !event.shiftKey &&
+    document.activeElement === terakhir
+  ) {
+
+    event.preventDefault();
+    pertama.focus();
+
+  }
+
+}
+
 function filterKategoriBukuAdmin() {
 
   const select =
@@ -7279,6 +7357,11 @@ window.addEventListener(
 window.addEventListener(
   "keydown",
   jagaFokusAdmin
+);
+
+window.addEventListener(
+  "keydown",
+  jagaFokusEditBuku
 );
 
 window.addEventListener(
