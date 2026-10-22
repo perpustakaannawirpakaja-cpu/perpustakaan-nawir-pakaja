@@ -5572,6 +5572,10 @@ async function bukaEditBukuAdmin(bookId) {
     .classList
     .add("show");
 
+  document
+  .getElementById("adminPanel")
+  ?.setAttribute("inert", "");
+
   editMessage.textContent =
     "Memuat data buku...";
 
@@ -5760,6 +5764,10 @@ function tutupEditBukuAdmin() {
     .getElementById("editBookModal")
     .classList
     .remove("show");
+
+  document
+  .getElementById("adminPanel")
+  ?.removeAttribute("inert");
 
   document
     .getElementById("edit-book-form")
