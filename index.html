@@ -3890,6 +3890,11 @@ function updateActiveFilterChips() {
       "book-sort-select"
     );
 
+  const categorySelect =
+  document.getElementById(
+    "book-category-select"
+  );
+
   const keyword =
     searchInput
       ? searchInput.value.trim()
@@ -3940,6 +3945,10 @@ chip.addEventListener(
     ) {
       event.preventDefault();
       onClick();
+
+      requestAnimationFrame(() => {
+  fokusKembali?.focus();
+});
     }
   }
 );
@@ -4015,11 +4024,6 @@ if (filterKategoriAktif) {
     `🏷️ ${filterKategoriAktif}`,
     () => {
 
-      const categorySelect =
-        document.getElementById(
-          "book-category-select"
-        );
-
       filterKategoriAktif = "";
 
       if (categorySelect) {
@@ -4032,10 +4036,11 @@ if (filterKategoriAktif) {
       );
 
       filterKategoriBuku();
-    }
+    },
+    categorySelect
   );
 }
-
+  
 if (
   sortSelect &&
   sortSelect.value !== "az"
