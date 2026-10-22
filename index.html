@@ -7078,6 +7078,12 @@ if (adminTotalBooks) {
     `${totalBooks || 0} buku`;
 }
 
+requestAnimationFrame(() => {
+  document
+    .getElementById("book-title")
+    ?.focus();
+});
+
   } catch (error) {
 
     console.error(
