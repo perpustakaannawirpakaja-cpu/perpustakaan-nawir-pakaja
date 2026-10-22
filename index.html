@@ -5826,7 +5826,35 @@ if (idFokusEditBuku !== null) {
       `.admin-book-edit[data-book-id="${idFokusEditBuku}"]`
     );
 
-  tombolEdit?.focus();
+  const resetFilter =
+    document.getElementById(
+      "admin-book-filter-reset"
+    );
+
+  const searchAdmin =
+    document.getElementById(
+      "admin-book-search"
+    );
+
+  if (
+    tombolEdit &&
+    tombolEdit.getClientRects().length > 0
+  ) {
+
+    tombolEdit.focus();
+
+  } else if (
+    resetFilter &&
+    resetFilter.getClientRects().length > 0
+  ) {
+
+    resetFilter.focus();
+
+  } else {
+
+    searchAdmin?.focus();
+
+  }
 
   idFokusEditBuku = null;
 }
