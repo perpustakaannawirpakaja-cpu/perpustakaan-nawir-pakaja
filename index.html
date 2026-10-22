@@ -4722,6 +4722,84 @@ if (modalLainTerbuka) {
 
 }
 
+function jagaFokusLoginAdmin(event) {
+
+  if (event.key !== "Tab") {
+    return;
+  }
+
+  const adminModal =
+    document.getElementById(
+      "adminModal"
+    );
+
+  if (
+    !adminModal ||
+    !adminModal.classList.contains("show")
+  ) {
+    return;
+  }
+
+  const fokusable =
+    Array.from(
+      adminModal.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(
+      (element) =>
+        element.getClientRects().length > 0
+    );
+
+  if (fokusable.length === 0) {
+    return;
+  }
+
+  const pertama =
+    fokusable[0];
+
+  const terakhir =
+    fokusable[
+      fokusable.length - 1
+    ];
+
+  const fokusDiModal =
+    adminModal.contains(
+      document.activeElement
+    );
+
+  if (!fokusDiModal) {
+
+    event.preventDefault();
+
+    if (event.shiftKey) {
+      terakhir.focus();
+    } else {
+      pertama.focus();
+    }
+
+    return;
+  }
+
+  if (
+    event.shiftKey &&
+    document.activeElement === pertama
+  ) {
+
+    event.preventDefault();
+    terakhir.focus();
+
+  } else if (
+    !event.shiftKey &&
+    document.activeElement === terakhir
+  ) {
+
+    event.preventDefault();
+    pertama.focus();
+
+  }
+
+}
+
 function jagaFokusAdmin(event) {
 
   if (event.key !== "Tab") {
@@ -7657,6 +7735,11 @@ window.addEventListener(
   "keydown",
   fokusPencarianAdmin,
   true
+);
+
+window.addEventListener(
+  "keydown",
+  jagaFokusLoginAdmin
 );
 
 window.addEventListener(
