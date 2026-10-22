@@ -1252,6 +1252,14 @@ body.dark .read-button{
   font-weight:700;
 }
 
+.admin-book-edit:focus,
+.admin-book-delete:focus{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
+  box-shadow:
+    0 0 0 4px rgba(37,99,235,.16);
+}
+
 .admin-book-edit{
   background:#dbeafe;
   color:#1d4ed8;
@@ -5560,10 +5568,6 @@ async function bukaEditBukuAdmin(bookId) {
     .classList
     .add("show");
 
-  document
-  .getElementById("edit-book-title")
-  ?.focus();
-
   editMessage.textContent =
     "Memuat data buku...";
 
@@ -5738,7 +5742,11 @@ newFileName.textContent = "";
 newFileName.style.display =
   "none";
 
-  editMessage.textContent = "";
+editMessage.textContent = "";
+
+document
+  .getElementById("edit-book-title")
+  ?.focus();
 
 }
 
