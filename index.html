@@ -2357,9 +2357,13 @@ body[data-ui-style="minimal"] .read-button:hover {
     <option value="minimal">◻️ Minimalist UI</option>
   </select>
 
-  <button class="admin-btn" onclick="bukaAdmin()">
-    🔐 Admin
-  </button>
+  <button
+  id="admin-open-btn"
+  class="admin-btn"
+  onclick="bukaAdmin()"
+>
+  🔐 Admin
+</button>
 
   <button class="theme-btn" onclick="ubahTema()">
     🌙 Dark
@@ -2624,13 +2628,22 @@ body[data-ui-style="minimal"] .read-button:hover {
   
 <!-- PANEL ADMIN UPLOAD BUKU -->
 
-<div class="modal" id="adminPanel">
+<div
+  class="modal"
+  id="adminPanel"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="admin-panel-title"
+  aria-describedby="admin-panel-description"
+>
 
   <div class="modal-box">
 
-<h2>🛠️ Dashboard Admin</h2>
+<h2 id="admin-panel-title">
+  🛠️ Dashboard Admin
+</h2>
 
-<p>
+<p id="admin-panel-description">
   Kelola koleksi Perpustakaan Nawir Pakaja.
 </p>
 
@@ -2664,6 +2677,7 @@ body[data-ui-style="minimal"] .read-button:hover {
       <input
         id="book-title"
         type="text"
+        aria-label="Judul Buku"
         placeholder="Judul Buku"
         required
       >
@@ -2671,17 +2685,20 @@ body[data-ui-style="minimal"] .read-button:hover {
       <input
         id="book-author"
         type="text"
+        aria-label="Penulis"
         placeholder="Penulis"
       >
 
       <input
         id="book-category"
         type="text"
+        aria-label="Kategori"
         placeholder="Kategori"
       >
 
       <textarea
         id="book-description"
+        aria-label="Deskripsi Buku"
         placeholder="Deskripsi Buku"
         rows="4"
       ></textarea>
@@ -2705,7 +2722,12 @@ body[data-ui-style="minimal"] .read-button:hover {
         >
       </label>
 
-      <p id="book-upload-message"></p>
+      <p
+  id="book-upload-message"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+></p>
 
       <div class="modal-actions">
 
@@ -6549,6 +6571,44 @@ function tutupAdminPanel() {
     .querySelector("footer")
     ?.removeAttribute("inert");
 
+  document
+  .getElementById("admin-open-btn")
+  ?.focus();
+
+}
+
+function tutupAdminDenganEscape(event) {
+
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  if (event.defaultPrevented) {
+    return;
+  }
+
+  const adminPanel =
+    document.getElementById(
+      "adminPanel"
+    );
+
+  const modalLainTerbuka =
+    document.querySelector(
+      ".modal.show:not(#adminPanel)"
+    );
+
+  if (
+    !adminPanel ||
+    !adminPanel.classList.contains("show") ||
+    modalLainTerbuka
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+
+  tutupAdminPanel();
+
 }
 
 async function logoutAdmin() {
@@ -7418,6 +7478,11 @@ window.addEventListener(
 window.addEventListener(
   "keydown",
   jagaFokusAdmin
+);
+
+window.addEventListener(
+  "keydown",
+  tutupAdminDenganEscape
 );
 
 window.addEventListener(
