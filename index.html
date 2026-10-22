@@ -4722,6 +4722,34 @@ if (modalLainTerbuka) {
 
 }
 
+function tutupLoginAdminDenganEscape(event) {
+
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  if (event.defaultPrevented) {
+    return;
+  }
+
+  const adminModal =
+    document.getElementById(
+      "adminModal"
+    );
+
+  if (
+    !adminModal ||
+    !adminModal.classList.contains("show")
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+
+  tutupAdmin();
+
+}
+
 function jagaFokusLoginAdmin(event) {
 
   if (event.key !== "Tab") {
@@ -7735,6 +7763,11 @@ window.addEventListener(
   "keydown",
   fokusPencarianAdmin,
   true
+);
+
+window.addEventListener(
+  "keydown",
+  tutupLoginAdminDenganEscape
 );
 
 window.addEventListener(
