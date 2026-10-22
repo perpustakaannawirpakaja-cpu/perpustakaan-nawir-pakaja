@@ -3895,8 +3895,8 @@ function updateActiveFilterChips() {
       ? searchInput.value.trim()
       : "";
 
-  const tambahChip =
-  (teks, onClick) => {
+const tambahChip =
+  (teks, onClick, fokusKembali) => {
 
     const chip =
       document.createElement("span");
@@ -3927,23 +3927,22 @@ function updateActiveFilterChips() {
 );
 
   chip.addEventListener(
-      "click",
-      onClick
-  );
+  "click",
+  onClick
+);
 
-  chip.addEventListener(
-      "keydown",
-      (event) => {
-        if (
-          event.key === "Enter" ||
-          event.key === " "
-        ) {
-          event.preventDefault();
-          onClick();
-        }
-      }
-  );
-
+chip.addEventListener(
+  "keydown",
+  (event) => {
+    if (
+      event.key === "Enter" ||
+      event.key === " "
+    ) {
+      event.preventDefault();
+      onClick();
+    }
+  }
+);
     container.appendChild(chip);
   };
 
@@ -5072,61 +5071,64 @@ function updateAdminActiveFilterChips() {
       ? searchInput.value.trim()
       : "";
 
-  const tambahChip =
-    (teks, onClick) => {
+const tambahChip =
+  (teks, onClick, fokusKembali) => {
 
-      const chip =
-        document.createElement("span");
+    const chip =
+      document.createElement("span");
 
-      chip.className =
-        "admin-active-filter-chip";
+    chip.className =
+      "admin-active-filter-chip";
 
-      chip.textContent = teks;
+    chip.textContent = teks;
 
-      chip.setAttribute(
-        "role",
-        "button"
-      );
+    chip.setAttribute(
+      "role",
+      "button"
+    );
 
-      chip.setAttribute(
-        "tabindex",
-        "0"
-      );
+    chip.setAttribute(
+      "tabindex",
+      "0"
+    );
 
-      chip.setAttribute(
-        "aria-label",
-        `Hapus filter ${teks}`
-      );
+    chip.setAttribute(
+      "aria-label",
+      `Hapus filter ${teks}`
+    );
 
-      chip.setAttribute(
-  "aria-controls",
-  "admin-book-list admin-book-search-status admin-active-book-filters"
-);
+    chip.setAttribute(
+      "aria-controls",
+      "admin-book-list admin-book-search-status admin-active-book-filters"
+    );
 
-      chip.addEventListener(
-        "click",
-        onClick
-      );
+    chip.addEventListener(
+      "click",
+      onClick
+    );
 
-      chip.addEventListener(
-        "keydown",
-        (event) => {
+    chip.addEventListener(
+      "keydown",
+      (event) => {
 
-          if (
-            event.key === "Enter" ||
-            event.key === " "
-          ) {
+        if (
+          event.key === "Enter" ||
+          event.key === " "
+        ) {
 
-            event.preventDefault();
+          event.preventDefault();
 
-            onClick();
+          onClick();
 
-          }
+          requestAnimationFrame(() => {
+            fokusKembali?.focus();
+          });
 
         }
-      );
+      }
+    );
 
-      container.appendChild(chip);
+    container.appendChild(chip);
 
     };
 
@@ -5174,8 +5176,9 @@ if (
 
       cariBukuAdmin();
 
-    }
-  );
+      },
+  categorySelect
+);
 
 }
 
