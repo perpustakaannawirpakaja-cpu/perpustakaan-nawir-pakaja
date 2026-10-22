@@ -4362,10 +4362,21 @@ async function bukaAdmin(){
     ?.setAttribute("inert", "");
 
   requestAnimationFrame(() => {
-    document
-      .getElementById("admin-email")
-      ?.focus();
-  });
+
+  const password =
+    document.getElementById(
+      "admin-password"
+    );
+
+  if (password) {
+    password.value = "";
+  }
+
+  document
+    .getElementById("admin-email")
+    ?.focus();
+
+});
 
 }
 
