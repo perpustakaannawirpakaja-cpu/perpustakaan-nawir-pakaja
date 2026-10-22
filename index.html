@@ -4671,9 +4671,19 @@ function keyboardPencarianAdmin(event) {
     return;
   }
 
-  event.preventDefault();
+  const input =
+    event.currentTarget;
 
-  hapusPencarianAdmin();
+  if (
+    input &&
+    input.value.trim() !== ""
+  ) {
+
+    event.preventDefault();
+
+    hapusPencarianAdmin();
+
+  }
 
 }
 
