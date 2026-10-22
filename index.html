@@ -7275,6 +7275,19 @@ document
 );
 
 document
+  .getElementById("adminPanel")
+  .addEventListener(
+    "click",
+    function(e){
+
+      if(e.target === this){
+        tutupAdminPanel();
+      }
+
+    }
+  );
+
+document
   .getElementById("editBookModal")
   .addEventListener(
     "click",
