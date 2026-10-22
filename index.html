@@ -3960,11 +3960,6 @@ if (keyword) {
     `🔎 Pencarian: ${keyword}`,
     () => {
 
-      const searchInput =
-        document.getElementById(
-          "searchInput"
-        );
-
       const clearButton =
         document.getElementById(
           "clear-search"
@@ -3984,7 +3979,8 @@ if (keyword) {
       }
 
       filterKategoriBuku();
-    }
+    },
+    searchInput
   );
 }
 
@@ -4053,19 +4049,20 @@ if (
   };
 
   tambahChip(
-    `↕️ ${labelUrut[sortSelect.value]}`,
-    () => {
+  `↕️ ${labelUrut[sortSelect.value]}`,
+  () => {
 
-      sortSelect.value = "az";
+    sortSelect.value = "az";
 
-      localStorage.setItem(
-        "bookSortMode",
-        "az"
-      );
+    localStorage.setItem(
+      "bookSortMode",
+      "az"
+    );
 
-      filterKategoriBuku();
-    }
-  );
+    filterKategoriBuku();
+  },
+  sortSelect
+);
 }
 }
 
