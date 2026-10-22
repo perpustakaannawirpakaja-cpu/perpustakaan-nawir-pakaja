@@ -2584,13 +2584,22 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 <!-- MODAL ADMIN -->
 
-<div class="modal" id="adminModal">
+<div
+  class="modal"
+  id="adminModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="admin-login-title"
+  aria-describedby="admin-login-description"
+>
 
   <div class="modal-box">
 
-    <h2>🔐 Admin</h2>
+    <h2 id="admin-login-title">
+      🔐 Admin
+    </h2>
 
-    <p>
+    <p id="admin-login-description">
       Area pengelolaan Perpustakaan Nawir Pakaja.
     </p>
 
@@ -2599,23 +2608,28 @@ body[data-ui-style="minimal"] .read-button:hover {
       onsubmit="event.preventDefault(); loginAdmin();"
     >
 
-      <input
-        id="admin-email"
-        type="email"
-        placeholder="Email Admin"
-        autocomplete="email"
-        required
-      >
+<input
+  id="admin-email"
+  type="email"
+  aria-label="Email Admin"
+  placeholder="Email Admin"
+  autocomplete="email"
+  required
+>
 
-      <input
-        id="admin-password"
-        type="password"
-        placeholder="Password"
-        autocomplete="current-password"
-        required
-      >
-
-      <p id="admin-login-message"></p>
+<input
+  id="admin-password"
+  type="password"
+  aria-label="Password Admin"
+  placeholder="Password"
+  autocomplete="current-password"
+  required
+>
+        id="admin-login-message"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      ></p>
 
       <div class="modal-actions">
 
@@ -2808,7 +2822,7 @@ body[data-ui-style="minimal"] .read-button:hover {
   id="admin-book-search-hint"
   class="admin-book-search-hint"
 >
-  ⌨️ / Fokus Search · Esc Hapus Search
+  ⌨️ / Fokus Search · Esc Hapus Search / Tutup Admin
 </p>
 
 <div class="admin-book-sort">
@@ -4319,6 +4333,15 @@ async function bukaAdmin(){
 
   /* Belum login Admin:
      tampilkan form login */
+  const loginMessage =
+  document.getElementById(
+    "admin-login-message"
+  );
+
+if (loginMessage) {
+  loginMessage.textContent = "";
+}
+  
   document
   .getElementById("adminModal")
   .classList
