@@ -6965,10 +6965,14 @@ async function loginAdmin() {
     loginButton.textContent = "Masuk";
 
     message.textContent =
-      "❌ Login gagal: " +
-      (error?.message || "User tidak ditemukan.");
+  "❌ Login gagal: " +
+  (error?.message || "User tidak ditemukan.");
 
-    return;
+document
+  .getElementById("admin-password")
+  ?.focus();
+
+return;
   }
 
   const { data: adminData, error: adminError } =
