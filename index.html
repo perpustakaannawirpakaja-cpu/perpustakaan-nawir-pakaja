@@ -4741,6 +4741,74 @@ if (modalLainTerbuka) {
 
 }
 
+function jagaFokusUtama(event) {
+
+  if (event.key !== "Tab") {
+    return;
+  }
+
+  const modalTerbuka =
+    document.querySelector(
+      ".modal.show"
+    );
+
+  if (modalTerbuka) {
+    return;
+  }
+
+  const searchInput =
+    document.getElementById(
+      "searchInput"
+    );
+
+  if (
+    !searchInput ||
+    searchInput.getClientRects().length === 0
+  ) {
+    return;
+  }
+
+  const fokusable =
+    Array.from(
+      document.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(
+      (element) =>
+        element.getClientRects().length > 0 &&
+        !element.closest("#adminPanel") &&
+        !element.closest(".modal")
+    );
+
+  if (fokusable.length === 0) {
+    return;
+  }
+
+  const terakhir =
+    fokusable[
+      fokusable.length - 1
+    ];
+
+  if (
+    event.shiftKey &&
+    document.activeElement === searchInput
+  ) {
+
+    event.preventDefault();
+    terakhir.focus();
+
+  } else if (
+    !event.shiftKey &&
+    document.activeElement === terakhir
+  ) {
+
+    event.preventDefault();
+    searchInput.focus();
+
+  }
+
+}
+
 function jagaFokusEditBuku(event) {
 
   if (event.key !== "Tab") {
@@ -7500,6 +7568,11 @@ window.addEventListener(
   "keydown",
   fokusPencarianUtama,
   true
+);
+
+window.addEventListener(
+  "keydown",
+  jagaFokusUtama
 );
     </script>
 
