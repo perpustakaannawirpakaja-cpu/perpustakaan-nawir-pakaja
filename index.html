@@ -4313,18 +4313,52 @@ async function bukaAdmin(){
   /* Belum login Admin:
      tampilkan form login */
   document
-    .getElementById("adminModal")
-    .classList
-    .add("show");
+  .getElementById("adminModal")
+  .classList
+  .add("show");
+
+document
+  .querySelector("header")
+  ?.setAttribute("inert", "");
+
+document
+  .querySelector("main")
+  ?.setAttribute("inert", "");
+
+document
+  .querySelector("footer")
+  ?.setAttribute("inert", "");
+
+requestAnimationFrame(() => {
+  document
+    .getElementById("admin-email")
+    ?.focus();
+});
 
 }
 
 function tutupAdmin(){
 
   document
-  .getElementById("adminModal")
-  .classList
-  .remove("show");
+    .getElementById("adminModal")
+    .classList
+    .remove("show");
+
+  document
+    .querySelector("header")
+    ?.removeAttribute("inert");
+
+  document
+    .querySelector("main")
+    ?.removeAttribute("inert");
+
+  document
+    .querySelector("footer")
+    ?.removeAttribute("inert");
+
+  document
+    .getElementById("admin-open-btn")
+    ?.focus();
 
 }
 
