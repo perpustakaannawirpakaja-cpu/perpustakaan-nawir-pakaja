@@ -6677,8 +6677,14 @@ if (coverPath) {
   }
 
   alert(
-    "✅ Buku berhasil dihapus."
-  );
+  "✅ Buku berhasil dihapus."
+);
+
+requestAnimationFrame(() => {
+  document
+    .getElementById("admin-book-search")
+    ?.focus();
+});
 
 }
 
