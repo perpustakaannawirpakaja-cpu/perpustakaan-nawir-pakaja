@@ -4010,8 +4010,11 @@ if (filterHurufAktif) {
 
   });
 
-      filterKategoriBuku();
-    }
+            filterKategoriBuku();
+    },
+    document.querySelector(
+      `.letter[data-letter="${filterHurufAktif}"]`
+    )
   );
 }
 
