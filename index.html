@@ -3795,7 +3795,11 @@ filterKategoriAktif = "";
     "bookSortMode"
   );
 
-  filterKategoriBuku();
+filterKategoriBuku();
+
+requestAnimationFrame(() => {
+  searchInput?.focus();
+});
 }
 
 /* =========================================
