@@ -6946,6 +6946,7 @@ async function uploadBuku(event) {
 
   let uploadedBookPath = null;
   let uploadedCoverPath = null;
+  let uploadBerhasil = false;
 
   try {
 
@@ -7078,11 +7079,7 @@ if (adminTotalBooks) {
     `${totalBooks || 0} buku`;
 }
 
-requestAnimationFrame(() => {
-  document
-    .getElementById("book-title")
-    ?.focus();
-});
+uploadBerhasil = true;
 
   } catch (error) {
 
@@ -7094,12 +7091,22 @@ requestAnimationFrame(() => {
     message.textContent =
       "❌ " + error.message;
 
-  } finally {
+  } 
+  
+  finally {
 
-    uploadButton.disabled = false;
-    uploadButton.textContent =
-      "📤 Upload Buku";
+  uploadButton.disabled = false;
+  uploadButton.textContent =
+    "📤 Upload Buku";
+
+  if (uploadBerhasil) {
+    setTimeout(() => {
+      document
+        .getElementById("book-title")
+        ?.focus();
+    }, 0);
   }
+}
 }
 
 
