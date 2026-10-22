@@ -4633,8 +4633,8 @@ if (
   target &&
   target.closest &&
   target.closest(
-    'input, textarea, select, [contenteditable="true"]'
-  )
+  'input, textarea, [contenteditable="true"]'
+)
 ) {
   return;
 }
@@ -7472,7 +7472,8 @@ tampilkanBuku();
 
 window.addEventListener(
   "keydown",
-  fokusPencarianAdmin
+  fokusPencarianAdmin,
+  true
 );
 
 window.addEventListener(
