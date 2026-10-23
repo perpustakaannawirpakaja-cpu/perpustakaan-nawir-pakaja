@@ -6176,6 +6176,35 @@ function previewPdfPengganti(event) {
 
 }
 
+function samakanKategoriYangSudahAda(
+  kategoriInput
+) {
+
+  const kategoriBersih =
+    (kategoriInput || "").trim();
+
+  if (!kategoriBersih) {
+    return "";
+  }
+
+  const kategoriYangSama =
+    semuaBuku
+      .map((buku) =>
+        (buku.category || "").trim()
+      )
+      .find((kategori) =>
+        kategori &&
+        kategori.toLocaleLowerCase("id-ID") ===
+          kategoriBersih.toLocaleLowerCase("id-ID")
+      );
+
+  return (
+    kategoriYangSama ||
+    kategoriBersih
+  );
+
+}
+
 async function simpanEditBuku(event) {
 
   event.preventDefault();
@@ -6198,10 +6227,11 @@ async function simpanEditBuku(event) {
       .trim();
 
   const category =
+  samakanKategoriYangSudahAda(
     document
       .getElementById("edit-book-category")
       .value
-      .trim();
+  );
 
   const description =
     document
