@@ -6711,6 +6711,7 @@ async function hapusBukuAdmin(bookId) {
     .select(`
       id,
       title,
+      category,
       file_url,
       cover_url
     `)
@@ -6843,6 +6844,53 @@ if (coverPath) {
       "Data buku sudah dihapus, tetapi cover gagal dibersihkan:",
       coverDeleteError
     );
+
+  }
+
+}
+
+  const kategoriBukuDihapus =
+  (book.category || "").trim();
+
+if (kategoriBukuDihapus) {
+
+  const {
+    count: sisaBukuKategori,
+    error: categoryCountError
+  } = await db
+    .from("books")
+    .select("*", {
+      count: "exact",
+      head: true
+    })
+    .eq(
+      "category",
+      book.category
+    );
+
+  if (
+    !categoryCountError &&
+    (sisaBukuKategori || 0) === 0
+  ) {
+
+    const categorySelect =
+      document.getElementById(
+        "admin-book-category"
+      );
+
+    if (
+      categorySelect &&
+      categorySelect.value.trim() ===
+        kategoriBukuDihapus
+    ) {
+
+      categorySelect.value = "";
+
+      localStorage.removeItem(
+        "adminBookCategory"
+      );
+
+    }
 
   }
 
