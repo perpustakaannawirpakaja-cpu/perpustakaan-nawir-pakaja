@@ -6187,19 +6187,74 @@ function samakanKategoriYangSudahAda(
     return "";
   }
 
-  const kategoriYangSama =
+  const normalisasi =
+    (teks) =>
+      teks.toLocaleLowerCase("id-ID");
+
+  const kategoriDariBuku =
     semuaBuku
       .map((buku) =>
         (buku.category || "").trim()
       )
-      .find((kategori) =>
-        kategori &&
-        kategori.toLocaleLowerCase("id-ID") ===
-          kategoriBersih.toLocaleLowerCase("id-ID")
-      );
+      .filter(Boolean);
+
+  const kategoriCocok =
+    kategoriDariBuku.filter(
+      (kategori) =>
+        normalisasi(kategori) ===
+        normalisasi(kategoriBersih)
+    );
+
+  if (kategoriCocok.length > 0) {
+
+    const jumlahKemunculan =
+      new Map();
+
+    kategoriCocok.forEach(
+      (kategori) => {
+
+        jumlahKemunculan.set(
+          kategori,
+          (
+            jumlahKemunculan.get(
+              kategori
+            ) || 0
+          ) + 1
+        );
+
+      }
+    );
+
+    return [
+      ...jumlahKemunculan.entries()
+    ]
+      .sort(
+        (a, b) =>
+          b[1] - a[1]
+      )[0][0];
+
+  }
+
+  const kategoriDropdown =
+    Array.from(
+      document.querySelectorAll(
+        "#admin-book-category option, #book-category-select option"
+      )
+    )
+      .map((option) =>
+        option.value.trim()
+      )
+      .filter(Boolean);
+
+  const kategoriDropdownCocok =
+    kategoriDropdown.find(
+      (kategori) =>
+        normalisasi(kategori) ===
+        normalisasi(kategoriBersih)
+    );
 
   return (
-    kategoriYangSama ||
+    kategoriDropdownCocok ||
     kategoriBersih
   );
 
