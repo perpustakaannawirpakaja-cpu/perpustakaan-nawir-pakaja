@@ -6176,12 +6176,18 @@ function previewPdfPengganti(event) {
 
 }
 
+function normalisasiKategori(teks) {
+  return (teks || "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 function samakanKategoriYangSudahAda(
   kategoriInput
 ) {
 
   const kategoriBersih =
-    (kategoriInput || "").trim();
+    normalisasiKategori(kategoriInput);
 
   if (!kategoriBersih) {
     return "";
@@ -6189,12 +6195,15 @@ function samakanKategoriYangSudahAda(
 
   const normalisasi =
     (teks) =>
-      teks.toLocaleLowerCase("id-ID");
+      normalisasiKategori(teks)
+        .toLocaleLowerCase("id-ID");
 
   const kategoriDariBuku =
     semuaBuku
       .map((buku) =>
-        (buku.category || "").trim()
+        normalisasiKategori(
+          buku.category
+        )
       )
       .filter(Boolean);
 
@@ -6242,7 +6251,9 @@ function samakanKategoriYangSudahAda(
       )
     )
       .map((option) =>
-        option.value.trim()
+        normalisasiKategori(
+          option.value
+        )
       )
       .filter(Boolean);
 
