@@ -7163,7 +7163,11 @@ async function uploadBuku(event) {
     document.getElementById("book-author").value.trim();
 
   const category =
-    document.getElementById("book-category").value.trim();
+  samakanKategoriYangSudahAda(
+    document
+      .getElementById("book-category")
+      .value
+  );
 
   const description =
     document.getElementById("book-description").value.trim();
