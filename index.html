@@ -2733,6 +2733,31 @@ body[data-ui-style="minimal"] .read-button:hover {
         rows="4"
       ></textarea>
 
+      <label for="book-upload-mode">
+  Mode Upload Buku
+</label>
+
+<select
+  id="book-upload-mode"
+  aria-label="Mode Upload Buku"
+  aria-describedby="book-upload-mode-hint"
+>
+  <option value="single_pdf">
+    📄 PDF Lengkap
+  </option>
+
+  <option value="incremental">
+    📚 Upload Bertahap
+  </option>
+</select>
+
+<p
+  id="book-upload-mode-hint"
+  class="admin-book-search-hint"
+>
+  PDF Lengkap untuk satu file PDF utuh. Upload Bertahap untuk menambahkan halaman sedikit demi sedikit.
+</p>
+
       <label>
         Cover Buku
         <input
@@ -2742,7 +2767,7 @@ body[data-ui-style="minimal"] .read-button:hover {
         >
       </label>
 
-      <label>
+      <label id="book-single-pdf-group">
         File Buku PDF
         <input
           id="book-file"
@@ -2751,6 +2776,31 @@ body[data-ui-style="minimal"] .read-button:hover {
           required
         >
       </label>
+
+  <div
+  id="book-incremental-group"
+  hidden
+>
+
+  <label for="book-total-pages">
+    Total Halaman Buku
+  </label>
+
+  <input
+    id="book-total-pages"
+    type="number"
+    min="1"
+    step="1"
+    inputmode="numeric"
+    aria-label="Total Halaman Buku"
+    placeholder="Contoh: 100"
+  >
+
+  <p class="admin-book-search-hint">
+    Jumlah halaman dapat diisi sekarang agar sistem bisa mendeteksi halaman yang belum terupload.
+  </p>
+
+</div>
 
       <p
   id="book-upload-message"
@@ -7219,6 +7269,85 @@ return;
 }, 800);
 }
 
+function updateModeUploadBuku() {
+
+  const modeSelect =
+    document.getElementById(
+      "book-upload-mode"
+    );
+
+  const singlePdfGroup =
+    document.getElementById(
+      "book-single-pdf-group"
+    );
+
+  const incrementalGroup =
+    document.getElementById(
+      "book-incremental-group"
+    );
+
+  const bookFile =
+    document.getElementById(
+      "book-file"
+    );
+
+  const totalPages =
+    document.getElementById(
+      "book-total-pages"
+    );
+
+  if (
+    !modeSelect ||
+    !singlePdfGroup ||
+    !incrementalGroup ||
+    !bookFile
+  ) {
+    return;
+  }
+
+  const mode =
+    modeSelect.value;
+
+  if (mode === "incremental") {
+
+    singlePdfGroup.hidden = true;
+
+    incrementalGroup.hidden = false;
+
+    bookFile.required = false;
+
+    bookFile.value = "";
+
+    if (totalPages) {
+      totalPages.required = true;
+    }
+
+  } else {
+
+    singlePdfGroup.hidden = false;
+
+    incrementalGroup.hidden = true;
+
+    bookFile.required = true;
+
+    if (totalPages) {
+      totalPages.required = false;
+      totalPages.value = "";
+    }
+
+  }
+
+}
+
+document
+  .getElementById("book-upload-mode")
+  ?.addEventListener(
+    "change",
+    updateModeUploadBuku
+  );
+
+updateModeUploadBuku();
+
 async function uploadBuku(event) {
   event.preventDefault();
 
@@ -7235,14 +7364,29 @@ async function uploadBuku(event) {
       .value
   );
 
-  const description =
-    document.getElementById("book-description").value.trim();
+const description =
+  document.getElementById("book-description").value.trim();
 
-  const coverFile =
-    document.getElementById("book-cover").files[0];
+const uploadMode =
+  document
+    .getElementById("book-upload-mode")
+    .value;
 
-  const bookFile =
-    document.getElementById("book-file").files[0];
+const totalPagesInput =
+  document.getElementById(
+    "book-total-pages"
+  );
+
+const totalPages =
+  uploadMode === "incremental"
+    ? Number(totalPagesInput?.value || 0)
+    : null;
+
+const coverFile =
+  document.getElementById("book-cover").files[0];
+
+const bookFile =
+  document.getElementById("book-file").files[0];
 
   const message =
     document.getElementById("book-upload-message");
@@ -7258,11 +7402,30 @@ async function uploadBuku(event) {
     return;
   }
 
-  if (!bookFile) {
-    message.textContent =
-      "⚠️ File PDF harus dipilih.";
-    return;
-  }
+  if (
+  uploadMode === "single_pdf" &&
+  !bookFile
+) {
+  message.textContent =
+    "⚠️ File PDF harus dipilih.";
+
+  return;
+}
+
+if (
+  uploadMode === "incremental" &&
+  (
+    !Number.isInteger(totalPages) ||
+    totalPages < 1
+  )
+) {
+  message.textContent =
+    "⚠️ Total halaman harus diisi dengan angka minimal 1.";
+
+  totalPagesInput?.focus();
+
+  return;
+}
 
   const {
     data: { user },
@@ -7852,10 +8015,14 @@ async function tampilkanRekomendasiBuku(books) {
   section.style.display = "block";
 }
     
-    async function tampilkanBuku() {
+async function tampilkanBuku() {
   const { data, error } = await db
     .from("books")
     .select("*")
+    .eq(
+      "upload_status",
+      "complete"
+    )
     .order("title", { ascending: true });
 
   const bookList = document.getElementById("bookList");
