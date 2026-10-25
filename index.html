@@ -7460,6 +7460,129 @@ if (
 
   try {
 
+  if (uploadMode === "incremental") {
+
+  let coverUrl = null;
+
+  if (coverFile) {
+
+    const safeCoverName =
+      coverFile.name.replace(
+        /[^a-zA-Z0-9._-]/g,
+        "_"
+      );
+
+    uploadedCoverPath =
+      `${user.id}/${Date.now()}-${safeCoverName}`;
+
+    const {
+      error: coverUploadError
+    } = await db.storage
+      .from("book-covers")
+      .upload(
+        uploadedCoverPath,
+        coverFile,
+        {
+          cacheControl: "3600",
+          upsert: false,
+          contentType:
+            coverFile.type ||
+            "image/jpeg"
+        }
+      );
+
+    if (coverUploadError) {
+      throw new Error(
+        "Upload cover gagal: " +
+        coverUploadError.message
+      );
+    }
+
+    const {
+      data: coverPublicData
+    } = db.storage
+      .from("book-covers")
+      .getPublicUrl(
+        uploadedCoverPath
+      );
+
+    coverUrl =
+      coverPublicData.publicUrl;
+
+  }
+
+  const {
+    data: draftBook,
+    error: insertDraftError
+  } = await db
+    .from("books")
+    .insert({
+      title: title,
+      author: author || null,
+      category: category || null,
+      description:
+        description || null,
+      file_url: null,
+      cover_url: coverUrl,
+      upload_mode: "incremental",
+      upload_status: "draft",
+      total_pages: totalPages
+    })
+    .select("id")
+    .single();
+
+  if (
+    insertDraftError ||
+    !draftBook
+  ) {
+    throw new Error(
+      "Pembuatan draft buku gagal: " +
+      (
+        insertDraftError?.message ||
+        "ID buku tidak ditemukan."
+      )
+    );
+  }
+
+  document
+    .getElementById(
+      "book-upload-form"
+    )
+    .reset();
+
+  updateModeUploadBuku();
+
+  message.textContent =
+    `✅ Draft buku berhasil dibuat. ID Buku: ${draftBook.id}.`;
+
+  await tampilkanBuku();
+
+  await muatDaftarBukuAdmin();
+
+  const adminTotalBooks =
+    document.getElementById(
+      "admin-total-books"
+    );
+
+  const {
+    count: totalBooks
+  } = await db
+    .from("books")
+    .select("*", {
+      count: "exact",
+      head: true
+    });
+
+  if (adminTotalBooks) {
+    adminTotalBooks.textContent =
+      `${totalBooks || 0} buku`;
+  }
+
+  uploadBerhasil = true;
+
+  return;
+}
+
     const safeBookName =
       bookFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
 
