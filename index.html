@@ -6033,6 +6033,10 @@ async function bukaKelolaHalaman(bookId) {
     ""
   );
 
+  requestAnimationFrame(() => {
+    pageNumberInput?.focus();
+  });
+
   hiddenId.value = bookId;
 
   title.textContent = "-";
@@ -6138,19 +6142,28 @@ async function bukaKelolaHalaman(bookId) {
   progress.textContent =
     `${jumlahHalaman} / ${totalHalaman} halaman`;
 
-  if (pagesError) {
+if (pagesError) {
 
-    message.textContent =
-      "❌ Gagal memuat daftar halaman.";
+  console.error(
+    "Gagal memuat book_pages:",
+    pagesError
+  );
 
-    list.innerHTML = `
-      <p class="admin-book-loading">
-        Gagal memuat daftar halaman.
-      </p>
-    `;
+  message.textContent =
+    "❌ Gagal memuat daftar halaman: " +
+    (
+      pagesError.message ||
+      "Error tidak diketahui."
+    );
 
-    return;
-  }
+  list.innerHTML = `
+    <p class="admin-book-loading">
+      Gagal memuat daftar halaman.
+    </p>
+  `;
+
+  return;
+}
 
   if (!pages || pages.length === 0) {
 
