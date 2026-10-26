@@ -1260,6 +1260,7 @@ body.dark .read-button{
 }
 
 .admin-book-edit:focus,
+.admin-book-pages:focus,
 .admin-book-delete:focus{
   outline:3px solid var(--primary);
   outline-offset:3px;
@@ -1273,6 +1274,18 @@ body.dark .read-button{
 
   border:
     1px solid #93c5fd;
+}
+
+.admin-book-pages{
+  background:#dcfce7;
+  color:#15803d;
+  border:1px solid #86efac;
+}
+
+body.dark .admin-book-pages{
+  background:#14532d;
+  color:#dcfce7;
+  border-color:#22c55e;
 }
 
 .admin-book-delete{
@@ -3105,6 +3118,106 @@ body[data-ui-style="minimal"] .read-button:hover {
       </div>
 
     </form>
+
+  </div>
+
+</div>
+
+<!-- MODAL KELOLA HALAMAN BUKU -->
+
+<div
+  class="modal"
+  id="bookPagesModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="book-pages-title"
+  aria-describedby="book-pages-description"
+>
+
+  <div class="modal-box">
+
+    <h2 id="book-pages-title">
+      📄 Kelola Halaman
+    </h2>
+
+    <p id="book-pages-description">
+      Upload halaman buku secara bertahap.
+    </p>
+
+    <input
+      id="book-pages-book-id"
+      type="hidden"
+    >
+
+    <p>
+      Buku:
+      <strong id="book-pages-book-title">
+        -
+      </strong>
+    </p>
+
+    <p
+      id="book-pages-progress"
+      role="status"
+      aria-live="polite"
+    >
+      0 / 0 halaman
+    </p>
+
+    <label for="book-page-number">
+      Nomor Halaman
+    </label>
+
+    <input
+      id="book-page-number"
+      type="number"
+      min="1"
+      step="1"
+      inputmode="numeric"
+      placeholder="Contoh: 1"
+    >
+
+    <label for="book-page-file">
+      File Halaman PDF
+    </label>
+
+    <input
+      id="book-page-file"
+      type="file"
+      accept="application/pdf,.pdf"
+    >
+
+    <p
+      id="book-pages-message"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    ></p>
+
+    <div
+      id="book-pages-list"
+    ></div>
+
+    <div class="modal-actions">
+
+      <button
+        type="button"
+        class="close-btn"
+        onclick="tutupKelolaHalaman()"
+      >
+        Tutup
+      </button>
+
+      <button
+        type="button"
+        class="login-btn"
+        id="book-page-upload-btn"
+        onclick="uploadHalamanBuku()"
+      >
+        📤 Upload Halaman
+      </button>
+
+    </div>
 
   </div>
 
@@ -5635,14 +5748,17 @@ if (status) {
   } = await db
     .from("books")
     .select(`
-      id,
-      title,
-      author,
-      category,
-      cover_url,
-      file_url,
-      created_at
-    `)
+  id,
+  title,
+  author,
+  category,
+  cover_url,
+  file_url,
+  upload_mode,
+  upload_status,
+  total_pages,
+  created_at
+`)
     .order("title", {
       ascending: true
     });
@@ -5785,7 +5901,44 @@ const categories =
           🏷️ ${book.category || "Tanpa kategori"}
         </span>
 
+        ${
+  book.upload_mode === "incremental"
+    ? `
+      <span>
+        📚 Mode: Upload Bertahap
+      </span>
+
+      <span>
+        ${
+          book.upload_status === "complete"
+            ? "✅ Status: Selesai"
+            : "🟡 Status: Belum Lengkap"
+        }
+      </span>
+
+      <span>
+        📄 Total Halaman:
+        ${book.total_pages || "-"}
+      </span>
+    `
+    : ""
+}
+
         <div class="admin-book-actions">
+
+${
+  book.upload_mode === "incremental"
+    ? `
+      <button
+  type="button"
+  class="admin-book-pages"
+  data-book-id="${book.id}"
+  onclick="bukaKelolaHalaman(${book.id})">
+  📄 Kelola Halaman
+</button>
+    `
+    : ""
+}
 
 <button
   type="button"
@@ -5808,6 +5961,325 @@ const categories =
     `).join("");
 
   urutkanBukuAdmin();
+
+}
+
+let idFokusKelolaHalaman = null;
+
+async function bukaKelolaHalaman(bookId) {
+
+  idFokusKelolaHalaman = bookId;
+
+  const modal =
+    document.getElementById(
+      "bookPagesModal"
+    );
+
+  const adminPanel =
+    document.getElementById(
+      "adminPanel"
+    );
+
+  const hiddenId =
+    document.getElementById(
+      "book-pages-book-id"
+    );
+
+  const title =
+    document.getElementById(
+      "book-pages-book-title"
+    );
+
+  const progress =
+    document.getElementById(
+      "book-pages-progress"
+    );
+
+  const message =
+    document.getElementById(
+      "book-pages-message"
+    );
+
+  const list =
+    document.getElementById(
+      "book-pages-list"
+    );
+
+  const pageNumberInput =
+    document.getElementById(
+      "book-page-number"
+    );
+
+  const pageFileInput =
+    document.getElementById(
+      "book-page-file"
+    );
+
+  if (
+    !modal ||
+    !hiddenId ||
+    !title ||
+    !progress ||
+    !message ||
+    !list
+  ) {
+    return;
+  }
+
+  modal.classList.add("show");
+
+  adminPanel?.setAttribute(
+    "inert",
+    ""
+  );
+
+  hiddenId.value = bookId;
+
+  title.textContent = "-";
+  progress.textContent =
+    "Memuat progres...";
+  message.textContent =
+    "Memuat data buku...";
+  list.innerHTML = `
+    <p class="admin-book-loading">
+      Memuat halaman...
+    </p>
+  `;
+
+  if (pageNumberInput) {
+    pageNumberInput.value = "";
+  }
+
+  if (pageFileInput) {
+    pageFileInput.value = "";
+  }
+
+  const {
+    data: book,
+    error: bookError
+  } = await db
+    .from("books")
+    .select(`
+      id,
+      title,
+      total_pages,
+      upload_mode,
+      upload_status
+    `)
+    .eq("id", bookId)
+    .maybeSingle();
+
+  if (bookError || !book) {
+
+    message.textContent =
+      "❌ Gagal memuat data buku.";
+
+    progress.textContent =
+      "0 / 0 halaman";
+
+    list.innerHTML = `
+      <p class="admin-book-loading">
+        Gagal memuat halaman.
+      </p>
+    `;
+
+    return;
+  }
+
+  if (
+    book.upload_mode !== "incremental"
+  ) {
+
+    title.textContent =
+      book.title || "-";
+
+    message.textContent =
+      "⚠️ Buku ini bukan mode Upload Bertahap.";
+
+    progress.textContent =
+      "0 / 0 halaman";
+
+    list.innerHTML = `
+      <p class="admin-book-loading">
+        Buku ini tidak memakai Upload Bertahap.
+      </p>
+    `;
+
+    return;
+  }
+
+  const {
+    data: pages,
+    error: pagesError
+  } = await db
+    .from("book_pages")
+    .select(`
+      id,
+      page_number,
+      file_url,
+      created_at
+    `)
+    .eq("book_id", bookId)
+    .order("page_number", {
+      ascending: true
+    });
+
+  title.textContent =
+    book.title || "-";
+
+  const jumlahHalaman =
+    Array.isArray(pages)
+      ? pages.length
+      : 0;
+
+  const totalHalaman =
+    book.total_pages || 0;
+
+  progress.textContent =
+    `${jumlahHalaman} / ${totalHalaman} halaman`;
+
+  if (pagesError) {
+
+    message.textContent =
+      "❌ Gagal memuat daftar halaman.";
+
+    list.innerHTML = `
+      <p class="admin-book-loading">
+        Gagal memuat daftar halaman.
+      </p>
+    `;
+
+    return;
+  }
+
+  if (!pages || pages.length === 0) {
+
+    list.innerHTML = `
+      <p class="admin-book-loading">
+        Belum ada halaman yang diupload.
+      </p>
+    `;
+
+  } else {
+
+    list.innerHTML =
+      pages.map((page) => `
+        <p class="admin-book-loading">
+          📄 Halaman ${page.page_number}
+        </p>
+      `).join("");
+
+  }
+
+  message.textContent =
+    book.upload_status === "complete"
+      ? "✅ Buku ini sudah lengkap."
+      : "ℹ️ Silakan upload halaman satu per satu.";
+
+  pageNumberInput?.focus();
+
+}
+
+function tutupKelolaHalaman() {
+
+  document
+    .getElementById("bookPagesModal")
+    ?.classList
+    .remove("show");
+
+  document
+    .getElementById("adminPanel")
+    ?.removeAttribute("inert");
+
+  const hiddenId =
+    document.getElementById(
+      "book-pages-book-id"
+    );
+
+  const title =
+    document.getElementById(
+      "book-pages-book-title"
+    );
+
+  const progress =
+    document.getElementById(
+      "book-pages-progress"
+    );
+
+  const message =
+    document.getElementById(
+      "book-pages-message"
+    );
+
+  const list =
+    document.getElementById(
+      "book-pages-list"
+    );
+
+  const pageNumberInput =
+    document.getElementById(
+      "book-page-number"
+    );
+
+  const pageFileInput =
+    document.getElementById(
+      "book-page-file"
+    );
+
+  if (hiddenId) {
+    hiddenId.value = "";
+  }
+
+  if (title) {
+    title.textContent = "-";
+  }
+
+  if (progress) {
+    progress.textContent =
+      "0 / 0 halaman";
+  }
+
+  if (message) {
+    message.textContent = "";
+  }
+
+  if (list) {
+    list.innerHTML = "";
+  }
+
+  if (pageNumberInput) {
+    pageNumberInput.value = "";
+  }
+
+  if (pageFileInput) {
+    pageFileInput.value = "";
+  }
+
+  if (
+    idFokusKelolaHalaman !== null
+  ) {
+
+    const tombolKelola =
+      document.querySelector(
+        `.admin-book-pages[data-book-id="${idFokusKelolaHalaman}"]`
+      );
+
+    const searchAdmin =
+      document.getElementById(
+        "admin-book-search"
+      );
+
+    if (
+      tombolKelola &&
+      tombolKelola.getClientRects().length > 0
+    ) {
+      tombolKelola.focus();
+    } else {
+      searchAdmin?.focus();
+    }
+
+    idFokusKelolaHalaman = null;
+  }
 
 }
 
