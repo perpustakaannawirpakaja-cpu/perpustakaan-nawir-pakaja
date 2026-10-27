@@ -6296,9 +6296,14 @@ if (!pages || pages.length === 0) {
 
 }
 
+  const semuaHalamanLengkap =
+    totalHalaman > 0 &&
+    jumlahHalaman === totalHalaman &&
+    halamanBelumDiupload.length === 0;
+
   message.textContent =
-    book.upload_status === "complete"
-      ? "✅ Buku ini sudah lengkap."
+    semuaHalamanLengkap
+      ? "✅ Semua halaman sudah lengkap. Siap dibuat PDF final."
       : "ℹ️ Silakan upload halaman satu per satu.";
 
   pageNumberInput?.focus();
