@@ -6165,24 +6165,74 @@ if (pagesError) {
   return;
 }
 
-  if (!pages || pages.length === 0) {
+  const nomorTerupload =
+  new Set(
+    (pages || []).map(
+      (page) =>
+        Number(page.page_number)
+    )
+  );
 
-    list.innerHTML = `
-      <p class="admin-book-loading">
-        Belum ada halaman yang diupload.
-      </p>
-    `;
+const halamanBelumDiupload = [];
 
-  } else {
-
-    list.innerHTML =
-      pages.map((page) => `
-        <p class="admin-book-loading">
-          📄 Halaman ${page.page_number}
-        </p>
-      `).join("");
-
+for (
+  let nomor = 1;
+  nomor <= totalHalaman;
+  nomor++
+) {
+  if (
+    !nomorTerupload.has(nomor)
+  ) {
+    halamanBelumDiupload.push(
+      nomor
+    );
   }
+}
+
+progress.textContent =
+  `${jumlahHalaman} / ${totalHalaman} halaman | DEBUG belum: ${halamanBelumDiupload.join(", ")}`;
+
+if (!pages || pages.length === 0) {
+
+  list.innerHTML = `
+    <p class="admin-book-loading">
+      Belum ada halaman yang diupload.
+    </p>
+
+    <p class="admin-book-loading">
+      ⚠️ Belum diupload:
+      ${halamanBelumDiupload.join(", ")}
+    </p>
+  `;
+
+} else {
+
+  const daftarTerupload =
+    pages.map((page) => `
+      <p class="admin-book-loading">
+        📄 Halaman ${page.page_number}
+      </p>
+    `).join("");
+
+  const statusBelum =
+    halamanBelumDiupload.length > 0
+      ? `
+        <p class="admin-book-loading">
+          ⚠️ Belum diupload:
+          ${halamanBelumDiupload.join(", ")}
+        </p>
+      `
+      : `
+        <p class="admin-book-loading">
+          ✅ Semua halaman sudah diupload.
+        </p>
+      `;
+
+  list.innerHTML =
+    statusBelum +
+    daftarTerupload;
+
+}
 
   message.textContent =
     book.upload_status === "complete"
