@@ -6296,6 +6296,318 @@ function tutupKelolaHalaman() {
 
 }
 
+async function uploadHalamanBuku() {
+
+  const bookId =
+    Number(
+      document
+        .getElementById(
+          "book-pages-book-id"
+        )
+        ?.value || 0
+    );
+
+  const pageNumberInput =
+    document.getElementById(
+      "book-page-number"
+    );
+
+  const pageFileInput =
+    document.getElementById(
+      "book-page-file"
+    );
+
+  const message =
+    document.getElementById(
+      "book-pages-message"
+    );
+
+  const uploadButton =
+    document.getElementById(
+      "book-page-upload-btn"
+    );
+
+  const pageNumber =
+    Number(
+      pageNumberInput?.value || 0
+    );
+
+  const pageFile =
+    pageFileInput?.files?.[0];
+
+  if (!bookId) {
+    message.textContent =
+      "❌ ID buku tidak ditemukan.";
+    return;
+  }
+
+  if (
+    !Number.isInteger(pageNumber) ||
+    pageNumber < 1
+  ) {
+    message.textContent =
+      "⚠️ Nomor halaman harus berupa angka minimal 1.";
+
+    pageNumberInput?.focus();
+    return;
+  }
+
+  if (!pageFile) {
+    message.textContent =
+      "⚠️ File halaman PDF harus dipilih.";
+
+    pageFileInput?.focus();
+    return;
+  }
+
+  const namaFile =
+    pageFile.name.toLowerCase();
+
+  if (
+    pageFile.type &&
+    pageFile.type !== "application/pdf"
+  ) {
+    message.textContent =
+      "⚠️ File halaman harus berupa PDF.";
+
+    pageFileInput?.focus();
+    return;
+  }
+
+  if (!namaFile.endsWith(".pdf")) {
+    message.textContent =
+      "⚠️ File halaman harus berekstensi .pdf.";
+
+    pageFileInput?.focus();
+    return;
+  }
+
+  const MAX_PAGE_PDF_SIZE =
+    50 * 1024 * 1024;
+
+  if (
+    pageFile.size >
+    MAX_PAGE_PDF_SIZE
+  ) {
+    message.textContent =
+      "⚠️ Ukuran file halaman maksimal 50 MB.";
+
+    pageFileInput?.focus();
+    return;
+  }
+
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (
+    userError ||
+    !user
+  ) {
+    message.textContent =
+      "❌ Sesi Admin tidak ditemukan.";
+    return;
+  }
+
+  const {
+    data: book,
+    error: bookError
+  } = await db
+    .from("books")
+    .select(`
+      id,
+      total_pages,
+      upload_mode
+    `)
+    .eq("id", bookId)
+    .maybeSingle();
+
+  if (
+    bookError ||
+    !book
+  ) {
+    message.textContent =
+      "❌ Data buku tidak ditemukan.";
+    return;
+  }
+
+  if (
+    book.upload_mode !==
+    "incremental"
+  ) {
+    message.textContent =
+      "⚠️ Buku ini bukan mode Upload Bertahap.";
+    return;
+  }
+
+  if (
+    book.total_pages &&
+    pageNumber >
+      book.total_pages
+  ) {
+    message.textContent =
+      `⚠️ Nomor halaman maksimal ${book.total_pages}.`;
+
+    pageNumberInput?.focus();
+    return;
+  }
+
+  const {
+    data: existingPage,
+    error: existingPageError
+  } = await db
+    .from("book_pages")
+    .select("id")
+    .eq(
+      "book_id",
+      bookId
+    )
+    .eq(
+      "page_number",
+      pageNumber
+    )
+    .maybeSingle();
+
+  if (existingPageError) {
+    console.error(
+      "Gagal memeriksa halaman:",
+      existingPageError
+    );
+
+    message.textContent =
+      "❌ Gagal memeriksa nomor halaman.";
+    return;
+  }
+
+  if (existingPage) {
+    message.textContent =
+      `⚠️ Halaman ${pageNumber} sudah pernah diupload.`;
+
+    pageNumberInput?.focus();
+    return;
+  }
+
+  uploadButton.disabled = true;
+
+  uploadButton.textContent =
+    "⏳ Mengupload...";
+
+  let uploadedPagePath = null;
+
+  try {
+
+    const safeFileName =
+      pageFile.name.replace(
+        /[^a-zA-Z0-9._-]/g,
+        "_"
+      );
+
+    const paddedPage =
+      String(pageNumber)
+        .padStart(5, "0");
+
+    uploadedPagePath =
+      `${user.id}/incremental/${bookId}/page-${paddedPage}-${Date.now()}-${safeFileName}`;
+
+    const {
+      error: uploadError
+    } = await db.storage
+      .from("book-files")
+      .upload(
+        uploadedPagePath,
+        pageFile,
+        {
+          cacheControl: "3600",
+          upsert: false,
+          contentType:
+            "application/pdf"
+        }
+      );
+
+    if (uploadError) {
+      throw new Error(
+        "Upload halaman gagal: " +
+        uploadError.message
+      );
+    }
+
+    const {
+      data: publicData
+    } = db.storage
+      .from("book-files")
+      .getPublicUrl(
+        uploadedPagePath
+      );
+
+    const fileUrl =
+      publicData.publicUrl;
+
+    const {
+      error: insertError
+    } = await db
+      .from("book_pages")
+      .insert({
+        book_id:
+          bookId,
+        page_number:
+          pageNumber,
+        file_url:
+          fileUrl,
+        storage_path:
+          uploadedPagePath,
+        file_size:
+          pageFile.size
+      });
+
+    if (insertError) {
+
+      await db.storage
+        .from("book-files")
+        .remove([
+          uploadedPagePath
+        ]);
+
+      uploadedPagePath = null;
+
+      throw new Error(
+        "Penyimpanan halaman gagal: " +
+        insertError.message
+      );
+    }
+
+    await bukaKelolaHalaman(
+      bookId
+    );
+
+    message.textContent =
+      `✅ Halaman ${pageNumber} berhasil diupload.`;
+
+  } catch (error) {
+
+    console.error(
+      "Upload halaman buku gagal:",
+      error
+    );
+
+    message.textContent =
+      "❌ " +
+      (
+        error?.message ||
+        "Upload halaman gagal."
+      );
+
+  } finally {
+
+    uploadButton.disabled = false;
+
+    uploadButton.textContent =
+      "📤 Upload Halaman";
+
+  }
+
+}
+
 let idFokusEditBuku = null;
 
 async function bukaEditBukuAdmin(bookId) {
