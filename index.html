@@ -1254,6 +1254,41 @@ body.dark .read-button{
   padding:10px 12px;
 }
 
+.book-page-compression-options{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  margin-top:8px;
+}
+
+.book-page-compression-toggle{
+  display:flex !important;
+  align-items:center;
+  gap:7px;
+  margin:0 !important;
+  font-size:13px;
+}
+
+.book-page-compression-toggle input{
+  width:auto !important;
+  margin:0;
+}
+
+#book-page-compression-quality{
+  width:auto;
+  min-width:130px;
+  padding:7px 9px;
+  font-size:13px;
+}
+
+#book-page-file-size{
+  width:100%;
+  margin:0 !important;
+  font-size:12px;
+  color:var(--muted);
+}
+
 #book-pages-progress{
   margin:10px 0 12px;
   font-weight:600;
@@ -3251,6 +3286,49 @@ body[data-ui-style="minimal"] .read-button:hover {
       type="file"
       accept="application/pdf,.pdf"
     >
+
+    <div
+  id="book-page-compression-options"
+  class="book-page-compression-options"
+>
+
+  <label class="book-page-compression-toggle">
+
+    <input
+      id="book-page-auto-compress"
+      type="checkbox"
+      checked
+    >
+
+    🗜️ Kompres PDF otomatis
+
+  </label>
+
+  <select
+    id="book-page-compression-quality"
+    aria-label="Kualitas kompresi PDF"
+  >
+    <option value="balanced" selected>
+      Seimbang
+    </option>
+
+    <option value="high">
+      Kualitas Tinggi
+    </option>
+
+    <option value="small">
+      Ukuran Kecil
+    </option>
+  </select>
+
+  <p
+    id="book-page-file-size"
+    aria-live="polite"
+  >
+    Ukuran file: -
+  </p>
+
+</div>
 
     <p
       id="book-pages-message"
@@ -6040,6 +6118,58 @@ ${
   urutkanBukuAdmin();
 
 }
+
+function formatUkuranFile(bytes) {
+
+  if (
+    !Number.isFinite(bytes) ||
+    bytes <= 0
+  ) {
+    return "0 KB";
+  }
+
+  if (bytes < 1024 * 1024) {
+    return (
+      bytes / 1024
+    ).toFixed(1) + " KB";
+  }
+
+  return (
+    bytes /
+    (1024 * 1024)
+  ).toFixed(2) + " MB";
+}
+
+document
+  .getElementById(
+    "book-page-file"
+  )
+  ?.addEventListener(
+    "change",
+    (event) => {
+
+      const file =
+        event.target.files?.[0];
+
+      const sizeInfo =
+        document.getElementById(
+          "book-page-file-size"
+        );
+
+      if (!sizeInfo) {
+        return;
+      }
+
+      if (!file) {
+        sizeInfo.textContent =
+          "Ukuran file: -";
+        return;
+      }
+
+      sizeInfo.textContent =
+        `Ukuran asli: ${formatUkuranFile(file.size)}`;
+    }
+  );
 
 let idFokusKelolaHalaman = null;
 
