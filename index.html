@@ -6047,6 +6047,8 @@ async function bukaKelolaHalaman(bookId) {
 
   idFokusKelolaHalaman = bookId;
 
+  nomorHalamanPengganti = null;
+
   const modal =
     document.getElementById(
       "bookPagesModal"
@@ -6451,9 +6453,16 @@ function tutupKelolaHalaman() {
     idFokusKelolaHalaman = null;
   }
 
+  nomorHalamanPengganti = null;
+
 }
 
+let nomorHalamanPengganti = null;
+
 function pilihGantiHalaman(pageNumber) {
+
+  nomorHalamanPengganti =
+    Number(pageNumber);
 
   const pageNumberInput =
     document.getElementById(
@@ -6644,21 +6653,42 @@ async function uploadHalamanBuku() {
     return;
   }
 
-  const {
-    data: existingPage,
-    error: existingPageError
-  } = await db
-    .from("book_pages")
-    .select("id")
-    .eq(
-      "book_id",
-      bookId
-    )
-    .eq(
-      "page_number",
-      pageNumber
-    )
-    .maybeSingle();
+  const sedangMenggantiHalaman =
+  nomorHalamanPengganti !== null;
+
+if (
+  sedangMenggantiHalaman &&
+  pageNumber !== nomorHalamanPengganti
+) {
+  message.textContent =
+    `⚠️ Anda sedang mengganti Halaman ${nomorHalamanPengganti}. Nomor halaman tidak boleh diubah.`;
+
+  pageNumberInput.value =
+    nomorHalamanPengganti;
+
+  pageNumberInput?.focus();
+  return;
+}
+
+const {
+  data: existingPage,
+  error: existingPageError
+} = await db
+  .from("book_pages")
+  .select(`
+    id,
+    storage_path,
+    file_url
+  `)
+  .eq(
+    "book_id",
+    bookId
+  )
+  .eq(
+    "page_number",
+    pageNumber
+  )
+  .maybeSingle();
 
   if (existingPageError) {
     console.error(
@@ -6671,13 +6701,26 @@ async function uploadHalamanBuku() {
     return;
   }
 
-  if (existingPage) {
-    message.textContent =
-      `⚠️ Halaman ${pageNumber} sudah pernah diupload.`;
+  if (
+  existingPage &&
+  !sedangMenggantiHalaman
+) {
+  message.textContent =
+    `⚠️ Halaman ${pageNumber} sudah pernah diupload.`;
 
-    pageNumberInput?.focus();
-    return;
-  }
+  pageNumberInput?.focus();
+  return;
+}
+
+if (
+  sedangMenggantiHalaman &&
+  !existingPage
+) {
+  message.textContent =
+    `❌ Data Halaman ${pageNumber} yang akan diganti tidak ditemukan.`;
+
+  return;
+}
 
   uploadButton.disabled = true;
 
@@ -6734,45 +6777,107 @@ async function uploadHalamanBuku() {
     const fileUrl =
       publicData.publicUrl;
 
-    const {
-      error: insertError
-    } = await db
-      .from("book_pages")
-      .insert({
-        book_id:
-          bookId,
-        page_number:
-          pageNumber,
-        file_url:
-          fileUrl,
-        storage_path:
-          uploadedPagePath,
-        file_size:
-          pageFile.size
-      });
+if (sedangMenggantiHalaman) {
 
-    if (insertError) {
+  const oldStoragePath =
+    existingPage.storage_path;
 
-      await db.storage
-        .from("book-files")
-        .remove([
-          uploadedPagePath
-        ]);
-
-      uploadedPagePath = null;
-
-      throw new Error(
-        "Penyimpanan halaman gagal: " +
-        insertError.message
-      );
-    }
-
-    await bukaKelolaHalaman(
-      bookId
+  const {
+    error: updatePageError
+  } = await db
+    .from("book_pages")
+    .update({
+      file_url:
+        fileUrl,
+      storage_path:
+        uploadedPagePath,
+      file_size:
+        pageFile.size
+    })
+    .eq(
+      "id",
+      existingPage.id
     );
 
-    message.textContent =
-      `✅ Halaman ${pageNumber} berhasil diupload.`;
+  if (updatePageError) {
+
+    await db.storage
+      .from("book-files")
+      .remove([
+        uploadedPagePath
+      ]);
+
+    uploadedPagePath = null;
+
+    throw new Error(
+      "Penggantian halaman gagal: " +
+      updatePageError.message
+    );
+  }
+
+  if (oldStoragePath) {
+
+    const {
+      error: deleteOldError
+    } = await db.storage
+      .from("book-files")
+      .remove([
+        oldStoragePath
+      ]);
+
+    if (deleteOldError) {
+      console.warn(
+        "File halaman lama gagal dihapus:",
+        deleteOldError
+      );
+    }
+  }
+
+} else {
+
+  const {
+    error: insertError
+  } = await db
+    .from("book_pages")
+    .insert({
+      book_id:
+        bookId,
+      page_number:
+        pageNumber,
+      file_url:
+        fileUrl,
+      storage_path:
+        uploadedPagePath,
+      file_size:
+        pageFile.size
+    });
+
+  if (insertError) {
+
+    await db.storage
+      .from("book-files")
+      .remove([
+        uploadedPagePath
+      ]);
+
+    uploadedPagePath = null;
+
+    throw new Error(
+      "Penyimpanan halaman gagal: " +
+      insertError.message
+    );
+  }
+
+}
+
+    await bukaKelolaHalaman(
+  bookId
+);
+
+message.textContent =
+  sedangMenggantiHalaman
+    ? `✅ Halaman ${pageNumber} berhasil diganti.`
+    : `✅ Halaman ${pageNumber} berhasil diupload.`;
 
   } catch (error) {
 
