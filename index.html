@@ -6291,11 +6291,19 @@ if (!pages || pages.length === 0) {
 } else {
 
   const daftarTerupload =
-    pages.map((page) => `
-      <p class="admin-book-loading">
-        📄 Halaman ${page.page_number}
-      </p>
-    `).join("");
+  pages.map((page) => `
+    <div class="admin-book-loading">
+      📄 Halaman ${page.page_number}
+
+      <button
+        type="button"
+        class="book-page-replace-btn"
+        onclick="pilihGantiHalaman(${page.page_number})"
+      >
+        ✏️ Ganti
+      </button>
+    </div>
+  `).join("");
 
   const statusBelum =
     halamanBelumDiupload.length > 0
@@ -6443,6 +6451,40 @@ function tutupKelolaHalaman() {
     idFokusKelolaHalaman = null;
   }
 
+}
+
+function pilihGantiHalaman(pageNumber) {
+
+  const pageNumberInput =
+    document.getElementById(
+      "book-page-number"
+    );
+
+  const pageFileInput =
+    document.getElementById(
+      "book-page-file"
+    );
+
+  const message =
+    document.getElementById(
+      "book-pages-message"
+    );
+
+  if (!pageNumberInput) {
+    return;
+  }
+
+  pageNumberInput.value =
+    pageNumber;
+
+  if (pageFileInput) {
+    pageFileInput.value = "";
+  }
+
+  message.textContent =
+    `✏️ Halaman ${pageNumber} dipilih. Pilih PDF pengganti lalu klik Upload Halaman.`;
+
+  pageFileInput?.focus();
 }
 
 async function uploadHalamanBuku() {
@@ -7095,6 +7137,8 @@ async function buatPdfFinalBuku() {
         error?.message ||
         "Pembuatan PDF final gagal."
       );
+
+    finalizeButton.disabled = false;
 
   } finally {
 
