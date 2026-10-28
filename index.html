@@ -3263,26 +3263,36 @@ body[data-ui-style="minimal"] .read-button:hover {
       id="book-pages-list"
     ></div>
 
-    <div class="modal-actions">
+<div class="modal-actions">
 
-      <button
-        type="button"
-        class="close-btn"
-        onclick="tutupKelolaHalaman()"
-      >
-        Tutup
-      </button>
+  <button
+    type="button"
+    class="close-btn"
+    onclick="tutupKelolaHalaman()"
+  >
+    Tutup
+  </button>
 
-      <button
-        type="button"
-        class="login-btn"
-        id="book-page-upload-btn"
-        onclick="uploadHalamanBuku()"
-      >
-        📤 Upload Halaman
-      </button>
+  <button
+    type="button"
+    class="login-btn"
+    id="book-page-upload-btn"
+    onclick="uploadHalamanBuku()"
+  >
+    📤 Upload Halaman
+  </button>
 
-    </div>
+  <button
+    type="button"
+    class="login-btn"
+    id="book-finalize-btn"
+    onclick="buatPdfFinalBuku()"
+    disabled
+  >
+    📚 Buat PDF Final
+  </button>
+
+</div>
 
   </div>
 
@@ -6080,6 +6090,15 @@ async function bukaKelolaHalaman(bookId) {
       "book-page-file"
     );
 
+  const finalizeButtonAwal =
+  document.getElementById(
+    "book-finalize-btn"
+  );
+
+  if (finalizeButtonAwal) {
+    finalizeButtonAwal.disabled = true;
+  }
+
   if (
     !modal ||
     !hiddenId ||
@@ -6300,6 +6319,16 @@ if (!pages || pages.length === 0) {
     totalHalaman > 0 &&
     jumlahHalaman === totalHalaman &&
     halamanBelumDiupload.length === 0;
+
+  const finalizeButton =
+    document.getElementById(
+      "book-finalize-btn"
+    );
+
+  if (finalizeButton) {
+    finalizeButton.disabled =
+      !semuaHalamanLengkap;
+  }
 
   message.textContent =
     semuaHalamanLengkap
