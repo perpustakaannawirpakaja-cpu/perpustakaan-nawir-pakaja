@@ -3355,7 +3355,7 @@ body[data-ui-style="minimal"] .read-button:hover {
     type="button"
     class="login-btn"
     id="book-page-upload-btn"
-    onclick="uploadHalamanBuku()"
+    onclick="aksiTombolUploadHalaman()"
   >
     📤 Upload Halaman
   </button>
@@ -6804,6 +6804,273 @@ function tutupKelolaHalaman() {
 
 }
 
+let aksiUploadHalamanTerakhir = null;
+
+function updateTombolUploadHalaman() {
+
+  const tombol =
+    document.getElementById(
+      "book-page-upload-btn"
+    );
+
+  if (!tombol) {
+    return;
+  }
+
+  if (aksiUploadHalamanTerakhir) {
+
+    tombol.textContent =
+      "↩️ Batal Upload Halaman";
+
+  } else {
+
+    tombol.textContent =
+      "📤 Upload Halaman";
+
+  }
+}
+
+async function aksiTombolUploadHalaman() {
+
+  if (aksiUploadHalamanTerakhir) {
+
+    await batalUploadHalaman();
+
+  } else {
+
+    await uploadHalamanBuku();
+
+  }
+}
+
+async function batalUploadHalaman() {
+
+  const aksi =
+    aksiUploadHalamanTerakhir;
+
+  const message =
+    document.getElementById(
+      "book-pages-message"
+    );
+
+  const tombol =
+    document.getElementById(
+      "book-page-upload-btn"
+    );
+
+  if (!aksi) {
+    updateTombolUploadHalaman();
+    return;
+  }
+
+  const yakin =
+    confirm(
+      `Batalkan upload terakhir untuk Halaman ${aksi.pageNumber}?`
+    );
+
+  if (!yakin) {
+    return;
+  }
+
+  tombol.disabled = true;
+
+  tombol.textContent =
+    "⏳ Membatalkan...";
+
+  try {
+
+    /* =========================
+       BATAL UPLOAD HALAMAN BARU
+       ========================= */
+
+    if (aksi.tipe === "upload") {
+
+      const {
+        error: deletePageError
+      } = await db
+        .from("book_pages")
+        .delete()
+        .eq(
+          "book_id",
+          aksi.bookId
+        )
+        .eq(
+          "page_number",
+          aksi.pageNumber
+        )
+        .eq(
+          "storage_path",
+          aksi.newStoragePath
+        );
+
+      if (deletePageError) {
+        throw new Error(
+          "Gagal membatalkan data halaman: " +
+          deletePageError.message
+        );
+      }
+
+    /* =========================
+       BATAL GANTI HALAMAN
+       ========================= */
+
+    } else if (
+      aksi.tipe === "replace"
+    ) {
+
+      const {
+        error: restorePageError
+      } = await db
+        .from("book_pages")
+        .update({
+          file_url:
+            aksi.oldFileUrl,
+
+          storage_path:
+            aksi.oldStoragePath,
+
+          file_size:
+            aksi.oldFileSize
+        })
+        .eq(
+          "book_id",
+          aksi.bookId
+        )
+        .eq(
+          "page_number",
+          aksi.pageNumber
+        );
+
+      if (restorePageError) {
+        throw new Error(
+          "Gagal mengembalikan halaman lama: " +
+          restorePageError.message
+        );
+      }
+
+      const {
+        error: restoreBookError
+      } = await db
+        .from("books")
+        .update({
+          upload_status:
+            aksi.statusSebelumnya,
+
+          file_url:
+            aksi.fileUrlFinalSebelumnya
+        })
+        .eq(
+          "id",
+          aksi.bookId
+        );
+
+      if (restoreBookError) {
+
+        /* Rollback lagi ke kondisi
+           setelah penggantian */
+
+        await db
+          .from("book_pages")
+          .update({
+            file_url:
+              aksi.newFileUrl,
+
+            storage_path:
+              aksi.newStoragePath,
+
+            file_size:
+              aksi.newFileSize
+          })
+          .eq(
+            "book_id",
+            aksi.bookId
+          )
+          .eq(
+            "page_number",
+            aksi.pageNumber
+          );
+
+        throw new Error(
+          "Gagal mengembalikan status buku: " +
+          restoreBookError.message
+        );
+      }
+
+    } else {
+
+      throw new Error(
+        "Jenis aksi upload tidak dikenali."
+      );
+    }
+
+    /* =========================
+       HAPUS FILE BARU
+       ========================= */
+
+    if (aksi.newStoragePath) {
+
+      const {
+        error: removeNewError
+      } = await db.storage
+        .from("book-files")
+        .remove([
+          aksi.newStoragePath
+        ]);
+
+      if (removeNewError) {
+        console.warn(
+          "File baru gagal dibersihkan:",
+          removeNewError
+        );
+      }
+    }
+
+    const nomorHalaman =
+      aksi.pageNumber;
+
+    const bookId =
+      aksi.bookId;
+
+    aksiUploadHalamanTerakhir =
+      null;
+
+    await tampilkanBuku();
+
+    await muatDaftarBukuAdmin();
+
+    await bukaKelolaHalaman(
+      bookId
+    );
+
+    updateTombolUploadHalaman();
+
+    message.textContent =
+      `✅ Upload Halaman ${nomorHalaman} berhasil dibatalkan.`;
+
+  } catch (error) {
+
+    console.error(
+      "Batal upload halaman gagal:",
+      error
+    );
+
+    message.textContent =
+      "❌ " +
+      (
+        error?.message ||
+        "Batal upload halaman gagal."
+      );
+
+  } finally {
+
+    tombol.disabled = false;
+
+    updateTombolUploadHalaman();
+
+  }
+
+}
+
 let nomorHalamanPengganti = null;
 
 function pilihGantiHalaman(pageNumber) {
@@ -7211,9 +7478,6 @@ if (
 
 if (sedangMenggantiHalaman) {
 
-  const oldStoragePath =
-    existingPage.storage_path;
-
   const {
     error: updatePageError
   } = await db
@@ -7302,24 +7566,6 @@ if (sedangMenggantiHalaman) {
   }
 }
 
-  if (oldStoragePath) {
-
-    const {
-      error: deleteOldError
-    } = await db.storage
-      .from("book-files")
-      .remove([
-        oldStoragePath
-      ]);
-
-    if (deleteOldError) {
-      console.warn(
-        "File halaman lama gagal dihapus:",
-        deleteOldError
-      );
-    }
-  }
-
 } else {
 
   const {
@@ -7357,7 +7603,62 @@ if (sedangMenggantiHalaman) {
 
 }
 
-    await bukaKelolaHalaman(
+if (sedangMenggantiHalaman) {
+
+  aksiUploadHalamanTerakhir = {
+    tipe: "replace",
+    bookId: bookId,
+    pageNumber: pageNumber,
+
+    oldFileUrl:
+      existingPage.file_url,
+
+    oldStoragePath:
+      existingPage.storage_path,
+
+    oldFileSize:
+      existingPage.file_size,
+
+    newStoragePath:
+      uploadedPagePath,
+
+    newFileUrl:
+      fileUrl,
+
+    newFileSize:
+      pageFile.size,
+
+    statusSebelumnya:
+      book.upload_status,
+
+    fileUrlFinalSebelumnya:
+      book.file_url
+  };
+
+} else {
+
+  aksiUploadHalamanTerakhir = {
+  tipe: "upload",
+  bookId: bookId,
+  pageNumber: pageNumber,
+
+  newStoragePath:
+    uploadedPagePath,
+
+  newFileUrl:
+    fileUrl,
+
+  newFileSize:
+    pageFile.size
+};
+
+}
+
+await tampilkanBuku();
+
+await muatDaftarBukuAdmin();
+
+await bukaKelolaHalaman(
   bookId
 );
 
@@ -7382,12 +7683,11 @@ message.textContent =
 
   } finally {
 
-    uploadButton.disabled = false;
+  uploadButton.disabled = false;
 
-    uploadButton.textContent =
-      "📤 Upload Halaman";
+  updateTombolUploadHalaman();
 
-  }
+}
 
 }
 
