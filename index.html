@@ -6699,7 +6699,16 @@ if (!pages || pages.length === 0) {
 
 }
 
-function tutupKelolaHalaman() {
+async function tutupKelolaHalaman() {
+
+  const bolehTutup =
+    await selesaikanAksiUploadTerakhir(
+      "menutup Kelola Halaman"
+    );
+
+  if (!bolehTutup) {
+    return;
+  }
 
   document
     .getElementById("bookPagesModal")
@@ -6828,6 +6837,70 @@ function updateTombolUploadHalaman() {
       "📤 Upload Halaman";
 
   }
+}
+
+async function selesaikanAksiUploadTerakhir(
+  tindakan
+) {
+
+  const aksi =
+    aksiUploadHalamanTerakhir;
+
+  if (!aksi) {
+    return true;
+  }
+
+  const yakin =
+    confirm(
+      `Perubahan terakhir pada Halaman ${aksi.pageNumber} masih bisa dibatalkan.\n\n` +
+      `Jika Anda ${tindakan}, perubahan akan dianggap final dan Batal Upload tidak dapat digunakan lagi.\n\n` +
+      `Lanjutkan?`
+    );
+
+  if (!yakin) {
+    return false;
+  }
+
+  if (
+    aksi.tipe === "replace" &&
+    aksi.oldStoragePath
+  ) {
+
+    const {
+      error: removeOldError
+    } = await db.storage
+      .from("book-files")
+      .remove([
+        aksi.oldStoragePath
+      ]);
+
+    if (removeOldError) {
+
+      console.error(
+        "Gagal membersihkan file lama:",
+        removeOldError
+      );
+
+      const message =
+        document.getElementById(
+          "book-pages-message"
+        );
+
+      if (message) {
+        message.textContent =
+          "❌ Perubahan belum dapat dikunci karena file cadangan lama gagal dibersihkan.";
+      }
+
+      return false;
+    }
+  }
+
+  aksiUploadHalamanTerakhir =
+    null;
+
+  updateTombolUploadHalaman();
+
+  return true;
 }
 
 async function aksiTombolUploadHalaman() {
@@ -7692,6 +7765,15 @@ message.textContent =
 }
 
 async function buatPdfFinalBuku() {
+
+const bolehFinalisasi =
+  await selesaikanAksiUploadTerakhir(
+    "membuat PDF Final"
+  );
+
+if (!bolehFinalisasi) {
+  return;
+}
 
   const bookId =
     Number(
