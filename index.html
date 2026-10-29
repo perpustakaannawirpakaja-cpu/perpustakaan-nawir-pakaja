@@ -7301,7 +7301,26 @@ const sizeInfo =
 const ukuranAsli =
   pageFile.size;
 
-if (autoCompress) {
+const BATAS_KOMPRES_OTOMATIS =
+  700 * 1024;
+
+const perluDikompres =
+  autoCompress &&
+  ukuranAsli >
+    BATAS_KOMPRES_OTOMATIS;
+
+if (
+  autoCompress &&
+  !perluDikompres
+) {
+
+  if (sizeInfo) {
+    sizeInfo.textContent =
+      `Ukuran asli: ${formatUkuranFile(ukuranAsli)} · Sudah cukup kecil, kompresi dilewati.`;
+  }
+}
+
+if (perluDikompres) {
 
   message.textContent =
     "⏳ Mengompres PDF...";
