@@ -1312,6 +1312,31 @@ body.dark .read-button{
   flex:0 0 auto;
 }
 
+#bookPagesModal #book-pages-list .admin-book-loading{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:5px;
+  text-align:left;
+}
+
+.book-page-compression-info{
+  display:block;
+  font-size:11px;
+  line-height:1.35;
+  color:var(--muted);
+  white-space:normal;
+}
+
+.book-page-replace-btn{
+  margin-top:2px;
+  padding:5px 8px;
+  border-radius:8px;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
+
 #bookPagesModal .modal-actions{
   margin-top:14px;
 }
@@ -6556,6 +6581,10 @@ async function bukaKelolaHalaman(bookId) {
       id,
       page_number,
       file_url,
+      file_size,
+      original_size,
+      compression_status,
+      compression_mode,
       created_at
     `)
     .eq("book_id", bookId)
@@ -6640,19 +6669,98 @@ if (!pages || pages.length === 0) {
 } else {
 
   const daftarTerupload =
-  pages.map((page) => `
-    <div class="admin-book-loading">
-      📄 Halaman ${page.page_number}
+  pages.map((page) => {
 
-      <button
-        type="button"
-        class="book-page-replace-btn"
-        onclick="pilihGantiHalaman(${page.page_number})"
-      >
-        ✏️ Ganti
-      </button>
-    </div>
-  `).join("");
+    const ukuranAkhir =
+      Number(page.file_size || 0);
+
+    const ukuranAwal =
+      Number(page.original_size || 0);
+
+    const status =
+      page.compression_status ||
+      "original";
+
+    const mode =
+      page.compression_mode;
+
+    let infoKompresi = "";
+
+    if (
+      status === "compressed" &&
+      ukuranAwal > 0 &&
+      ukuranAkhir > 0
+    ) {
+
+      const hemat =
+        Math.round(
+          (
+            1 -
+            (
+              ukuranAkhir /
+              ukuranAwal
+            )
+          ) * 100
+        );
+
+      const namaMode =
+        mode === "high"
+          ? "Kualitas Tinggi"
+          : mode === "small"
+            ? "Ukuran Kecil"
+            : "Seimbang";
+
+      infoKompresi = `
+        <span class="book-page-compression-info">
+          🗜️ ${namaMode}
+          · ${formatUkuranFile(ukuranAkhir)}
+          · Hemat ${hemat}%
+        </span>
+      `;
+
+    } else if (
+      status === "skipped"
+    ) {
+
+      infoKompresi = `
+        <span class="book-page-compression-info">
+          ↪️ Kompresi dilewati
+          · ${formatUkuranFile(ukuranAkhir)}
+        </span>
+      `;
+
+    } else {
+
+      infoKompresi = `
+        <span class="book-page-compression-info">
+          📦 Asli
+          · ${formatUkuranFile(ukuranAkhir)}
+        </span>
+      `;
+
+    }
+
+    return `
+      <div class="admin-book-loading">
+
+        <strong>
+          📄 Halaman ${page.page_number}
+        </strong>
+
+        ${infoKompresi}
+
+        <button
+          type="button"
+          class="book-page-replace-btn"
+          onclick="pilihGantiHalaman(${page.page_number})"
+        >
+          ✏️ Ganti
+        </button>
+
+      </div>
+    `;
+
+  }).join("");
 
   const statusBelum =
     halamanBelumDiupload.length > 0
@@ -7003,7 +7111,16 @@ async function batalUploadHalaman() {
             aksi.oldStoragePath,
 
           file_size:
-            aksi.oldFileSize
+            aksi.oldFileSize,
+
+          original_size:
+            aksi.oldOriginalSize,
+
+          compression_status:
+            aksi.oldCompressionStatus,
+
+          compression_mode:
+            aksi.oldCompressionMode
         })
         .eq(
           "book_id",
@@ -7052,7 +7169,16 @@ async function batalUploadHalaman() {
               aksi.newStoragePath,
 
             file_size:
-              aksi.newFileSize
+              aksi.newFileSize,
+
+            original_size:
+              aksi.newOriginalSize,
+
+            compression_status:
+              aksi.newCompressionStatus,
+
+            compression_mode:
+              aksi.newCompressionMode
           })
           .eq(
             "book_id",
@@ -7301,6 +7427,12 @@ const sizeInfo =
 const ukuranAsli =
   pageFile.size;
 
+let statusKompresi =
+  "original";
+
+let modeKompresiTersimpan =
+  null;
+
 const BATAS_KOMPRES_OTOMATIS =
   700 * 1024;
 
@@ -7313,6 +7445,12 @@ if (
   autoCompress &&
   !perluDikompres
 ) {
+
+statusKompresi =
+  "skipped";
+
+modeKompresiTersimpan =
+  null;
 
   if (sizeInfo) {
     sizeInfo.textContent =
@@ -7341,6 +7479,12 @@ if (perluDikompres) {
       pageFile =
         hasilKompresi.file;
 
+      statusKompresi =
+        "compressed";
+
+      modeKompresiTersimpan =
+        compressionQuality;
+
       const hemat =
         Math.round(
           (
@@ -7358,6 +7502,12 @@ if (perluDikompres) {
       }
 
     } else {
+
+      statusKompresi =
+        "skipped";
+
+      modeKompresiTersimpan =
+        compressionQuality;
 
       if (sizeInfo) {
         sizeInfo.textContent =
@@ -7465,11 +7615,14 @@ const {
   error: existingPageError
 } = await db
   .from("book_pages")
-  .select(`
+.select(`
   id,
   storage_path,
   file_url,
-  file_size
+  file_size,
+  original_size,
+  compression_status,
+  compression_mode
 `)
   .eq(
     "book_id",
@@ -7574,14 +7727,25 @@ if (sedangMenggantiHalaman) {
     error: updatePageError
   } = await db
     .from("book_pages")
-    .update({
-      file_url:
-        fileUrl,
-      storage_path:
-        uploadedPagePath,
-      file_size:
-        pageFile.size
-    })
+.update({
+  file_url:
+    fileUrl,
+
+  storage_path:
+    uploadedPagePath,
+
+  file_size:
+    pageFile.size,
+
+  original_size:
+    ukuranAsli,
+
+  compression_status:
+    statusKompresi,
+
+  compression_mode:
+    modeKompresiTersimpan
+})
     .eq(
       "id",
       existingPage.id
@@ -7623,14 +7787,25 @@ if (sedangMenggantiHalaman) {
       error: rollbackPageError
     } = await db
       .from("book_pages")
-      .update({
-        file_url:
-          existingPage.file_url,
-        storage_path:
-          existingPage.storage_path,
-        file_size:
-          existingPage.file_size
-      })
+.update({
+  file_url:
+    existingPage.file_url,
+
+  storage_path:
+    existingPage.storage_path,
+
+  file_size:
+    existingPage.file_size,
+
+  original_size:
+    existingPage.original_size,
+
+  compression_status:
+    existingPage.compression_status,
+
+  compression_mode:
+    existingPage.compression_mode
+})
       .eq(
         "id",
         existingPage.id
@@ -7664,18 +7839,31 @@ if (sedangMenggantiHalaman) {
     error: insertError
   } = await db
     .from("book_pages")
-    .insert({
-      book_id:
-        bookId,
-      page_number:
-        pageNumber,
-      file_url:
-        fileUrl,
-      storage_path:
-        uploadedPagePath,
-      file_size:
-        pageFile.size
-    });
+.insert({
+  book_id:
+    bookId,
+
+  page_number:
+    pageNumber,
+
+  file_url:
+    fileUrl,
+
+  storage_path:
+    uploadedPagePath,
+
+  file_size:
+    pageFile.size,
+
+  original_size:
+    ukuranAsli,
+
+  compression_status:
+    statusKompresi,
+
+  compression_mode:
+    modeKompresiTersimpan
+});
 
   if (insertError) {
 
@@ -7711,6 +7899,15 @@ if (sedangMenggantiHalaman) {
     oldFileSize:
       existingPage.file_size,
 
+    oldOriginalSize:
+      existingPage.original_size,
+
+    oldCompressionStatus:
+      existingPage.compression_status,
+
+    oldCompressionMode:
+      existingPage.compression_mode,
+
     newStoragePath:
       uploadedPagePath,
 
@@ -7719,6 +7916,15 @@ if (sedangMenggantiHalaman) {
 
     newFileSize:
       pageFile.size,
+
+    newOriginalSize:
+      ukuranAsli,
+
+    newCompressionStatus:
+      statusKompresi,
+
+    newCompressionMode:
+      modeKompresiTersimpan,
 
     statusSebelumnya:
       book.upload_status,
@@ -7730,19 +7936,28 @@ if (sedangMenggantiHalaman) {
 } else {
 
   aksiUploadHalamanTerakhir = {
-  tipe: "upload",
-  bookId: bookId,
-  pageNumber: pageNumber,
+    tipe: "upload",
+    bookId: bookId,
+    pageNumber: pageNumber,
 
-  newStoragePath:
-    uploadedPagePath,
+    newStoragePath:
+      uploadedPagePath,
 
-  newFileUrl:
-    fileUrl,
+    newFileUrl:
+      fileUrl,
 
-  newFileSize:
-    pageFile.size
-};
+    newFileSize:
+      pageFile.size,
+
+    newOriginalSize:
+      ukuranAsli,
+
+    newCompressionStatus:
+      statusKompresi,
+
+    newCompressionMode:
+      modeKompresiTersimpan
+  };
 
 }
 
