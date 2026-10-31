@@ -6757,6 +6757,14 @@ if (!pages || pages.length === 0) {
           ✏️ Ganti
         </button>
 
+        <button
+          type="button"
+          class="book-page-delete-btn"
+          onclick="pilihHapusHalaman(${page.page_number})"
+        >
+          🗑️ Hapus
+        </button>
+
       </div>
     `;
 
@@ -6934,7 +6942,17 @@ function updateTombolUploadHalaman() {
     return;
   }
 
-  if (aksiUploadHalamanTerakhir) {
+  if (
+    aksiUploadHalamanTerakhir?.tipe ===
+    "delete"
+  ) {
+
+    tombol.textContent =
+      "↩️ Batal Hapus Halaman";
+
+  } else if (
+    aksiUploadHalamanTerakhir
+  ) {
 
     tombol.textContent =
       "↩️ Batal Upload Halaman";
@@ -6944,6 +6962,247 @@ function updateTombolUploadHalaman() {
     tombol.textContent =
       "📤 Upload Halaman";
 
+  }
+}
+
+async function pilihHapusHalaman(pageNumber) {
+
+  const bookId =
+    Number(
+      document.getElementById(
+        "book-pages-book-id"
+      )?.value
+    );
+
+  const message =
+    document.getElementById(
+      "book-pages-message"
+    );
+
+  if (!bookId || !pageNumber) {
+    return;
+  }
+
+  // Jangan izinkan aksi baru
+  // kalau masih ada Undo sebelumnya.
+  if (aksiUploadHalamanTerakhir) {
+
+    alert(
+      "Masih ada perubahan halaman yang dapat dibatalkan.\n\n" +
+      "Selesaikan atau batalkan perubahan tersebut terlebih dahulu."
+    );
+
+    return;
+  }
+
+  const yakin = confirm(
+    `Hapus Halaman ${pageNumber}?\n\n` +
+    `File belum akan dihapus permanen dari Storage, sehingga masih dapat dibatalkan.`
+  );
+
+  if (!yakin) {
+    return;
+  }
+
+  if (message) {
+    message.textContent =
+      `Menghapus Halaman ${pageNumber}...`;
+  }
+
+  try {
+
+    // Ambil status buku sebelum diubah.
+    const {
+      data: book,
+      error: bookError
+    } = await db
+      .from("books")
+      .select(`
+        id,
+        upload_status,
+        file_url
+      `)
+      .eq("id", bookId)
+      .single();
+
+    if (bookError || !book) {
+      throw new Error(
+        bookError?.message ||
+        "Data buku tidak ditemukan."
+      );
+    }
+
+    // Ambil seluruh data halaman
+    // untuk cadangan Undo.
+    const {
+      data: page,
+      error: pageError
+    } = await db
+      .from("book_pages")
+      .select(`
+        id,
+        book_id,
+        page_number,
+        file_url,
+        storage_path,
+        file_size,
+        original_size,
+        compression_status,
+        compression_mode,
+        created_at
+      `)
+      .eq("book_id", bookId)
+      .eq("page_number", pageNumber)
+      .single();
+
+    if (pageError || !page) {
+      throw new Error(
+        pageError?.message ||
+        `Halaman ${pageNumber} tidak ditemukan.`
+      );
+    }
+
+    // Hapus dari database.
+    // FILE STORAGE BELUM DIHAPUS.
+    const {
+      error: deleteError
+    } = await db
+      .from("book_pages")
+      .delete()
+      .eq("id", page.id);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    // Kalau buku sebelumnya sudah Final,
+    // kembalikan menjadi Draft.
+    if (
+      book.upload_status ===
+      "complete"
+    ) {
+
+      const {
+        error: resetBookError
+      } = await db
+        .from("books")
+        .update({
+          upload_status: "draft",
+          file_url: null
+        })
+        .eq("id", bookId);
+
+      if (resetBookError) {
+
+        // Rollback halaman kalau
+        // status buku gagal diubah.
+        const {
+          error: rollbackError
+        } = await db
+          .from("book_pages")
+          .insert({
+            book_id: page.book_id,
+            page_number:
+              page.page_number,
+            file_url:
+              page.file_url,
+            storage_path:
+              page.storage_path,
+            file_size:
+              page.file_size,
+            original_size:
+              page.original_size,
+            compression_status:
+              page.compression_status,
+            compression_mode:
+              page.compression_mode,
+            created_at:
+              page.created_at
+          });
+
+        if (rollbackError) {
+          throw new Error(
+            "Status buku gagal diubah dan rollback halaman juga gagal: " +
+            rollbackError.message
+          );
+        }
+
+        throw resetBookError;
+      }
+    }
+
+    // Simpan cadangan untuk Undo.
+    aksiUploadHalamanTerakhir = {
+      tipe: "delete",
+
+      bookId,
+      pageNumber,
+
+      deletedPage: {
+        book_id:
+          page.book_id,
+
+        page_number:
+          page.page_number,
+
+        file_url:
+          page.file_url,
+
+        storage_path:
+          page.storage_path,
+
+        file_size:
+          page.file_size,
+
+        original_size:
+          page.original_size,
+
+        compression_status:
+          page.compression_status,
+
+        compression_mode:
+          page.compression_mode,
+
+        created_at:
+          page.created_at
+      },
+
+      statusSebelumnya:
+        book.upload_status,
+
+      fileUrlFinalSebelumnya:
+        book.file_url
+    };
+
+    await tampilkanBuku();
+    await muatDaftarBukuAdmin();
+    await bukaKelolaHalaman(bookId);
+
+    updateTombolUploadHalaman();
+
+    const pesanBaru =
+      document.getElementById(
+        "book-pages-message"
+      );
+
+    if (pesanBaru) {
+      pesanBaru.textContent =
+        `✅ Halaman ${pageNumber} dihapus. ` +
+        `Anda masih dapat menggunakan Batal Hapus Halaman.`;
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Gagal menghapus halaman:",
+      error
+    );
+
+    if (message) {
+      message.textContent =
+        "❌ Gagal menghapus halaman: " +
+        error.message;
+    }
   }
 }
 
@@ -6958,16 +7217,25 @@ async function selesaikanAksiUploadTerakhir(
     return true;
   }
 
+  const namaBatal =
+    aksi.tipe === "delete"
+      ? "Batal Hapus"
+      : "Batal Upload";
+
   const yakin =
     confirm(
       `Perubahan terakhir pada Halaman ${aksi.pageNumber} masih bisa dibatalkan.\n\n` +
-      `Jika Anda ${tindakan}, perubahan akan dianggap final dan Batal Upload tidak dapat digunakan lagi.\n\n` +
+      `Jika Anda ${tindakan}, perubahan akan dianggap final dan ${namaBatal} tidak dapat digunakan lagi.\n\n` +
       `Lanjutkan?`
     );
 
   if (!yakin) {
     return false;
   }
+
+  /* =========================
+     KUNCI AKSI GANTI HALAMAN
+     ========================= */
 
   if (
     aksi.tipe === "replace" &&
@@ -6997,6 +7265,44 @@ async function selesaikanAksiUploadTerakhir(
       if (message) {
         message.textContent =
           "❌ Perubahan belum dapat dikunci karena file cadangan lama gagal dibersihkan.";
+      }
+
+      return false;
+    }
+  }
+
+  /* =========================
+     KUNCI AKSI HAPUS HALAMAN
+     ========================= */
+
+  if (
+    aksi.tipe === "delete" &&
+    aksi.deletedPage?.storage_path
+  ) {
+
+    const {
+      error: removeDeletedError
+    } = await db.storage
+      .from("book-files")
+      .remove([
+        aksi.deletedPage.storage_path
+      ]);
+
+    if (removeDeletedError) {
+
+      console.error(
+        "Gagal menghapus file halaman:",
+        removeDeletedError
+      );
+
+      const message =
+        document.getElementById(
+          "book-pages-message"
+        );
+
+      if (message) {
+        message.textContent =
+          "❌ Penghapusan belum dapat dikunci karena file halaman gagal dibersihkan dari Storage.";
       }
 
       return false;
@@ -7044,9 +7350,14 @@ async function batalUploadHalaman() {
     return;
   }
 
+  const teksKonfirmasi =
+  aksi.tipe === "delete"
+    ? `Batalkan penghapusan Halaman ${aksi.pageNumber}?`
+    : `Batalkan upload terakhir untuk Halaman ${aksi.pageNumber}?`;
+
   const yakin =
     confirm(
-      `Batalkan upload terakhir untuk Halaman ${aksi.pageNumber}?`
+      teksKonfirmasi
     );
 
   if (!yakin) {
@@ -7195,6 +7506,96 @@ async function batalUploadHalaman() {
         );
       }
 
+        /* =========================
+           BATAL HAPUS HALAMAN
+           ========================= */
+
+    } else if (
+      aksi.tipe === "delete"
+    ) {
+
+      const page =
+        aksi.deletedPage;
+
+      const {
+        error: restoreDeletedPageError
+      } = await db
+        .from("book_pages")
+        .insert({
+          book_id:
+            page.book_id,
+
+          page_number:
+            page.page_number,
+
+          file_url:
+            page.file_url,
+
+          storage_path:
+            page.storage_path,
+
+          file_size:
+            page.file_size,
+
+          original_size:
+            page.original_size,
+
+          compression_status:
+            page.compression_status,
+
+          compression_mode:
+            page.compression_mode,
+
+          created_at:
+            page.created_at
+        });
+
+      if (restoreDeletedPageError) {
+        throw new Error(
+          "Gagal mengembalikan halaman yang dihapus: " +
+          restoreDeletedPageError.message
+        );
+      }
+
+      const {
+        error: restoreBookError
+      } = await db
+        .from("books")
+        .update({
+          upload_status:
+            aksi.statusSebelumnya,
+
+          file_url:
+            aksi.fileUrlFinalSebelumnya
+        })
+        .eq(
+          "id",
+          aksi.bookId
+        );
+
+      if (restoreBookError) {
+
+        // Kalau status buku gagal
+        // dikembalikan, hapus lagi
+        // halaman yang baru direstore.
+        await db
+          .from("book_pages")
+          .delete()
+          .eq(
+            "book_id",
+            aksi.bookId
+          )
+          .eq(
+            "page_number",
+            aksi.pageNumber
+          );
+
+        throw new Error(
+          "Gagal mengembalikan status buku: " +
+          restoreBookError.message
+        );
+      }
+
     } else {
 
       throw new Error(
@@ -7244,7 +7645,9 @@ async function batalUploadHalaman() {
     updateTombolUploadHalaman();
 
     message.textContent =
-      `✅ Upload Halaman ${nomorHalaman} berhasil dibatalkan.`;
+      aksi.tipe === "delete"
+        ? `✅ Penghapusan Halaman ${nomorHalaman} berhasil dibatalkan.`
+        : `✅ Upload Halaman ${nomorHalaman} berhasil dibatalkan.`;
 
   } catch (error) {
 
