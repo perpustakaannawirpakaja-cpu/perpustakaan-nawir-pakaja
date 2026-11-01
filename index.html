@@ -9722,17 +9722,20 @@ if (!bolehFinalisasi) {
 
     finalizeButton.disabled = false;
 
-  } finally {
+} finally {
 
-    finalizeButton.textContent =
-      "📚 Buat PDF Final";
+  finalizeButton.disabled =
+    false;
 
-    if (uploadButton) {
-      uploadButton.disabled =
-        false;
-    }
+  finalizeButton.textContent =
+    "📚 Buat PDF Final";
 
+  if (uploadButton) {
+    uploadButton.disabled =
+      false;
   }
+
+}
 
 }
 
