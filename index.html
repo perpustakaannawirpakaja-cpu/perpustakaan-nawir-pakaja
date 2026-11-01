@@ -3356,15 +3356,24 @@ body[data-ui-style="minimal"] .read-button:hover {
 </div>
 
     <p
-      id="book-pages-message"
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-    ></p>
+  id="book-pages-message"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+></p>
 
-    <div
-      id="book-pages-list"
-    ></div>
+<p
+  id="book-pages-integrity-status"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+>
+  Memeriksa integritas halaman...
+</p>
+
+<div
+  id="book-pages-list"
+></div>
 
 <div class="modal-actions">
 
@@ -6512,8 +6521,14 @@ async function bukaKelolaHalaman(bookId) {
   progress.textContent =
     "Memuat progres...";
   message.textContent =
-    "Memuat data buku...";
-  list.innerHTML = `
+  "Memuat data buku...";
+
+if (integrityStatus) {
+  integrityStatus.textContent =
+    "⏳ Memeriksa integritas halaman...";
+}
+
+list.innerHTML = `
     <p class="admin-book-loading">
       Memuat halaman...
     </p>
@@ -6542,26 +6557,36 @@ async function bukaKelolaHalaman(bookId) {
     .eq("id", bookId)
     .maybeSingle();
 
-  if (bookError || !book) {
+ if (bookError || !book) {
 
-    message.textContent =
-      "❌ Gagal memuat data buku.";
-
-    progress.textContent =
-      "0 / 0 halaman";
-
-    list.innerHTML = `
-      <p class="admin-book-loading">
-        Gagal memuat halaman.
-      </p>
-    `;
-
-    return;
+  if (integrityStatus) {
+    integrityStatus.textContent =
+      "❌ Integritas halaman tidak dapat diperiksa.";
   }
+
+  message.textContent =
+    "❌ Gagal memuat data buku.";
+
+  progress.textContent =
+    "0 / 0 halaman";
+
+  list.innerHTML = `
+    <p class="admin-book-loading">
+      Gagal memuat halaman.
+    </p>
+  `;
+
+  return;
+}
 
   if (
     book.upload_mode !== "incremental"
   ) {
+
+    if (integrityStatus) {
+      integrityStatus.textContent =
+        "ℹ️ Pemeriksaan integritas hanya berlaku untuk Upload Bertahap.";
+    }
 
     title.textContent =
       book.title || "-";
@@ -6617,6 +6642,11 @@ async function bukaKelolaHalaman(bookId) {
 
 if (pagesError) {
 
+  if (integrityStatus) {
+    integrityStatus.textContent =
+      "❌ Integritas halaman tidak dapat diperiksa karena daftar halaman gagal dimuat.";
+  }
+
   console.error(
     "Gagal memuat book_pages:",
     pagesError
@@ -6636,6 +6666,21 @@ if (pagesError) {
   `;
 
   return;
+}
+
+const hasilIntegritas =
+  await validasiIntegritasHalaman(
+    bookId
+  );
+
+if (integrityStatus) {
+
+  integrityStatus.textContent =
+    hasilIntegritas.valid
+      ? "✅ Integritas halaman aman — " +
+        hasilIntegritas.message
+      : "⚠️ Integritas halaman bermasalah — " +
+        hasilIntegritas.message;
 }
 
   const nomorTerupload =
@@ -6868,12 +6913,17 @@ async function tutupKelolaHalaman() {
   const message =
     document.getElementById(
       "book-pages-message"
-    );
+  );
+
+  const integrityStatus =
+    document.getElementById(
+      "book-pages-integrity-status"
+  );
 
   const list =
     document.getElementById(
       "book-pages-list"
-    );
+  );
 
   const pageNumberInput =
     document.getElementById(
@@ -6899,12 +6949,16 @@ async function tutupKelolaHalaman() {
   }
 
   if (message) {
-    message.textContent = "";
-  }
+  message.textContent = "";
+}
 
-  if (list) {
-    list.innerHTML = "";
-  }
+if (integrityStatus) {
+  integrityStatus.textContent = "";
+}
+
+if (list) {
+  list.innerHTML = "";
+}
 
   if (pageNumberInput) {
     pageNumberInput.value = "";
