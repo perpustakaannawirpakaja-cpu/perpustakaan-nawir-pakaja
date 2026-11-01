@@ -3388,6 +3388,15 @@ body[data-ui-style="minimal"] .read-button:hover {
   <button
     type="button"
     class="login-btn"
+    id="book-page-insert-btn"
+    onclick="bukaSisipkanHalaman()"
+  >
+    ➕ Sisipkan Halaman
+  </button>
+
+  <button
+    type="button"
+    class="login-btn"
     id="book-finalize-btn"
     onclick="buatPdfFinalBuku()"
     disabled
@@ -6926,6 +6935,7 @@ async function tutupKelolaHalaman() {
   }
 
   nomorHalamanPengganti = null;
+  modeSisipHalamanAktif = false;
 
 }
 
@@ -6943,19 +6953,27 @@ function updateTombolUploadHalaman() {
   }
 
   if (
-    aksiUploadHalamanTerakhir?.tipe ===
-    "delete"
-  ) {
+  aksiUploadHalamanTerakhir?.tipe ===
+  "delete"
+) {
 
-    tombol.textContent =
-      "↩️ Batal Hapus Halaman";
+  tombol.textContent =
+    "↩️ Batal Hapus Halaman";
 
-  } else if (
-    aksiUploadHalamanTerakhir
-  ) {
+} else if (
+  aksiUploadHalamanTerakhir?.tipe ===
+  "insert"
+) {
 
-    tombol.textContent =
-      "↩️ Batal Upload Halaman";
+  tombol.textContent =
+    "↩️ Batal Sisip Halaman";
+
+} else if (
+  aksiUploadHalamanTerakhir
+) {
+
+  tombol.textContent =
+    "↩️ Batal Upload Halaman";
 
   } else {
 
@@ -7218,8 +7236,10 @@ async function selesaikanAksiUploadTerakhir(
   }
 
   const namaBatal =
-    aksi.tipe === "delete"
-      ? "Batal Hapus"
+  aksi.tipe === "delete"
+    ? "Batal Hapus"
+    : aksi.tipe === "insert"
+      ? "Batal Sisip"
       : "Batal Upload";
 
   const yakin =
@@ -7353,7 +7373,9 @@ async function batalUploadHalaman() {
   const teksKonfirmasi =
   aksi.tipe === "delete"
     ? `Batalkan penghapusan Halaman ${aksi.pageNumber}?`
-    : `Batalkan upload terakhir untuk Halaman ${aksi.pageNumber}?`;
+    : aksi.tipe === "insert"
+      ? `Batalkan penyisipan Halaman ${aksi.pageNumber}?`
+      : `Batalkan upload terakhir untuk Halaman ${aksi.pageNumber}?`;
 
   const yakin =
     confirm(
@@ -7401,6 +7423,43 @@ async function batalUploadHalaman() {
           deletePageError.message
         );
       }
+
+/* =========================
+   BATAL SISIP HALAMAN
+   ========================= */
+
+} else if (
+  aksi.tipe === "insert"
+) {
+
+  const {
+    error: undoInsertError
+  } = await db.rpc(
+    "undo_insert_incremental_book_page",
+    {
+      p_book_id:
+        aksi.bookId,
+
+      p_page_number:
+        aksi.pageNumber,
+
+      p_storage_path:
+        aksi.newStoragePath,
+
+      p_previous_status:
+        aksi.statusSebelumnya,
+
+      p_previous_file_url:
+        aksi.fileUrlFinalSebelumnya
+    }
+  );
+
+  if (undoInsertError) {
+    throw new Error(
+      "Gagal membatalkan penyisipan halaman: " +
+      undoInsertError.message
+    );
+  }      
 
     /* =========================
        BATAL GANTI HALAMAN
@@ -7645,9 +7704,11 @@ async function batalUploadHalaman() {
     updateTombolUploadHalaman();
 
     message.textContent =
-      aksi.tipe === "delete"
-        ? `✅ Penghapusan Halaman ${nomorHalaman} berhasil dibatalkan.`
-        : `✅ Upload Halaman ${nomorHalaman} berhasil dibatalkan.`;
+  aksi.tipe === "delete"
+    ? `✅ Penghapusan Halaman ${nomorHalaman} berhasil dibatalkan.`
+    : aksi.tipe === "insert"
+      ? `✅ Penyisipan Halaman ${nomorHalaman} berhasil dibatalkan.`
+      : `✅ Upload Halaman ${nomorHalaman} berhasil dibatalkan.`;
 
   } catch (error) {
 
@@ -7674,11 +7735,118 @@ async function batalUploadHalaman() {
 }
 
 let nomorHalamanPengganti = null;
+let modeSisipHalamanAktif = false;
+
+async function bukaSisipkanHalaman() {
+
+  const bookId =
+    Number(
+      document.getElementById(
+        "book-pages-book-id"
+      )?.value
+    );
+
+  const pageNumberInput =
+    document.getElementById(
+      "book-page-number"
+    );
+
+  const pageFileInput =
+    document.getElementById(
+      "book-page-file"
+    );
+
+  const message =
+    document.getElementById(
+      "book-pages-message"
+    );
+
+  if (!bookId) {
+    return;
+  }
+
+  if (aksiUploadHalamanTerakhir) {
+
+    alert(
+      "Masih ada perubahan halaman yang dapat dibatalkan.\n\n" +
+      "Selesaikan atau batalkan perubahan tersebut terlebih dahulu."
+    );
+
+    return;
+  }
+
+  const {
+    data: book,
+    error
+  } = await db
+    .from("books")
+    .select(`
+      total_pages,
+      upload_mode
+    `)
+    .eq("id", bookId)
+    .single();
+
+  if (error || !book) {
+
+    if (message) {
+      message.textContent =
+        "❌ Data buku tidak dapat dibaca.";
+    }
+
+    return;
+  }
+
+  if (
+    book.upload_mode !==
+    "incremental"
+  ) {
+
+    if (message) {
+      message.textContent =
+        "❌ Sisipkan halaman hanya tersedia untuk buku mode bertahap.";
+    }
+
+    return;
+  }
+
+  modeSisipHalamanAktif = true;
+  nomorHalamanPengganti = null;
+
+  if (pageNumberInput) {
+
+    pageNumberInput.value = "";
+
+    pageNumberInput.min = 1;
+
+    pageNumberInput.max =
+      Number(book.total_pages) + 1;
+
+    pageNumberInput.placeholder =
+      `1 - ${Number(book.total_pages) + 1}`;
+  }
+
+  if (pageFileInput) {
+    pageFileInput.value = "";
+  }
+
+  if (message) {
+
+    message.textContent =
+      `➕ Mode Sisipkan Halaman aktif. ` +
+      `Pilih posisi 1 sampai ${Number(book.total_pages) + 1}, ` +
+      `lalu pilih PDF satu halaman.`;
+  }
+
+  pageNumberInput?.focus();
+}
 
 function pilihGantiHalaman(pageNumber) {
 
   nomorHalamanPengganti =
     Number(pageNumber);
+
+  modeSisipHalamanAktif = false;
 
   const pageNumberInput =
     document.getElementById(
@@ -7984,20 +8152,31 @@ if (perluDikompres) {
     return;
   }
 
-  if (
-    book.total_pages &&
-    pageNumber >
-      book.total_pages
-  ) {
-    message.textContent =
-      `⚠️ Nomor halaman maksimal ${book.total_pages}.`;
+  const sedangMenyisipkanHalaman =
+  modeSisipHalamanAktif === true;
 
-    pageNumberInput?.focus();
-    return;
-  }
-
-  const sedangMenggantiHalaman =
+const sedangMenggantiHalaman =
   nomorHalamanPengganti !== null;
+
+const batasNomorHalaman =
+  sedangMenyisipkanHalaman
+    ? Number(book.total_pages) + 1
+    : Number(book.total_pages);
+
+if (
+  book.total_pages &&
+  pageNumber >
+    batasNomorHalaman
+) {
+
+  message.textContent =
+    sedangMenyisipkanHalaman
+      ? `⚠️ Posisi sisip maksimal ${batasNomorHalaman}.`
+      : `⚠️ Nomor halaman maksimal ${batasNomorHalaman}.`;
+
+  pageNumberInput?.focus();
+  return;
+}
 
 if (
   sedangMenggantiHalaman &&
@@ -8050,7 +8229,8 @@ const {
 
   if (
   existingPage &&
-  !sedangMenggantiHalaman
+  !sedangMenggantiHalaman &&
+  !sedangMenyisipkanHalaman
 ) {
   message.textContent =
     `⚠️ Halaman ${pageNumber} sudah pernah diupload.`;
@@ -8130,25 +8310,25 @@ if (sedangMenggantiHalaman) {
     error: updatePageError
   } = await db
     .from("book_pages")
-.update({
-  file_url:
-    fileUrl,
+    .update({
+      file_url:
+        fileUrl,
 
-  storage_path:
-    uploadedPagePath,
+      storage_path:
+        uploadedPagePath,
 
-  file_size:
-    pageFile.size,
+      file_size:
+        pageFile.size,
 
-  original_size:
-    ukuranAsli,
+      original_size:
+        ukuranAsli,
 
-  compression_status:
-    statusKompresi,
+      compression_status:
+        statusKompresi,
 
-  compression_mode:
-    modeKompresiTersimpan
-})
+      compression_mode:
+        modeKompresiTersimpan
+    })
     .eq(
       "id",
       existingPage.id
@@ -8171,55 +8351,110 @@ if (sedangMenggantiHalaman) {
   }
 
   if (
-  book.upload_status === "complete"
+    book.upload_status === "complete"
+  ) {
+
+    const {
+      error: resetBookError
+    } = await db
+      .from("books")
+      .update({
+        upload_status: "draft",
+        file_url: null
+      })
+      .eq(
+        "id",
+        bookId
+      );
+
+    if (resetBookError) {
+
+      const {
+        error: rollbackPageError
+      } = await db
+        .from("book_pages")
+        .update({
+          file_url:
+            existingPage.file_url,
+
+          storage_path:
+            existingPage.storage_path,
+
+          file_size:
+            existingPage.file_size,
+
+          original_size:
+            existingPage.original_size,
+
+          compression_status:
+            existingPage.compression_status,
+
+          compression_mode:
+            existingPage.compression_mode
+        })
+        .eq(
+          "id",
+          existingPage.id
+        );
+
+      if (rollbackPageError) {
+        console.error(
+          "Rollback halaman gagal:",
+          rollbackPageError
+        );
+      }
+
+      await db.storage
+        .from("book-files")
+        .remove([
+          uploadedPagePath
+        ]);
+
+      uploadedPagePath = null;
+
+      throw new Error(
+        "Status buku gagal dikembalikan ke draft: " +
+        resetBookError.message
+      );
+    }
+  }
+
+} else if (
+  sedangMenyisipkanHalaman
 ) {
 
   const {
-    error: resetBookError
-  } = await db
-    .from("books")
-    .update({
-      upload_status: "draft",
-      file_url: null
-    })
-    .eq("id", bookId);
+    error: insertPageError
+  } = await db.rpc(
+    "insert_incremental_book_page",
+    {
+      p_book_id:
+        bookId,
 
-  if (resetBookError) {
+      p_page_number:
+        pageNumber,
 
-    const {
-      error: rollbackPageError
-    } = await db
-      .from("book_pages")
-.update({
-  file_url:
-    existingPage.file_url,
+      p_file_url:
+        fileUrl,
 
-  storage_path:
-    existingPage.storage_path,
+      p_storage_path:
+        uploadedPagePath,
 
-  file_size:
-    existingPage.file_size,
+      p_file_size:
+        pageFile.size,
 
-  original_size:
-    existingPage.original_size,
+      p_original_size:
+        ukuranAsli,
 
-  compression_status:
-    existingPage.compression_status,
+      p_compression_status:
+        statusKompresi,
 
-  compression_mode:
-    existingPage.compression_mode
-})
-      .eq(
-        "id",
-        existingPage.id
-      );
-
-    if (rollbackPageError) {
-      console.error(
-        "Rollback halaman gagal:",
-        rollbackPageError
-      );
+      p_compression_mode:
+        modeKompresiTersimpan
     }
+  );
+
+  if (insertPageError) {
 
     await db.storage
       .from("book-files")
@@ -8230,11 +8465,10 @@ if (sedangMenggantiHalaman) {
     uploadedPagePath = null;
 
     throw new Error(
-      "Status buku gagal dikembalikan ke draft: " +
-      resetBookError.message
+      "Penyisipan halaman gagal: " +
+      insertPageError.message
     );
   }
-}
 
 } else {
 
@@ -8242,31 +8476,31 @@ if (sedangMenggantiHalaman) {
     error: insertError
   } = await db
     .from("book_pages")
-.insert({
-  book_id:
-    bookId,
+    .insert({
+      book_id:
+        bookId,
 
-  page_number:
-    pageNumber,
+      page_number:
+        pageNumber,
 
-  file_url:
-    fileUrl,
+      file_url:
+        fileUrl,
 
-  storage_path:
-    uploadedPagePath,
+      storage_path:
+        uploadedPagePath,
 
-  file_size:
-    pageFile.size,
+      file_size:
+        pageFile.size,
 
-  original_size:
-    ukuranAsli,
+      original_size:
+        ukuranAsli,
 
-  compression_status:
-    statusKompresi,
+      compression_status:
+        statusKompresi,
 
-  compression_mode:
-    modeKompresiTersimpan
-});
+      compression_mode:
+        modeKompresiTersimpan
+    });
 
   if (insertError) {
 
@@ -8283,15 +8517,18 @@ if (sedangMenggantiHalaman) {
       insertError.message
     );
   }
-
 }
-
+  
 if (sedangMenggantiHalaman) {
 
   aksiUploadHalamanTerakhir = {
     tipe: "replace",
-    bookId: bookId,
-    pageNumber: pageNumber,
+
+    bookId:
+      bookId,
+
+    pageNumber:
+      pageNumber,
 
     oldFileUrl:
       existingPage.file_url,
@@ -8336,12 +8573,57 @@ if (sedangMenggantiHalaman) {
       book.file_url
   };
 
+} else if (
+  sedangMenyisipkanHalaman
+) {
+
+  aksiUploadHalamanTerakhir = {
+    tipe: "insert",
+
+    bookId:
+      bookId,
+
+    pageNumber:
+      pageNumber,
+
+    newStoragePath:
+      uploadedPagePath,
+
+    newFileUrl:
+      fileUrl,
+
+    newFileSize:
+      pageFile.size,
+
+    newOriginalSize:
+      ukuranAsli,
+
+    newCompressionStatus:
+      statusKompresi,
+
+    newCompressionMode:
+      modeKompresiTersimpan,
+
+    statusSebelumnya:
+      book.upload_status,
+
+    fileUrlFinalSebelumnya:
+      book.file_url,
+
+    totalPagesSebelumnya:
+      book.total_pages
+  };
+
 } else {
 
   aksiUploadHalamanTerakhir = {
     tipe: "upload",
-    bookId: bookId,
-    pageNumber: pageNumber,
+
+    bookId:
+      bookId,
+
+    pageNumber:
+      pageNumber,
 
     newStoragePath:
       uploadedPagePath,
@@ -8364,6 +8646,10 @@ if (sedangMenggantiHalaman) {
 
 }
 
+if (sedangMenyisipkanHalaman) {
+  modeSisipHalamanAktif = false;
+}
+
 await tampilkanBuku();
 
 await muatDaftarBukuAdmin();
@@ -8375,7 +8661,9 @@ await bukaKelolaHalaman(
 message.textContent =
   sedangMenggantiHalaman
     ? `✅ Halaman ${pageNumber} berhasil diganti.`
-    : `✅ Halaman ${pageNumber} berhasil diupload.`;
+    : sedangMenyisipkanHalaman
+      ? `✅ Halaman baru berhasil disisipkan pada posisi ${pageNumber}.`
+      : `✅ Halaman ${pageNumber} berhasil diupload.`;
 
   } catch (error) {
 
