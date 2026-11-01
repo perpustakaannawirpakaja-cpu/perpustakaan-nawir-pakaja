@@ -9381,6 +9381,13 @@ if (!hasilValidasi.valid) {
     message.textContent =
       "❌ PDF Final tidak dapat dibuat. " +
       hasilValidasi.message;
+
+    requestAnimationFrame(() => {
+      message.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    });
   }
 
   return;
