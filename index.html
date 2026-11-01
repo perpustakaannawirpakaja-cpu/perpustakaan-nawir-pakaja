@@ -9156,7 +9156,243 @@ message.textContent =
 
 }
 
+async function validasiIntegritasHalaman(
+  bookId
+) {
+
+  const {
+    data: book,
+    error: bookError
+  } = await db
+    .from("books")
+    .select(`
+      id,
+      total_pages,
+      upload_mode
+    `)
+    .eq("id", bookId)
+    .single();
+
+  if (bookError || !book) {
+    return {
+      valid: false,
+      message:
+        "Data buku tidak ditemukan."
+    };
+  }
+
+  if (
+    book.upload_mode !==
+    "incremental"
+  ) {
+    return {
+      valid: false,
+      message:
+        "Validasi halaman hanya berlaku untuk buku mode bertahap."
+    };
+  }
+
+  const totalPages =
+    Number(book.total_pages || 0);
+
+  if (
+    !Number.isInteger(totalPages) ||
+    totalPages < 1
+  ) {
+    return {
+      valid: false,
+      message:
+        "Total halaman buku tidak valid."
+    };
+  }
+
+  const {
+    data: pages,
+    error: pagesError
+  } = await db
+    .from("book_pages")
+    .select(`
+      id,
+      page_number
+    `)
+    .eq("book_id", bookId)
+    .order(
+      "page_number",
+      {
+        ascending: true
+      }
+    );
+
+  if (pagesError) {
+    return {
+      valid: false,
+      message:
+        "Data halaman tidak dapat diperiksa."
+    };
+  }
+
+  if (
+    pages.length !==
+    totalPages
+  ) {
+
+    return {
+      valid: false,
+      message:
+        `Jumlah halaman tidak cocok. ` +
+        `Database memiliki ${pages.length} halaman, ` +
+        `sedangkan total buku adalah ${totalPages}.`
+    };
+  }
+
+  const nomorTerlihat =
+    new Set();
+
+  const nomorDuplikat = [];
+  const nomorDiLuarRentang = [];
+
+  for (const page of pages) {
+
+    const nomor =
+      Number(page.page_number);
+
+    if (
+      !Number.isInteger(nomor) ||
+      nomor < 1 ||
+      nomor > totalPages
+    ) {
+
+      nomorDiLuarRentang.push(
+        nomor
+      );
+
+      continue;
+    }
+
+    if (
+      nomorTerlihat.has(nomor)
+    ) {
+
+      nomorDuplikat.push(
+        nomor
+      );
+
+    } else {
+
+      nomorTerlihat.add(
+        nomor
+      );
+    }
+  }
+
+  if (
+    nomorDiLuarRentang.length > 0
+  ) {
+
+    return {
+      valid: false,
+      message:
+        `Ditemukan nomor halaman di luar rentang 1-${totalPages}: ` +
+        nomorDiLuarRentang.join(", ")
+    };
+  }
+
+  if (
+    nomorDuplikat.length > 0
+  ) {
+
+    return {
+      valid: false,
+      message:
+        "Ditemukan nomor halaman ganda: " +
+        nomorDuplikat.join(", ")
+    };
+  }
+
+  const halamanHilang = [];
+
+  for (
+    let nomor = 1;
+    nomor <= totalPages;
+    nomor++
+  ) {
+
+    if (
+      !nomorTerlihat.has(nomor)
+    ) {
+
+      halamanHilang.push(
+        nomor
+      );
+    }
+  }
+
+  if (
+    halamanHilang.length > 0
+  ) {
+
+    return {
+      valid: false,
+      message:
+        "Halaman yang belum ada: " +
+        halamanHilang.join(", ")
+    };
+  }
+
+  return {
+    valid: true,
+    message:
+      `Urutan halaman lengkap: 1-${totalPages}.`,
+    totalPages,
+    pages
+  };
+}
+
 async function buatPdfFinalBuku() {
+
+const bookId =
+  Number(
+    document.getElementById(
+      "book-pages-book-id"
+    )?.value || 0
+  );
+
+const message =
+  document.getElementById(
+    "book-pages-message"
+  );
+
+if (!bookId) {
+
+  if (message) {
+    message.textContent =
+      "❌ ID buku tidak ditemukan.";
+  }
+
+  return;
+}
+
+const hasilValidasi =
+  await validasiIntegritasHalaman(
+    bookId
+  );
+
+if (!hasilValidasi.valid) {
+
+  if (message) {
+    message.textContent =
+      "❌ PDF Final tidak dapat dibuat. " +
+      hasilValidasi.message;
+  }
+
+  return;
+}
+
+if (message) {
+  message.textContent =
+    "✅ Integritas halaman valid. " +
+    hasilValidasi.message;
+}
 
 const bolehFinalisasi =
   await selesaikanAksiUploadTerakhir(
@@ -9167,20 +9403,6 @@ if (!bolehFinalisasi) {
   return;
 }
 
-  const bookId =
-    Number(
-      document
-        .getElementById(
-          "book-pages-book-id"
-        )
-        ?.value || 0
-    );
-
-  const message =
-    document.getElementById(
-      "book-pages-message"
-    );
-
   const finalizeButton =
     document.getElementById(
       "book-finalize-btn"
@@ -9190,12 +9412,6 @@ if (!bolehFinalisasi) {
     document.getElementById(
       "book-page-upload-btn"
     );
-
-  if (!bookId) {
-    message.textContent =
-      "❌ ID buku tidak ditemukan.";
-    return;
-  }
 
   if (
     typeof PDFLib === "undefined" ||
