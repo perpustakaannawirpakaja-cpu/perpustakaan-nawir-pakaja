@@ -6818,10 +6818,8 @@ if (!pages || pages.length === 0) {
     );
 
   if (finalizeButton) {
-  finalizeButton.disabled =
-    !semuaHalamanLengkap ||
-    book.upload_status === "complete";
-}
+    finalizeButton.disabled = false;
+  }
 
   message.textContent =
     semuaHalamanLengkap
