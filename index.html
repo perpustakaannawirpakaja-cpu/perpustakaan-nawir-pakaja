@@ -6937,6 +6937,10 @@ async function tutupKelolaHalaman() {
   nomorHalamanPengganti = null;
   modeSisipHalamanAktif = false;
 
+  if (pageNumberInput) {
+    delete pageNumberInput.dataset.mode;
+  }
+
 }
 
 let aksiUploadHalamanTerakhir = null;
@@ -7814,6 +7818,11 @@ async function bukaSisipkanHalaman() {
   nomorHalamanPengganti = null;
 
   if (pageNumberInput) {
+  pageNumberInput.dataset.mode =
+    "insert";
+}
+
+  if (pageNumberInput) {
 
     pageNumberInput.value = "";
 
@@ -7852,6 +7861,10 @@ function pilihGantiHalaman(pageNumber) {
     document.getElementById(
       "book-page-number"
     );
+
+  if (pageNumberInput) {
+    delete pageNumberInput.dataset.mode;
+  }
 
   const pageFileInput =
     document.getElementById(
@@ -8153,15 +8166,17 @@ if (perluDikompres) {
   }
 
   const sedangMenyisipkanHalaman =
-  modeSisipHalamanAktif === true;
+    modeSisipHalamanAktif === true ||
+    pageNumberInput?.dataset.mode ===
+      "insert";
 
-const sedangMenggantiHalaman =
-  nomorHalamanPengganti !== null;
+  const sedangMenggantiHalaman =
+    nomorHalamanPengganti !== null;
 
-const batasNomorHalaman =
-  sedangMenyisipkanHalaman
-    ? Number(book.total_pages) + 1
-    : Number(book.total_pages);
+  const batasNomorHalaman =
+    sedangMenyisipkanHalaman
+      ? Number(book.total_pages) + 1
+      : Number(book.total_pages);
 
 if (
   book.total_pages &&
@@ -8648,6 +8663,10 @@ if (sedangMenggantiHalaman) {
 
 if (sedangMenyisipkanHalaman) {
   modeSisipHalamanAktif = false;
+
+  if (pageNumberInput) {
+    delete pageNumberInput.dataset.mode;
+  }
 }
 
 await tampilkanBuku();
