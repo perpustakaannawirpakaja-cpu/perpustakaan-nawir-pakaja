@@ -1337,6 +1337,45 @@ body.dark .read-button{
   border-color: rgba(59, 130, 246, 0.40);
 }
 
+#book-pages-integrity-action {
+  margin: 8px 0 12px;
+}
+
+#book-pages-integrity-action:empty {
+  display: none;
+}
+
+.book-pages-integrity-action-btn {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.book-pages-integrity-action-btn:hover {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.book-pages-integrity-action-btn:active {
+  transform: translateY(1px);
+}
+
+.book-pages-integrity-action-btn:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 4px rgba(37, 99, 235, 0.14);
+}
+
 #book-pages-list{
   display:flex;
   flex-wrap:wrap;
@@ -3444,6 +3483,11 @@ body[data-ui-style="minimal"] .read-button:hover {
 >
   Memeriksa integritas halaman...
 </p>
+
+<div
+  id="book-pages-integrity-action"
+  aria-live="polite"
+></div>
 
 <div
   id="book-pages-list"
@@ -6533,6 +6577,139 @@ function aturStatusIntegritasHalaman(
   element.textContent = teks;
 }
 
+function arahkanPeriksaHalaman(
+  pageNumber
+) {
+
+  const list =
+    document.getElementById(
+      "book-pages-list"
+    );
+
+  const message =
+    document.getElementById(
+      "book-pages-message"
+    );
+
+  if (!list) {
+    return;
+  }
+
+  const cards =
+    Array.from(
+      list.querySelectorAll(
+        ".admin-book-loading"
+      )
+    );
+
+  const cardTarget =
+    cards.find((card) => {
+
+      const strong =
+        card.querySelector(
+          "strong"
+        );
+
+      if (!strong) {
+        return false;
+      }
+
+      const cocok =
+        strong.textContent.match(
+          /Halaman\s+(\d+)/
+        );
+
+      return (
+        cocok &&
+          Number(cocok[1]) ===
+          Number(pageNumber)
+      );
+    });
+
+  if (!cardTarget) {
+
+    if (message) {
+      message.textContent =
+        `⚠️ Halaman ${pageNumber} tidak ditemukan pada daftar.`;
+    }
+
+    return;
+  }
+
+  if (message) {
+    message.textContent =
+      `🔎 Periksa Halaman ${pageNumber}. Nomor halaman ini berada di luar rentang buku.`;
+  }
+
+  cardTarget.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+
+  const tombolPertama =
+    cardTarget.querySelector(
+      "button"
+    );
+
+  requestAnimationFrame(() => {
+    tombolPertama?.focus();
+  });
+}
+
+function arahkanUploadHalaman(
+  pageNumber
+) {
+
+  const pageNumberInput =
+    document.getElementById(
+      "book-page-number"
+    );
+
+  const pageFileInput =
+    document.getElementById(
+      "book-page-file"
+    );
+
+  const message =
+    document.getElementById(
+      "book-pages-message"
+    );
+
+  if (!pageNumberInput) {
+    return;
+  }
+
+  nomorHalamanPengganti = null;
+  modeSisipHalamanAktif = false;
+  modePindahHalamanAktif = false;
+  halamanAsalPindah = null;
+
+  delete pageNumberInput.dataset.mode;
+
+  pageNumberInput.value =
+    Number(pageNumber);
+
+  if (pageFileInput) {
+    pageFileInput.value = "";
+  }
+
+  if (message) {
+    message.textContent =
+      `📤 Siapkan file PDF untuk Halaman ${pageNumber}.`;
+  }
+
+  pageNumberInput.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+
+  requestAnimationFrame(() => {
+    pageFileInput?.focus();
+  });
+
+  updateTombolUploadHalaman();
+}
+
 async function bukaKelolaHalaman(bookId) {
 
   idFokusKelolaHalaman = bookId;
@@ -6572,6 +6749,11 @@ async function bukaKelolaHalaman(bookId) {
   const integrityStatus =
     document.getElementById(
       "book-pages-integrity-status"
+    );
+
+  const integrityAction =
+    document.getElementById(
+      "book-pages-integrity-action"
     );
 
   const list =
@@ -6634,7 +6816,11 @@ async function bukaKelolaHalaman(bookId) {
     "⏳ Memeriksa integritas halaman..."
   );
 
-list.innerHTML = `
+  if (integrityAction) {
+    integrityAction.innerHTML = "";
+  }
+
+  list.innerHTML = `
     <p class="admin-book-loading">
       Memuat halaman...
     </p>
@@ -6794,6 +6980,19 @@ aturStatusIntegritasHalaman(
       hasilIntegritas.message
 );
 
+  const nomorDiLuarRentang =
+  (pages || [])
+    .map(
+      (page) =>
+        Number(page.page_number)
+    )
+    .filter(
+      (nomor) =>
+        !Number.isInteger(nomor) ||
+        nomor < 1 ||
+        nomor > totalHalaman
+    );
+
   const nomorTerupload =
   new Set(
     (pages || []).map(
@@ -6815,6 +7014,44 @@ for (
     halamanBelumDiupload.push(
       nomor
     );
+  }
+}
+
+if (integrityAction) {
+
+  integrityAction.innerHTML = "";
+
+  if (nomorDiLuarRentang.length > 0) {
+
+    const nomorMasalah =
+      nomorDiLuarRentang[0];
+
+    integrityAction.innerHTML = `
+      <button
+        type="button"
+        class="book-pages-integrity-action-btn"
+        onclick="arahkanPeriksaHalaman(${nomorMasalah})"
+      >
+        👉 Periksa Halaman ${nomorMasalah}
+      </button>
+    `;
+
+  } else if (
+    halamanBelumDiupload.length > 0
+  ) {
+
+    const nomorHilang =
+      halamanBelumDiupload[0];
+
+    integrityAction.innerHTML = `
+      <button
+        type="button"
+        class="book-pages-integrity-action-btn"
+        onclick="arahkanUploadHalaman(${nomorHilang})"
+      >
+        👉 Upload Halaman ${nomorHilang}
+      </button>
+    `;
   }
 }
 
@@ -7024,17 +7261,22 @@ async function tutupKelolaHalaman() {
   const message =
     document.getElementById(
       "book-pages-message"
-  );
+    );
 
   const integrityStatus =
     document.getElementById(
       "book-pages-integrity-status"
-  );
+    );
+
+  const integrityAction =
+  document.getElementById(
+    "book-pages-integrity-action"
+    );
 
   const list =
     document.getElementById(
       "book-pages-list"
-  );
+    );
 
   const pageNumberInput =
     document.getElementById(
@@ -7068,6 +7310,10 @@ aturStatusIntegritasHalaman(
   null,
   ""
 );
+
+if (integrityAction) {
+  integrityAction.innerHTML = "";
+}
 
 if (list) {
   list.innerHTML = "";
