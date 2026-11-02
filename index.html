@@ -1298,6 +1298,45 @@ body.dark .read-button{
   margin:12px 0 8px;
 }
 
+/* =========================================
+   CP77-B - PAGE INTEGRITY STATUS
+   ========================================= */
+
+#book-pages-integrity-status {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 600;
+  background: var(--card);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#book-pages-integrity-status.integrity-ok {
+  background: rgba(34, 197, 94, 0.10);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+#book-pages-integrity-status.integrity-warning {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.50);
+}
+
+#book-pages-integrity-status.integrity-error {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+#book-pages-integrity-status.integrity-info {
+  background: rgba(59, 130, 246, 0.10);
+  border-color: rgba(59, 130, 246, 0.40);
+}
+
 #book-pages-list{
   display:flex;
   flex-wrap:wrap;
@@ -2481,6 +2520,41 @@ body[data-ui-style="minimal"] .read-button:hover {
     padding: 9px 10px;
   }
 
+}
+
+#book-pages-integrity-status {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 600;
+  background: var(--card);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#book-pages-integrity-status.integrity-ok {
+  background: rgba(34, 197, 94, 0.10);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+#book-pages-integrity-status.integrity-warning {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.50);
+}
+
+#book-pages-integrity-status.integrity-error {
+  background: rgba(239, 68, 68, 0.10);
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+#book-pages-integrity-status.integrity-info {
+  background: rgba(59, 130, 246, 0.10);
+  border-color: rgba(59, 130, 246, 0.40);
 }
 
 </style>
@@ -6433,6 +6507,32 @@ document
 
 let idFokusKelolaHalaman = null;
 
+function aturStatusIntegritasHalaman(
+  element,
+  tipe,
+  teks
+) {
+
+  if (!element) {
+    return;
+  }
+
+  element.classList.remove(
+    "integrity-ok",
+    "integrity-warning",
+    "integrity-error",
+    "integrity-info"
+  );
+
+  if (tipe) {
+    element.classList.add(
+      `integrity-${tipe}`
+    );
+  }
+
+  element.textContent = teks;
+}
+
 async function bukaKelolaHalaman(bookId) {
 
   idFokusKelolaHalaman = bookId;
@@ -6528,10 +6628,11 @@ async function bukaKelolaHalaman(bookId) {
   message.textContent =
   "Memuat data buku...";
 
-if (integrityStatus) {
-  integrityStatus.textContent =
-    "⏳ Memeriksa integritas halaman...";
-}
+  aturStatusIntegritasHalaman(
+    integrityStatus,
+    "info",
+    "⏳ Memeriksa integritas halaman..."
+  );
 
 list.innerHTML = `
     <p class="admin-book-loading">
@@ -6562,12 +6663,13 @@ list.innerHTML = `
     .eq("id", bookId)
     .maybeSingle();
 
- if (bookError || !book) {
+  if (bookError || !book) {
 
-  if (integrityStatus) {
-    integrityStatus.textContent =
-      "❌ Integritas halaman tidak dapat diperiksa.";
-  }
+  aturStatusIntegritasHalaman(
+    integrityStatus,
+    "error",
+    "❌ Integritas halaman tidak dapat diperiksa."
+  );
 
   message.textContent =
     "❌ Gagal memuat data buku.";
@@ -6584,14 +6686,15 @@ list.innerHTML = `
   return;
 }
 
-  if (
-    book.upload_mode !== "incremental"
-  ) {
+    if (
+      book.upload_mode !== "incremental"
+    ) {
 
-    if (integrityStatus) {
-      integrityStatus.textContent =
-        "ℹ️ Pemeriksaan integritas hanya berlaku untuk Upload Bertahap.";
-    }
+    aturStatusIntegritasHalaman(
+      integrityStatus,
+      "info",
+      "ℹ️ Pemeriksaan integritas hanya berlaku untuk Upload Bertahap."
+    );
 
     title.textContent =
       book.title || "-";
@@ -6645,12 +6748,13 @@ list.innerHTML = `
   progress.textContent =
     `${jumlahHalaman} / ${totalHalaman} halaman`;
 
-if (pagesError) {
+  if (pagesError) {
 
-  if (integrityStatus) {
-    integrityStatus.textContent =
-      "❌ Integritas halaman tidak dapat diperiksa karena daftar halaman gagal dimuat.";
-  }
+  aturStatusIntegritasHalaman(
+    integrityStatus,
+    "error",
+    "❌ Integritas halaman tidak dapat diperiksa karena daftar halaman gagal dimuat."
+  );
 
   console.error(
     "Gagal memuat book_pages:",
@@ -6678,15 +6782,17 @@ const hasilIntegritas =
     bookId
   );
 
-if (integrityStatus) {
-
-  integrityStatus.textContent =
-    hasilIntegritas.valid
-      ? "✅ Integritas halaman aman — " +
-        hasilIntegritas.message
-      : "⚠️ Integritas halaman bermasalah — " +
-        hasilIntegritas.message;
-}
+aturStatusIntegritasHalaman(
+  integrityStatus,
+  hasilIntegritas.valid
+    ? "ok"
+    : "warning",
+  hasilIntegritas.valid
+    ? "✅ Integritas halaman aman — " +
+      hasilIntegritas.message
+    : "⚠️ Integritas halaman bermasalah — " +
+      hasilIntegritas.message
+);
 
   const nomorTerupload =
   new Set(
@@ -6957,9 +7063,11 @@ async function tutupKelolaHalaman() {
   message.textContent = "";
 }
 
-if (integrityStatus) {
-  integrityStatus.textContent = "";
-}
+aturStatusIntegritasHalaman(
+  integrityStatus,
+  null,
+  ""
+);
 
 if (list) {
   list.innerHTML = "";
