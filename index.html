@@ -1346,7 +1346,12 @@ body.dark .read-button{
   border-color: rgba(59, 130, 246, 0.40);
 }
 
+}
+
 #book-pages-integrity-action {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin: 8px 0 12px;
 }
 
@@ -7066,41 +7071,75 @@ for (
   }
 }
 
+const masalahIntegritas = [];
+
+if (jumlahHalaman !== totalHalaman) {
+  masalahIntegritas.push(
+    `Jumlah halaman tidak cocok: ${jumlahHalaman} dari ${totalHalaman}.`
+  );
+}
+
+if (halamanBelumDiupload.length > 0) {
+  masalahIntegritas.push(
+    `Halaman belum tersedia: ${halamanBelumDiupload.join(", ")}.`
+  );
+}
+
+if (nomorDiLuarRentang.length > 0) {
+  masalahIntegritas.push(
+    `Nomor di luar rentang: ${nomorDiLuarRentang.join(", ")}.`
+  );
+}
+
+if (masalahIntegritas.length > 0) {
+
+  aturStatusIntegritasHalaman(
+    integrityStatus,
+    "warning",
+    "⚠️ Integritas halaman bermasalah — " +
+      masalahIntegritas.join(" • ")
+  );
+}
+
 if (integrityAction) {
 
   integrityAction.innerHTML = "";
 
   if (nomorDiLuarRentang.length > 0) {
 
-    const nomorMasalah =
-      nomorDiLuarRentang[0];
-
-    integrityAction.innerHTML = `
-      <button
-        type="button"
-        class="book-pages-integrity-action-btn"
-        onclick="arahkanPeriksaHalaman(${nomorMasalah})"
-      >
-        👉 Periksa Halaman ${nomorMasalah}
-      </button>
-    `;
+    integrityAction.innerHTML =
+      nomorDiLuarRentang
+        .map(
+          (nomor) => `
+            <button
+              type="button"
+              class="book-pages-integrity-action-btn"
+              onclick="arahkanPeriksaHalaman(${nomor})"
+            >
+              👉 Periksa Halaman ${nomor}
+            </button>
+          `
+        )
+        .join("");
 
   } else if (
     halamanBelumDiupload.length > 0
   ) {
 
-    const nomorHilang =
-      halamanBelumDiupload[0];
-
-    integrityAction.innerHTML = `
-      <button
-        type="button"
-        class="book-pages-integrity-action-btn"
-        onclick="arahkanUploadHalaman(${nomorHilang})"
-      >
-        👉 Upload Halaman ${nomorHilang}
-      </button>
-    `;
+    integrityAction.innerHTML =
+      halamanBelumDiupload
+        .map(
+          (nomor) => `
+            <button
+              type="button"
+              class="book-pages-integrity-action-btn"
+              onclick="arahkanUploadHalaman(${nomor})"
+            >
+              👉 Upload Halaman ${nomor}
+            </button>
+          `
+        )
+        .join("");
   }
 }
 
