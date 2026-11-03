@@ -1432,6 +1432,13 @@ body.dark .read-button{
     0 0 0 4px rgba(37, 99, 235, 0.22);
 }
 
+#book-pages-list .book-page-integrity-problem {
+  border: 2px solid rgba(245, 158, 11, 0.85);
+  box-shadow:
+    0 0 0 4px rgba(245, 158, 11, 0.18);
+  background: rgba(245, 158, 11, 0.08);
+}
+
 #bookPagesModal .modal-actions{
   margin-top:14px;
 }
@@ -6663,6 +6670,20 @@ function arahkanPeriksaHalaman(
 
     return;
   }
+
+  list
+    .querySelectorAll(
+      ".book-page-integrity-problem"
+    )
+    .forEach((card) => {
+      card.classList.remove(
+        "book-page-integrity-problem"
+      );
+    });
+
+  cardTarget.classList.add(
+    "book-page-integrity-problem"
+  );
 
   if (message) {
     message.textContent =
