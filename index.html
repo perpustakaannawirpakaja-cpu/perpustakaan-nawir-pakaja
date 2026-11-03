@@ -6542,18 +6542,29 @@ document
           "book-page-file-size"
         );
 
-      if (!sizeInfo) {
-        return;
-      }
+      const uploadButton =
+        document.getElementById(
+          "book-page-upload-btn"
+        );
 
       if (!file) {
-        sizeInfo.textContent =
-          "Ukuran file: -";
+
+        if (sizeInfo) {
+          sizeInfo.textContent =
+            "Ukuran file: -";
+        }
+
         return;
       }
 
-      sizeInfo.textContent =
-        `Ukuran asli: ${formatUkuranFile(file.size)}`;
+      if (sizeInfo) {
+        sizeInfo.textContent =
+          `Ukuran asli: ${formatUkuranFile(file.size)}`;
+      }
+
+      requestAnimationFrame(() => {
+        uploadButton?.focus();
+      });
     }
   );
 
