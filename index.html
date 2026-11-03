@@ -6710,7 +6710,7 @@ function arahkanPeriksaHalaman(
   });
 }
 
-function arahkanUploadHalaman(
+async function arahkanUploadHalaman(
   pageNumber
 ) {
 
@@ -6731,6 +6731,18 @@ function arahkanUploadHalaman(
 
   if (!pageNumberInput) {
     return;
+  }
+
+  if (aksiUploadHalamanTerakhir) {
+
+    const bolehLanjut =
+      await selesaikanAksiUploadTerakhir(
+        `melanjutkan ke Upload Halaman ${pageNumber}`
+      );
+
+    if (!bolehLanjut) {
+      return;
+    }
   }
 
   nomorHalamanPengganti = null;
