@@ -6402,6 +6402,21 @@ if (incrementalBookIds.length > 0) {
         Number(book.id)
       );
 
+    const detailIntegritas =
+      !integritas ||
+      integritas.valid
+        ? ""
+        : [
+            integritas.halamanHilang.length > 0
+              ? `${integritas.halamanHilang.length} halaman hilang`
+              : "",
+            integritas.nomorDiLuarRentang.length > 0
+              ? `${integritas.nomorDiLuarRentang.length} nomor di luar rentang`
+              : ""
+          ]
+            .filter(Boolean)
+            .join(" · ");
+
     const badgeIntegritas =
       book.upload_mode !== "incremental"
         ? ""
@@ -6425,6 +6440,11 @@ if (incrementalBookIds.length > 0) {
                 aria-label="Buka Kelola Halaman untuk memperbaiki integritas ${book.title || "buku ini"}"
               >
                 ⚠️ Integritas Bermasalah
+                ${
+                  detailIntegritas
+                    ? ` · ${detailIntegritas}`
+                    : ""
+                }
               </button>
             `;
 
