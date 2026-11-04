@@ -3298,6 +3298,32 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 </div>
 
+<div class="admin-book-integrity-filter">
+
+  <label for="admin-book-integrity">
+    Integritas:
+  </label>
+
+  <select
+    id="admin-book-integrity"
+    aria-controls="admin-book-list admin-book-search-status admin-active-book-filters"
+    onchange="filterIntegritasBukuAdmin()"
+  >
+    <option value="">
+      Semua Integritas
+    </option>
+
+    <option value="safe">
+      ✅ Aman
+    </option>
+
+    <option value="problem">
+      ⚠️ Bermasalah
+    </option>
+  </select>
+
+</div>
+
 <div class="admin-book-filter-reset">
 
   <button
@@ -5092,8 +5118,8 @@ function cariBukuAdmin() {
     );
 
   if (!input) {
-  return;
-}
+    return;
+  }
 
   const keyword =
     input.value
@@ -5102,44 +5128,56 @@ function cariBukuAdmin() {
 
   if (keyword) {
 
-  localStorage.setItem(
-    "adminBookSearch",
-    input.value
-  );
+    localStorage.setItem(
+      "adminBookSearch",
+      input.value
+    );
 
-} else {
+  } else {
 
-  localStorage.removeItem(
-    "adminBookSearch"
-  );
+    localStorage.removeItem(
+      "adminBookSearch"
+    );
 
-}
+  }
 
   const categorySelect =
-  document.getElementById(
-    "admin-book-category"
-  );
+    document.getElementById(
+      "admin-book-category"
+    );
 
-const selectedCategory =
-  (
-    categorySelect?.value || ""
-  )
-    .trim()
-    .toLowerCase();
+  const selectedCategory =
+    (
+      categorySelect?.value || ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const integritySelect =
+    document.getElementById(
+      "admin-book-integrity"
+    );
+
+  const selectedIntegrity =
+    (
+      integritySelect?.value || ""
+    )
+      .trim()
+      .toLowerCase();
 
   const clearButton =
-  document.getElementById(
-    "admin-book-search-clear"
-  );
+    document.getElementById(
+      "admin-book-search-clear"
+    );
 
-if (clearButton) {
+  if (clearButton) {
 
-  clearButton.style.display =
-    keyword
-      ? "flex"
-      : "none";
+    clearButton.style.display =
+      keyword
+        ? "flex"
+        : "none";
 
-}
+  }
 
   const items =
     document.querySelectorAll(
@@ -5151,47 +5189,69 @@ if (clearButton) {
   items.forEach((item) => {
 
     const text =
-  Array.from(
-    item.querySelectorAll(
-      "strong, span"
-    )
-  )
-    .map((element) =>
-      element.textContent
-    )
-    .join(" ")
-    .toLowerCase();
+      Array.from(
+        item.querySelectorAll(
+          "strong, span"
+        )
+      )
+        .map((element) =>
+          element.textContent
+        )
+        .join(" ")
+        .toLowerCase();
 
     const itemCategory =
-  (
-    item.dataset.category || ""
-  )
-    .trim()
-    .toLowerCase();
+      (
+        item.dataset.category || ""
+      )
+        .trim()
+        .toLowerCase();
 
-const cocokKeyword =
-  text.includes(keyword);
+    const badgeAman =
+      item.querySelector(
+        ".admin-integrity-ok"
+      );
 
-const cocokKategori =
-  !selectedCategory ||
-  itemCategory === selectedCategory;
+    const badgeBermasalah =
+      item.querySelector(
+        ".admin-integrity-warning"
+      );
 
-const cocok =
-  cocokKeyword &&
-  cocokKategori;
+    const cocokKeyword =
+      text.includes(keyword);
 
-item.style.display =
-  cocok
-    ? ""
-    : "none";
+    const cocokKategori =
+      !selectedCategory ||
+      itemCategory === selectedCategory;
 
-if (cocok) {
-  jumlahTampil++;
-}
+    const cocokIntegritas =
+      !selectedIntegrity ||
+      (
+        selectedIntegrity === "safe" &&
+        badgeAman
+      ) ||
+      (
+        selectedIntegrity === "problem" &&
+        badgeBermasalah
+      );
+
+    const cocok =
+      cocokKeyword &&
+      cocokKategori &&
+      cocokIntegritas;
+
+    item.style.display =
+      cocok
+        ? ""
+        : "none";
+
+    if (cocok) {
+      jumlahTampil++;
+    }
 
   });
 
-    const adminBookList =
+  const adminBookList =
     document.getElementById(
       "admin-book-list"
     );
@@ -5202,9 +5262,13 @@ if (cocok) {
     );
 
   if (
-  (keyword || selectedCategory) &&
-  jumlahTampil === 0
-) {
+    (
+      keyword ||
+      selectedCategory ||
+      selectedIntegrity
+    ) &&
+    jumlahTampil === 0
+  ) {
 
     if (!emptyMessage) {
 
@@ -5223,22 +5287,35 @@ if (cocok) {
 
     }
 
-    if (keyword && selectedCategory) {
+    if (selectedIntegrity) {
 
-  emptyMessage.textContent =
-    `Tidak ada buku yang cocok dengan "${input.value.trim()}" pada kategori "${categorySelect.value}".`;
+      const labelIntegritas =
+        selectedIntegrity === "safe"
+          ? "Aman"
+          : "Bermasalah";
 
-} else if (keyword) {
+      emptyMessage.textContent =
+        `Tidak ada buku dengan integritas "${labelIntegritas}" yang cocok dengan filter aktif.`;
 
-  emptyMessage.textContent =
-    `Tidak ada buku yang cocok dengan "${input.value.trim()}".`;
+    } else if (
+      keyword &&
+      selectedCategory
+    ) {
 
-} else {
+      emptyMessage.textContent =
+        `Tidak ada buku yang cocok dengan "${input.value.trim()}" pada kategori "${categorySelect.value}".`;
 
-  emptyMessage.textContent =
-    `Tidak ada buku pada kategori "${categorySelect.value}".`;
+    } else if (keyword) {
 
-}
+      emptyMessage.textContent =
+        `Tidak ada buku yang cocok dengan "${input.value.trim()}".`;
+
+    } else {
+
+      emptyMessage.textContent =
+        `Tidak ada buku pada kategori "${categorySelect.value}".`;
+
+    }
 
   } else if (emptyMessage) {
 
@@ -5246,41 +5323,54 @@ if (cocok) {
 
   }
 
-const status =
-  document.getElementById(
-    "admin-book-search-status"
-  );
+  const status =
+    document.getElementById(
+      "admin-book-search-status"
+    );
 
-if (status) {
+  if (status) {
 
-  const totalBuku =
-    items.length;
+    const totalBuku =
+      items.length;
 
-  if (keyword && selectedCategory) {
+    if (selectedIntegrity) {
 
-    status.textContent =
-      `${jumlahTampil} dari ${totalBuku} buku ditemukan pada kategori "${categorySelect.value}"`;
+      const labelIntegritas =
+        selectedIntegrity === "safe"
+          ? "Aman"
+          : "Bermasalah";
 
-  } else if (keyword) {
+      status.textContent =
+        `${jumlahTampil} dari ${totalBuku} buku dengan integritas "${labelIntegritas}"`;
 
-    status.textContent =
-      `${jumlahTampil} dari ${totalBuku} buku ditemukan`;
+    } else if (
+      keyword &&
+      selectedCategory
+    ) {
 
-  } else if (selectedCategory) {
+      status.textContent =
+        `${jumlahTampil} dari ${totalBuku} buku ditemukan pada kategori "${categorySelect.value}"`;
 
-    status.textContent =
-      `${jumlahTampil} dari ${totalBuku} buku pada kategori "${categorySelect.value}"`;
+    } else if (keyword) {
 
-  } else {
+      status.textContent =
+        `${jumlahTampil} dari ${totalBuku} buku ditemukan`;
 
-    status.textContent =
-      `${totalBuku} buku`;
+    } else if (selectedCategory) {
+
+      status.textContent =
+        `${jumlahTampil} dari ${totalBuku} buku pada kategori "${categorySelect.value}"`;
+
+    } else {
+
+      status.textContent =
+        `${totalBuku} buku`;
+
+    }
 
   }
 
-}
-
-updateResetFilterBukuAdmin();
+  updateResetFilterBukuAdmin();
 
 }
 
@@ -5718,6 +5808,26 @@ function filterKategoriBukuAdmin() {
 
 }
 
+function filterIntegritasBukuAdmin() {
+
+  const select =
+    document.getElementById(
+      "admin-book-integrity"
+    );
+
+  if (!select) {
+    return;
+  }
+
+  localStorage.setItem(
+    "adminBookIntegrity",
+    select.value
+  );
+
+  cariBukuAdmin();
+
+}
+
 function resetFilterBukuAdmin() {
 
   const searchInput =
@@ -5734,6 +5844,11 @@ function resetFilterBukuAdmin() {
     document.getElementById(
       "admin-book-category"
     );
+
+  const integritySelect =
+  document.getElementById(
+    "admin-book-integrity"
+  );
 
   const sortSelect =
     document.getElementById(
@@ -5752,12 +5867,20 @@ function resetFilterBukuAdmin() {
     categorySelect.value = "";
   }
 
+  if (integritySelect) {
+    integritySelect.value = "";
+  }
+
   if (sortSelect) {
     sortSelect.value = "title-asc";
   }
 
   localStorage.removeItem(
     "adminBookCategory"
+  );
+
+  localStorage.removeItem(
+    "adminBookIntegrity"
   );
 
   localStorage.removeItem(
@@ -5791,6 +5914,11 @@ function updateResetFilterBukuAdmin() {
       "admin-book-category"
     );
 
+  const integritySelect =
+    document.getElementById(
+      "admin-book-integrity"
+    );
+
   const sortSelect =
     document.getElementById(
       "admin-book-sort"
@@ -5808,33 +5936,39 @@ function updateResetFilterBukuAdmin() {
     categorySelect &&
     categorySelect.value !== "";
 
+  const adaIntegritas =
+    integritySelect &&
+    integritySelect.value !== "";
+
   const adaSort =
     sortSelect &&
     sortSelect.value !== "title-asc";
 
   const jumlahFilterAktif =
-  [
-    adaSearch,
-    adaKategori,
-    adaSort
-  ].filter(Boolean).length;
+    [
+      adaSearch,
+      adaKategori,
+      adaIntegritas,
+      adaSort
+    ].filter(Boolean).length;
 
-    resetButton.style.display =
+  resetButton.style.display =
     adaSearch ||
     adaKategori ||
+    adaIntegritas ||
     adaSort
       ? "inline-flex"
       : "none";
 
   resetButton.textContent =
-  jumlahFilterAktif > 0
-    ? `↺ Reset Filter (${jumlahFilterAktif})`
-    : "↺ Reset Filter";
+    jumlahFilterAktif > 0
+      ? `↺ Reset Filter (${jumlahFilterAktif})`
+      : "↺ Reset Filter";
 
   resetButton.classList.toggle(
-  "active",
-  jumlahFilterAktif > 0
-);
+    "active",
+    jumlahFilterAktif > 0
+  );
 
   updateAdminActiveFilterChips();
 
@@ -5866,6 +6000,11 @@ function updateAdminActiveFilterChips() {
     document.getElementById(
       "admin-book-category"
     );
+
+  const integritySelect =
+  document.getElementById(
+    "admin-book-integrity"
+  );
 
   const sortSelect =
     document.getElementById(
@@ -5983,9 +6122,37 @@ if (
 
       cariBukuAdmin();
 
-      },
-  categorySelect
-);
+    },
+    categorySelect
+  );
+
+}
+
+if (
+  integritySelect &&
+  integritySelect.value !== ""
+) {
+
+  const labelIntegritas =
+    integritySelect.value === "safe"
+      ? "Aman"
+      : "Bermasalah";
+
+  tambahChip(
+    `🛡️ Integritas: ${labelIntegritas}`,
+    () => {
+
+      integritySelect.value = "";
+
+      localStorage.removeItem(
+        "adminBookIntegrity"
+      );
+
+      cariBukuAdmin();
+
+    },
+    integritySelect
+  );
 
 }
 
@@ -6162,6 +6329,36 @@ async function muatDaftarBukuAdmin() {
     searchInput.value =
       savedSearch;
   }
+
+  const integritySelect =
+  document.getElementById(
+    "admin-book-integrity"
+  );
+
+const savedIntegrity =
+  localStorage.getItem(
+    "adminBookIntegrity"
+  ) || "";
+
+if (
+  integritySelect &&
+  [
+    "",
+    "safe",
+    "problem"
+  ].includes(savedIntegrity)
+) {
+
+  integritySelect.value =
+    savedIntegrity;
+
+} else {
+
+  localStorage.removeItem(
+    "adminBookIntegrity"
+  );
+
+}
 
   const status =
     document.getElementById(
