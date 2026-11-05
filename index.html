@@ -926,6 +926,26 @@ body.dark .read-button{
   overflow-wrap:anywhere;
 }
 
+.admin-integrity-summary-action{
+  width:100%;
+  text-align:left;
+  font-family:inherit;
+  cursor:pointer;
+}
+
+.admin-integrity-summary-action:hover{
+  border-color:var(--primary);
+  transform:translateY(-1px);
+}
+
+.admin-integrity-summary-action:focus,
+.admin-integrity-summary-action:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
+  box-shadow:
+    0 0 0 4px rgba(37,99,235,.16);
+}
+
 .admin-section-title{
   margin:
     4px 0 16px;
@@ -3067,19 +3087,29 @@ body[data-ui-style="minimal"] .read-button:hover {
     </strong>
   </div>
 
-  <div class="admin-summary-card">
-    <span>✅ Integritas Aman</span>
-    <strong id="admin-integrity-safe-count">
-      0 buku
-    </strong>
-  </div>
+<button
+  type="button"
+  class="admin-summary-card admin-integrity-summary-action"
+  onclick="filterIntegritasDariRingkasan('safe')"
+  aria-label="Tampilkan buku dengan integritas aman"
+>
+  <span>✅ Integritas Aman</span>
+  <strong id="admin-integrity-safe-count">
+    0 buku
+  </strong>
+</button>
 
-  <div class="admin-summary-card">
-    <span>⚠️ Integritas Bermasalah</span>
-    <strong id="admin-integrity-problem-count">
-      0 buku
-    </strong>
-  </div>
+<button
+  type="button"
+  class="admin-summary-card admin-integrity-summary-action"
+  onclick="filterIntegritasDariRingkasan('problem')"
+  aria-label="Tampilkan buku dengan integritas bermasalah"
+>
+  <span>⚠️ Integritas Bermasalah</span>
+  <strong id="admin-integrity-problem-count">
+    0 buku
+  </strong>
+</button>
 
 </div>
 
@@ -5839,6 +5869,40 @@ function filterIntegritasBukuAdmin() {
   );
 
   cariBukuAdmin();
+
+}
+
+function filterIntegritasDariRingkasan(
+  nilaiIntegritas
+) {
+
+  const integritySelect =
+    document.getElementById(
+      "admin-book-integrity"
+    );
+
+  if (!integritySelect) {
+    return;
+  }
+
+  integritySelect.value =
+    nilaiIntegritas;
+
+  localStorage.setItem(
+    "adminBookIntegrity",
+    nilaiIntegritas
+  );
+
+  cariBukuAdmin();
+
+  document
+    .getElementById(
+      "admin-book-list"
+    )
+    ?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
 
 }
 
