@@ -954,6 +954,40 @@ body.dark .read-button{
   margin:4px 0 14px;
 }
 
+.admin-integrity-health-bar{
+  display:flex;
+  width:100%;
+  height:12px;
+
+  margin:
+    -4px 0 16px;
+
+  overflow:hidden;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:999px;
+
+  background:var(--bg);
+}
+
+.admin-integrity-health-safe,
+.admin-integrity-health-problem{
+  height:100%;
+
+  transition:
+    width .3s ease;
+}
+
+.admin-integrity-health-safe{
+  background:#22c55e;
+}
+
+.admin-integrity-health-problem{
+  background:#f59e0b;
+}
+
 @media(max-width:500px){
   .admin-integrity-summary-row{
     grid-template-columns:1fr;
@@ -3311,6 +3345,23 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 </div>
 
+<div
+  class="admin-integrity-health-bar"
+  aria-label="Kesehatan integritas koleksi"
+>
+  <div
+    id="admin-integrity-health-safe"
+    class="admin-integrity-health-safe"
+    style="width:0%"
+  ></div>
+
+  <div
+    id="admin-integrity-health-problem"
+    class="admin-integrity-health-problem"
+    style="width:0%"
+  ></div>
+</div>
+
 <div class="admin-book-sort">
 
   <label for="admin-book-sort">
@@ -5186,6 +5237,16 @@ function updateRingkasanIntegritasAdmin(
       "admin-integrity-problem-count"
     );
 
+  const safeBarElement =
+  document.getElementById(
+    "admin-integrity-health-safe"
+  );
+
+const problemBarElement =
+  document.getElementById(
+    "admin-integrity-health-problem"
+  );
+
   const totalIntegritas =
     jumlahAman +
     jumlahBermasalah;
@@ -5214,6 +5275,16 @@ function updateRingkasanIntegritasAdmin(
     problemCountElement.textContent =
       `${jumlahBermasalah} buku (${persenBermasalah}%)`;
   }
+
+  if (safeBarElement) {
+  safeBarElement.style.width =
+    `${persenAman}%`;
+}
+
+if (problemBarElement) {
+  problemBarElement.style.width =
+    `${persenBermasalah}%`;
+}
 
 }
 
@@ -6781,6 +6852,16 @@ if (adminPagesError) {
       "admin-integrity-problem-count"
   );
 
+const safeBarElement =
+  document.getElementById(
+    "admin-integrity-health-safe"
+  );
+
+const problemBarElement =
+  document.getElementById(
+    "admin-integrity-health-problem"
+  );
+
 if (integritasAdminGagal) {
 
   if (safeCountElement) {
@@ -6791,6 +6872,16 @@ if (integritasAdminGagal) {
   if (problemCountElement) {
     problemCountElement.textContent =
       "Gagal memuat";
+  }
+
+  if (safeBarElement) {
+    safeBarElement.style.width =
+      "0%";
+  }
+
+  if (problemBarElement) {
+    problemBarElement.style.width =
+      "0%";
   }
 
 } else {
