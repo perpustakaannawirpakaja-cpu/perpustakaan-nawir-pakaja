@@ -946,6 +946,20 @@ body.dark .read-button{
     0 0 0 4px rgba(37,99,235,.16);
 }
 
+.admin-integrity-summary-row{
+  display:grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap:10px;
+  margin:4px 0 14px;
+}
+
+@media(max-width:500px){
+  .admin-integrity-summary-row{
+    grid-template-columns:1fr;
+  }
+}
+
 .admin-section-title{
   margin:
     4px 0 16px;
@@ -3086,31 +3100,6 @@ body[data-ui-style="minimal"] .read-button:hover {
       0 buku
     </strong>
   </div>
-
-<button
-  type="button"
-  class="admin-summary-card admin-integrity-summary-action"
-  onclick="filterIntegritasDariRingkasan('safe')"
-  aria-label="Tampilkan buku dengan integritas aman"
->
-  <span>✅ Integritas Aman</span>
-  <strong id="admin-integrity-safe-count">
-    0 buku
-  </strong>
-</button>
-
-<button
-  type="button"
-  class="admin-summary-card admin-integrity-summary-action"
-  onclick="filterIntegritasDariRingkasan('problem')"
-  aria-label="Tampilkan buku dengan integritas bermasalah"
->
-  <span>⚠️ Integritas Bermasalah</span>
-  <strong id="admin-integrity-problem-count">
-    0 buku
-  </strong>
-</button>
-
 </div>
 
 <h3 class="admin-section-title">
@@ -3293,6 +3282,34 @@ body[data-ui-style="minimal"] .read-button:hover {
 >
   ⌨️ / Fokus Search · Esc Hapus Search / Tutup Admin
 </p>
+
+<div class="admin-integrity-summary-row">
+
+  <button
+    type="button"
+    class="admin-summary-card admin-integrity-summary-action"
+    onclick="filterIntegritasDariRingkasan('safe')"
+    aria-label="Tampilkan buku dengan integritas aman"
+  >
+    <span>✅ Integritas Aman</span>
+    <strong id="admin-integrity-safe-count">
+      0 buku
+    </strong>
+  </button>
+
+  <button
+    type="button"
+    class="admin-summary-card admin-integrity-summary-action"
+    onclick="filterIntegritasDariRingkasan('problem')"
+    aria-label="Tampilkan buku dengan integritas bermasalah"
+  >
+    <span>⚠️ Integritas Bermasalah</span>
+    <strong id="admin-integrity-problem-count">
+      0 buku
+    </strong>
+  </button>
+
+</div>
 
 <div class="admin-book-sort">
 
