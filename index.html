@@ -1000,6 +1000,26 @@ body.dark .read-button{
   background:#f59e0b;
 }
 
+.admin-integrity-health-status{
+  margin:
+    -8px 0 16px;
+
+  padding:
+    8px 10px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:10px;
+
+  background:var(--bg);
+  color:var(--text);
+
+  font-size:12px;
+  font-weight:700;
+  text-align:center;
+}
+
 @media(max-width:500px){
   .admin-integrity-summary-row{
     grid-template-columns:1fr;
@@ -3374,6 +3394,16 @@ body[data-ui-style="minimal"] .read-button:hover {
   ></div>
 </div>
 
+<p
+  id="admin-integrity-health-status"
+  class="admin-integrity-health-status"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+>
+  ⚪ Belum Ada Data
+</p>
+
 <div class="admin-book-sort">
 
   <label for="admin-book-sort">
@@ -5250,13 +5280,18 @@ function updateRingkasanIntegritasAdmin(
     );
 
   const safeBarElement =
-  document.getElementById(
-    "admin-integrity-health-safe"
+    document.getElementById(
+      "admin-integrity-health-safe"
     );
 
   const problemBarElement =
     document.getElementById(
       "admin-integrity-health-problem"
+    );
+
+  const healthStatusElement =
+    document.getElementById(
+      "admin-integrity-health-status"
     );
 
   const totalIntegritas =
@@ -5311,6 +5346,37 @@ function updateRingkasanIntegritasAdmin(
         ? `${persenBermasalah}%`
         : "";
   }
+
+  if (healthStatusElement) {
+
+  if (totalIntegritas === 0) {
+
+    healthStatusElement.textContent =
+      "⚪ Belum Ada Data";
+
+  } else if (persenAman >= 90) {
+
+    healthStatusElement.textContent =
+      "🟢 Sangat Baik";
+
+  } else if (persenAman >= 75) {
+
+    healthStatusElement.textContent =
+      "🔵 Baik";
+
+  } else if (persenAman >= 50) {
+
+    healthStatusElement.textContent =
+      "🟠 Perlu Perhatian";
+
+  } else {
+
+    healthStatusElement.textContent =
+      "🔴 Bermasalah";
+
+  }
+
+}
 
 }
 
@@ -5620,6 +5686,11 @@ if (adaIntegritasBelumDiperiksa) {
       "admin-integrity-health-problem"
     );
 
+  const healthStatusElement =
+    document.getElementById(
+      "admin-integrity-health-status"
+    );
+
   if (safeCountElement) {
     safeCountElement.textContent =
       "Gagal memuat";
@@ -5644,6 +5715,11 @@ if (adaIntegritasBelumDiperiksa) {
 
     problemBarElement.textContent =
       "";
+  }
+
+  if (healthStatusElement) {
+    healthStatusElement.textContent =
+      "🔵 Belum Diperiksa";
   }
 
 } else {
@@ -6914,6 +6990,11 @@ const problemBarElement =
     "admin-integrity-health-problem"
   );
 
+const healthStatusElement =
+  document.getElementById(
+    "admin-integrity-health-status"
+  );
+
 if (integritasAdminGagal) {
 
   if (safeCountElement) {
@@ -6940,6 +7021,11 @@ if (integritasAdminGagal) {
 
     problemBarElement.textContent =
       "";
+  }
+
+  if (healthStatusElement) {
+    healthStatusElement.textContent =
+      "🔵 Belum Diperiksa";
   }
 
 } else {
