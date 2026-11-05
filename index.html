@@ -3067,6 +3067,20 @@ body[data-ui-style="minimal"] .read-button:hover {
     </strong>
   </div>
 
+  <div class="admin-summary-card">
+    <span>✅ Integritas Aman</span>
+    <strong id="admin-integrity-safe-count">
+      0 buku
+    </strong>
+  </div>
+
+  <div class="admin-summary-card">
+    <span>⚠️ Integritas Bermasalah</span>
+    <strong id="admin-integrity-problem-count">
+      0 buku
+    </strong>
+  </div>
+
 </div>
 
 <h3 class="admin-section-title">
@@ -5041,18 +5055,18 @@ async function bukaAdminPanel() {
     .add("show");
 
   document
-  .querySelector("header")
-  ?.setAttribute("inert", "");
+    .querySelector("header")
+    ?.setAttribute("inert", "");
 
-document
-  .querySelector("main")
-  ?.setAttribute("inert", "");
+  document
+    .querySelector("main")
+    ?.setAttribute("inert", "");
 
-document
-  .querySelector("footer")
-  ?.setAttribute("inert", "");
+  document
+    .querySelector("footer")
+    ?.setAttribute("inert", "");
 
-    document
+  document
     .getElementById("admin-book-search")
     ?.focus();
 
@@ -5070,41 +5084,41 @@ document
       user?.email || "-";
 }
 
-const adminTotalBooks =
-  document.getElementById(
-    "admin-total-books"
-  );
-
-const {
-  count: totalBooks,
-  error: countError
-} = await db
-  .from("books")
-  .select("*", {
-    count: "exact",
-    head: true
-  });
-
-if (adminTotalBooks) {
-
-  if (countError) {
-
-    adminTotalBooks.textContent =
-      "Gagal memuat";
-
-    console.error(
-      "Gagal menghitung koleksi:",
-      countError
+  const adminTotalBooks =
+    document.getElementById(
+      "admin-total-books"
     );
 
-  } else {
+  const {
+    count: totalBooks,
+    error: countError
+  } = await db
+    .from("books")
+    .select("*", {
+      count: "exact",
+      head: true
+    });
 
-    adminTotalBooks.textContent =
-      `${totalBooks || 0} buku`;
+  if (adminTotalBooks) {
+
+    if (countError) {
+
+      adminTotalBooks.textContent =
+        "Gagal memuat";
+
+      console.error(
+        "Gagal menghitung koleksi:",
+        countError
+      );
+
+    } else {
+
+      adminTotalBooks.textContent =
+        `${totalBooks || 0} buku`;
+
+    }
 
   }
-
-}
 
 await muatDaftarBukuAdmin();
 
@@ -6457,6 +6471,9 @@ if (
 const integritasAdminByBook =
   new Map();
 
+let integritasAdminGagal =
+  false;
+
 if (incrementalBookIds.length > 0) {
 
   const {
@@ -6473,14 +6490,16 @@ if (incrementalBookIds.length > 0) {
       incrementalBookIds
     );
 
-  if (adminPagesError) {
+if (adminPagesError) {
 
-    console.error(
-      "Gagal memeriksa integritas buku Admin:",
-      adminPagesError
-    );
+  integritasAdminGagal = true;
 
-  } else {
+  console.error(
+    "Gagal memeriksa integritas buku Admin:",
+    adminPagesError
+  );
+
+} else {
 
     for (const book of books) {
 
@@ -6564,6 +6583,57 @@ if (incrementalBookIds.length > 0) {
   }
 }
 
+  const safeCountElement =
+  document.getElementById(
+    "admin-integrity-safe-count"
+  );
+
+  const problemCountElement =
+    document.getElementById(
+      "admin-integrity-problem-count"
+  );
+
+if (integritasAdminGagal) {
+
+  if (safeCountElement) {
+    safeCountElement.textContent =
+      "Gagal memuat";
+  }
+
+  if (problemCountElement) {
+    problemCountElement.textContent =
+      "Gagal memuat";
+  }
+
+} else {
+
+  const dataIntegritas =
+    Array.from(
+      integritasAdminByBook.values()
+    );
+
+  const jumlahAman =
+    dataIntegritas.filter(
+      item => item.valid
+    ).length;
+
+  const jumlahBermasalah =
+    dataIntegritas.filter(
+      item => !item.valid
+    ).length;
+
+  if (safeCountElement) {
+    safeCountElement.textContent =
+      `${jumlahAman} buku`;
+  }
+
+  if (problemCountElement) {
+    problemCountElement.textContent =
+      `${jumlahBermasalah} buku`;
+  }
+
+}
+
   const categorySelect =
     document.getElementById(
       "admin-book-category"
@@ -6576,31 +6646,31 @@ if (incrementalBookIds.length > 0) {
         "adminBookCategory"
     ) || "";
 
-  const currentCategory =
-    categorySelect.value ||
-    savedCategory;
+    const currentCategory =
+      categorySelect.value ||
+      savedCategory;
 
-  const categories =
-    [
-      ...new Set([
-      ...books
-        .map((book) =>
-          (book.category || "").trim()
+    const categories =
+      [
+        ...new Set([
+        ...books
+          .map((book) =>
+            (book.category || "").trim()
+          )
+          .filter(Boolean),
+
+        ...(currentCategory
+          ? [currentCategory]
+          : [])
+      ])
+    ]
+      .sort((a, b) =>
+        a.localeCompare(
+          b,
+          "id",
+          { sensitivity: "base" }
         )
-        .filter(Boolean),
-
-      ...(currentCategory
-        ? [currentCategory]
-        : [])
-    ])
-  ]
-    .sort((a, b) =>
-      a.localeCompare(
-        b,
-        "id",
-        { sensitivity: "base" }
-      )
-    );
+      );
 
   categorySelect.innerHTML = `
     <option value="">
