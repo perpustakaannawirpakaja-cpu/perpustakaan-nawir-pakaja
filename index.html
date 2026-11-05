@@ -5230,6 +5230,9 @@ function cariBukuAdmin() {
 
   let jumlahTampil = 0;
 
+  let jumlahAmanTerfilter = 0;
+  let jumlahBermasalahTerfilter = 0;
+
   items.forEach((item) => {
 
     const text =
@@ -5267,6 +5270,22 @@ function cariBukuAdmin() {
     const cocokKategori =
       !selectedCategory ||
       itemCategory === selectedCategory;
+
+    const cocokFilterDasar =
+      cocokKeyword &&
+      cocokKategori;
+
+if (cocokFilterDasar) {
+
+  if (badgeAman) {
+    jumlahAmanTerfilter++;
+  }
+
+  if (badgeBermasalah) {
+    jumlahBermasalahTerfilter++;
+  }
+
+}
 
     const cocokIntegritas =
       !selectedIntegrity ||
@@ -5413,6 +5432,26 @@ function cariBukuAdmin() {
     }
 
   }
+
+  const safeCountElement =
+  document.getElementById(
+    "admin-integrity-safe-count"
+  );
+
+const problemCountElement =
+  document.getElementById(
+    "admin-integrity-problem-count"
+  );
+
+if (safeCountElement) {
+  safeCountElement.textContent =
+    `${jumlahAmanTerfilter} buku`;
+}
+
+if (problemCountElement) {
+  problemCountElement.textContent =
+    `${jumlahBermasalahTerfilter} buku`;
+}
 
   updateResetFilterBukuAdmin();
 
