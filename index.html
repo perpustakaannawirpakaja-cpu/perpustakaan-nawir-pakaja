@@ -5171,6 +5171,52 @@ await muatDaftarBukuAdmin();
 
 }
 
+function updateRingkasanIntegritasAdmin(
+  jumlahAman,
+  jumlahBermasalah
+) {
+
+  const safeCountElement =
+    document.getElementById(
+      "admin-integrity-safe-count"
+    );
+
+  const problemCountElement =
+    document.getElementById(
+      "admin-integrity-problem-count"
+    );
+
+  const totalIntegritas =
+    jumlahAman +
+    jumlahBermasalah;
+
+  const persenAman =
+    totalIntegritas > 0
+      ? Math.round(
+          (
+            jumlahAman /
+            totalIntegritas
+          ) * 100
+        )
+      : 0;
+
+  const persenBermasalah =
+    totalIntegritas > 0
+      ? 100 - persenAman
+      : 0;
+
+  if (safeCountElement) {
+    safeCountElement.textContent =
+      `${jumlahAman} buku (${persenAman}%)`;
+  }
+
+  if (problemCountElement) {
+    problemCountElement.textContent =
+      `${jumlahBermasalah} buku (${persenBermasalah}%)`;
+  }
+
+}
+
 function cariBukuAdmin() {
 
   const input =
@@ -5450,24 +5496,40 @@ if (cocokFilterDasar) {
 
   }
 
+const adaIntegritasBelumDiperiksa =
+  document.querySelector(
+    "#admin-book-list .admin-integrity-unknown"
+  );
+
+if (adaIntegritasBelumDiperiksa) {
+
   const safeCountElement =
-  document.getElementById(
-    "admin-integrity-safe-count"
+    document.getElementById(
+      "admin-integrity-safe-count"
+    );
+
+  const problemCountElement =
+    document.getElementById(
+      "admin-integrity-problem-count"
+    );
+
+  if (safeCountElement) {
+    safeCountElement.textContent =
+      "Gagal memuat";
+  }
+
+  if (problemCountElement) {
+    problemCountElement.textContent =
+      "Gagal memuat";
+  }
+
+} else {
+
+  updateRingkasanIntegritasAdmin(
+    jumlahAmanTerfilter,
+    jumlahBermasalahTerfilter
   );
 
-const problemCountElement =
-  document.getElementById(
-    "admin-integrity-problem-count"
-  );
-
-if (safeCountElement) {
-  safeCountElement.textContent =
-    `${jumlahAmanTerfilter} buku`;
-}
-
-if (problemCountElement) {
-  problemCountElement.textContent =
-    `${jumlahBermasalahTerfilter} buku`;
 }
 
   updateResetFilterBukuAdmin();
@@ -6469,10 +6531,10 @@ async function muatDaftarBukuAdmin() {
     "admin-book-integrity"
   );
 
-const savedIntegrity =
-  localStorage.getItem(
-    "adminBookIntegrity"
-  ) || "";
+  const savedIntegrity =
+    localStorage.getItem(
+      "adminBookIntegrity"
+    ) || "";
 
 if (
   integritySelect &&
@@ -6573,6 +6635,12 @@ if (
     status.textContent =
       "0 buku";
   }
+
+  updateRingkasanIntegritasAdmin(
+    0,
+    0
+  );
+    
     return;
   }
 
@@ -6742,15 +6810,10 @@ if (integritasAdminGagal) {
       item => !item.valid
     ).length;
 
-  if (safeCountElement) {
-    safeCountElement.textContent =
-      `${jumlahAman} buku`;
-  }
-
-  if (problemCountElement) {
-    problemCountElement.textContent =
-      `${jumlahBermasalah} buku`;
-  }
+  updateRingkasanIntegritasAdmin(
+    jumlahAman,
+    jumlahBermasalah
+  );
 
 }
 
