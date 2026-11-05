@@ -976,6 +976,18 @@ body.dark .read-button{
 .admin-integrity-health-problem{
   height:100%;
 
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  color:#ffffff;
+  font-size:10px;
+  font-weight:800;
+  line-height:1;
+
+  overflow:hidden;
+  white-space:nowrap;
+
   transition:
     width .3s ease;
 }
@@ -5240,12 +5252,12 @@ function updateRingkasanIntegritasAdmin(
   const safeBarElement =
   document.getElementById(
     "admin-integrity-health-safe"
-  );
+    );
 
-const problemBarElement =
-  document.getElementById(
-    "admin-integrity-health-problem"
-  );
+  const problemBarElement =
+    document.getElementById(
+      "admin-integrity-health-problem"
+    );
 
   const totalIntegritas =
     jumlahAman +
@@ -5268,23 +5280,37 @@ const problemBarElement =
 
   if (safeCountElement) {
     safeCountElement.textContent =
-      `${jumlahAman} buku (${persenAman}%)`;
+      `${jumlahAman} buku`;
   }
 
   if (problemCountElement) {
     problemCountElement.textContent =
-      `${jumlahBermasalah} buku (${persenBermasalah}%)`;
+      `${jumlahBermasalah} buku`;
   }
 
   if (safeBarElement) {
-  safeBarElement.style.width =
-    `${persenAman}%`;
-}
+    safeBarElement.style.width =
+      `${persenAman}%`;
+  }
 
-if (problemBarElement) {
-  problemBarElement.style.width =
-    `${persenBermasalah}%`;
-}
+  if (safeBarElement) {
+    safeBarElement.textContent =
+      persenAman > 0
+        ? `${persenAman}%`
+        : "";
+  }
+
+  if (problemBarElement) {
+    problemBarElement.style.width =
+      `${persenBermasalah}%`;
+  }
+
+  if (problemBarElement) {
+    problemBarElement.textContent =
+      persenBermasalah > 0
+        ? `${persenBermasalah}%`
+        : "";
+  }
 
 }
 
@@ -5584,6 +5610,16 @@ if (adaIntegritasBelumDiperiksa) {
       "admin-integrity-problem-count"
     );
 
+  const safeBarElement =
+    document.getElementById(
+      "admin-integrity-health-safe"
+    );
+
+  const problemBarElement =
+    document.getElementById(
+      "admin-integrity-health-problem"
+    );
+
   if (safeCountElement) {
     safeCountElement.textContent =
       "Gagal memuat";
@@ -5592,6 +5628,22 @@ if (adaIntegritasBelumDiperiksa) {
   if (problemCountElement) {
     problemCountElement.textContent =
       "Gagal memuat";
+  }
+
+  if (safeBarElement) {
+    safeBarElement.style.width =
+      "0%";
+
+    safeBarElement.textContent =
+      "";
+  }
+
+  if (problemBarElement) {
+    problemBarElement.style.width =
+      "0%";
+
+    problemBarElement.textContent =
+      "";
   }
 
 } else {
@@ -6877,11 +6929,17 @@ if (integritasAdminGagal) {
   if (safeBarElement) {
     safeBarElement.style.width =
       "0%";
+
+    safeBarElement.textContent =
+      "";
   }
 
   if (problemBarElement) {
     problemBarElement.style.width =
       "0%";
+
+    problemBarElement.textContent =
+      "";
   }
 
 } else {
