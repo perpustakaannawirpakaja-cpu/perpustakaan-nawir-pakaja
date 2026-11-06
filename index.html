@@ -1020,6 +1020,42 @@ body.dark .read-button{
   text-align:center;
 }
 
+.admin-integrity-health-status.is-excellent{
+  background:rgba(34,197,94,.10);
+  border-color:rgba(34,197,94,.45);
+  color:#15803d;
+}
+
+.admin-integrity-health-status.is-good{
+  background:rgba(59,130,246,.10);
+  border-color:rgba(59,130,246,.40);
+  color:#1d4ed8;
+}
+
+.admin-integrity-health-status.is-warning{
+  background:rgba(245,158,11,.12);
+  border-color:rgba(245,158,11,.50);
+  color:#b45309;
+}
+
+.admin-integrity-health-status.is-problem{
+  background:rgba(239,68,68,.10);
+  border-color:rgba(239,68,68,.45);
+  color:#b91c1c;
+}
+
+.admin-integrity-health-status.is-empty{
+  background:var(--bg);
+  border-color:var(--border);
+  color:var(--muted);
+}
+
+.admin-integrity-health-status.is-unchecked{
+  background:rgba(59,130,246,.10);
+  border-color:rgba(59,130,246,.40);
+  color:#1d4ed8;
+}
+
 @media(max-width:500px){
   .admin-integrity-summary-row{
     grid-template-columns:1fr;
@@ -5294,6 +5330,15 @@ function updateRingkasanIntegritasAdmin(
       "admin-integrity-health-status"
     );
 
+  const healthStatusClasses = [
+    "is-excellent",
+    "is-good",
+    "is-warning",
+    "is-problem",
+    "is-empty",
+    "is-unchecked"
+  ];
+
   const totalIntegritas =
     jumlahAman +
     jumlahBermasalah;
@@ -5347,32 +5392,56 @@ function updateRingkasanIntegritasAdmin(
         : "";
   }
 
-  if (healthStatusElement) {
+if (healthStatusElement) {
+
+  healthStatusElement.classList.remove(
+    ...healthStatusClasses
+  );
 
   if (totalIntegritas === 0) {
 
     healthStatusElement.textContent =
       "⚪ Belum Ada Data";
 
+    healthStatusElement.classList.add(
+      "is-empty"
+    );
+
   } else if (persenAman >= 90) {
 
     healthStatusElement.textContent =
       "🟢 Sangat Baik";
+
+    healthStatusElement.classList.add(
+      "is-excellent"
+    );
 
   } else if (persenAman >= 75) {
 
     healthStatusElement.textContent =
       "🔵 Baik";
 
+    healthStatusElement.classList.add(
+      "is-good"
+    );
+
   } else if (persenAman >= 50) {
 
     healthStatusElement.textContent =
       "🟠 Perlu Perhatian";
 
+    healthStatusElement.classList.add(
+      "is-warning"
+    );
+
   } else {
 
     healthStatusElement.textContent =
       "🔴 Bermasalah";
+
+    healthStatusElement.classList.add(
+      "is-problem"
+    );
 
   }
 
@@ -5718,9 +5787,24 @@ if (adaIntegritasBelumDiperiksa) {
   }
 
   if (healthStatusElement) {
-    healthStatusElement.textContent =
-      "🔵 Belum Diperiksa";
-  }
+
+  healthStatusElement.classList.remove(
+    "is-excellent",
+    "is-good",
+    "is-warning",
+    "is-problem",
+    "is-empty",
+    "is-unchecked"
+  );
+
+  healthStatusElement.textContent =
+    "🔵 Belum Diperiksa";
+
+  healthStatusElement.classList.add(
+    "is-unchecked"
+  );
+
+}
 
 } else {
 
@@ -7024,8 +7108,23 @@ if (integritasAdminGagal) {
   }
 
   if (healthStatusElement) {
+
+    healthStatusElement.classList.remove(
+      "is-excellent",
+      "is-good",
+      "is-warning",
+      "is-problem",
+      "is-empty",
+      "is-unchecked"
+    );
+
     healthStatusElement.textContent =
       "🔵 Belum Diperiksa";
+
+    healthStatusElement.classList.add(
+      "is-unchecked"
+    );
+
   }
 
 } else {
