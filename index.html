@@ -5450,8 +5450,12 @@ if (healthStatusElement) {
     );
 
     if (healthDescriptionElement) {
+
       healthDescriptionElement.textContent =
-        "Hampir seluruh buku incremental memiliki susunan halaman yang valid.";
+        persenAman === 100
+          ? "Semua buku incremental memiliki susunan halaman yang valid."
+          : "Hampir seluruh buku incremental memiliki susunan halaman yang valid.";
+
     }
 
   } else if (persenAman >= 75) {
