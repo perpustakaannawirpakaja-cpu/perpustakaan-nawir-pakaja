@@ -5453,8 +5453,8 @@ if (healthStatusElement) {
 
       healthDescriptionElement.textContent =
         persenAman === 100
-          ? "Semua buku incremental memiliki susunan halaman yang valid."
-          : "Hampir seluruh buku incremental memiliki susunan halaman yang valid.";
+          ? `${jumlahAman} buku incremental, semuanya memiliki susunan halaman yang valid.`
+          : `${jumlahAman} buku aman dan ${jumlahBermasalah} buku bermasalah. Kondisi koleksi sangat baik.`;
 
     }
 
@@ -5469,7 +5469,7 @@ if (healthStatusElement) {
 
     if (healthDescriptionElement) {
       healthDescriptionElement.textContent =
-        "Sebagian besar buku aman, tetapi masih ada sedikit masalah integritas.";
+        `${jumlahAman} buku aman dan ${jumlahBermasalah} buku bermasalah. Kondisi koleksi baik.`;
     }
 
   } else if (persenAman >= 50) {
@@ -5483,7 +5483,7 @@ if (healthStatusElement) {
 
     if (healthDescriptionElement) {
       healthDescriptionElement.textContent =
-        "Beberapa buku perlu diperiksa atau diperbaiki.";
+        `${jumlahAman} buku aman dan ${jumlahBermasalah} buku bermasalah. Koleksi perlu perhatian.`;
     }
 
   } else {
