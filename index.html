@@ -1061,6 +1061,17 @@ body.dark
   color:#1d4ed8;
 }
 
+.admin-integrity-health-description{
+  margin:
+    -8px 0 16px;
+
+  color:var(--muted);
+
+  font-size:11px;
+  line-height:1.5;
+  text-align:center;
+}
+
 @media(max-width:500px){
   .admin-integrity-summary-row{
     grid-template-columns:1fr;
@@ -3445,6 +3456,13 @@ body[data-ui-style="minimal"] .read-button:hover {
   ⚪ Belum Ada Data
 </p>
 
+<p
+  id="admin-integrity-health-description"
+  class="admin-integrity-health-description"
+>
+  Belum ada data integritas pada hasil koleksi ini.
+</p>
+
 <div class="admin-book-sort">
 
   <label for="admin-book-sort">
@@ -5335,6 +5353,11 @@ function updateRingkasanIntegritasAdmin(
       "admin-integrity-health-status"
     );
 
+  const healthDescriptionElement =
+    document.getElementById(
+      "admin-integrity-health-description"
+    );
+
   const healthStatusClasses = [
     "is-excellent",
     "is-good",
@@ -5412,6 +5435,11 @@ if (healthStatusElement) {
       "is-empty"
     );
 
+    if (healthDescriptionElement) {
+      healthDescriptionElement.textContent =
+        "Belum ada data integritas pada hasil koleksi ini.";
+    }
+
   } else if (persenAman >= 90) {
 
     healthStatusElement.textContent =
@@ -5420,6 +5448,11 @@ if (healthStatusElement) {
     healthStatusElement.classList.add(
       "is-excellent"
     );
+
+    if (healthDescriptionElement) {
+      healthDescriptionElement.textContent =
+        "Hampir seluruh buku incremental memiliki susunan halaman yang valid.";
+    }
 
   } else if (persenAman >= 75) {
 
@@ -5430,6 +5463,11 @@ if (healthStatusElement) {
       "is-good"
     );
 
+    if (healthDescriptionElement) {
+      healthDescriptionElement.textContent =
+        "Sebagian besar buku aman, tetapi masih ada sedikit masalah integritas.";
+    }
+
   } else if (persenAman >= 50) {
 
     healthStatusElement.textContent =
@@ -5439,6 +5477,11 @@ if (healthStatusElement) {
       "is-warning"
     );
 
+    if (healthDescriptionElement) {
+      healthDescriptionElement.textContent =
+        "Beberapa buku perlu diperiksa atau diperbaiki.";
+    }
+
   } else {
 
     healthStatusElement.textContent =
@@ -5447,6 +5490,11 @@ if (healthStatusElement) {
     healthStatusElement.classList.add(
       "is-problem"
     );
+
+    if (healthDescriptionElement) {
+      healthDescriptionElement.textContent =
+        "Banyak buku memiliki masalah integritas halaman.";
+    }
 
   }
 
@@ -5808,6 +5856,16 @@ if (adaIntegritasBelumDiperiksa) {
   healthStatusElement.classList.add(
     "is-unchecked"
   );
+
+  const healthDescriptionElement =
+    document.getElementById(
+      "admin-integrity-health-description"
+    );
+
+  if (healthDescriptionElement) {
+    healthDescriptionElement.textContent =
+      "Pemeriksaan integritas belum berhasil dilakukan.";
+  }
 
 }
 
@@ -7129,6 +7187,16 @@ if (integritasAdminGagal) {
     healthStatusElement.classList.add(
       "is-unchecked"
     );
+
+    const healthDescriptionElement =
+      document.getElementById(
+        "admin-integrity-health-description"
+      );
+
+    if (healthDescriptionElement) {
+      healthDescriptionElement.textContent =
+        "Pemeriksaan integritas belum berhasil dilakukan.";
+    }
 
   }
 
