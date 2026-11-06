@@ -1072,6 +1072,27 @@ body.dark
   text-align:center;
 }
 
+.admin-integrity-health-recommendation{
+  margin:
+    -8px 0 16px;
+
+  padding:
+    8px 10px;
+
+  border:
+    1px dashed var(--border);
+
+  border-radius:10px;
+
+  background:var(--bg);
+  color:var(--text);
+
+  font-size:11px;
+  font-weight:600;
+  line-height:1.5;
+  text-align:center;
+}
+
 @media(max-width:500px){
   .admin-integrity-summary-row{
     grid-template-columns:1fr;
@@ -3463,6 +3484,13 @@ body[data-ui-style="minimal"] .read-button:hover {
   Belum ada data integritas pada hasil koleksi ini.
 </p>
 
+<p
+  id="admin-integrity-health-recommendation"
+  class="admin-integrity-health-recommendation"
+>
+  Tidak ada tindakan yang tersedia.
+</p>
+
 <div class="admin-book-sort">
 
   <label for="admin-book-sort">
@@ -5358,6 +5386,11 @@ function updateRingkasanIntegritasAdmin(
       "admin-integrity-health-description"
     );
 
+  const healthRecommendationElement =
+    document.getElementById(
+      "admin-integrity-health-recommendation"
+    );
+
   const healthStatusClasses = [
     "is-excellent",
     "is-good",
@@ -5440,6 +5473,11 @@ if (healthStatusElement) {
         "Belum ada data integritas pada hasil koleksi ini.";
     }
 
+    if (healthRecommendationElement) {
+      healthRecommendationElement.textContent =
+        "Tidak ada tindakan yang tersedia.";
+    }
+
   } else if (persenAman >= 90) {
 
     healthStatusElement.textContent =
@@ -5450,12 +5488,15 @@ if (healthStatusElement) {
     );
 
     if (healthDescriptionElement) {
-
       healthDescriptionElement.textContent =
         persenAman === 100
           ? `${jumlahAman} buku incremental, semuanya memiliki susunan halaman yang valid.`
           : `${jumlahAman} buku aman dan ${jumlahBermasalah} buku bermasalah. Kondisi koleksi sangat baik.`;
+    }
 
+    if (healthRecommendationElement) {
+      healthRecommendationElement.textContent =
+        "Tidak ada tindakan yang diperlukan.";
     }
 
   } else if (persenAman >= 75) {
@@ -5472,6 +5513,11 @@ if (healthStatusElement) {
         `${jumlahAman} buku aman dan ${jumlahBermasalah} buku bermasalah. Kondisi koleksi baik.`;
     }
 
+    if (healthRecommendationElement) {
+      healthRecommendationElement.textContent =
+        "Periksa buku yang ditandai bermasalah bila diperlukan.";
+    }
+
   } else if (persenAman >= 50) {
 
     healthStatusElement.textContent =
@@ -5486,6 +5532,11 @@ if (healthStatusElement) {
         `${jumlahAman} buku aman dan ${jumlahBermasalah} buku bermasalah. Koleksi perlu perhatian.`;
     }
 
+    if (healthRecommendationElement) {
+      healthRecommendationElement.textContent =
+        "Disarankan memeriksa dan memperbaiki buku bermasalah.";
+    }
+
   } else {
 
     healthStatusElement.textContent =
@@ -5498,6 +5549,11 @@ if (healthStatusElement) {
     if (healthDescriptionElement) {
       healthDescriptionElement.textContent =
         `Ada ${jumlahBermasalah} buku yang memiliki masalah integritas halaman.`;
+    }
+
+    if (healthRecommendationElement) {
+      healthRecommendationElement.textContent =
+        "Segera periksa buku bermasalah dan perbaiki susunan halamannya.";
     }
 
   }
@@ -5866,9 +5922,19 @@ if (adaIntegritasBelumDiperiksa) {
       "admin-integrity-health-description"
     );
 
+  const healthRecommendationElement =
+    document.getElementById(
+      "admin-integrity-health-recommendation"
+    );
+
   if (healthDescriptionElement) {
     healthDescriptionElement.textContent =
       "Pemeriksaan integritas belum berhasil dilakukan.";
+  }
+
+  if (healthRecommendationElement) {
+    healthRecommendationElement.textContent =
+      "Coba periksa kembali integritas koleksi.";
   }
 
 }
@@ -7195,11 +7261,21 @@ if (integritasAdminGagal) {
     const healthDescriptionElement =
       document.getElementById(
         "admin-integrity-health-description"
+      ); 
+
+    const healthRecommendationElement =
+      document.getElementById(
+        "admin-integrity-health-recommendation"
       );
 
     if (healthDescriptionElement) {
       healthDescriptionElement.textContent =
         "Pemeriksaan integritas belum berhasil dilakukan.";
+    }
+
+    if (healthRecommendationElement) {
+      healthRecommendationElement.textContent =
+        "Coba periksa kembali integritas koleksi.";
     }
 
   }
