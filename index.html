@@ -1206,6 +1206,20 @@ body.dark
   font-size:17px;
 }
 
+.book-source-coming-soon{
+  margin:
+    -6px 0 12px;
+
+  color:var(--muted);
+
+  font-size:11px;
+  line-height:1.5;
+}
+
+.book-source-coming-soon strong{
+  color:var(--primary);
+}
+
 /* =========================================
    ADMIN COLLECTION MANAGEMENT
    ========================================= */
@@ -3380,20 +3394,34 @@ body[data-ui-style="minimal"] .read-button:hover {
       ></textarea>
 
       <label for="book-upload-mode">
-  Mode Upload Buku
-</label>
+        Sumber Buku
+      </label>
 
 <select
   id="book-upload-mode"
-  aria-label="Mode Upload Buku"
+  aria-label="Sumber Buku"
   aria-describedby="book-upload-mode-hint"
 >
   <option value="single_pdf">
-    📄 PDF Lengkap
+    📄 Import PDF
   </option>
 
   <option value="incremental">
     📚 Upload Bertahap
+  </option>
+
+  <option
+    value="direct_epub"
+    disabled
+  >
+    📘 EPUB Langsung — segera
+  </option>
+
+  <option
+    value="scanner"
+    disabled
+  >
+    📷 Scan Buku — segera
   </option>
 </select>
 
@@ -3401,7 +3429,12 @@ body[data-ui-style="minimal"] .read-button:hover {
   id="book-upload-mode-hint"
   class="admin-book-search-hint"
 >
-  PDF Lengkap untuk satu file PDF utuh. Upload Bertahap untuk menambahkan halaman sedikit demi sedikit.
+  Pilih sumber buku. Import PDF dan Upload Bertahap sudah aktif. EPUB Langsung dan Scan Buku sedang disiapkan menuju format akhir EPUB.
+</p>
+
+<p class="book-source-coming-soon">
+  <strong>Segera:</strong>
+  📘 EPUB Langsung dan 📷 Scan Buku akan diaktifkan setelah jalur ingestion siap.
 </p>
 
       <label>
