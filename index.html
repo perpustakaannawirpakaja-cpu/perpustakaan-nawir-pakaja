@@ -1151,6 +1151,48 @@ body.dark
   color:#fca5a5;
 }
 
+.admin-integrity-health-action{
+  display:block;
+  width:100%;
+
+  margin:
+    -8px 0 16px;
+
+  padding:
+    10px 12px;
+
+  border:
+    1px solid rgba(239,68,68,.45);
+
+  border-radius:10px;
+
+  background:rgba(239,68,68,.10);
+  color:#b91c1c;
+
+  font-size:11px;
+  font-weight:700;
+
+  cursor:pointer;
+}
+
+.admin-integrity-health-action[hidden]{
+  display:none;
+}
+
+.admin-integrity-health-action:hover{
+  background:rgba(239,68,68,.16);
+}
+
+.admin-integrity-health-action:focus-visible{
+  outline:3px solid var(--primary);
+  outline-offset:3px;
+}
+
+body.dark
+.admin-integrity-health-action{
+  color:#fca5a5;
+}
+
 @media(max-width:500px){
   .admin-integrity-summary-row{
     grid-template-columns:1fr;
@@ -3549,6 +3591,16 @@ body[data-ui-style="minimal"] .read-button:hover {
   Tidak ada tindakan yang tersedia.
 </p>
 
+<button
+  type="button"
+  id="admin-integrity-health-action"
+  class="admin-integrity-health-action"
+  onclick="filterIntegritasDariRingkasan('problem')"
+  hidden
+>
+  ⚠️ Tampilkan Buku Bermasalah
+</button>
+
 <div class="admin-book-sort">
 
   <label for="admin-book-sort">
@@ -5449,6 +5501,11 @@ function updateRingkasanIntegritasAdmin(
       "admin-integrity-health-recommendation"
     );
 
+  const healthActionElement =
+    document.getElementById(
+      "admin-integrity-health-action"
+    );
+
   const healthStatusClasses = [
     "is-excellent",
     "is-good",
@@ -5532,6 +5589,10 @@ if (healthStatusElement) {
     );
   }
 
+  if (healthActionElement) {
+    healthActionElement.hidden = true;
+  }
+
   if (totalIntegritas === 0) {
 
     healthStatusElement.textContent =
@@ -5575,7 +5636,9 @@ if (healthStatusElement) {
 
     if (healthRecommendationElement) {
       healthRecommendationElement.textContent =
-        "Tidak ada tindakan yang diperlukan.";
+        jumlahBermasalah > 0
+          ? "Periksa buku yang ditandai bermasalah bila diperlukan."
+          : "Tidak ada tindakan yang diperlukan.";
     }
 
     if (healthRecommendationElement) {
@@ -5661,6 +5724,17 @@ if (healthStatusElement) {
 
   }
 
+}
+
+if (healthActionElement) {
+
+  healthActionElement.hidden =
+    jumlahBermasalah === 0;
+
+  healthActionElement.textContent =
+    jumlahBermasalah > 0
+      ? `⚠️ Tampilkan ${jumlahBermasalah} Buku Bermasalah`
+      : "⚠️ Tampilkan Buku Bermasalah";
 }
 
 }
@@ -6035,7 +6109,7 @@ if (adaIntegritasBelumDiperiksa) {
       "Pemeriksaan integritas belum berhasil dilakukan.";
   }
 
-  if (healthRecommendationElement) {
+if (healthRecommendationElement) {
 
   healthRecommendationElement.classList.remove(
     "is-excellent",
@@ -6053,6 +6127,15 @@ if (adaIntegritasBelumDiperiksa) {
     "is-unchecked"
   );
 
+}
+
+const healthActionElement =
+  document.getElementById(
+    "admin-integrity-health-action"
+  );
+
+if (healthActionElement) {
+  healthActionElement.hidden = true;
 }
 
 }
@@ -7360,40 +7443,7 @@ if (integritasAdminGagal) {
 
   if (healthStatusElement) {
 
-    healthStatusElement.classList.remove(
-      "is-excellent",
-      "is-good",
-      "is-warning",
-      "is-problem",
-      "is-empty",
-      "is-unchecked"
-    );
-
-    healthStatusElement.textContent =
-      "🔵 Belum Diperiksa";
-
-    healthStatusElement.classList.add(
-      "is-unchecked"
-    );
-
-    const healthDescriptionElement =
-      document.getElementById(
-        "admin-integrity-health-description"
-      ); 
-
-    const healthRecommendationElement =
-      document.getElementById(
-        "admin-integrity-health-recommendation"
-      );
-
-    if (healthDescriptionElement) {
-      healthDescriptionElement.textContent =
-        "Pemeriksaan integritas belum berhasil dilakukan.";
-    }
-
-    if (healthRecommendationElement) {
-
-  healthRecommendationElement.classList.remove(
+  healthStatusElement.classList.remove(
     "is-excellent",
     "is-good",
     "is-warning",
@@ -7402,16 +7452,58 @@ if (integritasAdminGagal) {
     "is-unchecked"
   );
 
-  healthRecommendationElement.textContent =
-    "Coba periksa kembali integritas koleksi.";
+  healthStatusElement.textContent =
+    "🔵 Belum Diperiksa";
 
-  healthRecommendationElement.classList.add(
+  healthStatusElement.classList.add(
     "is-unchecked"
   );
 
-}
+  const healthDescriptionElement =
+    document.getElementById(
+      "admin-integrity-health-description"
+    );
+
+  const healthRecommendationElement =
+    document.getElementById(
+      "admin-integrity-health-recommendation"
+    );
+
+  if (healthDescriptionElement) {
+    healthDescriptionElement.textContent =
+      "Pemeriksaan integritas belum berhasil dilakukan.";
+  }
+
+  if (healthRecommendationElement) {
+
+    healthRecommendationElement.classList.remove(
+      "is-excellent",
+      "is-good",
+      "is-warning",
+      "is-problem",
+      "is-empty",
+      "is-unchecked"
+    );
+
+    healthRecommendationElement.textContent =
+      "Coba periksa kembali integritas koleksi.";
+
+    healthRecommendationElement.classList.add(
+      "is-unchecked"
+    );
 
   }
+
+}
+
+const healthActionElement =
+  document.getElementById(
+    "admin-integrity-health-action"
+  );
+
+if (healthActionElement) {
+  healthActionElement.hidden = true;
+}
 
 } else {
 
