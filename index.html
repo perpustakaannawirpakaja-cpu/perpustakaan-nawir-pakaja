@@ -13210,6 +13210,32 @@ return;
 }, 800);
 }
 
+function getBookIngestionConfig(
+  uploadMode
+) {
+
+  const configs = {
+
+    single_pdf: {
+      sourceType: "pdf_import",
+      sourceFormat: "pdf",
+      targetFormat: "epub",
+      epubLayout: "fixed"
+    },
+
+    incremental: {
+      sourceType: "incremental_upload",
+      sourceFormat: null,
+      targetFormat: "epub",
+      epubLayout: "fixed"
+    }
+
+  };
+
+  return configs[uploadMode] || null;
+
+}
+
 function updateModeUploadBuku() {
 
   const modeSelect =
@@ -13305,29 +13331,34 @@ async function uploadBuku(event) {
       .value
   );
 
-const description =
-  document.getElementById("book-description").value.trim();
+  const description =
+    document.getElementById("book-description").value.trim();
 
-const uploadMode =
-  document
-    .getElementById("book-upload-mode")
-    .value;
+  const uploadMode =
+    document
+      .getElementById("book-upload-mode")
+      .value;
 
-const totalPagesInput =
-  document.getElementById(
-    "book-total-pages"
-  );
+  const ingestionConfig =
+    getBookIngestionConfig(
+      uploadMode
+    );
 
-const totalPages =
-  uploadMode === "incremental"
-    ? Number(totalPagesInput?.value || 0)
-    : null;
+  const totalPagesInput =
+    document.getElementById(
+      "book-total-pages"
+    );
 
-const coverFile =
-  document.getElementById("book-cover").files[0];
+  const totalPages =
+    uploadMode === "incremental"
+      ? Number(totalPagesInput?.value || 0)
+      : null;
 
-const bookFile =
-  document.getElementById("book-file").files[0];
+  const coverFile =
+    document.getElementById("book-cover").files[0];
+
+  const bookFile =
+    document.getElementById("book-file").files[0];
 
   const message =
     document.getElementById("book-upload-message");
@@ -13337,6 +13368,13 @@ const bookFile =
 
   message.textContent = "";
 
+  if (!ingestionConfig) {
+    message.textContent =
+      "⚠️ Sumber buku belum didukung.";
+
+    return;
+  }
+
   if (!title) {
     message.textContent =
       "⚠️ Judul buku harus diisi.";
@@ -13344,11 +13382,11 @@ const bookFile =
   }
 
   if (
-  uploadMode === "single_pdf" &&
-  !bookFile
+    uploadMode === "single_pdf" &&
+    !bookFile
 ) {
-  message.textContent =
-    "⚠️ File PDF harus dipilih.";
+    message.textContent =
+      "⚠️ File PDF harus dipilih.";
 
   return;
 }
