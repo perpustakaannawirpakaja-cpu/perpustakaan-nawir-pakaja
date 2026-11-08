@@ -9243,6 +9243,25 @@ async function pilihHapusHalaman(pageNumber) {
         book.file_url
     };
 
+    let ingestionDeleteSyncWarning = null;
+
+try {
+
+  await sinkronkanProgressIngestionBuku(
+    bookId
+  );
+
+} catch (syncError) {
+
+  console.error(
+    "Sinkronisasi progress ingestion setelah hapus gagal:",
+    syncError
+  );
+
+  ingestionDeleteSyncWarning =
+    syncError;
+}
+
     await tampilkanBuku();
     await muatDaftarBukuAdmin();
     await bukaKelolaHalaman(bookId);
@@ -9255,10 +9274,16 @@ async function pilihHapusHalaman(pageNumber) {
       );
 
     if (pesanBaru) {
-      pesanBaru.textContent =
-        `✅ Halaman ${pageNumber} dihapus. ` +
-        `Anda masih dapat menggunakan Batal Hapus Halaman.`;
-    }
+
+  pesanBaru.textContent =
+    `✅ Halaman ${pageNumber} dihapus. ` +
+    `Anda masih dapat menggunakan Batal Hapus Halaman.`;
+
+  if (ingestionDeleteSyncWarning) {
+    pesanBaru.textContent +=
+      " ⚠️ Progress ingestion belum tersinkron.";
+  }
+}
 
   } catch (error) {
 
@@ -9788,6 +9813,25 @@ async function batalUploadHalaman() {
     const bookId =
       aksi.bookId;
 
+    let ingestionUndoSyncWarning = null;
+
+try {
+
+  await sinkronkanProgressIngestionBuku(
+    bookId
+  );
+
+} catch (syncError) {
+
+  console.error(
+    "Sinkronisasi progress ingestion setelah Undo gagal:",
+    syncError
+  );
+
+  ingestionUndoSyncWarning =
+    syncError;
+}
+
     aksiUploadHalamanTerakhir =
       null;
 
@@ -9809,6 +9853,11 @@ async function batalUploadHalaman() {
           : aksi.tipe === "move"
             ? `✅ Pemindahan Halaman ${aksi.fromPage} ke posisi ${aksi.toPage} berhasil dibatalkan.`
             : `✅ Upload Halaman ${nomorHalaman} berhasil dibatalkan.`;
+
+    if (ingestionUndoSyncWarning) {
+      message.textContent +=
+        " ⚠️ Progress ingestion belum tersinkron.";
+    }
 
   } catch (error) {
 
@@ -10255,6 +10304,25 @@ async function pindahkanHalamanBuku() {
       pageNumberInput.value = "";
     }
 
+    let ingestionMoveSyncWarning = null;
+
+try {
+
+  await sinkronkanProgressIngestionBuku(
+    bookId
+  );
+
+} catch (syncError) {
+
+  console.error(
+    "Sinkronisasi progress ingestion setelah pindah gagal:",
+    syncError
+  );
+
+  ingestionMoveSyncWarning =
+    syncError;
+}
+
     await tampilkanBuku();
 
     await muatDaftarBukuAdmin();
@@ -10269,8 +10337,14 @@ async function pindahkanHalamanBuku() {
       );
 
     if (pesanBaru) {
+
       pesanBaru.textContent =
         `✅ Halaman ${halamanAsal} berhasil dipindahkan ke posisi ${halamanTujuan}.`;
+
+      if (ingestionMoveSyncWarning) {
+        pesanBaru.textContent +=
+          " ⚠️ Progress ingestion belum tersinkron.";
+      }
     }
 
   } catch (error) {
@@ -11123,6 +11197,25 @@ if (sedangMenyisipkanHalaman) {
   }
 }
 
+let ingestionSyncWarning = null;
+
+try {
+
+  await sinkronkanProgressIngestionBuku(
+    bookId
+  );
+
+} catch (syncError) {
+
+  console.error(
+    "Sinkronisasi progress ingestion gagal:",
+    syncError
+  );
+
+  ingestionSyncWarning =
+    syncError;
+}
+
 await tampilkanBuku();
 
 await muatDaftarBukuAdmin();
@@ -11137,6 +11230,11 @@ message.textContent =
     : sedangMenyisipkanHalaman
       ? `✅ Halaman baru berhasil disisipkan pada posisi ${pageNumber}.`
       : `✅ Halaman ${pageNumber} berhasil diupload.`;
+
+  if (ingestionSyncWarning) {
+    message.textContent +=
+      " ⚠️ Progress ingestion belum tersinkron.";
+  }
 
   } catch (error) {
 
@@ -11708,6 +11806,25 @@ if (!bolehFinalisasi) {
       );
     }
 
+let ingestionFinalizeSyncWarning = null;
+
+try {
+
+  await sinkronkanProgressIngestionBuku(
+    bookId
+  );
+
+} catch (syncError) {
+
+  console.error(
+    "Sinkronisasi ingestion setelah finalisasi gagal:",
+    syncError
+  );
+
+  ingestionFinalizeSyncWarning =
+    syncError;
+}
+
     await tampilkanBuku();
 
     await muatDaftarBukuAdmin();
@@ -11718,6 +11835,11 @@ if (!bolehFinalisasi) {
 
     message.textContent =
       `✅ PDF final berhasil dibuat. ${totalHalaman} halaman telah digabung dan buku sudah berstatus Selesai.`;
+
+    if (ingestionFinalizeSyncWarning) {
+      message.textContent +=
+        " ⚠️ Status ingestion belum tersinkron.";
+    }
 
   } catch (error) {
 
@@ -13325,6 +13447,120 @@ async function buatBookIngestionSession(
         ingestionError?.message ||
         "Data sesi tidak ditemukan."
       )
+    );
+  }
+
+  return ingestionSession;
+
+}
+
+async function sinkronkanProgressIngestionBuku(
+  bookId
+) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku untuk sinkronisasi ingestion tidak valid."
+    );
+  }
+
+  const {
+    data: book,
+    error: bookError
+  } = await db
+    .from("books")
+    .select(`
+      id,
+      total_pages,
+      upload_status
+    `)
+    .eq(
+      "id",
+      idBuku
+    )
+    .single();
+
+  if (
+    bookError ||
+    !book
+  ) {
+    throw new Error(
+      "Data buku untuk sinkronisasi ingestion tidak ditemukan."
+    );
+  }
+
+  const {
+    count: jumlahHalaman,
+    error: countError
+  } = await db
+    .from("book_pages")
+    .select("*", {
+      count: "exact",
+      head: true
+    })
+    .eq(
+      "book_id",
+      idBuku
+    );
+
+  if (countError) {
+    throw new Error(
+      "Gagal menghitung halaman ingestion: " +
+      countError.message
+    );
+  }
+
+  const ingestionStatus =
+    book.upload_status === "complete"
+      ? "ready"
+      : "draft";
+
+  const {
+    data: ingestionSession,
+    error: updateError
+  } = await db
+    .from("book_ingestion_sessions")
+    .update({
+  total_pages:
+    Number(book.total_pages || 0),
+
+  processed_pages:
+    jumlahHalaman || 0,
+
+  status:
+    ingestionStatus,
+
+  last_error: null
+})
+    .eq(
+      "book_id",
+      idBuku
+    )
+    .select(`
+      id,
+      book_id,
+      processed_pages,
+      total_pages,
+      status
+    `)
+    .maybeSingle();
+
+  if (updateError) {
+    throw new Error(
+      "Sinkronisasi progress ingestion gagal: " +
+      updateError.message
+    );
+  }
+
+  if (!ingestionSession) {
+    throw new Error(
+      "Sesi ingestion buku tidak ditemukan."
     );
   }
 
