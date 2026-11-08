@@ -9080,9 +9080,22 @@ async function pilihHapusHalaman(pageNumber) {
 
   try {
 
-    // Ambil status buku sebelum diubah.
-    const {
-      data: book,
+  const statusIngestionAktif =
+    await setStatusIngestionBuku(
+      bookId,
+      "ingesting"
+    );
+
+  if (!statusIngestionAktif) {
+
+    console.warn(
+      "Status ingestion belum berhasil diubah ke ingesting."
+    );
+  }
+
+  // Ambil status buku sebelum diubah.
+  const {
+    data: book,
       error: bookError
     } = await db
       .from("books")
@@ -9509,9 +9522,22 @@ async function batalUploadHalaman() {
 
   try {
 
-    /* =========================
-       BATAL UPLOAD HALAMAN BARU
-       ========================= */
+  const statusIngestionAktif =
+    await setStatusIngestionBuku(
+      aksi.bookId,
+      "ingesting"
+    );
+
+  if (!statusIngestionAktif) {
+
+    console.warn(
+      "Status ingestion belum berhasil diubah ke ingesting."
+    );
+  }
+
+  /* =========================
+     BATAL UPLOAD HALAMAN BARU
+     ========================= */
 
     if (aksi.tipe === "upload") {
 
@@ -10312,9 +10338,22 @@ async function pindahkanHalamanBuku() {
 
   try {
 
-    const {
-      error: moveError
-    } = await db.rpc(
+  const statusIngestionAktif =
+    await setStatusIngestionBuku(
+      bookId,
+      "ingesting"
+    );
+
+  if (!statusIngestionAktif) {
+
+    console.warn(
+      "Status ingestion belum berhasil diubah ke ingesting."
+    );
+  }
+
+  const {
+    error: moveError
+  } = await db.rpc(
       "move_incremental_book_page",
       {
         p_book_id:
@@ -10616,43 +10655,43 @@ async function uploadHalamanBuku() {
     "book-page-auto-compress"
   )?.checked;
 
-const compressionQuality =
-  document.getElementById(
-    "book-page-compression-quality"
-  )?.value || "balanced";
+  const compressionQuality =
+    document.getElementById(
+      "book-page-compression-quality"
+    )?.value || "balanced";
 
-const sizeInfo =
-  document.getElementById(
-    "book-page-file-size"
-  );
+  const sizeInfo =
+    document.getElementById(
+      "book-page-file-size"
+    );
 
-const ukuranAsli =
-  pageFile.size;
+  const ukuranAsli =
+    pageFile.size;
 
-let statusKompresi =
-  "original";
+  let statusKompresi =
+    "original";
 
-let modeKompresiTersimpan =
-  null;
+  let modeKompresiTersimpan =
+    null;
 
-const BATAS_KOMPRES_OTOMATIS =
-  700 * 1024;
+  const BATAS_KOMPRES_OTOMATIS =
+    700 * 1024;
 
-const perluDikompres =
-  autoCompress &&
-  ukuranAsli >=
-    BATAS_KOMPRES_OTOMATIS;
+  const perluDikompres =
+    autoCompress &&
+    ukuranAsli >=
+      BATAS_KOMPRES_OTOMATIS;
 
-if (
-  autoCompress &&
-  !perluDikompres
-) {
+  if (
+    autoCompress &&
+    !perluDikompres
+  ) {
 
-statusKompresi =
-  "skipped";
+  statusKompresi =
+    "skipped";
 
-modeKompresiTersimpan =
-  null;
+  modeKompresiTersimpan =
+    null;
 
   if (sizeInfo) {
     sizeInfo.textContent =
@@ -10889,9 +10928,22 @@ if (
 
   let uploadedPagePath = null;
 
-  try {
+try {
 
-    const safeFileName =
+  const statusIngestionAktif =
+    await setStatusIngestionBuku(
+      bookId,
+      "ingesting"
+    );
+
+  if (!statusIngestionAktif) {
+
+    console.warn(
+      "Status ingestion belum berhasil diubah ke ingesting."
+    );
+  }
+
+  const safeFileName =
       pageFile.name.replace(
         /[^a-zA-Z0-9._-]/g,
         "_"
@@ -11774,11 +11826,24 @@ if (!bolehFinalisasi) {
 
   let finalStoragePath = null;
 
-  try {
+try {
 
-    const {
-      PDFDocument
-    } = PDFLib;
+  const statusProcessingAktif =
+    await setStatusIngestionBuku(
+      bookId,
+      "processing"
+    );
+
+  if (!statusProcessingAktif) {
+
+    console.warn(
+      "Status ingestion belum berhasil diubah ke processing."
+    );
+  }
+
+  const {
+    PDFDocument
+  } = PDFLib;
 
     const finalPdf =
       await PDFDocument.create();
@@ -13745,6 +13810,9 @@ async function catatErrorIngestionBuku(
   } = await db
     .from("book_ingestion_sessions")
     .update({
+      status:
+        "failed",
+
       last_error:
         pesanError
     })
@@ -13757,6 +13825,67 @@ async function catatErrorIngestionBuku(
 
     console.error(
       "Gagal mencatat error ingestion:",
+      updateError
+    );
+
+    return false;
+  }
+
+  return true;
+}
+
+async function setStatusIngestionBuku(
+  bookId,
+  status
+) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    return false;
+  }
+
+  const statusValid = [
+    "draft",
+    "ingesting",
+    "processing",
+    "ready",
+    "complete",
+    "failed",
+    "cancelled"
+  ];
+
+  if (
+    !statusValid.includes(status)
+  ) {
+    console.error(
+      "Status ingestion tidak valid:",
+      status
+    );
+
+    return false;
+  }
+
+  const {
+    error: updateError
+  } = await db
+    .from("book_ingestion_sessions")
+    .update({
+      status: status
+    })
+    .eq(
+      "book_id",
+      idBuku
+    );
+
+  if (updateError) {
+
+    console.error(
+      "Gagal memperbarui status ingestion:",
       updateError
     );
 
