@@ -9258,6 +9258,21 @@ try {
     syncError
   );
 
+  try {
+
+    await catatErrorIngestionBuku(
+      bookId,
+      syncError
+    );
+
+  } catch (trackingError) {
+
+    console.error(
+      "Pencatatan error ingestion gagal:",
+      trackingError
+    );
+  }
+
   ingestionDeleteSyncWarning =
     syncError;
 }
@@ -9291,6 +9306,21 @@ try {
       "Gagal menghapus halaman:",
       error
     );
+
+    try {
+
+      await catatErrorIngestionBuku(
+        bookId,
+        error
+      );
+
+    } catch (trackingError) {
+
+      console.error(
+        "Pencatatan error ingestion gagal:",
+        trackingError
+      );
+    }
 
     if (message) {
       message.textContent =
@@ -9828,6 +9858,21 @@ try {
     syncError
   );
 
+  try {
+
+    await catatErrorIngestionBuku(
+      bookId,
+      syncError
+    );
+
+  } catch (trackingError) {
+
+    console.error(
+      "Pencatatan error ingestion gagal:",
+      trackingError
+    );
+  }
+
   ingestionUndoSyncWarning =
     syncError;
 }
@@ -9865,6 +9910,21 @@ try {
       "Batal upload halaman gagal:",
       error
     );
+
+    try {
+
+      await catatErrorIngestionBuku(
+        aksi?.bookId,
+        error
+      );
+
+    } catch (trackingError) {
+
+      console.error(
+        "Pencatatan error ingestion gagal:",
+        trackingError
+      );
+    }
 
     message.textContent =
       "❌ " +
@@ -10319,6 +10379,21 @@ try {
     syncError
   );
 
+  try {
+
+    await catatErrorIngestionBuku(
+      bookId,
+      syncError
+    );
+
+  } catch (trackingError) {
+
+    console.error(
+      "Pencatatan error ingestion gagal:",
+      trackingError
+    );
+  }
+
   ingestionMoveSyncWarning =
     syncError;
 }
@@ -10353,6 +10428,21 @@ try {
       "Pindahkan halaman gagal:",
       error
     );
+
+    try {
+
+      await catatErrorIngestionBuku(
+        bookId,
+        error
+      );
+
+    } catch (trackingError) {
+
+      console.error(
+        "Pencatatan error ingestion gagal:",
+        trackingError
+      );
+    }
 
     if (message) {
       message.textContent =
@@ -11212,6 +11302,21 @@ try {
     syncError
   );
 
+  try {
+
+    await catatErrorIngestionBuku(
+      bookId,
+      syncError
+    );
+
+  } catch (trackingError) {
+
+    console.error(
+      "Pencatatan error ingestion gagal:",
+      trackingError
+    );
+  }
+
   ingestionSyncWarning =
     syncError;
 }
@@ -11242,6 +11347,21 @@ message.textContent =
       "Upload halaman buku gagal:",
       error
     );
+
+    try {
+
+      await catatErrorIngestionBuku(
+        bookId,
+        error
+      );
+
+    } catch (trackingError) {
+
+      console.error(
+        "Pencatatan error ingestion gagal:",
+        trackingError
+      );
+    }
 
     message.textContent =
       "❌ " +
@@ -11821,6 +11941,21 @@ try {
     syncError
   );
 
+  try {
+
+    await catatErrorIngestionBuku(
+      bookId,
+      syncError
+    );
+
+  } catch (trackingError) {
+
+    console.error(
+      "Pencatatan error ingestion gagal:",
+      trackingError
+    );
+  }
+
   ingestionFinalizeSyncWarning =
     syncError;
 }
@@ -11847,6 +11982,21 @@ try {
       "Pembuatan PDF final gagal:",
       error
     );
+
+    try {
+
+      await catatErrorIngestionBuku(
+        bookId,
+        error
+      );
+
+    } catch (trackingError) {
+
+      console.error(
+        "Pencatatan error ingestion gagal:",
+        trackingError
+      );
+    }
 
     message.textContent =
       "❌ " +
@@ -13566,6 +13716,54 @@ async function sinkronkanProgressIngestionBuku(
 
   return ingestionSession;
 
+}
+
+async function catatErrorIngestionBuku(
+  bookId,
+  error
+) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    return false;
+  }
+
+  const pesanError =
+    String(
+      error?.message ||
+      error ||
+      "Terjadi kesalahan ingestion."
+    ).trim();
+
+  const {
+    error: updateError
+  } = await db
+    .from("book_ingestion_sessions")
+    .update({
+      last_error:
+        pesanError
+    })
+    .eq(
+      "book_id",
+      idBuku
+    );
+
+  if (updateError) {
+
+    console.error(
+      "Gagal mencatat error ingestion:",
+      updateError
+    );
+
+    return false;
+  }
+
+  return true;
 }
 
 function updateModeUploadBuku() {
