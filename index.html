@@ -13225,14 +13225,110 @@ function getBookIngestionConfig(
 
     incremental: {
       sourceType: "incremental_upload",
-      sourceFormat: null,
+      sourceFormat: "pdf",
       targetFormat: "epub",
       epubLayout: "fixed"
     }
 
   };
 
-  return configs[uploadMode] || null;
+    return configs[uploadMode] || null;
+
+}
+
+async function buatBookIngestionSession(
+  bookId,
+  ingestionConfig,
+  options = {}
+) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku untuk sesi ingestion tidak valid."
+    );
+  }
+
+  if (!ingestionConfig) {
+    throw new Error(
+      "Konfigurasi ingestion tidak tersedia."
+    );
+  }
+
+  const status =
+    options.status || "draft";
+
+  const totalPages =
+    Number.isInteger(options.totalPages) &&
+    options.totalPages >= 0
+      ? options.totalPages
+      : 0;
+
+  const processedPages =
+    Number.isInteger(
+      options.processedPages
+    ) &&
+    options.processedPages >= 0
+      ? options.processedPages
+      : 0;
+
+  const {
+    data: ingestionSession,
+    error: ingestionError
+  } = await db
+    .from("book_ingestion_sessions")
+    .insert({
+      book_id: idBuku,
+
+      source_type:
+        ingestionConfig.sourceType,
+
+      source_format:
+        ingestionConfig.sourceFormat,
+
+      target_format:
+        ingestionConfig.targetFormat,
+
+      epub_layout:
+        ingestionConfig.epubLayout,
+
+      status: status,
+
+      total_pages:
+        totalPages,
+
+      processed_pages:
+        processedPages,
+
+      last_error: null
+    })
+    .select(`
+      id,
+      book_id,
+      source_type,
+      status
+    `)
+    .single();
+
+  if (
+    ingestionError ||
+    !ingestionSession
+  ) {
+    throw new Error(
+      "Pembuatan sesi ingestion gagal: " +
+      (
+        ingestionError?.message ||
+        "Data sesi tidak ditemukan."
+      )
+    );
+  }
+
+  return ingestionSession;
 
 }
 
@@ -13523,6 +13619,41 @@ if (
     );
   }
 
+  try {
+
+  await buatBookIngestionSession(
+    draftBook.id,
+    ingestionConfig,
+    {
+      status: "draft",
+      totalPages: totalPages,
+      processedPages: 0
+    }
+  );
+
+} catch (ingestionError) {
+
+  await db
+    .from("books")
+    .delete()
+    .eq(
+      "id",
+      draftBook.id
+    );
+
+  if (uploadedCoverPath) {
+    await db.storage
+      .from("book-covers")
+      .remove([
+        uploadedCoverPath
+      ]);
+  }
+
+  uploadedCoverPath = null;
+
+  throw ingestionError;
+}
+
   document
     .getElementById(
       "book-upload-form"
@@ -13642,24 +13773,79 @@ if (
         coverPublicData.publicUrl;
     }
 
-    const { error: insertError } =
-      await db
-        .from("books")
-        .insert({
-          title: title,
-          author: author || null,
-          category: category || null,
-          description: description || null,
-          file_url: fileUrl,
-          cover_url: coverUrl
-        });
+    const {
+  data: insertedBook,
+  error: insertError
+} = await db
+  .from("books")
+  .insert({
+    title: title,
+    author: author || null,
+    category: category || null,
+    description:
+      description || null,
+    file_url: fileUrl,
+    cover_url: coverUrl
+  })
+  .select("id")
+  .single();
 
-    if (insertError) {
-      throw new Error(
-        "Penyimpanan data buku gagal: " +
-        insertError.message
-      );
+if (
+  insertError ||
+  !insertedBook
+) {
+  throw new Error(
+    "Penyimpanan data buku gagal: " +
+    (
+      insertError?.message ||
+      "ID buku tidak ditemukan."
+    )
+  );
+}
+
+try {
+
+  await buatBookIngestionSession(
+    insertedBook.id,
+    ingestionConfig,
+    {
+      status: "ready",
+      totalPages: 0,
+      processedPages: 0
     }
+  );
+
+} catch (ingestionError) {
+
+  await db
+    .from("books")
+    .delete()
+    .eq(
+      "id",
+      insertedBook.id
+    );
+
+  if (uploadedBookPath) {
+    await db.storage
+      .from("book-files")
+      .remove([
+        uploadedBookPath
+      ]);
+  }
+
+  if (uploadedCoverPath) {
+    await db.storage
+      .from("book-covers")
+      .remove([
+        uploadedCoverPath
+      ]);
+  }
+
+  uploadedBookPath = null;
+  uploadedCoverPath = null;
+
+  throw ingestionError;
+}
 
     document
       .getElementById("book-upload-form")
