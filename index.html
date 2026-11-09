@@ -4242,6 +4242,8 @@ body[data-ui-style="minimal"] .read-button:hover {
 
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
 <script>
 
 const alphabet =
@@ -9779,6 +9781,20 @@ async function pilihHapusHalaman(pageNumber) {
         book.file_url
     };
 
+try {
+
+  await resetMetadataOutputEpub(
+    bookId
+  );
+
+} catch (resetOutputError) {
+
+  console.warn(
+    "Penghapusan halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
+    resetOutputError
+  );
+}    
+
     let ingestionDeleteSyncWarning = null;
 
 try {
@@ -10402,6 +10418,20 @@ async function batalUploadHalaman() {
     const bookId =
       aksi.bookId;
 
+    try {
+
+      await resetMetadataOutputEpub(
+        bookId
+      );
+
+    } catch (resetOutputError) {
+
+      console.warn(
+        "Undo halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
+        resetOutputError
+      );
+    }
+
     let ingestionUndoSyncWarning = null;
 
 try {
@@ -10944,6 +10974,20 @@ if (!statusIngestionAktif) {
 
     if (pageNumberInput) {
       pageNumberInput.value = "";
+    }
+
+    try {
+
+      await resetMetadataOutputEpub(
+        bookId
+      );
+
+    } catch (resetOutputError) {
+
+      console.warn(
+        "Pemindahan halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
+        resetOutputError
+      );
     }
 
     let ingestionMoveSyncWarning = null;
@@ -11884,11 +11928,43 @@ if (sedangMenggantiHalaman) {
 
 }
 
+if (!sedangMenyisipkanHalaman) {
+
+  try {
+
+    await resetMetadataOutputEpub(
+      bookId
+    );
+
+  } catch (resetOutputError) {
+
+    console.warn(
+      "Perubahan halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
+      resetOutputError
+    );
+  }
+}
+
 if (sedangMenyisipkanHalaman) {
+
   modeSisipHalamanAktif = false;
 
   if (pageNumberInput) {
     delete pageNumberInput.dataset.mode;
+  }
+
+  try {
+
+    await resetMetadataOutputEpub(
+      bookId
+    );
+
+  } catch (resetOutputError) {
+
+    console.warn(
+      "Penyisipan halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
+      resetOutputError
+    );
   }
 }
 
@@ -14112,6 +14188,1806 @@ return;
   tutupAdmin();
   bukaAdminPanel();
 }, 800);
+}
+
+function escapeXmlEpub(value = "") {
+
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+}
+
+async function buatEpubSkeleton({
+  bookId,
+  title = "Buku",
+  language = "id"
+}) {
+
+  if (
+    typeof JSZip === "undefined"
+  ) {
+    throw new Error(
+      "JSZip belum tersedia."
+    );
+  }
+
+  const zip =
+    new JSZip();
+
+  const safeTitle =
+    escapeXmlEpub(title);
+
+  const identifier =
+    `urn:perpustakaan-nawir-pakaja:${bookId}`;
+
+  zip.file(
+    "mimetype",
+    "application/epub+zip",
+    {
+      compression: "STORE"
+    }
+  );
+
+  zip.file(
+    "META-INF/container.xml",
+`<?xml version="1.0" encoding="UTF-8"?>
+<container
+  version="1.0"
+  xmlns="urn:oasis:names:tc:opendocument:xmlns:container"
+>
+  <rootfiles>
+    <rootfile
+      full-path="EPUB/package.opf"
+      media-type="application/oebps-package+xml"
+    />
+  </rootfiles>
+</container>`
+  );
+
+  zip.file(
+    "EPUB/nav.xhtml",
+`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:epub="http://www.idpf.org/2007/ops"
+  lang="${language}"
+>
+<head>
+  <meta charset="UTF-8"/>
+  <title>Daftar Isi</title>
+</head>
+<body>
+  <nav epub:type="toc">
+    <h1>Daftar Isi</h1>
+    <ol>
+      <li>
+        <a href="Text/start.xhtml">
+          ${safeTitle}
+        </a>
+      </li>
+    </ol>
+  </nav>
+</body>
+</html>`
+  );
+
+  zip.file(
+    "EPUB/Text/start.xhtml",
+`<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  lang="${language}"
+>
+<head>
+  <meta charset="UTF-8"/>
+  <title>${safeTitle}</title>
+</head>
+<body>
+  <h1>${safeTitle}</h1>
+  <p>EPUB sedang dipersiapkan.</p>
+</body>
+</html>`
+  );
+
+  zip.file(
+    "EPUB/package.opf",
+`<?xml version="1.0" encoding="UTF-8"?>
+<package
+  xmlns="http://www.idpf.org/2007/opf"
+  version="3.0"
+  unique-identifier="book-id"
+>
+  <metadata
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+  >
+    <dc:identifier id="book-id">
+      ${identifier}
+    </dc:identifier>
+
+    <dc:title>
+      ${safeTitle}
+    </dc:title>
+
+    <dc:language>
+      ${language}
+    </dc:language>
+
+    <meta
+      property="dcterms:modified"
+    >${new Date().toISOString().replace(/\.\d{3}Z$/, "Z")}</meta>
+  </metadata>
+
+  <manifest>
+    <item
+      id="nav"
+      href="nav.xhtml"
+      media-type="application/xhtml+xml"
+      properties="nav"
+    />
+
+    <item
+      id="start"
+      href="Text/start.xhtml"
+      media-type="application/xhtml+xml"
+    />
+  </manifest>
+
+  <spine>
+    <itemref idref="start"/>
+  </spine>
+</package>`
+  );
+
+  return zip;
+}
+
+async function buatEpubBlobSkeleton({
+  bookId,
+  title = "Buku",
+  language = "id"
+}) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku untuk EPUB tidak valid."
+    );
+  }
+
+  const zip =
+    await buatEpubSkeleton({
+      bookId: idBuku,
+      title,
+      language
+    });
+
+  const blob =
+    await zip.generateAsync({
+      type: "blob",
+      mimeType:
+        "application/epub+zip",
+      compression: "DEFLATE",
+      compressionOptions: {
+        level: 6
+      }
+    });
+
+  if (
+    !(blob instanceof Blob) ||
+    blob.size < 1
+  ) {
+    throw new Error(
+      "Blob EPUB gagal dibuat."
+    );
+  }
+
+  return blob;
+}
+
+async function validasiEpubSkeleton(
+  epubBlob
+) {
+
+  if (
+    !(epubBlob instanceof Blob) ||
+    epubBlob.size < 1
+  ) {
+    return {
+      valid: false,
+      message:
+        "Blob EPUB kosong atau tidak valid."
+    };
+  }
+
+  if (
+    typeof JSZip === "undefined"
+  ) {
+    return {
+      valid: false,
+      message:
+        "JSZip belum tersedia."
+    };
+  }
+
+  const zip =
+    await JSZip.loadAsync(
+      epubBlob
+    );
+
+  const fileWajib = [
+    "mimetype",
+    "META-INF/container.xml",
+    "EPUB/package.opf",
+    "EPUB/nav.xhtml",
+    "EPUB/Text/start.xhtml"
+  ];
+
+  const fileHilang =
+    fileWajib.filter(
+      (path) =>
+        !zip.file(path)
+    );
+
+  if (fileHilang.length) {
+
+    return {
+      valid: false,
+      message:
+        "Struktur EPUB belum lengkap: " +
+        fileHilang.join(", ")
+    };
+  }
+
+  const mimetype =
+    (
+      await zip
+        .file("mimetype")
+        .async("string")
+    ).trim();
+
+  if (
+    mimetype !==
+    "application/epub+zip"
+  ) {
+
+    return {
+      valid: false,
+      message:
+        "Isi file mimetype EPUB tidak sesuai."
+    };
+  }
+
+  const containerXml =
+    await zip
+      .file(
+        "META-INF/container.xml"
+      )
+      .async("string");
+
+  if (
+    !containerXml.includes(
+      'full-path="EPUB/package.opf"'
+    )
+  ) {
+
+    return {
+      valid: false,
+      message:
+        "container.xml tidak menunjuk ke package.opf."
+    };
+  }
+
+  const packageOpf =
+    await zip
+      .file(
+        "EPUB/package.opf"
+      )
+      .async("string");
+
+  if (
+    !packageOpf.includes(
+      'version="3.0"'
+    ) ||
+    !packageOpf.includes(
+      'properties="nav"'
+    )
+  ) {
+
+    return {
+      valid: false,
+      message:
+        "Metadata package.opf EPUB belum valid."
+    };
+  }
+
+  return {
+    valid: true,
+    message:
+      "Struktur dasar EPUB valid."
+  };
+}
+
+async function siapkanEpubSkeleton({
+  bookId,
+  title = "Buku",
+  language = "id"
+}) {
+
+  const epubBlob =
+    await buatEpubBlobSkeleton({
+      bookId,
+      title,
+      language
+    });
+
+  const hasilValidasi =
+    await validasiEpubSkeleton(
+      epubBlob
+    );
+
+  if (!hasilValidasi.valid) {
+    throw new Error(
+      hasilValidasi.message
+    );
+  }
+
+  return {
+    blob: epubBlob,
+    size: epubBlob.size,
+    mimeType:
+      "application/epub+zip",
+    validation:
+      hasilValidasi
+  };
+}
+
+async function ubahPdfHalamanKeGambarEpub({
+  fileUrl,
+  scale = 1.5,
+  quality = 0.88
+}) {
+
+  if (!fileUrl) {
+    throw new Error(
+      "URL halaman PDF tidak tersedia."
+    );
+  }
+
+  const pdfjsLib =
+    await muatPdfJsKompresi();
+
+  const response =
+    await fetch(fileUrl);
+
+  if (!response.ok) {
+    throw new Error(
+      "File halaman PDF gagal diambil."
+    );
+  }
+
+  const sourceBytes =
+    new Uint8Array(
+      await response.arrayBuffer()
+    );
+
+  const loadingTask =
+    pdfjsLib.getDocument({
+      data: sourceBytes
+    });
+
+  const pdf =
+    await loadingTask.promise;
+
+  if (pdf.numPages !== 1) {
+    throw new Error(
+      `PDF halaman berisi ${pdf.numPages} halaman. EPUB hanya menerima satu halaman per slot.`
+    );
+  }
+
+  const page =
+    await pdf.getPage(1);
+
+  const viewport =
+    page.getViewport({
+      scale
+    });
+
+  const canvas =
+    document.createElement(
+      "canvas"
+    );
+
+  const context =
+    canvas.getContext(
+      "2d",
+      {
+        alpha: false
+      }
+    );
+
+  if (!context) {
+    throw new Error(
+      "Canvas EPUB tidak dapat dibuat."
+    );
+  }
+
+  canvas.width =
+    Math.ceil(
+      viewport.width
+    );
+
+  canvas.height =
+    Math.ceil(
+      viewport.height
+    );
+
+  context.fillStyle =
+    "#ffffff";
+
+  context.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  await page.render({
+    canvasContext: context,
+    viewport
+  }).promise;
+
+  const imageBlob =
+    await canvasKeBlob(
+      canvas,
+      "image/jpeg",
+      quality
+    );
+
+  if (
+    !(imageBlob instanceof Blob) ||
+    imageBlob.size < 1
+  ) {
+    throw new Error(
+      "Gambar halaman EPUB gagal dibuat."
+    );
+  }
+
+  return {
+    blob: imageBlob,
+    width: canvas.width,
+    height: canvas.height,
+    mediaType: "image/jpeg"
+  };
+}
+
+function buatXhtmlHalamanEpub({
+  pageNumber,
+  imageFileName,
+  width,
+  height,
+  title = "Halaman"
+}) {
+
+  const nomorHalaman =
+    Number(pageNumber);
+
+  const lebar =
+    Number(width);
+
+  const tinggi =
+    Number(height);
+
+  if (
+    !Number.isInteger(nomorHalaman) ||
+    nomorHalaman < 1 ||
+    !imageFileName ||
+    !lebar ||
+    !tinggi
+  ) {
+    throw new Error(
+      "Data halaman EPUB tidak valid."
+    );
+  }
+
+  const safeTitle =
+    escapeXmlEpub(
+      `${title} ${nomorHalaman}`
+    );
+
+  const safeImageFileName =
+    escapeXmlEpub(
+      imageFileName
+    );
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  lang="id"
+>
+<head>
+  <meta charset="UTF-8"/>
+  <meta
+    name="viewport"
+    content="width=${lebar}, height=${tinggi}"
+  />
+  <title>${safeTitle}</title>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: ${lebar}px;
+      height: ${tinggi}px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    img {
+      display: block;
+      width: ${lebar}px;
+      height: ${tinggi}px;
+    }
+  </style>
+</head>
+
+<body>
+  <img
+    src="../Images/${safeImageFileName}"
+    alt="${safeTitle}"
+    width="${lebar}"
+    height="${tinggi}"
+  />
+</body>
+</html>`;
+}
+
+function tambahkanHalamanKeEpub({
+  zip,
+  pageNumber,
+  imageBlob,
+  width,
+  height,
+  title = "Halaman"
+}) {
+
+  const nomorHalaman =
+    Number(pageNumber);
+
+  if (
+    !zip ||
+    !Number.isInteger(nomorHalaman) ||
+    nomorHalaman < 1 ||
+    !(imageBlob instanceof Blob)
+  ) {
+    throw new Error(
+      "Data halaman untuk paket EPUB tidak valid."
+    );
+  }
+
+  const nomorFile =
+    String(nomorHalaman)
+      .padStart(
+        4,
+        "0"
+      );
+
+  const imageFileName =
+    `page-${nomorFile}.jpg`;
+
+  const xhtmlFileName =
+    `page-${nomorFile}.xhtml`;
+
+  const xhtml =
+    buatXhtmlHalamanEpub({
+      pageNumber:
+        nomorHalaman,
+      imageFileName,
+      width,
+      height,
+      title
+    });
+
+  zip.file(
+    `EPUB/Images/${imageFileName}`,
+    imageBlob
+  );
+
+  zip.file(
+    `EPUB/Text/${xhtmlFileName}`,
+    xhtml
+  );
+
+  return {
+    pageNumber:
+      nomorHalaman,
+
+    imageFileName,
+
+    imageHref:
+      `Images/${imageFileName}`,
+
+    imageId:
+      `image-${nomorFile}`,
+
+    xhtmlFileName,
+
+    xhtmlHref:
+      `Text/${xhtmlFileName}`,
+
+    xhtmlId:
+      `page-${nomorFile}`,
+
+    width:
+      Number(width),
+
+    height:
+      Number(height)
+  };
+}
+
+function buatPackageOpfEpubFixed({
+  bookId,
+  title = "Buku",
+  language = "id",
+  pages = []
+}) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1 ||
+    !Array.isArray(pages) ||
+    pages.length < 1
+  ) {
+    throw new Error(
+      "Metadata package EPUB tidak valid."
+    );
+  }
+
+  const safeTitle =
+    escapeXmlEpub(title);
+
+  const identifier =
+    `urn:perpustakaan-nawir-pakaja:${idBuku}`;
+
+  const manifestPages =
+    pages
+      .map(
+        (page) => `
+    <item
+      id="${page.imageId}"
+      href="${page.imageHref}"
+      media-type="image/jpeg"
+    />
+
+    <item
+      id="${page.xhtmlId}"
+      href="${page.xhtmlHref}"
+      media-type="application/xhtml+xml"
+    />`
+      )
+      .join("");
+
+  const spinePages =
+    pages
+      .map(
+        (page) => `
+    <itemref
+      idref="${page.xhtmlId}"
+    />`
+      )
+      .join("");
+
+  const modified =
+    new Date()
+      .toISOString()
+      .replace(
+        /\.\d{3}Z$/,
+        "Z"
+      );
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<package
+  xmlns="http://www.idpf.org/2007/opf"
+  version="3.0"
+  unique-identifier="book-id"
+>
+  <metadata
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+  >
+    <dc:identifier id="book-id">
+      ${identifier}
+    </dc:identifier>
+
+    <dc:title>
+      ${safeTitle}
+    </dc:title>
+
+    <dc:language>
+      ${language}
+    </dc:language>
+
+    <meta
+      property="dcterms:modified"
+    >${modified}</meta>
+
+    <meta
+      property="rendition:layout"
+    >pre-paginated</meta>
+
+    <meta
+      property="rendition:orientation"
+    >auto</meta>
+
+    <meta
+      property="rendition:spread"
+    >auto</meta>
+  </metadata>
+
+  <manifest>
+    <item
+      id="nav"
+      href="nav.xhtml"
+      media-type="application/xhtml+xml"
+      properties="nav"
+    />
+    ${manifestPages}
+  </manifest>
+
+  <spine>
+    ${spinePages}
+  </spine>
+</package>`;
+}
+
+function buatNavXhtmlEpubFixed({
+  title = "Buku",
+  language = "id",
+  pages = []
+}) {
+
+  if (
+    !Array.isArray(pages) ||
+    pages.length < 1
+  ) {
+    throw new Error(
+      "Daftar halaman EPUB tidak tersedia."
+    );
+  }
+
+  const safeTitle =
+    escapeXmlEpub(title);
+
+  const daftarHalaman =
+    pages
+      .map(
+        (page) => `
+      <li>
+        <a href="${page.xhtmlHref}">
+          Halaman ${page.pageNumber}
+        </a>
+      </li>`
+      )
+      .join("");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:epub="http://www.idpf.org/2007/ops"
+  lang="${language}"
+>
+<head>
+  <meta charset="UTF-8"/>
+  <title>Daftar Isi - ${safeTitle}</title>
+</head>
+
+<body>
+
+  <nav epub:type="toc">
+    <h1>${safeTitle}</h1>
+
+    <ol>
+      ${daftarHalaman}
+    </ol>
+  </nav>
+
+</body>
+</html>`;
+}
+
+async function buatEpubFixedDariBookPages({
+  bookId,
+  language = "id"
+}) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku untuk EPUB tidak valid."
+    );
+  }
+
+  const hasilIntegritas =
+    await validasiIntegritasHalaman(
+      idBuku
+    );
+
+  if (!hasilIntegritas.valid) {
+    throw new Error(
+      "Integritas halaman EPUB tidak valid: " +
+      hasilIntegritas.message
+    );
+  }
+
+  const {
+    data: book,
+    error: bookError
+  } = await db
+    .from("books")
+    .select(`
+      id,
+      title,
+      total_pages,
+      upload_mode
+    `)
+    .eq(
+      "id",
+      idBuku
+    )
+    .single();
+
+  if (
+    bookError ||
+    !book
+  ) {
+    throw new Error(
+      bookError?.message ||
+      "Data buku EPUB tidak ditemukan."
+    );
+  }
+
+  if (
+    book.upload_mode !==
+    "incremental"
+  ) {
+    throw new Error(
+      "Builder EPUB ini hanya menerima buku Upload Bertahap."
+    );
+  }
+
+  const {
+    data: pages,
+    error: pagesError
+  } = await db
+    .from("book_pages")
+    .select(`
+      page_number,
+      file_url
+    `)
+    .eq(
+      "book_id",
+      idBuku
+    )
+    .order(
+      "page_number",
+      {
+        ascending: true
+      }
+    );
+
+  if (pagesError) {
+    throw new Error(
+      "Gagal mengambil halaman EPUB: " +
+      pagesError.message
+    );
+  }
+
+  const totalHalaman =
+    Number(
+      book.total_pages || 0
+    );
+
+  if (
+    !Array.isArray(pages) ||
+    pages.length !== totalHalaman
+  ) {
+    throw new Error(
+      "Jumlah halaman EPUB tidak sesuai dengan total halaman buku."
+    );
+  }
+
+  const zip =
+    await buatEpubSkeleton({
+      bookId: idBuku,
+      title:
+        book.title || "Buku",
+      language
+    });
+
+  /*
+    Skeleton memakai start.xhtml
+    sebagai placeholder.
+    Pada EPUB nyata file ini tidak
+    diperlukan lagi.
+  */
+  zip.remove(
+    "EPUB/Text/start.xhtml"
+  );
+
+  const halamanEpub = [];
+
+  for (
+    const page of pages
+  ) {
+
+    const nomorHalaman =
+      Number(
+        page.page_number
+      );
+
+    if (!page.file_url) {
+      throw new Error(
+        `URL Halaman ${nomorHalaman} tidak tersedia.`
+      );
+    }
+
+    const gambar =
+      await ubahPdfHalamanKeGambarEpub({
+        fileUrl:
+          page.file_url
+      });
+
+    const metadataHalaman =
+      tambahkanHalamanKeEpub({
+        zip,
+        pageNumber:
+          nomorHalaman,
+        imageBlob:
+          gambar.blob,
+        width:
+          gambar.width,
+        height:
+          gambar.height,
+        title:
+          "Halaman"
+      });
+
+    halamanEpub.push(
+      metadataHalaman
+    );
+  }
+
+  if (
+    halamanEpub.length !==
+    totalHalaman
+  ) {
+    throw new Error(
+      "Jumlah halaman hasil konversi EPUB tidak sesuai."
+    );
+  }
+
+  zip.file(
+    "EPUB/nav.xhtml",
+    buatNavXhtmlEpubFixed({
+      title:
+        book.title || "Buku",
+      language,
+      pages:
+        halamanEpub
+    })
+  );
+
+  zip.file(
+    "EPUB/package.opf",
+    buatPackageOpfEpubFixed({
+      bookId:
+        idBuku,
+      title:
+        book.title || "Buku",
+      language,
+      pages:
+        halamanEpub
+    })
+  );
+
+  const epubBlob =
+    await zip.generateAsync({
+      type: "blob",
+      mimeType:
+        "application/epub+zip",
+      compression:
+        "DEFLATE",
+      compressionOptions: {
+        level: 6
+      }
+    });
+
+  if (
+    !(epubBlob instanceof Blob) ||
+    epubBlob.size < 1
+  ) {
+    throw new Error(
+      "File EPUB Fixed Layout gagal dibuat."
+    );
+  }
+
+  const hasilValidasiEpub =
+  await validasiEpubFixedLayout({
+    epubBlob,
+    expectedPages:
+      halamanEpub.length
+  });
+
+if (!hasilValidasiEpub.valid) {
+  throw new Error(
+    hasilValidasiEpub.message
+  );
+}
+
+  return {
+  blob:
+    epubBlob,
+
+  size:
+    epubBlob.size,
+
+  mimeType:
+    "application/epub+zip",
+
+  bookId:
+    idBuku,
+
+  title:
+    book.title || "Buku",
+
+  totalPages:
+    halamanEpub.length,
+
+  pages:
+    halamanEpub,
+
+  validation:
+    hasilValidasiEpub
+};
+
+}
+
+async function validasiEpubFixedLayout({
+  epubBlob,
+  expectedPages
+}) {
+
+  const totalHalaman =
+    Number(expectedPages);
+
+  if (
+    !(epubBlob instanceof Blob) ||
+    epubBlob.size < 1
+  ) {
+    return {
+      valid: false,
+      message:
+        "Blob EPUB Fixed Layout kosong atau tidak valid."
+    };
+  }
+
+  if (
+    !Number.isInteger(totalHalaman) ||
+    totalHalaman < 1
+  ) {
+    return {
+      valid: false,
+      message:
+        "Jumlah halaman EPUB yang diharapkan tidak valid."
+    };
+  }
+
+  if (
+    typeof JSZip === "undefined"
+  ) {
+    return {
+      valid: false,
+      message:
+        "JSZip belum tersedia."
+    };
+  }
+
+  const zip =
+    await JSZip.loadAsync(
+      epubBlob
+    );
+
+  const fileWajib = [
+    "mimetype",
+    "META-INF/container.xml",
+    "EPUB/package.opf",
+    "EPUB/nav.xhtml"
+  ];
+
+  const fileHilang =
+    fileWajib.filter(
+      (path) =>
+        !zip.file(path)
+    );
+
+  if (fileHilang.length) {
+
+    return {
+      valid: false,
+      message:
+        "Struktur EPUB Fixed Layout belum lengkap: " +
+        fileHilang.join(", ")
+    };
+  }
+
+  const mimetype =
+    (
+      await zip
+        .file("mimetype")
+        .async("string")
+    ).trim();
+
+  if (
+    mimetype !==
+    "application/epub+zip"
+  ) {
+    return {
+      valid: false,
+      message:
+        "Mimetype EPUB Fixed Layout tidak sesuai."
+    };
+  }
+
+  if (
+    zip.file(
+      "EPUB/Text/start.xhtml"
+    )
+  ) {
+    return {
+      valid: false,
+      message:
+        "Placeholder start.xhtml masih terdapat pada EPUB final."
+    };
+  }
+
+  const fileNames =
+    Object.keys(
+      zip.files
+    );
+
+  const imageFiles =
+    fileNames.filter(
+      (path) =>
+        /^EPUB\/Images\/page-\d{4}\.jpg$/.test(
+          path
+        )
+    );
+
+  const xhtmlFiles =
+    fileNames.filter(
+      (path) =>
+        /^EPUB\/Text\/page-\d{4}\.xhtml$/.test(
+          path
+        )
+    );
+
+  if (
+    imageFiles.length !==
+    totalHalaman
+  ) {
+    return {
+      valid: false,
+      message:
+        `Jumlah gambar EPUB ${imageFiles.length}, seharusnya ${totalHalaman}.`
+    };
+  }
+
+  if (
+    xhtmlFiles.length !==
+    totalHalaman
+  ) {
+    return {
+      valid: false,
+      message:
+        `Jumlah XHTML EPUB ${xhtmlFiles.length}, seharusnya ${totalHalaman}.`
+    };
+  }
+
+  const packageOpf =
+    await zip
+      .file(
+        "EPUB/package.opf"
+      )
+      .async("string");
+
+  if (
+    !packageOpf.includes(
+      'property="rendition:layout"'
+    ) ||
+    !packageOpf.includes(
+      ">pre-paginated</meta>"
+    )
+  ) {
+    return {
+      valid: false,
+      message:
+        "package.opf belum ditandai sebagai EPUB Fixed Layout."
+    };
+  }
+
+  for (
+    let nomor = 1;
+    nomor <= totalHalaman;
+    nomor++
+  ) {
+
+    const nomorFile =
+      String(nomor)
+        .padStart(
+          4,
+          "0"
+        );
+
+    const imagePath =
+      `EPUB/Images/page-${nomorFile}.jpg`;
+
+    const xhtmlPath =
+      `EPUB/Text/page-${nomorFile}.xhtml`;
+
+    if (
+      !zip.file(imagePath) ||
+      !zip.file(xhtmlPath)
+    ) {
+      return {
+        valid: false,
+        message:
+          `Pasangan file Halaman ${nomor} tidak lengkap.`
+      };
+    }
+
+    const xhtml =
+      await zip
+        .file(xhtmlPath)
+        .async("string");
+
+    if (
+      !xhtml.includes(
+        `../Images/page-${nomorFile}.jpg`
+      )
+    ) {
+      return {
+        valid: false,
+        message:
+          `XHTML Halaman ${nomor} tidak menunjuk ke gambar yang benar.`
+      };
+    }
+  }
+
+  const navXhtml =
+    await zip
+      .file(
+        "EPUB/nav.xhtml"
+      )
+      .async("string");
+
+  const jumlahLinkNav =
+    (
+      navXhtml.match(
+        /Text\/page-\d{4}\.xhtml/g
+      ) || []
+    ).length;
+
+  if (
+    jumlahLinkNav !==
+    totalHalaman
+  ) {
+    return {
+      valid: false,
+      message:
+        `Navigasi EPUB memiliki ${jumlahLinkNav} halaman, seharusnya ${totalHalaman}.`
+    };
+  }
+
+  return {
+    valid: true,
+    message:
+      `EPUB Fixed Layout valid: ${totalHalaman} halaman.`
+  };
+}
+
+async function uploadEpubOutput({
+  bookId,
+  epubBlob
+}) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku output EPUB tidak valid."
+    );
+  }
+
+  if (
+    !(epubBlob instanceof Blob) ||
+    epubBlob.size < 1
+  ) {
+    throw new Error(
+      "Blob output EPUB tidak valid."
+    );
+  }
+
+  const {
+    data: { user },
+    error: userError
+  } =
+    await db.auth.getUser();
+
+  if (
+    userError ||
+    !user
+  ) {
+    throw new Error(
+      "Admin belum login."
+    );
+  }
+
+  const storagePath =
+    `${user.id}/incremental/${idBuku}/output-${Date.now()}.epub`;
+
+  const {
+    error: uploadError
+  } =
+    await db.storage
+      .from(
+        "book-files"
+      )
+      .upload(
+        storagePath,
+        epubBlob,
+        {
+          cacheControl:
+            "3600",
+
+          upsert:
+            false,
+
+          contentType:
+            "application/epub+zip"
+        }
+      );
+
+  if (uploadError) {
+    throw new Error(
+      "Upload EPUB gagal: " +
+      uploadError.message
+    );
+  }
+
+  const {
+    data: publicData
+  } =
+    db.storage
+      .from(
+        "book-files"
+      )
+      .getPublicUrl(
+        storagePath
+      );
+
+  const publicUrl =
+    publicData?.publicUrl;
+
+  if (!publicUrl) {
+
+  const {
+    error: cleanupError
+  } =
+    await db.storage
+      .from(
+        "book-files"
+      )
+      .remove([
+        storagePath
+      ]);
+
+  if (cleanupError) {
+    console.error(
+      "Pembersihan EPUB tanpa URL gagal:",
+      cleanupError
+    );
+  }
+
+  throw new Error(
+    "URL publik EPUB gagal dibuat."
+  );
+}
+
+  return {
+    storagePath,
+    publicUrl,
+    size:
+      epubBlob.size,
+    format:
+      "epub"
+  };
+}
+
+async function simpanMetadataOutputEpub({
+  bookId,
+  output
+}) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku metadata EPUB tidak valid."
+    );
+  }
+
+  if (
+    !output ||
+    output.format !== "epub" ||
+    !output.publicUrl ||
+    !output.storagePath ||
+    !Number.isFinite(
+      Number(output.size)
+    ) ||
+    Number(output.size) < 1
+  ) {
+    throw new Error(
+      "Metadata output EPUB tidak valid."
+    );
+  }
+
+  const outputCreatedAt =
+    new Date().toISOString();
+
+  const {
+    data: session,
+    error: updateError
+  } = await db
+    .from(
+      "book_ingestion_sessions"
+    )
+    .update({
+      output_format:
+        "epub",
+
+      output_url:
+        output.publicUrl,
+
+      output_storage_path:
+        output.storagePath,
+
+      output_size:
+        Number(output.size),
+
+      output_created_at:
+        outputCreatedAt
+    })
+    .eq(
+      "book_id",
+      idBuku
+    )
+    .select(`
+      id,
+      book_id,
+      output_format,
+      output_url,
+      output_storage_path,
+      output_size,
+      output_created_at
+    `)
+    .single();
+
+  if (
+    updateError ||
+    !session
+  ) {
+    throw new Error(
+      "Metadata output EPUB gagal disimpan: " +
+      (
+        updateError?.message ||
+        "Session ingestion tidak ditemukan."
+      )
+    );
+  }
+
+  return session;
+}
+
+async function prosesOutputEpub({
+  bookId,
+  language = "id"
+}) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku proses EPUB tidak valid."
+    );
+  }
+
+  const outputSebelumnya =
+    await ambilOutputEpubSebelumnya(
+      idBuku
+    );
+
+  let outputUpload = null;
+
+  try {
+
+    const hasilEpub =
+      await buatEpubFixedDariBookPages({
+        bookId:
+          idBuku,
+        language
+      });
+
+    outputUpload =
+      await uploadEpubOutput({
+        bookId:
+          idBuku,
+        epubBlob:
+          hasilEpub.blob
+      });
+
+    const session =
+      await simpanMetadataOutputEpub({
+        bookId:
+          idBuku,
+        output:
+          outputUpload
+      });
+
+    let outputLamaDihapus =
+      false;
+
+    if (
+      outputSebelumnya?.storagePath &&
+      outputSebelumnya.storagePath !==
+        outputUpload.storagePath
+    ) {
+
+      const {
+        error: hapusLamaError
+      } =
+        await db.storage
+          .from(
+            "book-files"
+          )
+          .remove([
+            outputSebelumnya.storagePath
+          ]);
+
+      if (hapusLamaError) {
+
+        console.warn(
+          "EPUB baru berhasil, tetapi file EPUB lama gagal dihapus:",
+          hapusLamaError
+        );
+
+      } else {
+
+        outputLamaDihapus =
+          true;
+
+      }
+    }
+
+    return {
+      epub:
+        hasilEpub,
+
+      output:
+        outputUpload,
+
+      session,
+
+      previousOutput:
+        outputSebelumnya,
+
+      previousOutputDeleted:
+        outputLamaDihapus
+    };
+
+  } catch (error) {
+
+    if (
+      outputUpload?.storagePath
+    ) {
+
+      const {
+        error: rollbackError
+      } =
+        await db.storage
+          .from(
+            "book-files"
+          )
+          .remove([
+            outputUpload.storagePath
+          ]);
+
+      if (rollbackError) {
+        console.error(
+          "Rollback file EPUB gagal:",
+          rollbackError
+        );
+      }
+    }
+
+    throw error;
+  }
+}
+
+async function ambilOutputEpubSebelumnya(
+  bookId
+) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku output sebelumnya tidak valid."
+    );
+  }
+
+  const {
+    data: session,
+    error: sessionError
+  } = await db
+    .from(
+      "book_ingestion_sessions"
+    )
+    .select(`
+      id,
+      book_id,
+      output_format,
+      output_url,
+      output_storage_path,
+      output_size,
+      output_created_at
+    `)
+    .eq(
+      "book_id",
+      idBuku
+    )
+    .single();
+
+  if (
+    sessionError ||
+    !session
+  ) {
+    throw new Error(
+      "Session ingestion tidak ditemukan: " +
+      (
+        sessionError?.message ||
+        "Data session kosong."
+      )
+    );
+  }
+
+  if (
+  !session.output_storage_path
+) {
+  return null;
+}
+
+  return {
+  format:
+    session.output_format || "epub",
+
+  publicUrl:
+    session.output_url,
+
+  storagePath:
+    session.output_storage_path,
+
+  size:
+    Number(
+      session.output_size || 0
+    ),
+
+  createdAt:
+    session.output_created_at,
+
+  stale:
+    session.output_format !== "epub"
+};
+
+}
+
+async function resetMetadataOutputEpub(
+  bookId
+) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku reset output EPUB tidak valid."
+    );
+  }
+
+  const {
+    error: resetError
+  } = await db
+    .from(
+      "book_ingestion_sessions"
+    )
+    .update({
+      /*
+        output_format = null
+        menandakan output lama
+        sudah tidak lagi aktif/current.
+
+        Lokasi file lama sengaja
+        DIPERTAHANKAN agar nanti
+        dapat dibersihkan setelah
+        EPUB baru berhasil dibuat.
+      */
+      output_format:
+        null,
+
+      output_created_at:
+        null
+    })
+    .eq(
+      "book_id",
+      idBuku
+    );
+
+  if (resetError) {
+    throw new Error(
+      "Metadata output EPUB gagal direset: " +
+      resetError.message
+    );
+  }
+
+  return true;
 }
 
 function getBookIngestionConfig(
