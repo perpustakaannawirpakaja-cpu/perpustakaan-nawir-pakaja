@@ -8238,7 +8238,7 @@ async function kompresPdfSatuHalaman(
       canvas,
       "image/jpeg",
       setting.quality
-    );
+    );  
 
   const {
     PDFDocument
@@ -12480,6 +12480,34 @@ try {
     );
   }
 
+    message.textContent =
+    "⏳ Menyiapkan EPUB final...";
+
+  const hasilEpubFinalisasi =
+    await pastikanOutputEpubFinalisasi({
+      bookId,
+      language: "id"
+    });
+
+  if (
+    hasilEpubFinalisasi.reused
+  ) {
+
+    console.log(
+      "EPUB final sudah aktif. Output lama digunakan kembali.",
+      hasilEpubFinalisasi.output
+    );
+
+  } else if (
+    hasilEpubFinalisasi.rebuilt
+  ) {
+
+    console.log(
+      "EPUB final berhasil dibangun ulang.",
+      hasilEpubFinalisasi.output
+    );
+  }
+
   const {
     PDFDocument
   } = PDFLib;
@@ -12672,8 +12700,15 @@ try {
       bookId
     );
 
+    const statusEpubFinal =
+      hasilEpubFinalisasi.rebuilt
+        ? "EPUB final berhasil dibangun ulang."
+        : "EPUB final aktif digunakan kembali.";
+
     message.textContent =
-      `✅ PDF final berhasil dibuat. ${totalHalaman} halaman telah digabung dan buku sudah berstatus Selesai.`;
+      `✅ Finalisasi berhasil. ` +
+      `${statusEpubFinal} ` +
+      `PDF final ${totalHalaman} halaman berhasil dibuat dan buku sudah berstatus Selesai.`;
 
     if (ingestionFinalizeSyncWarning) {
       message.textContent +=
@@ -15853,6 +15888,98 @@ async function prosesOutputEpub({
 
     throw error;
   }
+}
+
+async function pastikanOutputEpubFinalisasi({
+  bookId,
+  language = "id"
+}) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku finalisasi EPUB tidak valid."
+    );
+  }
+
+  const outputSekarang =
+    await ambilOutputEpubSebelumnya(
+      idBuku
+    );
+
+  const outputSiap =
+    outputSekarang &&
+    outputSekarang.stale === false &&
+    outputSekarang.format === "epub" &&
+    typeof outputSekarang.publicUrl ===
+      "string" &&
+    outputSekarang.publicUrl.trim() !== "" &&
+    typeof outputSekarang.storagePath ===
+      "string" &&
+    outputSekarang.storagePath.trim() !== "" &&
+    Number.isFinite(
+      Number(outputSekarang.size)
+    ) &&
+    Number(outputSekarang.size) > 0;
+
+  if (outputSiap) {
+
+    return {
+      reused: true,
+      rebuilt: false,
+
+      output:
+        outputSekarang,
+
+      result:
+        null
+    };
+  }
+
+  const hasilRebuild =
+    await prosesOutputEpub({
+      bookId:
+        idBuku,
+
+      language
+    });
+
+  return {
+    reused: false,
+    rebuilt: true,
+
+    output: {
+      format:
+        "epub",
+
+      publicUrl:
+        hasilRebuild.output.publicUrl,
+
+      storagePath:
+        hasilRebuild.output.storagePath,
+
+      size:
+        Number(
+          hasilRebuild.output.size || 0
+        ),
+
+      createdAt:
+        hasilRebuild.session
+          ?.output_created_at ||
+        null,
+
+      stale:
+        false
+    },
+
+    result:
+      hasilRebuild
+  };
 }
 
 async function ambilOutputEpubSebelumnya(
