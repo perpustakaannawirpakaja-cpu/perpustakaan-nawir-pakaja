@@ -744,6 +744,25 @@ body.dark .read-button{
   margin-top:0;
 }
 
+.modal-drag-handle{
+  cursor:grab;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
+}
+
+.modal-drag-handle:active{
+  cursor:grabbing;
+}
+
+.modal-drag-handle::after{
+  content:"  ↕";
+  margin-left:6px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+}
+
 /* === FORM MODAL === */
 
 .modal-box,
@@ -3465,7 +3484,10 @@ body[data-ui-style="minimal"] .read-button:hover {
 
   <div class="modal-box">
 
-<h2 id="admin-panel-title">
+<h2
+  id="admin-panel-title"
+  class="modal-drag-handle"
+>
   🛠️ Dashboard Admin
 </h2>
 
@@ -4042,7 +4064,10 @@ body[data-ui-style="minimal"] .read-button:hover {
 
   <div class="modal-box">
 
-    <h2 id="book-pages-title">
+    <h2
+      id="book-pages-title"
+      class="modal-drag-handle"
+    >
       📄 Kelola Halaman
     </h2>
 
@@ -5563,6 +5588,10 @@ function tutupAdmin(){
 }
 
 async function bukaAdminPanel() {
+
+  resetPosisiModalDraggable(
+    "adminPanel"
+  );
 
   document
     .getElementById("adminPanel")
@@ -8518,6 +8547,216 @@ async function arahkanUploadHalaman(
   updateTombolUploadHalaman();
 }
 
+function aktifkanModalDraggable(
+  modalId
+) {
+
+  const modal =
+    document.getElementById(
+      modalId
+    );
+
+  const modalBox =
+    modal?.querySelector(
+      ".modal-box"
+    );
+
+  const dragHandle =
+    modalBox?.querySelector(
+      ".modal-drag-handle"
+    );
+
+  if (
+    !modal ||
+    !modalBox ||
+    !dragHandle
+  ) {
+    return false;
+  }
+
+  let sedangDrag = false;
+
+  let pointerAwalX = 0;
+  let pointerAwalY = 0;
+
+  let posisiAwalX = 0;
+  let posisiAwalY = 0;
+
+  dragHandle.addEventListener(
+    "pointerdown",
+    (event) => {
+
+      if (event.button !== 0) {
+        return;
+      }
+
+      const rect =
+        modalBox.getBoundingClientRect();
+
+      sedangDrag = true;
+
+      pointerAwalX =
+        event.clientX;
+
+      pointerAwalY =
+        event.clientY;
+
+      posisiAwalX =
+        rect.left;
+
+      posisiAwalY =
+        rect.top;
+
+      modalBox.style.position =
+        "fixed";
+
+      modalBox.style.left =
+        `${rect.left}px`;
+
+      modalBox.style.top =
+        `${rect.top}px`;
+
+      modalBox.style.margin =
+        "0";
+
+      dragHandle.setPointerCapture(
+        event.pointerId
+      );
+
+      event.preventDefault();
+    }
+  );
+
+  dragHandle.addEventListener(
+    "pointermove",
+    (event) => {
+
+      if (!sedangDrag) {
+        return;
+      }
+
+      const deltaX =
+        event.clientX -
+        pointerAwalX;
+
+      const deltaY =
+        event.clientY -
+        pointerAwalY;
+
+      const lebarModal =
+        modalBox.offsetWidth;
+
+      const tinggiModal =
+        modalBox.offsetHeight;
+
+      const batasTerlihat =
+        80;
+
+      let posisiX =
+        posisiAwalX +
+        deltaX;
+
+      let posisiY =
+        posisiAwalY +
+        deltaY;
+
+      posisiX =
+        Math.min(
+          window.innerWidth -
+            batasTerlihat,
+          Math.max(
+            batasTerlihat -
+              lebarModal,
+            posisiX
+          )
+        );
+
+      posisiY =
+        Math.min(
+          window.innerHeight -
+            batasTerlihat,
+          Math.max(
+            batasTerlihat -
+              tinggiModal,
+            posisiY
+          )
+        );
+
+      modalBox.style.left =
+        `${posisiX}px`;
+
+      modalBox.style.top =
+        `${posisiY}px`;
+    }
+  );
+
+  const akhiriDrag =
+    (event) => {
+
+      if (!sedangDrag) {
+        return;
+      }
+
+      sedangDrag = false;
+
+      try {
+
+        dragHandle.releasePointerCapture(
+          event.pointerId
+        );
+
+      } catch (error) {
+
+        // Aman diabaikan.
+      }
+    };
+
+  dragHandle.addEventListener(
+    "pointerup",
+    akhiriDrag
+  );
+
+  dragHandle.addEventListener(
+    "pointercancel",
+    akhiriDrag
+  );
+
+  return true;
+}
+
+function resetPosisiModalDraggable(
+  modalId
+) {
+
+  const modalBox =
+    document
+      .getElementById(
+        modalId
+      )
+      ?.querySelector(
+        ".modal-box"
+      );
+
+  if (!modalBox) {
+    return false;
+  }
+
+  modalBox.style.position = "";
+  modalBox.style.left = "";
+  modalBox.style.top = "";
+  modalBox.style.margin = "";
+
+  return true;
+}
+
+aktifkanModalDraggable(
+  "adminPanel"
+);
+
+aktifkanModalDraggable(
+  "bookPagesModal"
+);
+
 async function bukaKelolaHalaman(bookId) {
 
   idFokusKelolaHalaman = bookId;
@@ -8528,6 +8767,18 @@ async function bukaKelolaHalaman(bookId) {
     document.getElementById(
       "bookPagesModal"
     );
+
+  const modalSudahTerbuka =
+  modal?.classList.contains(
+    "show"
+  );
+
+if (!modalSudahTerbuka) {
+
+  resetPosisiModalDraggable(
+    "bookPagesModal"
+  );
+}
 
   const adminPanel =
     document.getElementById(
@@ -14277,6 +14528,29 @@ function getIngestionStatusInfo(
   );
 }
 
+function scrollKelolaHalamanKeAtas() {
+
+  const modalBox =
+    document.querySelector(
+      "#bookPagesModal .modal-box"
+    );
+
+  if (!modalBox) {
+    return false;
+  }
+
+  requestAnimationFrame(() => {
+
+    modalBox.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+
+  });
+
+  return true;
+}
+
 async function tampilkanStatusIngestionKelolaHalaman(
   bookId
 ) {
@@ -14296,6 +14570,8 @@ async function tampilkanStatusIngestionKelolaHalaman(
   ) {
     return false;
   }
+
+  scrollKelolaHalamanKeAtas();
 
   statusElement.classList.remove(
     "ingestion-draft",
