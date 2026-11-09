@@ -1869,6 +1869,78 @@ label[for="book-upload-mode"]{
   color:#1d4ed8;
 }
 
+.admin-book-item .admin-ingestion-badge {
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+
+  padding:5px 8px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:999px;
+
+  font-size:11px;
+  font-weight:700;
+}
+
+.admin-book-item .ingestion-draft {
+  background:rgba(245, 158, 11, 0.12);
+  border-color:rgba(245, 158, 11, 0.45);
+  color:#b45309;
+}
+
+.admin-book-item .ingestion-ingesting,
+.admin-book-item .ingestion-processing {
+  background:rgba(59, 130, 246, 0.10);
+  border-color:rgba(59, 130, 246, 0.40);
+  color:#1d4ed8;
+}
+
+.admin-book-item .ingestion-ready,
+.admin-book-item .ingestion-complete {
+  background:rgba(34, 197, 94, 0.10);
+  border-color:rgba(34, 197, 94, 0.45);
+  color:#15803d;
+}
+
+.admin-book-item .ingestion-failed {
+  background:rgba(239, 68, 68, 0.10);
+  border-color:rgba(239, 68, 68, 0.45);
+  color:#b91c1c;
+}
+
+.admin-book-item .ingestion-cancelled,
+.admin-book-item .ingestion-unknown {
+  background:rgba(107, 114, 128, 0.10);
+  border-color:rgba(107, 114, 128, 0.40);
+  color:#4b5563;
+}
+
+.admin-book-item .admin-ingestion-error {
+  display:block;
+  width:100%;
+
+  padding:8px 10px;
+
+  border:
+    1px solid rgba(239, 68, 68, 0.30);
+
+  border-radius:10px;
+
+  background:
+    rgba(239, 68, 68, 0.08);
+
+  color:#b91c1c;
+
+  font-size:11px;
+  font-weight:600;
+  line-height:1.5;
+
+  overflow-wrap:anywhere;
+}
+
 .admin-book-actions{
   display:flex;
   gap:8px;
@@ -5870,7 +5942,7 @@ function cariBukuAdmin() {
     const text =
       Array.from(
         item.querySelectorAll(
-          "strong, span"
+          "strong, span:not(.admin-ingestion-badge):not(.admin-ingestion-error)"
         )
       )
         .map((element) =>
@@ -7320,6 +7392,57 @@ if (
         Number(book.id)
     );
 
+const ingestionAdminByBook =
+  new Map();
+
+let ingestionAdminGagal =
+  false;
+
+if (incrementalBookIds.length > 0) {
+
+  const {
+    data: ingestionSessions,
+    error: ingestionSessionsError
+  } = await db
+    .from("book_ingestion_sessions")
+    .select(`
+      book_id,
+      source_type,
+      status,
+      total_pages,
+      processed_pages,
+      last_error
+    `)
+    .in(
+      "book_id",
+      incrementalBookIds
+    );
+
+  if (ingestionSessionsError) {
+
+    ingestionAdminGagal =
+      true;
+
+    console.error(
+      "Gagal memuat status ingestion Admin:",
+      ingestionSessionsError
+    );
+
+  } else {
+
+    for (
+      const session of
+      ingestionSessions || []
+    ) {
+
+      ingestionAdminByBook.set(
+        Number(session.book_id),
+        session
+      );
+    }
+  }
+}
+
 const integritasAdminByBook =
   new Map();
 
@@ -7717,6 +7840,69 @@ if (healthActionElement) {
                 }
               </button>
             `;
+    const ingestion =
+  ingestionAdminByBook.get(
+    Number(book.id)
+  );
+
+const ingestionInfo =
+  ingestion
+    ? getIngestionStatusInfo(
+        ingestion.status
+      )
+    : null;
+
+const ingestionProgress =
+  ingestion
+    ? `${Number(
+        ingestion.processed_pages || 0
+      )}/${Number(
+        ingestion.total_pages || 0
+      )}`
+    : "";
+
+const badgeIngestion =
+  book.upload_mode !== "incremental"
+    ? ""
+    : ingestionAdminGagal
+      ? `
+        <span
+          class="admin-ingestion-badge ingestion-unknown"
+        >
+          ℹ️ Ingestion: Gagal dimuat
+        </span>
+      `
+      : !ingestion || !ingestionInfo
+        ? `
+          <span
+            class="admin-ingestion-badge ingestion-unknown"
+          >
+            ℹ️ Ingestion: Belum tersedia
+          </span>
+        `
+        : `
+          <span
+            class="admin-ingestion-badge ${ingestionInfo.className}"
+          >
+            ${ingestionInfo.icon}
+            Ingestion:
+            ${ingestionInfo.label}
+            · ${ingestionProgress}
+          </span>
+        `;
+
+    const detailErrorIngestion =
+      ingestion?.status === "failed" &&
+        ingestion?.last_error
+        ? `
+          <span
+            class="admin-ingestion-error"
+            role="status"
+          >
+            ❌ ${ingestion.last_error}
+          </span>
+        `
+        : "";
 
     return `
         <div
@@ -7728,7 +7914,11 @@ if (healthActionElement) {
           ${book.title || "Tanpa Judul"}
         </strong>
 
-          ${badgeIntegritas}
+        ${badgeIntegritas}
+
+        ${badgeIngestion}
+
+        ${detailErrorIngestion}
 
         <span>
           ${book.author || "Penulis tidak tersedia"}
@@ -13893,6 +14083,72 @@ async function setStatusIngestionBuku(
   }
 
   return true;
+}
+
+function getIngestionStatusInfo(
+  status
+) {
+
+  const statusMap = {
+
+    draft: {
+      icon: "🟡",
+      label: "Draft",
+      className:
+        "ingestion-draft"
+    },
+
+    ingesting: {
+      icon: "🔵",
+      label: "Mengunggah",
+      className:
+        "ingestion-ingesting"
+    },
+
+    processing: {
+      icon: "🔵",
+      label: "Memproses",
+      className:
+        "ingestion-processing"
+    },
+
+    ready: {
+      icon: "🟢",
+      label: "Siap",
+      className:
+        "ingestion-ready"
+    },
+
+    complete: {
+      icon: "🟢",
+      label: "Selesai",
+      className:
+        "ingestion-complete"
+    },
+
+    failed: {
+      icon: "🔴",
+      label: "Gagal",
+      className:
+        "ingestion-failed"
+    },
+
+    cancelled: {
+      icon: "⚪",
+      label: "Dibatalkan",
+      className:
+        "ingestion-cancelled"
+    }
+  };
+
+  return (
+    statusMap[status] || {
+      icon: "ℹ️",
+      label: "Tidak diketahui",
+      className:
+        "ingestion-unknown"
+    }
+  );
 }
 
 function updateModeUploadBuku() {
