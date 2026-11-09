@@ -1595,6 +1595,55 @@ label[for="book-upload-mode"]{
   font-weight:600;
 }
 
+#book-pages-ingestion-status{
+  margin:0 0 12px;
+  padding:10px 12px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:10px;
+
+  font-size:12px;
+  font-weight:700;
+  line-height:1.5;
+
+  overflow-wrap:anywhere;
+}
+
+#book-pages-ingestion-status.ingestion-draft{
+  background:rgba(245,158,11,.12);
+  border-color:rgba(245,158,11,.45);
+  color:#b45309;
+}
+
+#book-pages-ingestion-status.ingestion-ingesting,
+#book-pages-ingestion-status.ingestion-processing{
+  background:rgba(59,130,246,.10);
+  border-color:rgba(59,130,246,.40);
+  color:#1d4ed8;
+}
+
+#book-pages-ingestion-status.ingestion-ready,
+#book-pages-ingestion-status.ingestion-complete{
+  background:rgba(34,197,94,.10);
+  border-color:rgba(34,197,94,.45);
+  color:#15803d;
+}
+
+#book-pages-ingestion-status.ingestion-failed{
+  background:rgba(239,68,68,.10);
+  border-color:rgba(239,68,68,.45);
+  color:#b91c1c;
+}
+
+#book-pages-ingestion-status.ingestion-cancelled,
+#book-pages-ingestion-status.ingestion-unknown{
+  background:var(--bg);
+  border-color:var(--border);
+  color:var(--muted);
+}
+
 #book-pages-message{
   margin:12px 0 8px;
 }
@@ -4014,14 +4063,24 @@ body[data-ui-style="minimal"] .read-button:hover {
     </p>
 
     <p
-      id="book-pages-progress"
-      role="status"
-      aria-live="polite"
-    >
-      0 / 0 halaman
-    </p>
+  id="book-pages-progress"
+  role="status"
+  aria-live="polite"
+>
+  0 / 0 halaman
+</p>
 
-    <label for="book-page-number">
+<div
+  id="book-pages-ingestion-status"
+  class="book-pages-ingestion-status ingestion-unknown"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+>
+  ℹ️ Ingestion: Memuat status...
+</div>
+
+<label for="book-page-number">
       Nomor Halaman
     </label>
 
@@ -8490,6 +8549,11 @@ async function bukaKelolaHalaman(bookId) {
       "book-pages-progress"
     );
 
+  const ingestionStatus =
+    document.getElementById(
+      "book-pages-ingestion-status"
+    );
+
   const message =
     document.getElementById(
       "book-pages-message"
@@ -8534,6 +8598,7 @@ async function bukaKelolaHalaman(bookId) {
     !hiddenId ||
     !title ||
     !progress ||
+    !ingestionStatus ||
     !message ||
     !list
   ) {
@@ -8556,6 +8621,13 @@ async function bukaKelolaHalaman(bookId) {
   title.textContent = "-";
   progress.textContent =
     "Memuat progres...";
+  
+  ingestionStatus.className =
+    "book-pages-ingestion-status ingestion-unknown";
+
+  ingestionStatus.textContent =
+    "ℹ️ Ingestion: Memuat status...";
+  
   message.textContent =
   "Memuat data buku...";
 
@@ -8648,6 +8720,10 @@ async function bukaKelolaHalaman(bookId) {
 
     return;
   }
+
+  await tampilkanStatusIngestionKelolaHalaman(
+    bookId
+  );
 
   const {
     data: pages,
@@ -9281,6 +9357,12 @@ async function pilihHapusHalaman(pageNumber) {
     console.warn(
       "Status ingestion belum berhasil diubah ke ingesting."
     );
+
+  } else {
+
+    await tampilkanStatusIngestionKelolaHalaman(
+      bookId
+    );
   }
 
   // Ambil status buku sebelum diubah.
@@ -9525,6 +9607,10 @@ try {
       );
     }
 
+    await tampilkanStatusIngestionKelolaHalaman(
+      bookId
+    );
+
     if (message) {
       message.textContent =
         "❌ Gagal menghapus halaman: " +
@@ -9723,7 +9809,13 @@ async function batalUploadHalaman() {
     console.warn(
       "Status ingestion belum berhasil diubah ke ingesting."
     );
-  }
+
+  } else {
+
+  await tampilkanStatusIngestionKelolaHalaman(
+    aksi.bookId
+  );
+}
 
   /* =========================
      BATAL UPLOAD HALAMAN BARU
@@ -10122,25 +10214,29 @@ try {
 
   } catch (error) {
 
-    console.error(
-      "Batal upload halaman gagal:",
+  console.error(
+    "Batal perubahan halaman gagal:",
+    error
+  );
+
+  try {
+
+    await catatErrorIngestionBuku(
+      aksi.bookId,
       error
     );
 
-    try {
+  } catch (trackingError) {
 
-      await catatErrorIngestionBuku(
-        aksi?.bookId,
-        error
-      );
+    console.error(
+      "Pencatatan error ingestion gagal:",
+      trackingError
+    );
+  }
 
-    } catch (trackingError) {
-
-      console.error(
-        "Pencatatan error ingestion gagal:",
-        trackingError
-      );
-    }
+  await tampilkanStatusIngestionKelolaHalaman(
+    aksi.bookId
+  );
 
     message.textContent =
       "❌ " +
@@ -10529,17 +10625,23 @@ async function pindahkanHalamanBuku() {
   try {
 
   const statusIngestionAktif =
-    await setStatusIngestionBuku(
-      bookId,
-      "ingesting"
-    );
+  await setStatusIngestionBuku(
+    bookId,
+    "ingesting"
+  );
 
-  if (!statusIngestionAktif) {
+if (!statusIngestionAktif) {
 
-    console.warn(
-      "Status ingestion belum berhasil diubah ke ingesting."
-    );
-  }
+  console.warn(
+    "Status ingestion belum berhasil diubah ke ingesting."
+  );
+
+} else {
+
+  await tampilkanStatusIngestionKelolaHalaman(
+    bookId
+  );
+}
 
   const {
     error: moveError
@@ -10672,6 +10774,10 @@ try {
         trackingError
       );
     }
+
+    await tampilkanStatusIngestionKelolaHalaman(
+      bookId
+    );
 
     if (message) {
       message.textContent =
@@ -11131,7 +11237,13 @@ try {
     console.warn(
       "Status ingestion belum berhasil diubah ke ingesting."
     );
-  }
+
+  } else {
+
+  await tampilkanStatusIngestionKelolaHalaman(
+    bookId
+  );
+}
 
   const safeFileName =
       pageFile.name.replace(
@@ -11605,6 +11717,10 @@ message.textContent =
       );
     }
 
+  await tampilkanStatusIngestionKelolaHalaman(
+    bookId
+  );
+
     message.textContent =
       "❌ " +
       (
@@ -12029,6 +12145,12 @@ try {
     console.warn(
       "Status ingestion belum berhasil diubah ke processing."
     );
+
+  } else {
+
+    await tampilkanStatusIngestionKelolaHalaman(
+      bookId
+    );
   }
 
   const {
@@ -12252,6 +12374,10 @@ try {
         trackingError
       );
     }
+
+    await tampilkanStatusIngestionKelolaHalaman(
+      bookId
+    );
 
     message.textContent =
       "❌ " +
@@ -14151,6 +14277,122 @@ function getIngestionStatusInfo(
   );
 }
 
+async function tampilkanStatusIngestionKelolaHalaman(
+  bookId
+) {
+
+  const statusElement =
+    document.getElementById(
+      "book-pages-ingestion-status"
+    );
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !statusElement ||
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    return false;
+  }
+
+  statusElement.classList.remove(
+    "ingestion-draft",
+    "ingestion-ingesting",
+    "ingestion-processing",
+    "ingestion-ready",
+    "ingestion-complete",
+    "ingestion-failed",
+    "ingestion-cancelled",
+    "ingestion-unknown"
+  );
+
+  statusElement.classList.add(
+    "ingestion-unknown"
+  );
+
+  statusElement.textContent =
+    "ℹ️ Ingestion: Memuat status...";
+
+  const {
+    data: ingestion,
+    error
+  } = await db
+    .from("book_ingestion_sessions")
+    .select(`
+      status,
+      total_pages,
+      processed_pages,
+      last_error
+    `)
+    .eq(
+      "book_id",
+      idBuku
+    )
+    .maybeSingle();
+
+  if (error) {
+
+    console.error(
+      "Gagal memuat status ingestion Kelola Halaman:",
+      error
+    );
+
+    statusElement.textContent =
+      "⚠️ Ingestion: Status gagal dimuat.";
+
+    return false;
+  }
+
+  if (!ingestion) {
+
+    statusElement.textContent =
+      "ℹ️ Ingestion: Belum tersedia.";
+
+    return true;
+  }
+
+  const info =
+    getIngestionStatusInfo(
+      ingestion.status
+    );
+
+  const processedPages =
+    Number(
+      ingestion.processed_pages || 0
+    );
+
+  const totalPages =
+    Number(
+      ingestion.total_pages || 0
+    );
+
+  statusElement.classList.remove(
+    "ingestion-unknown"
+  );
+
+  statusElement.classList.add(
+    info.className
+  );
+
+  statusElement.textContent =
+    `${info.icon} Ingestion: ` +
+    `${info.label} · ` +
+    `${processedPages}/${totalPages}`;
+
+  if (
+    ingestion.status === "failed" &&
+    ingestion.last_error
+  ) {
+
+    statusElement.textContent +=
+      ` — ❌ ${ingestion.last_error}`;
+  }
+
+  return true;
+}
+
 function updateModeUploadBuku() {
 
   const modeSelect =
@@ -14559,7 +14801,7 @@ if (
         );
 
       uploadedCoverPath =
-  `${user.id}/${Date.now()}-${safeCoverName}`;
+        `${user.id}/${Date.now()}-${safeCoverName}`;
 
       const { error: coverUploadError } =
         await db.storage
