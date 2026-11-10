@@ -16427,44 +16427,75 @@ async function validasiFileOutputEpubStorage({
   }
 
   const {
-    data: daftarFile,
-    error: listError
-  } = await db.storage
-    .from("book-files")
-    .list(
-      folderPath,
+  data: publicData
+} = db.storage
+  .from("book-files")
+  .getPublicUrl(path);
+
+const publicUrl =
+  typeof publicData?.publicUrl === "string"
+    ? publicData.publicUrl.trim()
+    : "";
+
+if (!publicUrl) {
+  throw new Error(
+    "URL publik EPUB Storage tidak tersedia."
+  );
+}
+
+let responseStorage = null;
+
+try {
+
+  responseStorage =
+    await fetch(
+      publicUrl,
       {
-        limit: 100,
-        search: namaFile
+        method: "HEAD",
+        cache: "no-store"
       }
     );
 
-  if (listError) {
-    throw new Error(
-      "Pemeriksaan file EPUB di Storage gagal: " +
-      listError.message
-    );
-  }
+} catch (fetchError) {
 
-  const fileEpub =
-    Array.isArray(daftarFile)
-      ? daftarFile.find(
-          (item) =>
-            item &&
-            item.name === namaFile &&
-            item.id
-        )
-      : null;
+  throw new Error(
+    "Pemeriksaan file EPUB di Storage gagal: " +
+    (
+      fetchError?.message ||
+      "File tidak dapat diakses."
+    )
+  );
+}
 
-  if (!fileEpub) {
-    throw new Error(
-      "File EPUB final tidak ditemukan di Storage."
-    );
-  }
+if (!responseStorage.ok) {
+  throw new Error(
+    `File EPUB final tidak ditemukan di Storage. HTTP ${responseStorage.status}.`
+  );
+}
+
+const contentType =
+  (
+    responseStorage.headers.get(
+      "content-type"
+    ) || ""
+  ).toLowerCase();
+
+if (
+  contentType &&
+  !contentType.includes(
+    "application/epub+zip"
+  )
+) {
+  throw new Error(
+    `Content-Type file EPUB tidak valid: ${contentType}.`
+  );
+}
 
 const storageSize =
   Number(
-    fileEpub.metadata?.size || 0
+    responseStorage.headers.get(
+      "content-length"
+    ) || 0
   );
 
 const ukuranHarapan =
