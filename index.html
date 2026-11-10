@@ -12490,23 +12490,32 @@ try {
     });
 
   if (
-    hasilEpubFinalisasi.reused
-  ) {
+  hasilEpubFinalisasi.reused
+) {
 
-    console.log(
-      "EPUB final sudah aktif. Output lama digunakan kembali.",
-      hasilEpubFinalisasi.output
-    );
+  console.log(
+    "EPUB final sudah aktif. Output lama digunakan kembali.",
+    hasilEpubFinalisasi.output
+  );
 
-  } else if (
-    hasilEpubFinalisasi.rebuilt
-  ) {
+} else if (
+  hasilEpubFinalisasi.recovered
+) {
 
-    console.log(
-      "EPUB final berhasil dibangun ulang.",
-      hasilEpubFinalisasi.output
-    );
-  }
+  console.log(
+    "EPUB final berhasil dipulihkan otomatis dari masalah Storage.",
+    hasilEpubFinalisasi.output
+  );
+
+} else if (
+  hasilEpubFinalisasi.rebuilt
+) {
+
+  console.log(
+    "EPUB final berhasil dibangun ulang.",
+    hasilEpubFinalisasi.output
+  );
+}
 
   const {
     PDFDocument
@@ -12730,9 +12739,11 @@ const statusCompleteAktif =
     );
 
     const statusEpubFinal =
-      hasilEpubFinalisasi.rebuilt
-        ? "EPUB final berhasil dibangun ulang."
-        : "EPUB final aktif digunakan kembali.";
+      hasilEpubFinalisasi.recovered
+        ? "EPUB final berhasil dipulihkan otomatis dari masalah Storage."
+        : hasilEpubFinalisasi.rebuilt
+          ? "EPUB final berhasil dibangun ulang."
+          : "EPUB final aktif digunakan kembali.";
 
     message.textContent =
       `✅ Finalisasi berhasil. ` +
@@ -15956,11 +15967,27 @@ async function pastikanOutputEpubFinalisasi({
     ) &&
     Number(outputSekarang.size) > 0;
 
+  let recoveryStorageAktif =
+  false;
+  
   if (outputSiap) {
+
+  try {
+
+    await validasiFileOutputEpubStorage({
+      storagePath:
+        outputSekarang.storagePath,
+
+      expectedSize:
+        Number(
+          outputSekarang.size
+        )
+    });
 
     return {
       reused: true,
       rebuilt: false,
+      recovered: false,
 
       output:
         outputSekarang,
@@ -15968,7 +15995,19 @@ async function pastikanOutputEpubFinalisasi({
       result:
         null
     };
+
+  } catch (storageError) {
+
+    recoveryStorageAktif =
+      true;
+
+    console.warn(
+      "EPUB aktif tidak valid di Storage. Sistem akan membangun ulang EPUB:",
+      storageError
+    );
+
   }
+}
 
   const hasilRebuild =
     await prosesOutputEpub({
@@ -15981,6 +16020,8 @@ async function pastikanOutputEpubFinalisasi({
   return {
     reused: false,
     rebuilt: true,
+    recovered:
+      recoveryStorageAktif,
 
     output: {
       format:
