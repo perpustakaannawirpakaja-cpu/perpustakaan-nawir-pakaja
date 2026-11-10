@@ -16382,6 +16382,129 @@ async function sinkronkanProgressIngestionBuku(
 
 }
 
+async function validasiFileOutputEpubStorage({
+  storagePath,
+  expectedSize = 0
+}) {
+
+  const path =
+    typeof storagePath === "string"
+      ? storagePath.trim()
+      : "";
+
+  if (!path) {
+    throw new Error(
+      "Storage path EPUB kosong."
+    );
+  }
+
+  const bagianPath =
+    path
+      .split("/")
+      .filter(Boolean);
+
+  if (bagianPath.length < 2) {
+    throw new Error(
+      "Storage path EPUB tidak valid."
+    );
+  }
+
+  const namaFile =
+    bagianPath.pop();
+
+  const folderPath =
+    bagianPath.join("/");
+
+  if (
+    !namaFile ||
+    !namaFile
+      .toLowerCase()
+      .endsWith(".epub")
+  ) {
+    throw new Error(
+      "File output Storage bukan EPUB."
+    );
+  }
+
+  const {
+    data: daftarFile,
+    error: listError
+  } = await db.storage
+    .from("book-files")
+    .list(
+      folderPath,
+      {
+        limit: 100,
+        search: namaFile
+      }
+    );
+
+  if (listError) {
+    throw new Error(
+      "Pemeriksaan file EPUB di Storage gagal: " +
+      listError.message
+    );
+  }
+
+  const fileEpub =
+    Array.isArray(daftarFile)
+      ? daftarFile.find(
+          (item) =>
+            item &&
+            item.name === namaFile &&
+            item.id
+        )
+      : null;
+
+  if (!fileEpub) {
+    throw new Error(
+      "File EPUB final tidak ditemukan di Storage."
+    );
+  }
+
+const storageSize =
+  Number(
+    fileEpub.metadata?.size || 0
+  );
+
+const ukuranHarapan =
+  Number(
+    expectedSize || 0
+  );
+
+if (
+  !Number.isFinite(storageSize) ||
+  storageSize < 1
+) {
+  throw new Error(
+    "Ukuran file EPUB di Storage tidak valid."
+  );
+}
+
+if (
+  ukuranHarapan > 0 &&
+  storageSize !== ukuranHarapan
+) {
+  throw new Error(
+    `Ukuran file EPUB di Storage tidak cocok: ${storageSize}/${ukuranHarapan} byte.`
+  );
+}
+
+return {
+  valid: true,
+
+  storagePath:
+    path,
+
+  folderPath,
+
+  fileName:
+    namaFile,
+
+  storageSize
+};
+}
+
 async function validasiKesiapanFinalIngestionBuku(
   bookId
 ) {
@@ -16577,6 +16700,37 @@ async function validasiKesiapanFinalIngestionBuku(
     );
   }
 
+  let hasilStorageEpub = null;
+
+if (
+  typeof session.output_storage_path ===
+    "string" &&
+  session.output_storage_path.trim() !==
+    "" &&
+  Number.isFinite(outputSize) &&
+  outputSize > 0
+) {
+
+  try {
+
+    hasilStorageEpub =
+      await validasiFileOutputEpubStorage({
+        storagePath:
+          session.output_storage_path,
+
+        expectedSize:
+          outputSize
+      });
+
+  } catch (storageError) {
+
+    masalah.push(
+      storageError?.message ||
+      "Validasi file EPUB di Storage gagal."
+    );
+  }
+}
+
   if (
     masalah.length > 0
   ) {
@@ -16605,9 +16759,18 @@ async function validasiKesiapanFinalIngestionBuku(
     outputSize,
 
     outputCreatedAt:
-      session.output_created_at
-  };
-}
+      session.output_created_at,
+
+    storageVerified:
+      hasilStorageEpub?.valid === true,
+
+    storageFileName:
+      hasilStorageEpub?.fileName || null,
+
+    storageSize:
+      hasilStorageEpub?.storageSize || 0
+    };
+  }
 
 async function catatErrorIngestionBuku(
   bookId,
