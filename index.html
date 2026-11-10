@@ -12666,11 +12666,24 @@ try {
     bookId
   );
 
-  const statusCompleteAktif =
-    await setStatusIngestionBuku(
-      bookId,
-      "complete"
-    );
+const hasilFinalCompletionGate =
+  await validasiKesiapanFinalIngestionBuku(
+    bookId
+  );
+
+if (
+  !hasilFinalCompletionGate.valid
+) {
+  throw new Error(
+    "Final Completion Gate tidak lolos."
+  );
+}
+
+const statusCompleteAktif =
+  await setStatusIngestionBuku(
+    bookId,
+    "complete"
+  );
 
   if (!statusCompleteAktif) {
     throw new Error(
@@ -16367,6 +16380,233 @@ async function sinkronkanProgressIngestionBuku(
 
   return ingestionSession;
 
+}
+
+async function validasiKesiapanFinalIngestionBuku(
+  bookId
+) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku final completion gate tidak valid."
+    );
+  }
+
+  const [
+    hasilBuku,
+    hasilSession
+  ] = await Promise.all([
+
+    db
+      .from("books")
+      .select(`
+        id,
+        total_pages,
+        upload_status
+      `)
+      .eq(
+        "id",
+        idBuku
+      )
+      .single(),
+
+    db
+      .from("book_ingestion_sessions")
+      .select(`
+        id,
+        book_id,
+        status,
+        total_pages,
+        processed_pages,
+        output_format,
+        output_url,
+        output_storage_path,
+        output_size,
+        output_created_at
+      `)
+      .eq(
+        "book_id",
+        idBuku
+      )
+      .single()
+
+  ]);
+
+  if (
+    hasilBuku.error ||
+    !hasilBuku.data
+  ) {
+    throw new Error(
+      "Data buku Final Completion Gate tidak ditemukan."
+    );
+  }
+
+  if (
+    hasilSession.error ||
+    !hasilSession.data
+  ) {
+    throw new Error(
+      "Session ingestion Final Completion Gate tidak ditemukan."
+    );
+  }
+
+  const book =
+    hasilBuku.data;
+
+  const session =
+    hasilSession.data;
+
+  const totalPages =
+    Number(
+      book.total_pages || 0
+    );
+
+  const sessionTotalPages =
+    Number(
+      session.total_pages || 0
+    );
+
+  const processedPages =
+    Number(
+      session.processed_pages || 0
+    );
+
+  const outputSize =
+    Number(
+      session.output_size || 0
+    );
+
+  const masalah = [];
+
+  if (
+    book.upload_status !==
+    "complete"
+  ) {
+    masalah.push(
+      "Status buku belum complete."
+    );
+  }
+
+  if (
+    !Number.isInteger(totalPages) ||
+    totalPages < 1
+  ) {
+    masalah.push(
+      "Total halaman buku tidak valid."
+    );
+  }
+
+  if (
+    sessionTotalPages !==
+    totalPages
+  ) {
+    masalah.push(
+      `Total halaman ingestion ${sessionTotalPages}/${totalPages} tidak cocok.`
+    );
+  }
+
+  if (
+    processedPages !==
+    totalPages
+  ) {
+    masalah.push(
+      `Progress ingestion baru ${processedPages}/${totalPages}.`
+    );
+  }
+
+  if (
+    session.status !==
+    "ready"
+  ) {
+    masalah.push(
+      `Status ingestion harus ready sebelum complete, sekarang ${session.status || "kosong"}.`
+    );
+  }
+
+  if (
+    session.output_format !==
+    "epub"
+  ) {
+    masalah.push(
+      "Format output final bukan EPUB."
+    );
+  }
+
+  if (
+    typeof session.output_url !==
+      "string" ||
+    session.output_url.trim() ===
+      ""
+  ) {
+    masalah.push(
+      "URL output EPUB belum tersedia."
+    );
+  }
+
+  if (
+    typeof session.output_storage_path !==
+      "string" ||
+    session.output_storage_path.trim() ===
+      ""
+  ) {
+    masalah.push(
+      "Storage path EPUB belum tersedia."
+    );
+  }
+
+  if (
+    !Number.isFinite(outputSize) ||
+    outputSize < 1
+  ) {
+    masalah.push(
+      "Ukuran output EPUB tidak valid."
+    );
+  }
+
+  if (
+    !session.output_created_at
+  ) {
+    masalah.push(
+      "Waktu pembuatan EPUB belum tersedia."
+    );
+  }
+
+  if (
+    masalah.length > 0
+  ) {
+    throw new Error(
+      "Final Completion Gate gagal: " +
+      masalah.join(" ")
+    );
+  }
+
+  return {
+    valid: true,
+
+    bookId:
+      idBuku,
+
+    totalPages,
+
+    processedPages,
+
+    status:
+      session.status,
+
+    outputFormat:
+      session.output_format,
+
+    outputSize,
+
+    outputCreatedAt:
+      session.output_created_at
+  };
 }
 
 async function catatErrorIngestionBuku(
