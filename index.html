@@ -12517,6 +12517,16 @@ try {
   );
 }
 
+const bukuDenganEpub =
+  await sinkronkanOutputEpubKeBuku(
+    bookId
+  );
+
+console.log(
+  "Metadata EPUB berhasil disinkronkan ke books.",
+  bukuDenganEpub
+);
+
   const {
     PDFDocument
   } = PDFLib;
@@ -15801,6 +15811,125 @@ async function simpanMetadataOutputEpub({
   return session;
 }
 
+async function sinkronkanOutputEpubKeBuku(
+  bookId
+) {
+
+  const idBuku =
+    Number(bookId);
+
+  if (
+    !Number.isInteger(idBuku) ||
+    idBuku < 1
+  ) {
+    throw new Error(
+      "ID buku sinkron EPUB tidak valid."
+    );
+  }
+
+  const {
+    data: session,
+    error: sessionError
+  } = await db
+    .from(
+      "book_ingestion_sessions"
+    )
+    .select(`
+      output_format,
+      output_url,
+      output_storage_path,
+      output_size,
+      output_created_at
+    `)
+    .eq(
+      "book_id",
+      idBuku
+    )
+    .maybeSingle();
+
+  if (
+    sessionError ||
+    !session
+  ) {
+    throw new Error(
+      "Session ingestion EPUB tidak ditemukan."
+    );
+  }
+
+  const outputSize =
+    Number(
+      session.output_size || 0
+    );
+
+  if (
+    session.output_format !==
+      "epub" ||
+    typeof session.output_url !==
+      "string" ||
+    session.output_url.trim() ===
+      "" ||
+    typeof session.output_storage_path !==
+      "string" ||
+    session.output_storage_path.trim() ===
+      "" ||
+    !Number.isFinite(
+      outputSize
+    ) ||
+    outputSize < 1 ||
+    !session.output_created_at
+  ) {
+    throw new Error(
+      "Metadata EPUB aktif belum lengkap untuk disinkronkan ke buku."
+    );
+  }
+
+  const {
+    data: book,
+    error: updateError
+  } = await db
+    .from("books")
+    .update({
+      epub_url:
+        session.output_url,
+
+      epub_storage_path:
+        session.output_storage_path,
+
+      epub_size:
+        outputSize,
+
+      epub_created_at:
+        session.output_created_at
+    })
+    .eq(
+      "id",
+      idBuku
+    )
+    .select(`
+      id,
+      epub_url,
+      epub_storage_path,
+      epub_size,
+      epub_created_at
+    `)
+    .single();
+
+  if (
+    updateError ||
+    !book
+  ) {
+    throw new Error(
+      "Metadata EPUB gagal disinkronkan ke buku: " +
+      (
+        updateError?.message ||
+        "Data buku tidak ditemukan."
+      )
+    );
+  }
+
+  return book;
+}
+
 async function prosesOutputEpub({
   bookId,
   language = "id"
@@ -16181,6 +16310,35 @@ async function resetMetadataOutputEpub(
     throw new Error(
       "Metadata output EPUB gagal direset: " +
       resetError.message
+    );
+  }
+
+  const {
+    error: resetBookError
+  } = await db
+    .from("books")
+    .update({
+      epub_url:
+        null,
+
+      epub_storage_path:
+        null,
+
+      epub_size:
+        null,
+
+      epub_created_at:
+        null
+    })
+    .eq(
+      "id",
+      idBuku
+    );
+
+  if (resetBookError) {
+    throw new Error(
+      "Metadata EPUB pada buku gagal direset: " +
+      resetBookError.message
     );
   }
 
