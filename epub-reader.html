@@ -643,6 +643,93 @@ function ambilUrlEpub() {
   }
 }
 
+function pasangSwipeEpub(
+  contents
+) {
+
+  const doc =
+    contents?.document;
+
+  if (!doc) {
+    return;
+  }
+
+  let startX = 0;
+  let startY = 0;
+
+  doc.addEventListener(
+    "touchstart",
+    (event) => {
+
+      const touch =
+        event.touches?.[0];
+
+      if (!touch) {
+        return;
+      }
+
+      startX =
+        touch.clientX;
+
+      startY =
+        touch.clientY;
+    },
+    {
+      passive: true
+    }
+  );
+
+  doc.addEventListener(
+    "touchend",
+    async (event) => {
+
+      const touch =
+        event.changedTouches?.[0];
+
+      if (!touch || !rendition) {
+        return;
+      }
+
+      const deltaX =
+        touch.clientX - startX;
+
+      const deltaY =
+        touch.clientY - startY;
+
+      const jarakX =
+        Math.abs(deltaX);
+
+      const jarakY =
+        Math.abs(deltaY);
+
+      if (
+        jarakX < 50 ||
+        jarakX <= jarakY
+      ) {
+        return;
+      }
+
+      if (
+        deltaX < 0 &&
+        !nextButton.disabled
+      ) {
+        await rendition.next();
+        return;
+      }
+
+      if (
+        deltaX > 0 &&
+        !prevButton.disabled
+      ) {
+        await rendition.prev();
+      }
+    },
+    {
+      passive: true
+    }
+  );
+}
+
 async function bukaEpub() {
 
   const epubUrl =
@@ -699,6 +786,10 @@ async function bukaEpub() {
             "none"
         }
       );
+
+    rendition.hooks.content.register(
+      pasangSwipeEpub
+    );
 
     rendition.on(
       "relocated",
