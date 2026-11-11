@@ -704,15 +704,35 @@ async function bukaEpub() {
       "relocated",
       function (location) {
 
-    const current =
-      location?.start
-        ?.displayed
-        ?.page;
+    const spineIndex =
+  Number(
+    location?.start?.index
+  );
 
-    const total =
-      location?.start
-        ?.displayed
-        ?.total;
+const totalSpine =
+  Array.isArray(
+    epubBook?.spine?.spineItems
+  )
+    ? epubBook.spine.spineItems.length
+    : 0;
+
+const current =
+  Number.isInteger(spineIndex)
+    ? spineIndex + 1
+    : (
+        location?.start
+          ?.displayed
+          ?.page || 1
+      );
+
+const total =
+  totalSpine > 0
+    ? totalSpine
+    : (
+        location?.start
+          ?.displayed
+          ?.total || 1
+      );
 
     const cfi =
       location?.start
