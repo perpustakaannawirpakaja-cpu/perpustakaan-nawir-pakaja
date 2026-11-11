@@ -652,95 +652,6 @@ function ambilUrlEpub() {
   }
 }
 
-function pusatkanHalamanFixedEpub(
-  contents
-) {
-
-  const doc =
-    contents?.document;
-
-  const body =
-    doc?.body;
-
-  const viewportMeta =
-    doc?.querySelector(
-      'meta[name="viewport"]'
-    );
-
-  if (
-    !body ||
-    !viewportMeta ||
-    !viewer
-  ) {
-    return;
-  }
-
-  const viewportContent =
-    viewportMeta.getAttribute(
-      "content"
-    ) || "";
-
-  const widthMatch =
-    viewportContent.match(
-      /width\s*=\s*([0-9.]+)/i
-    );
-
-  const heightMatch =
-    viewportContent.match(
-      /height\s*=\s*([0-9.]+)/i
-    );
-
-  const pageWidth =
-    Number(
-      widthMatch?.[1]
-    );
-
-  const pageHeight =
-    Number(
-      heightMatch?.[1]
-    );
-
-  if (
-    !pageWidth ||
-    !pageHeight
-  ) {
-    return;
-  }
-
-  const rect =
-    viewer.getBoundingClientRect();
-
-  const scale =
-    Math.min(
-      rect.width / pageWidth,
-      rect.height / pageHeight
-    );
-
-  const offsetX =
-    Math.max(
-      0,
-      (
-        rect.width -
-        pageWidth * scale
-      ) / 2
-    );
-
-  const offsetY =
-    Math.max(
-      0,
-      (
-        rect.height -
-        pageHeight * scale
-      ) / 2
-    );
-
-  body.style.transformOrigin =
-    "top left";
-
-  body.style.transform =
-    `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-}
-
 function pasangSwipeEpub(
   contents
 ) {
@@ -751,6 +662,83 @@ function pasangSwipeEpub(
   if (!doc) {
     return;
   }
+
+  if (
+    typeof contents.scaler ===
+      "function" &&
+    !contents.__centerScalerPatched
+  ) {
+
+  const scalerAsli =
+    contents.scaler.bind(
+      contents
+    );
+
+  contents.scaler =
+    function (
+      scale,
+      offsetX,
+      offsetY
+    ) {
+
+      const viewport =
+        contents.viewport?.();
+
+      const viewportWidth =
+        Number.parseFloat(
+          viewport?.width
+        );
+
+      const viewerWidth =
+        viewer
+          ?.getBoundingClientRect()
+          ?.width;
+
+      let offsetXBaru =
+        offsetX;
+
+      if (
+        Number.isFinite(
+          viewportWidth
+        ) &&
+        Number.isFinite(
+          viewerWidth
+        ) &&
+        Number.isFinite(
+          scale
+        )
+      ) {
+
+        const lebarHasilScale =
+          viewportWidth *
+          scale;
+
+        const sisaLebar =
+          viewerWidth -
+          lebarHasilScale;
+
+        if (
+          sisaLebar > 0
+        ) {
+          offsetXBaru =
+            sisaLebar /
+            (
+              2 *
+              scale
+            );
+        }
+      }
+
+      return scalerAsli(
+        scale,
+        offsetXBaru,
+        offsetY
+      );
+    };
+
+  contents.__centerScalerPatched =
+    true;
+}
 
   let startX = 0;
   let startY = 0;
@@ -829,20 +817,13 @@ function pasangSwipeEpub(
 }
 
 function tungguLayoutEpubStabil() {
-
-  return new Promise(
-    (resolve) => {
-
-      requestAnimationFrame(
-        () => {
-
-          requestAnimationFrame(
-            resolve
-          );
-        }
-      );
-    }
-  );
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        resolve();
+      });
+    });
+  });
 }
 
 function jadwalkanResizeEpub() {
@@ -898,7 +879,7 @@ function jadwalkanResizeEpub() {
 
         try {
 
-          rendition.resize(
+          await rendition.resize(
             width,
             height
           );
@@ -989,24 +970,6 @@ async function bukaEpub() {
     rendition.hooks.content.register(
       pasangSwipeEpub
     );
-
-    rendition.on(
-      "rendered",
-      function (
-        section,
-        view
-      ) {
-
-    requestAnimationFrame(
-      () => {
-
-        pusatkanHalamanFixedEpub(
-          view?.contents
-        );
-      }
-    );
-  }
-);
 
     rendition.on(
       "relocated",
