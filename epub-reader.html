@@ -746,6 +746,12 @@ const total =
         `Halaman ${current} / ${total}`;
     }
 
+    prevButton.disabled =
+      current <= 1;
+
+    nextButton.disabled =
+      current >= total;
+
     simpanProgressEpubLokal({
       cfi,
       pageNumber: current,
@@ -815,12 +821,6 @@ const total =
 
       await rendition.display();
     }
-
-    prevButton.disabled =
-      false;
-
-    nextButton.disabled =
-      false;
 
     status.textContent =
       "✅ EPUB berhasil dibuka.";
