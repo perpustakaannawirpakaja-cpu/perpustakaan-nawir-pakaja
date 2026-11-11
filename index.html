@@ -599,9 +599,18 @@ transition:
 #continue-reading-list{
   display:grid;
   grid-template-columns:
-    repeat(auto-fit,minmax(220px,1fr));
+    repeat(auto-fit,minmax(360px,1fr));
   gap:20px;
   margin-bottom:30px;
+}
+
+#continue-reading-list .book-card{
+  min-width:0;
+}
+
+#continue-reading-list .book-info{
+  min-width:0;
+  overflow-wrap:anywhere;
 }
 
   /* =========================================
@@ -18314,12 +18323,15 @@ async function tampilkanRekomendasiBuku(books) {
   } = await db
     .from("reader_progress")
     .select(
-      "book_key, updated_at"
+      "book_key, reader_type, updated_at"
     )
     .eq("user_id", user.id)
-    .eq(
+    .in(
       "reader_type",
-      "pdf"
+      [
+        "pdf",
+        "epub"
+      ]
     )
     .order(
       "updated_at",
@@ -18343,22 +18355,34 @@ async function tampilkanRekomendasiBuku(books) {
   }
 
   const bukuDibaca =
-    progressData
-      .map((progress) => {
+  progressData
+    .map((progress) => {
 
-        return books.find((item) => {
+      return books.find((item) => {
 
-          const key =
-            "lastPage:" +
-            encodeURIComponent(
-              item.file_url || ""
-            );
+        const key =
+          progress.reader_type === "epub"
+            ? (
+                "lastEpub:" +
+                encodeURIComponent(
+                  item.epub_url || ""
+                )
+              )
+            : (
+                "lastPage:" +
+                encodeURIComponent(
+                  item.file_url || ""
+                )
+              );
 
-          return key === progress.book_key;
-        });
+        return (
+          key ===
+          progress.book_key
+        );
+      });
 
-      })
-      .filter(Boolean);
+    })
+    .filter(Boolean);
 
   if (bukuDibaca.length === 0) {
     return;
@@ -18394,15 +18418,22 @@ async function tampilkanRekomendasiBuku(books) {
         const kategori =
           (buku.category || "").trim();
 
-        const bookKey =
+        const pdfKey =
           "lastPage:" +
           encodeURIComponent(
             buku.file_url || ""
           );
 
+        const epubKey =
+          "lastEpub:" +
+          encodeURIComponent(
+            buku.epub_url || ""
+          );
+
         return (
           kategoriDibaca.includes(kategori) &&
-          !bookKeysDibaca.has(bookKey)
+          !bookKeysDibaca.has(pdfKey) &&
+          !bookKeysDibaca.has(epubKey)
         );
 
       })
@@ -18589,14 +18620,37 @@ if (savedBookLetter) {
 }
 }
 
-/* Tampilkan buku yang terakhir dibaca */
-await tampilkanLanjutMembaca(semuaBuku);
-
-/* Tampilkan rekomendasi buku */
-await tampilkanRekomendasiBuku(semuaBuku);
-
-/* Tampilkan koleksi sesuai filter tersimpan */
+/* Tampilkan koleksi utama lebih dulu */
 filterKategoriBuku();
+
+/* Muat Continue Reading dan Rekomendasi
+   tanpa menahan render koleksi utama */
+Promise.allSettled([
+  tampilkanLanjutMembaca(
+    semuaBuku
+  ),
+
+  tampilkanRekomendasiBuku(
+    semuaBuku
+  )
+]).then((hasil) => {
+
+  hasil.forEach(
+    (item) => {
+
+      if (
+        item.status ===
+        "rejected"
+      ) {
+
+        console.error(
+          "Gagal memuat fitur tambahan:",
+          item.reason
+        );
+      }
+    }
+  );
+});
 }
 
     const savedBookSortMode =
