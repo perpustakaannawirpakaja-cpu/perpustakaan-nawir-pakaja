@@ -273,6 +273,12 @@ let epubReadingKey =
 let epubResizeTimer =
   null;
 
+let epubViewerWidth =
+  0;
+
+let epubViewerHeight =
+  0;
+
 function buatEpubReadingKey(
   epubUrl
 ) {
@@ -733,6 +739,23 @@ function pasangSwipeEpub(
   );
 }
 
+function tungguLayoutEpubStabil() {
+
+  return new Promise(
+    (resolve) => {
+
+      requestAnimationFrame(
+        () => {
+
+          requestAnimationFrame(
+            resolve
+          );
+        }
+      );
+    }
+  );
+}
+
 function jadwalkanResizeEpub() {
 
   clearTimeout(
@@ -750,17 +773,22 @@ function jadwalkanResizeEpub() {
           return;
         }
 
+        await tungguLayoutEpubStabil();
+
         const lokasi =
           rendition.currentLocation();
 
         const cfi =
           lokasi?.start?.cfi || null;
 
+        const rect =
+          viewer.getBoundingClientRect();
+
         const width =
           Math.max(
             1,
             Math.round(
-              viewer.clientWidth
+              rect.width
             )
           );
 
@@ -768,9 +796,16 @@ function jadwalkanResizeEpub() {
           Math.max(
             1,
             Math.round(
-              viewer.clientHeight
+              rect.height
             )
           );
+
+        if (
+          width === epubViewerWidth &&
+          height === epubViewerHeight
+        ) {
+          return;
+        }
 
         try {
 
@@ -785,6 +820,12 @@ function jadwalkanResizeEpub() {
               cfi
             );
           }
+
+          epubViewerWidth =
+            width;
+
+          epubViewerHeight =
+            height;
 
         } catch (error) {
 
