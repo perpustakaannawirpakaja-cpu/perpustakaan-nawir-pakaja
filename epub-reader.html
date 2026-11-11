@@ -214,7 +214,23 @@ header{
   src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"
 ></script>
 
+<script
+  src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+></script>
+
 <script>
+const SUPABASE_URL =
+  "https://lacdmofkvrmygwczoeux.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_vu1p7MFzan_Dqx_58B8dmQ_V14Hm0Vj";
+
+const db =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+  
 const viewer =
   document.getElementById(
     "viewer"
@@ -250,6 +266,338 @@ let epubBook =
 
 let rendition =
   null;
+
+let epubReadingKey =
+  null;
+
+function buatEpubReadingKey(
+  epubUrl
+) {
+
+  if (
+    typeof epubUrl !==
+      "string" ||
+    !epubUrl.trim()
+  ) {
+    return null;
+  }
+
+  return (
+    "lastEpub:" +
+    encodeURIComponent(
+      epubUrl.trim()
+    )
+  );
+}
+
+function simpanProgressEpubLokal({
+  cfi,
+  pageNumber = null,
+  totalPages = null
+}) {
+
+  if (
+    !epubReadingKey ||
+    typeof cfi !== "string" ||
+    !cfi.trim()
+  ) {
+    return;
+  }
+
+  const progress = {
+    cfi: cfi.trim(),
+    page_number:
+  pageNumber !== null &&
+  pageNumber !== undefined &&
+  Number.isFinite(
+    Number(pageNumber)
+  )
+    ? Number(pageNumber)
+    : null,
+
+total_pages:
+  totalPages !== null &&
+  totalPages !== undefined &&
+  Number.isFinite(
+    Number(totalPages)
+  )
+    ? Number(totalPages)
+    : null,
+
+    updated_at:
+      new Date().toISOString()
+  };
+
+  localStorage.setItem(
+    epubReadingKey,
+    JSON.stringify(
+      progress
+    )
+  );
+}
+
+function ambilProgressEpubLokal() {
+
+  if (!epubReadingKey) {
+    return null;
+  }
+
+  const raw =
+    localStorage.getItem(
+      epubReadingKey
+    );
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+
+    const progress =
+      JSON.parse(raw);
+
+    if (
+      !progress ||
+      typeof progress.cfi !==
+        "string" ||
+      !progress.cfi.trim()
+    ) {
+      return null;
+    }
+
+    return {
+      ...progress,
+      cfi:
+        progress.cfi.trim()
+    };
+
+  } catch (error) {
+
+    console.warn(
+      "Progress EPUB lokal tidak valid:",
+      error
+    );
+
+    return null;
+  }
+}
+
+async function simpanProgressEpubCloud({
+  cfi,
+  pageNumber = null
+}) {
+
+  if (
+    !epubReadingKey ||
+    typeof cfi !== "string" ||
+    !cfi.trim()
+  ) {
+    return;
+  }
+
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (
+    userError ||
+    !user
+  ) {
+    return;
+  }
+
+  const halaman =
+    pageNumber !== null &&
+    pageNumber !== undefined &&
+    Number.isFinite(
+      Number(pageNumber)
+    )
+      ? Math.max(
+          1,
+          Math.trunc(
+            Number(pageNumber)
+          )
+        )
+      : 1;
+
+  const { error } =
+    await db
+      .from("reader_progress")
+      .upsert(
+        {
+          user_id:
+            user.id,
+
+          book_key:
+            epubReadingKey,
+
+          page_number:
+            halaman,
+
+          reader_type:
+            "epub",
+
+          location_cfi:
+            cfi.trim(),
+
+          updated_at:
+            new Date().toISOString()
+        },
+        {
+          onConflict:
+            "user_id,book_key"
+        }
+      );
+
+  if (error) {
+
+    console.error(
+      "Gagal menyimpan progress EPUB ke cloud:",
+      error
+    );
+  }
+}
+
+let epubProgressCloudSaveTimer =
+  null;
+
+function jadwalkanSimpanProgressEpubCloud({
+  cfi,
+  pageNumber = null
+}) {
+
+  clearTimeout(
+    epubProgressCloudSaveTimer
+  );
+
+  epubProgressCloudSaveTimer =
+    setTimeout(
+      () => {
+
+        simpanProgressEpubCloud({
+          cfi,
+          pageNumber
+        });
+
+      },
+      800
+    );
+}
+
+async function ambilProgressEpubCloud() {
+
+  if (!epubReadingKey) {
+    return null;
+  }
+
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
+
+  if (
+    userError ||
+    !user
+  ) {
+    return null;
+  }
+
+  const {
+    data,
+    error
+  } = await db
+    .from("reader_progress")
+    .select(
+      "page_number, location_cfi, updated_at"
+    )
+    .eq(
+      "user_id",
+      user.id
+    )
+    .eq(
+      "book_key",
+      epubReadingKey
+    )
+    .eq(
+      "reader_type",
+      "epub"
+    )
+    .maybeSingle();
+
+  if (error) {
+
+    console.error(
+      "Gagal mengambil progress EPUB dari cloud:",
+      error
+    );
+
+    return null;
+  }
+
+  if (
+    !data ||
+    typeof data.location_cfi !==
+      "string" ||
+    !data.location_cfi.trim()
+  ) {
+    return null;
+  }
+
+  return {
+    cfi:
+      data.location_cfi.trim(),
+
+    page_number:
+      data.page_number,
+
+    updated_at:
+      data.updated_at
+  };
+}
+
+function pilihProgressEpubTerbaru(
+  progressLokal,
+  progressCloud
+) {
+
+  if (
+    !progressLokal &&
+    !progressCloud
+  ) {
+    return null;
+  }
+
+  if (!progressLokal) {
+    return progressCloud;
+  }
+
+  if (!progressCloud) {
+    return progressLokal;
+  }
+
+  const waktuLokal =
+    Date.parse(
+      progressLokal.updated_at || ""
+    );
+
+  const waktuCloud =
+    Date.parse(
+      progressCloud.updated_at || ""
+    );
+
+  if (
+    Number.isFinite(waktuCloud) &&
+    (
+      !Number.isFinite(waktuLokal) ||
+      waktuCloud > waktuLokal
+    )
+  ) {
+    return progressCloud;
+  }
+
+  return progressLokal;
+}
 
 function ambilUrlEpub() {
 
@@ -300,6 +648,11 @@ async function bukaEpub() {
   const epubUrl =
     ambilUrlEpub();
 
+  epubReadingKey =
+  buatEpubReadingKey(
+    epubUrl
+  );
+
   if (!epubUrl) {
 
     status.textContent =
@@ -347,6 +700,46 @@ async function bukaEpub() {
         }
       );
 
+    rendition.on(
+      "relocated",
+      function (location) {
+
+    const current =
+      location?.start
+        ?.displayed
+        ?.page;
+
+    const total =
+      location?.start
+        ?.displayed
+        ?.total;
+
+    const cfi =
+      location?.start
+        ?.cfi;
+
+    if (
+      current &&
+      total
+    ) {
+      status.textContent =
+        `Halaman ${current} / ${total}`;
+    }
+
+    simpanProgressEpubLokal({
+      cfi,
+      pageNumber: current,
+      totalPages: total
+    });
+
+    jadwalkanSimpanProgressEpubCloud({
+      cfi,
+      pageNumber: current
+    });
+        
+  }
+);
+
     const metadata =
       await epubBook.loaded.metadata;
 
@@ -361,7 +754,47 @@ async function bukaEpub() {
         " - Perpustakaan Nawir Pakaja";
     }
 
-    await rendition.display();
+    const progressLokal =
+      ambilProgressEpubLokal();
+
+    const progressCloud =
+      await ambilProgressEpubCloud();
+
+    const progressTerbaru =
+      pilihProgressEpubTerbaru(
+        progressLokal,
+        progressCloud
+      );
+
+    if (
+      progressTerbaru?.cfi
+    ) {
+
+      try {
+
+        await rendition.display(
+          progressTerbaru.cfi
+        );
+
+        console.log(
+          "Resume EPUB dari progress terbaru:",
+          progressTerbaru.cfi
+        );
+
+      } catch (error) {
+
+        console.warn(
+          "Resume EPUB gagal, membuka dari awal:",
+          error
+        );
+
+        await rendition.display();
+      }
+
+    } else {
+
+      await rendition.display();
+    }
 
     prevButton.disabled =
       false;
@@ -371,31 +804,7 @@ async function bukaEpub() {
 
     status.textContent =
       "✅ EPUB berhasil dibuka.";
-
-    rendition.on(
-      "relocated",
-      function (location) {
-
-        const current =
-          location?.start
-            ?.displayed
-            ?.page;
-
-        const total =
-          location?.start
-            ?.displayed
-            ?.total;
-
-        if (
-          current &&
-          total
-        ) {
-          status.textContent =
-            `Halaman ${current} / ${total}`;
-        }
-      }
-    );
-
+    
   } catch (error) {
 
     console.error(
