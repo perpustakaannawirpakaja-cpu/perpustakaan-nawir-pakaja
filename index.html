@@ -18411,37 +18411,57 @@ async function tampilkanRekomendasiBuku(books) {
       )
     );
 
-  const rekomendasi =
+  const belumPernahDibaca =
+  (buku) => {
+
+    const pdfKey =
+      "lastPage:" +
+      encodeURIComponent(
+        buku.file_url || ""
+      );
+
+    const epubKey =
+      "lastEpub:" +
+      encodeURIComponent(
+        buku.epub_url || ""
+      );
+
+    return (
+      !bookKeysDibaca.has(pdfKey) &&
+      !bookKeysDibaca.has(epubKey)
+    );
+  };
+
+let rekomendasi =
+  books
+    .filter((buku) => {
+
+      const kategori =
+        (buku.category || "").trim();
+
+      return (
+        kategoriDibaca.includes(kategori) &&
+        belumPernahDibaca(buku)
+      );
+    })
+    .slice(0, 4);
+
+/* Fallback:
+   jika kategori favorit habis,
+   tampilkan buku lain yang belum dibaca */
+if (rekomendasi.length === 0) {
+
+  rekomendasi =
     books
-      .filter((buku) => {
-
-        const kategori =
-          (buku.category || "").trim();
-
-        const pdfKey =
-          "lastPage:" +
-          encodeURIComponent(
-            buku.file_url || ""
-          );
-
-        const epubKey =
-          "lastEpub:" +
-          encodeURIComponent(
-            buku.epub_url || ""
-          );
-
-        return (
-          kategoriDibaca.includes(kategori) &&
-          !bookKeysDibaca.has(pdfKey) &&
-          !bookKeysDibaca.has(epubKey)
-        );
-
-      })
+      .filter(
+        belumPernahDibaca
+      )
       .slice(0, 4);
+}
 
-  if (rekomendasi.length === 0) {
-    return;
-  }
+if (rekomendasi.length === 0) {
+  return;
+}
 
   rekomendasi.forEach((buku) => {
 
