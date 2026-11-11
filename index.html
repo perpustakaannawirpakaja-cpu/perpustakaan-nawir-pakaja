@@ -4494,6 +4494,45 @@ if (filterKategoriAktif) {
   status.textContent =
   `Menampilkan ${jumlahTampil} dari ${jumlahTotal} buku${tambahan} • Urut: ${labelUrut[modeUrut]}`;
 }
+
+function buatUrlReaderBuku(
+  buku
+) {
+
+  const epubUrl =
+    typeof buku?.epub_url ===
+      "string"
+      ? buku.epub_url.trim()
+      : "";
+
+  if (epubUrl) {
+
+    return (
+      "epub-reader.html?file=" +
+      encodeURIComponent(
+        epubUrl
+      )
+    );
+  }
+
+  const pdfUrl =
+    typeof buku?.file_url ===
+      "string"
+      ? buku.file_url.trim()
+      : "";
+
+  if (pdfUrl) {
+
+    return (
+      "reader.html?file=" +
+      encodeURIComponent(
+        pdfUrl
+      )
+    );
+  }
+
+  return "";
+}
   
 /* =========================================
    RENDER BOOK LIST
@@ -4633,13 +4672,13 @@ const isBukuBaru =
         </p>
 
         ${
-          buku.file_url
+          buatUrlReaderBuku(buku)
             ? `
               <a
                 class="read-button"
-                href="reader.html?file=${
-                  encodeURIComponent(
-                    buku.file_url
+                href="${
+                  buatUrlReaderBuku(
+                    buku
                   )
                 }"
               >
@@ -18267,13 +18306,13 @@ async function tampilkanRekomendasiBuku(books) {
         </p>
 
         ${
-          buku.file_url
+          buatUrlReaderBuku(buku)
             ? `
               <a
                 class="read-button"
-                href="reader.html?file=${
-                  encodeURIComponent(
-                    buku.file_url
+                href="${
+                  buatUrlReaderBuku(
+                    buku
                   )
                 }"
               >
