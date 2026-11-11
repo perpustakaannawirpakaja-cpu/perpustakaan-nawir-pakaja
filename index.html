@@ -18019,11 +18019,34 @@ async function tampilkanLanjutMembaca(books) {
       "book_key, page_number, updated_at"
     )
     .eq("user_id", user.id)
+    .eq(
+      "reader_type",
+      "pdf"
+    )
     .order(
       "updated_at",
       { ascending: false }
     )
     .limit(3);
+
+  const {
+  data: epubProgressData,
+  error: epubProgressError
+} = await db
+  .from("reader_progress")
+  .select(
+    "book_key, page_number, updated_at"
+  )
+  .eq("user_id", user.id)
+  .eq(
+    "reader_type",
+    "epub"
+  )
+  .order(
+    "updated_at",
+    { ascending: false }
+  )
+  .limit(3);
 
   if (progressError) {
     console.error(
@@ -18034,14 +18057,39 @@ async function tampilkanLanjutMembaca(books) {
     return;
   }
 
-  if (
+  if (epubProgressError) {
+    console.error(
+      "Gagal mengambil progress EPUB:",
+      epubProgressError
+    );
+  }
+
+  const tidakAdaProgressPdf =
     !progressData ||
-    progressData.length === 0
+    progressData.length === 0;
+
+  const tidakAdaProgressEpub =
+    !epubProgressData ||
+    epubProgressData.length === 0;
+
+  if (
+    tidakAdaProgressPdf &&
+    tidakAdaProgressEpub
   ) {
     return;
   }
 
-  const items = progressData
+  const progressPdfAman =
+    Array.isArray(progressData)
+      ? progressData
+      : [];
+
+  const progressEpubAman =
+    Array.isArray(epubProgressData)
+      ? epubProgressData
+      : [];
+
+  const items = progressPdfAman
     .map((progress) => {
 
       const buku = books.find((item) => {
@@ -18066,11 +18114,95 @@ async function tampilkanLanjutMembaca(books) {
     })
     .filter(Boolean);
 
-  if (items.length === 0) {
+  const epubItems =
+  progressEpubAman
+    .map((progress) => {
+
+      const buku =
+        books.find((item) => {
+
+          const key =
+            "lastEpub:" +
+            encodeURIComponent(
+              item.epub_url || ""
+            );
+
+          return (
+            key ===
+            progress.book_key
+          );
+        });
+
+      if (!buku) {
+        return null;
+      }
+
+      return {
+        buku,
+        progress
+      };
+    })
+    .filter(Boolean);
+
+  if (
+    items.length === 0 &&
+    epubItems.length === 0
+  ) {
     return;
   }
 
-  items.forEach(({ buku, progress }) => {
+  const semuaItems =
+  [
+    ...items.map(
+      (item) => ({
+        ...item,
+        readerType: "pdf"
+      })
+    ),
+
+    ...epubItems.map(
+      (item) => ({
+        ...item,
+        readerType: "epub"
+      })
+    )
+  ]
+    .sort(
+      (a, b) =>
+        new Date(
+          b.progress.updated_at || 0
+        ) -
+        new Date(
+          a.progress.updated_at || 0
+        )
+    )
+    .slice(0, 3);
+
+  semuaItems.forEach(
+    ({
+      buku,
+      progress,
+      readerType
+    }) => {
+
+    const lanjutkanUrl =
+      readerType === "epub"
+        ? (
+            buku.epub_url
+              ? "epub-reader.html?file=" +
+                encodeURIComponent(
+                  buku.epub_url
+                )
+              : ""
+          )
+        : (
+            buku.file_url
+              ? "reader.html?file=" +
+                encodeURIComponent(
+                  buku.file_url
+                )
+              : ""
+          );
 
     const card =
       document.createElement("div");
@@ -18104,6 +18236,17 @@ async function tampilkanLanjutMembaca(books) {
         </h3>
 
         <p>
+          Format:
+          <strong>
+            ${
+              readerType === "epub"
+                ? "EPUB"
+                : "PDF"
+            }
+          </strong>
+        </p>
+
+        <p>
           📖 Halaman terakhir:
           <strong>
             ${progress.page_number || 1}
@@ -18116,15 +18259,11 @@ async function tampilkanLanjutMembaca(books) {
         </p>
 
         ${
-          buku.file_url
+          lanjutkanUrl
             ? `
               <a
                 class="read-button"
-                href="reader.html?file=${
-                  encodeURIComponent(
-                    buku.file_url
-                  )
-                }"
+                href="${lanjutkanUrl}"
               >
                 ▶ Lanjutkan Membaca
               </a>
@@ -18142,8 +18281,8 @@ async function tampilkanLanjutMembaca(books) {
 }
 
     /* =========================================
-   SMART BOOK RECOMMENDATIONS
-   ========================================= */
+       SMART BOOK RECOMMENDATIONS
+       ========================================= */
 
 async function tampilkanRekomendasiBuku(books) {
 
@@ -18178,6 +18317,10 @@ async function tampilkanRekomendasiBuku(books) {
       "book_key, updated_at"
     )
     .eq("user_id", user.id)
+    .eq(
+      "reader_type",
+      "pdf"
+    )
     .order(
       "updated_at",
       { ascending: false }
