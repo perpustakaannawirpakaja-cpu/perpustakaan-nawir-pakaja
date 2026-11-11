@@ -270,6 +270,9 @@ let rendition =
 let epubReadingKey =
   null;
 
+let epubResizeTimer =
+  null;
+
 function buatEpubReadingKey(
   epubUrl
 ) {
@@ -730,6 +733,72 @@ function pasangSwipeEpub(
   );
 }
 
+function jadwalkanResizeEpub() {
+
+  clearTimeout(
+    epubResizeTimer
+  );
+
+  epubResizeTimer =
+    setTimeout(
+      async () => {
+
+        if (
+          !rendition ||
+          !viewer
+        ) {
+          return;
+        }
+
+        const lokasi =
+          rendition.currentLocation();
+
+        const cfi =
+          lokasi?.start?.cfi || null;
+
+        const width =
+          Math.max(
+            1,
+            Math.round(
+              viewer.clientWidth
+            )
+          );
+
+        const height =
+          Math.max(
+            1,
+            Math.round(
+              viewer.clientHeight
+            )
+          );
+
+        try {
+
+          rendition.resize(
+            width,
+            height
+          );
+
+          if (cfi) {
+
+            await rendition.display(
+              cfi
+            );
+          }
+
+        } catch (error) {
+
+          console.warn(
+            "Resize EPUB gagal:",
+            error
+          );
+        }
+
+      },
+      180
+    );
+}
+
 async function bukaEpub() {
 
   const epubUrl =
@@ -999,6 +1068,16 @@ window.addEventListener(
       await rendition.next();
     }
   }
+);
+
+window.addEventListener(
+  "resize",
+  jadwalkanResizeEpub
+);
+
+window.addEventListener(
+  "orientationchange",
+  jadwalkanResizeEpub
 );
 
 bukaEpub();
