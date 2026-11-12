@@ -19350,35 +19350,111 @@ function buatXhtmlHalamanEpub({
 }) {
 
   const nomorHalaman =
-    Number(pageNumber);
+    Number(
+      pageNumber
+    );
 
   const lebar =
-    Number(width);
+    Number(
+      width
+    );
 
   const tinggi =
-    Number(height);
+    Number(
+      height
+    );
 
   if (
-    !Number.isInteger(nomorHalaman) ||
-    nomorHalaman < 1 ||
-    !imageFileName ||
-    !lebar ||
-    !tinggi
+    !Number.isInteger(
+      nomorHalaman
+    ) ||
+    nomorHalaman < 1
   ) {
+
     throw new Error(
-      "Data halaman EPUB tidak valid."
+      "Nomor halaman EPUB tidak valid."
     );
   }
 
+  if (
+    !Number.isInteger(
+      lebar
+    ) ||
+    lebar < 1 ||
+    !Number.isInteger(
+      tinggi
+    ) ||
+    tinggi < 1
+  ) {
+
+    throw new Error(
+      "Dimensi halaman EPUB tidak valid."
+    );
+  }
+
+  const namaGambar =
+    typeof imageFileName ===
+      "string"
+      ? imageFileName.trim()
+      : "";
+
+  if (
+    !namaGambar ||
+    namaGambar.includes(
+      "/"
+    ) ||
+    namaGambar.includes(
+      "\\"
+    ) ||
+    namaGambar.includes(
+      ".."
+    ) ||
+    !/\.jpe?g$/i.test(
+      namaGambar
+    )
+  ) {
+
+    throw new Error(
+      "Nama file gambar halaman EPUB tidak valid."
+    );
+  }
+
+  if (
+    typeof escapeXmlEpub !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Function escapeXmlEpub tidak tersedia."
+    );
+  }
+
+  const judulDasar =
+    typeof title ===
+      "string" &&
+    title.trim()
+      ? title.trim()
+      : "Halaman";
+
   const safeTitle =
     escapeXmlEpub(
-      `${title} ${nomorHalaman}`
+      `${judulDasar} ${nomorHalaman}`
     );
 
   const safeImageFileName =
     escapeXmlEpub(
-      imageFileName
+      namaGambar
     );
+
+  if (
+    !safeTitle ||
+    !safeImageFileName
+  ) {
+
+    throw new Error(
+      "Metadata XHTML halaman EPUB tidak valid."
+    );
+  }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
