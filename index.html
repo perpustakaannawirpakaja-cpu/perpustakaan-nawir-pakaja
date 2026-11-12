@@ -18496,30 +18496,105 @@ async function validasiEpubSkeleton(
 ) {
 
   if (
-    !(epubBlob instanceof Blob) ||
-    epubBlob.size < 1
+    !(epubBlob instanceof Blob)
   ) {
+
     return {
       valid: false,
       message:
-        "Blob EPUB kosong atau tidak valid."
+        "Blob EPUB tidak valid."
+    };
+  }
+
+  const ukuranBlob =
+    Number(
+      epubBlob.size
+    );
+
+  if (
+    !Number.isInteger(
+      ukuranBlob
+    ) ||
+    ukuranBlob < 1
+  ) {
+
+    return {
+      valid: false,
+      message:
+        "Blob EPUB kosong atau ukurannya tidak valid."
+    };
+  }
+
+  const mimeType =
+    typeof epubBlob.type ===
+      "string"
+      ? epubBlob.type
+        .trim()
+        .toLowerCase()
+      : "";
+
+  if (
+    mimeType &&
+    mimeType !==
+      "application/epub+zip"
+  ) {
+
+    return {
+      valid: false,
+      message:
+        "MIME type Blob EPUB tidak sesuai."
     };
   }
 
   if (
-    typeof JSZip === "undefined"
+    typeof JSZip ===
+      "undefined" ||
+    typeof JSZip.loadAsync !==
+      "function"
   ) {
+
     return {
       valid: false,
       message:
-        "JSZip belum tersedia."
+        "JSZip belum tersedia atau tidak valid."
     };
   }
 
-  const zip =
-    await JSZip.loadAsync(
-      epubBlob
-    );
+  let zip =
+    null;
+
+  try {
+
+    zip =
+      await JSZip.loadAsync(
+        epubBlob
+      );
+
+  } catch (error) {
+
+    return {
+      valid: false,
+      message:
+        "Blob EPUB bukan arsip ZIP yang valid: " +
+        (
+          error?.message ||
+          "ZIP gagal dibaca."
+        )
+    };
+  }
+
+  if (
+    !zip ||
+    typeof zip.file !==
+      "function"
+  ) {
+
+    return {
+      valid: false,
+      message:
+        "Objek ZIP EPUB tidak valid."
+    };
+  }
 
   const fileWajib = [
     "mimetype",
@@ -18532,29 +18607,107 @@ async function validasiEpubSkeleton(
   const fileHilang =
     fileWajib.filter(
       (path) =>
-        !zip.file(path)
+        !zip.file(
+          path
+        )
     );
 
-  if (fileHilang.length) {
+  if (
+    fileHilang.length >
+      0
+  ) {
 
     return {
       valid: false,
       message:
         "Struktur EPUB belum lengkap: " +
-        fileHilang.join(", ")
+        fileHilang.join(
+          ", "
+        )
     };
   }
 
-  const mimetype =
-    (
+  let mimetype =
+    "";
+
+  let containerXml =
+    "";
+
+  let packageOpf =
+    "";
+
+  let navXhtml =
+    "";
+
+  let startXhtml =
+    "";
+
+  try {
+
+    mimetype =
+      (
+        await zip
+          .file(
+            "mimetype"
+          )
+          .async(
+            "string"
+          )
+      )
+        .trim();
+
+    containerXml =
       await zip
-        .file("mimetype")
-        .async("string")
-    ).trim();
+        .file(
+          "META-INF/container.xml"
+        )
+        .async(
+          "string"
+        );
+
+    packageOpf =
+      await zip
+        .file(
+          "EPUB/package.opf"
+        )
+        .async(
+          "string"
+        );
+
+    navXhtml =
+      await zip
+        .file(
+          "EPUB/nav.xhtml"
+        )
+        .async(
+          "string"
+        );
+
+    startXhtml =
+      await zip
+        .file(
+          "EPUB/Text/start.xhtml"
+        )
+        .async(
+          "string"
+        );
+
+  } catch (error) {
+
+    return {
+      valid: false,
+      message:
+        "Salah satu file inti EPUB gagal dibaca: " +
+        (
+          error?.message ||
+          "File EPUB tidak dapat diproses."
+        )
+    };
+  }
 
   if (
     mimetype !==
-    "application/epub+zip"
+      "application/epub+zip"
   ) {
 
     return {
@@ -18564,53 +18717,102 @@ async function validasiEpubSkeleton(
     };
   }
 
-  const containerXml =
-    await zip
-      .file(
-        "META-INF/container.xml"
-      )
-      .async("string");
-
   if (
     !containerXml.includes(
       'full-path="EPUB/package.opf"'
+    ) ||
+    !containerXml.includes(
+      'media-type="application/oebps-package+xml"'
     )
   ) {
 
     return {
       valid: false,
       message:
-        "container.xml tidak menunjuk ke package.opf."
+        "container.xml tidak menunjuk ke package.opf dengan benar."
     };
   }
-
-  const packageOpf =
-    await zip
-      .file(
-        "EPUB/package.opf"
-      )
-      .async("string");
 
   if (
     !packageOpf.includes(
       'version="3.0"'
     ) ||
     !packageOpf.includes(
+      'unique-identifier="book-id"'
+    ) ||
+    !packageOpf.includes(
+      '<dc:identifier id="book-id">'
+    ) ||
+    !packageOpf.includes(
+      "<dc:title>"
+    ) ||
+    !packageOpf.includes(
+      "<dc:language>"
+    ) ||
+    !packageOpf.includes(
+      'property="dcterms:modified"'
+    ) ||
+    !packageOpf.includes(
       'properties="nav"'
+    ) ||
+    !packageOpf.includes(
+      'href="Text/start.xhtml"'
+    ) ||
+    !packageOpf.includes(
+      '<itemref idref="start"/>'
     )
   ) {
 
     return {
       valid: false,
       message:
-        "Metadata package.opf EPUB belum valid."
+        "Metadata package.opf EPUB belum lengkap atau tidak valid."
+    };
+  }
+
+  if (
+    !navXhtml.includes(
+      'epub:type="toc"'
+    ) ||
+    !navXhtml.includes(
+      'href="Text/start.xhtml"'
+    )
+  ) {
+
+    return {
+      valid: false,
+      message:
+        "nav.xhtml EPUB belum memiliki daftar isi yang valid."
+    };
+  }
+
+  if (
+    !startXhtml.includes(
+      'xmlns="http://www.w3.org/1999/xhtml"'
+    ) ||
+    !startXhtml.includes(
+      "<title>"
+    ) ||
+    !startXhtml.includes(
+      "<body>"
+    )
+  ) {
+
+    return {
+      valid: false,
+      message:
+        "start.xhtml EPUB belum memiliki struktur XHTML dasar yang valid."
     };
   }
 
   return {
     valid: true,
     message:
-      "Struktur dasar EPUB valid."
+      "Struktur dasar EPUB valid.",
+    size:
+      ukuranBlob,
+    mimeType:
+      mimeType
   };
 }
 
