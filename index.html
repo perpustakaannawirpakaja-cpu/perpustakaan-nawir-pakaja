@@ -18764,16 +18764,59 @@ async function pastikanOutputEpubFinalisasi({
     errorUtama
   }) {
 
-    const pesanTambahan = [];
+    const pesanUtama =
+      errorUtama?.message ||
+      "Output EPUB rebuild tidak valid.";
+
+    const pathOutput =
+      typeof storagePath === "string"
+        ? storagePath.trim()
+        : "";
 
     /*
-     * Jika file baru sempat terupload,
-     * coba bersihkan dari Storage.
+     * PENTING:
+     *
+     * Metadata harus lebih dulu dibuat stale.
+     *
+     * Jangan hapus file fisik terlebih dahulu,
+     * karena kalau reset metadata gagal dan
+     * melakukan rollback, metadata bisa kembali
+     * menunjuk file yang sudah terhapus.
      */
-    if (
-      typeof storagePath === "string" &&
-      storagePath.trim()
-    ) {
+    try {
+
+      await resetMetadataOutputEpub(
+        idBuku
+      );
+
+    } catch (resetError) {
+
+      /*
+       * Reset metadata gagal.
+       *
+       * File EPUB baru sengaja DIPERTAHANKAN
+       * karena metadata mungkin masih menunjuk
+       * file tersebut setelah rollback.
+       */
+      throw new Error(
+        pesanUtama +
+        " | Reset metadata EPUB gagal: " +
+        (
+          resetError?.message ||
+          "Error tidak diketahui."
+        ) +
+        " | File EPUB baru dipertahankan untuk mencegah referensi Storage rusak."
+      );
+    }
+
+    /*
+     * Sampai titik ini metadata sudah
+     * berhasil ditandai stale dan books
+     * tidak lagi mempublikasikan EPUB baru.
+     *
+     * File fisik sekarang aman dibersihkan.
+     */
+    if (pathOutput) {
 
       try {
 
@@ -18784,21 +18827,28 @@ async function pastikanOutputEpubFinalisasi({
             "book-files"
           )
           .remove([
-            storagePath.trim()
+            pathOutput
           ]);
 
         if (removeError) {
 
-          pesanTambahan.push(
-            "Cleanup Storage gagal: " +
+          throw new Error(
             removeError.message
           );
         }
 
       } catch (cleanupError) {
 
-        pesanTambahan.push(
-          "Cleanup Storage gagal: " +
+        /*
+         * Metadata sudah stale, jadi file yang
+         * gagal dihapus hanya menjadi orphan.
+         *
+         * Jangan hidupkan metadata kembali.
+         */
+        throw new Error(
+          pesanUtama +
+          " | Metadata EPUB sudah berhasil direset, " +
+          "tetapi cleanup file EPUB baru gagal: " +
           (
             cleanupError?.message ||
             "Error tidak diketahui."
@@ -18808,43 +18858,12 @@ async function pastikanOutputEpubFinalisasi({
     }
 
     /*
-     * Metadata output baru jangan dibiarkan
-     * terlihat sebagai EPUB aktif/current.
+     * Metadata sudah stale dan file baru
+     * berhasil dibersihkan.
+     *
+     * Tetap throw error utama karena output
+     * rebuild memang tidak boleh digunakan.
      */
-    try {
-
-      await resetMetadataOutputEpub(
-        idBuku
-      );
-
-    } catch (resetError) {
-
-      pesanTambahan.push(
-        "Reset metadata EPUB gagal: " +
-        (
-          resetError?.message ||
-          "Error tidak diketahui."
-        )
-      );
-    }
-
-    const pesanUtama =
-      errorUtama?.message ||
-      "Output EPUB rebuild tidak valid.";
-
-    if (
-      pesanTambahan.length > 0
-    ) {
-
-      throw new Error(
-        pesanUtama +
-        " | " +
-        pesanTambahan.join(
-          " | "
-        )
-      );
-    }
-
     throw new Error(
       pesanUtama
     );
