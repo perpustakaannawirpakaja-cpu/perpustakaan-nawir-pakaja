@@ -16527,46 +16527,822 @@ setTimeout(() => {
 
 }
 
-async function hapusBukuAdmin(bookId) {
+async function hapusBukuAdmin(
+  bookId
+) {
 
-  const {
-    data: book,
-    error: loadError
-  } = await db
-    .from("books")
-    .select(`
-      id,
-      title,
-      category,
-      file_url,
-      cover_url
-    `)
-    .eq("id", bookId)
-    .maybeSingle();
+  const idBuku =
+    Number(
+      bookId
+    );
 
-  if (loadError || !book) {
+  if (
+    !Number.isInteger(
+      idBuku
+    ) ||
+    idBuku < 1
+  ) {
 
     console.error(
-      "Gagal mengambil data buku:",
-      loadError
+      "ID buku untuk penghapusan tidak valid:",
+      bookId
     );
 
     alert(
-      "❌ Data buku gagal dimuat."
+      "❌ ID buku tidak valid."
     );
 
     return;
   }
+
+  let book =
+    null;
+
+  let pageStoragePaths =
+    [];
+
+  let epubStoragePaths =
+    [];
+
+  try {
+
+    const {
+      data: {
+        user
+      },
+      error: userError
+    } =
+      await db.auth.getUser();
+
+    if (
+      userError ||
+      !user
+    ) {
+
+      throw new Error(
+        "Sesi Admin tidak ditemukan: " +
+        (
+          userError?.message ||
+          "User tidak tersedia."
+        )
+      );
+    }
+
+    const userId =
+      typeof user.id ===
+        "string"
+        ? user.id.trim()
+        : "";
+
+    if (!userId) {
+
+      throw new Error(
+        "ID Admin tidak tersedia."
+      );
+    }
+
+    const {
+      data: adminData,
+      error: adminError
+    } = await db
+      .from(
+        "admin_users"
+      )
+      .select(
+        "user_id"
+      )
+      .eq(
+        "user_id",
+        userId
+      )
+      .maybeSingle();
+
+    if (adminError) {
+
+      throw new Error(
+        "Gagal memeriksa akses Admin: " +
+        adminError.message
+      );
+    }
+
+    if (
+      !adminData ||
+      adminData.user_id !==
+        userId
+    ) {
+
+      throw new Error(
+        "Akun ini tidak memiliki akses Admin."
+      );
+    }
+
+    const {
+      data: bookData,
+      error: loadError
+    } = await db
+      .from(
+        "books"
+      )
+      .select(`
+        id,
+        title,
+        category,
+        file_url,
+        cover_url,
+        epub_storage_path
+      `)
+      .eq(
+        "id",
+        idBuku
+      )
+      .maybeSingle();
+
+    if (loadError) {
+
+      throw new Error(
+        "Gagal mengambil data buku: " +
+        loadError.message
+      );
+    }
+
+    if (!bookData) {
+
+      throw new Error(
+        "Data buku tidak ditemukan."
+      );
+    }
+
+    if (
+      Number(
+        bookData.id
+      ) !== idBuku
+    ) {
+
+      throw new Error(
+        "Book ID hasil query penghapusan tidak sesuai."
+      );
+    }
+
+    book =
+      bookData;
+
+  } catch (error) {
+
+    console.error(
+      "Gagal menyiapkan penghapusan buku:",
+      error
+    );
+
+    alert(
+      "❌ " +
+      (
+        error?.message ||
+        "Data buku gagal dimuat."
+      )
+    );
+
+    return;
+  }
+
+  const judulBuku =
+    typeof book.title ===
+      "string" &&
+    book.title.trim()
+      ? book.title.trim()
+      : "Tanpa Judul";
 
   const yakinHapus =
     confirm(
-      `Hapus buku "${book.title || "Tanpa Judul"}"?\n\n` +
-      `PDF, cover, dan data buku akan dihapus permanen.`
+      `Hapus buku "${judulBuku}"?\n\n` +
+      `PDF, cover, halaman incremental, EPUB, dan data buku akan dihapus permanen.`
     );
 
   if (!yakinHapus) {
+
     return;
   }
+
+  /*
+    Ambil semua path Storage SEBELUM
+    row buku dihapus karena relasi database
+    dapat terhapus melalui cascade.
+  */
+
+  try {
+
+    const {
+      data: pageRows,
+      error: pageError
+    } = await db
+      .from(
+        "book_pages"
+      )
+      .select(`
+        id,
+        book_id,
+        storage_path
+      `)
+      .eq(
+        "book_id",
+        idBuku
+      );
+
+    if (pageError) {
+
+      throw new Error(
+        "Gagal membaca file halaman incremental: " +
+        pageError.message
+      );
+    }
+
+    if (
+      Array.isArray(
+        pageRows
+      )
+    ) {
+
+      pageStoragePaths =
+        pageRows
+          .filter(
+            (page) =>
+              page &&
+              Number(
+                page.book_id
+              ) === idBuku &&
+              typeof page.storage_path ===
+                "string" &&
+              page.storage_path.trim()
+          )
+          .map(
+            (page) =>
+              page.storage_path.trim()
+          );
+    }
+
+    const {
+      data: ingestionRows,
+      error: ingestionError
+    } = await db
+      .from(
+        "book_ingestion_sessions"
+      )
+      .select(`
+        id,
+        book_id,
+        output_storage_path
+      `)
+      .eq(
+        "book_id",
+        idBuku
+      );
+
+    if (ingestionError) {
+
+      throw new Error(
+        "Gagal membaca metadata output ingestion: " +
+        ingestionError.message
+      );
+    }
+
+    if (
+      Array.isArray(
+        ingestionRows
+      )
+    ) {
+
+      epubStoragePaths =
+        ingestionRows
+          .filter(
+            (session) =>
+              session &&
+              Number(
+                session.book_id
+              ) === idBuku &&
+              typeof session.output_storage_path ===
+                "string" &&
+              session.output_storage_path.trim()
+          )
+          .map(
+            (session) =>
+              session.output_storage_path.trim()
+          );
+    }
+
+    if (
+      typeof book.epub_storage_path ===
+        "string" &&
+      book.epub_storage_path.trim()
+    ) {
+
+      epubStoragePaths.push(
+        book.epub_storage_path.trim()
+      );
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Penghapusan dibatalkan karena daftar file Storage tidak dapat dipastikan:",
+      error
+    );
+
+    alert(
+      "❌ " +
+      (
+        error?.message ||
+        "Daftar file buku gagal diperiksa."
+      )
+    );
+
+    return;
+  }
+
+  let pdfPath =
+    null;
+
+  let coverPath =
+    null;
+
+  if (
+    typeof book.file_url ===
+      "string" &&
+    book.file_url.trim()
+  ) {
+
+    try {
+
+      const publicUrl =
+        book.file_url.trim();
+
+      const marker =
+        "/storage/v1/object/public/book-files/";
+
+      const posisi =
+        publicUrl.indexOf(
+          marker
+        );
+
+      if (
+        posisi !== -1
+      ) {
+
+        const encodedPath =
+          publicUrl.substring(
+            posisi +
+            marker.length
+          );
+
+        const hasilPath =
+          decodeURIComponent(
+            encodedPath
+          );
+
+        if (hasilPath) {
+
+          pdfPath =
+            hasilPath;
+        }
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Path PDF final lama tidak dapat dibaca:",
+        error
+      );
+    }
+  }
+
+  if (
+    typeof book.cover_url ===
+      "string" &&
+    book.cover_url.trim()
+  ) {
+
+    try {
+
+      const publicUrl =
+        book.cover_url.trim();
+
+      const marker =
+        "/storage/v1/object/public/book-covers/";
+
+      const posisi =
+        publicUrl.indexOf(
+          marker
+        );
+
+      if (
+        posisi !== -1
+      ) {
+
+        const encodedPath =
+          publicUrl.substring(
+            posisi +
+            marker.length
+          );
+
+        const hasilPath =
+          decodeURIComponent(
+            encodedPath
+          );
+
+        if (hasilPath) {
+
+          coverPath =
+            hasilPath;
+        }
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Path cover lama tidak dapat dibaca:",
+        error
+      );
+    }
+  }
+
+  const {
+    data: deletedBook,
+    error: deleteError
+  } = await db
+    .from(
+      "books"
+    )
+    .delete()
+    .eq(
+      "id",
+      idBuku
+    )
+    .select(
+      "id"
+    )
+    .maybeSingle();
+
+  if (deleteError) {
+
+    console.error(
+      "Gagal menghapus data buku:",
+      deleteError
+    );
+
+    alert(
+      "❌ Data buku gagal dihapus: " +
+      deleteError.message
+    );
+
+    return;
+  }
+
+  if (
+    !deletedBook ||
+    Number(
+      deletedBook.id
+    ) !== idBuku
+  ) {
+
+    console.error(
+      "Read-back penghapusan buku tidak valid:",
+      deletedBook
+    );
+
+    alert(
+      "❌ Penghapusan buku tidak dapat diverifikasi."
+    );
+
+    return;
+  }
+
+  /*
+    Mulai titik ini database sudah terhapus.
+    Cleanup Storage bersifat best-effort dan
+    tidak boleh membalikkan status delete DB.
+  */
+
+  const storageWarnings =
+    [];
+
+  const bookFilePaths =
+    [
+      pdfPath,
+      ...pageStoragePaths,
+      ...epubStoragePaths
+    ]
+      .filter(
+        (path) =>
+          typeof path ===
+            "string" &&
+          path.trim()
+      )
+      .map(
+        (path) =>
+          path.trim()
+      );
+
+  const uniqueBookFilePaths =
+    [
+      ...new Set(
+        bookFilePaths
+      )
+    ];
+
+  if (
+    uniqueBookFilePaths.length >
+      0
+  ) {
+
+    try {
+
+      const {
+        error: fileDeleteError
+      } = await db
+        .storage
+        .from(
+          "book-files"
+        )
+        .remove(
+          uniqueBookFilePaths
+        );
+
+      if (fileDeleteError) {
+
+        storageWarnings.push(
+          "Sebagian file buku gagal dibersihkan dari Storage."
+        );
+
+        console.error(
+          "Data buku sudah dihapus, tetapi file book-files gagal dibersihkan:",
+          fileDeleteError
+        );
+      }
+
+    } catch (error) {
+
+      storageWarnings.push(
+        "Sebagian file buku gagal dibersihkan dari Storage."
+      );
+
+      console.error(
+        "Cleanup book-files gagal:",
+        error
+      );
+    }
+  }
+
+  if (coverPath) {
+
+    try {
+
+      const {
+        error: coverDeleteError
+      } = await db
+        .storage
+        .from(
+          "book-covers"
+        )
+        .remove([
+          coverPath
+        ]);
+
+      if (coverDeleteError) {
+
+        storageWarnings.push(
+          "Cover gagal dibersihkan dari Storage."
+        );
+
+        console.error(
+          "Data buku sudah dihapus, tetapi cover gagal dibersihkan:",
+          coverDeleteError
+        );
+      }
+
+    } catch (error) {
+
+      storageWarnings.push(
+        "Cover gagal dibersihkan dari Storage."
+      );
+
+      console.error(
+        "Cleanup cover gagal:",
+        error
+      );
+    }
+  }
+
+  const kategoriBukuDihapus =
+    normalisasiKategori(
+      book.category
+    );
+
+  if (kategoriBukuDihapus) {
+
+    try {
+
+      const {
+        count: sisaBukuKategori,
+        error: categoryCountError
+      } = await db
+        .from(
+          "books"
+        )
+        .select(
+          "*",
+          {
+            count:
+              "exact",
+
+            head:
+              true
+          }
+        )
+        .eq(
+          "category",
+          book.category
+        );
+
+      if (categoryCountError) {
+
+        throw categoryCountError;
+      }
+
+      const jumlahSisa =
+        Number(
+          sisaBukuKategori ||
+          0
+        );
+
+      if (
+        jumlahSisa === 0
+      ) {
+
+        const categorySelect =
+          document.getElementById(
+            "admin-book-category"
+          );
+
+        if (
+          categorySelect &&
+          normalisasiKategori(
+            categorySelect.value
+          ) ===
+            kategoriBukuDihapus
+        ) {
+
+          categorySelect.value =
+            "";
+
+          try {
+
+            localStorage.removeItem(
+              "adminBookCategory"
+            );
+
+          } catch (storageError) {
+
+            console.error(
+              "Filter kategori berhasil direset tetapi localStorage gagal dibersihkan:",
+              storageError
+            );
+          }
+        }
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Pemeriksaan sisa kategori setelah penghapusan gagal:",
+        error
+      );
+    }
+  }
+
+  let refreshWarning =
+    null;
+
+  try {
+
+    await tampilkanBuku();
+
+    await muatDaftarBukuAdmin();
+
+  } catch (refreshError) {
+
+    refreshWarning =
+      refreshError;
+
+    console.error(
+      "Buku berhasil dihapus tetapi refresh UI gagal:",
+      refreshError
+    );
+  }
+
+  const adminTotalBooks =
+    document.getElementById(
+      "admin-total-books"
+    );
+
+  try {
+
+    const {
+      count: totalBooks,
+      error: totalBooksError
+    } = await db
+      .from(
+        "books"
+      )
+      .select(
+        "*",
+        {
+          count:
+            "exact",
+
+          head:
+            true
+        }
+      );
+
+    if (totalBooksError) {
+
+      throw totalBooksError;
+    }
+
+    if (adminTotalBooks) {
+
+      const jumlahTotal =
+        Number(
+          totalBooks ||
+          0
+        );
+
+      adminTotalBooks.textContent =
+        `${
+          Number.isInteger(
+            jumlahTotal
+          ) &&
+          jumlahTotal >= 0
+            ? jumlahTotal
+            : 0
+        } buku`;
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Total koleksi setelah penghapusan gagal diperbarui:",
+      error
+    );
+  }
+
+  if (
+    storageWarnings.length >
+      0 ||
+    refreshWarning
+  ) {
+
+    const detailWarning =
+      [
+        ...new Set(
+          storageWarnings
+        )
+      ]
+        .join(
+          " "
+        );
+
+    alert(
+      "✅ Data buku berhasil dihapus." +
+      (
+        detailWarning
+          ? " ⚠️ " +
+            detailWarning
+          : ""
+      ) +
+      (
+        refreshWarning
+          ? " ⚠️ Sebagian tampilan Admin belum berhasil dimuat ulang."
+          : ""
+      )
+    );
+
+  } else {
+
+    alert(
+      "✅ Buku berhasil dihapus."
+    );
+  }
+
+  requestAnimationFrame(
+    () => {
+
+      document
+        .getElementById(
+          "admin-book-search"
+        )
+        ?.focus();
+    }
+  );
+}
 
   function ambilStoragePath(
     publicUrl,
