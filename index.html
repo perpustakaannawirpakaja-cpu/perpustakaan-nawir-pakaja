@@ -17691,34 +17691,83 @@ function tutupAdminDenganEscape(
 
 async function logoutAdmin() {
 
-  const { error } =
-    await db.auth.signOut();
-
-  if (error) {
-    console.error(
-      "Logout Admin gagal:",
-      error
-    );
-
-    return;
-  }
-
-  tutupAdminPanel();
-
-  document
-    .getElementById("book-upload-form")
-    ?.reset();
-
-  document
-    .getElementById("admin-password")
-    .value = "";
-
   const loginMessage =
     document.getElementById(
       "admin-login-message"
     );
 
+  const passwordInput =
+    document.getElementById(
+      "admin-password"
+    );
+
+  const uploadForm =
+    document.getElementById(
+      "book-upload-form"
+    );
+
+  try {
+
+    const {
+      error: signOutError
+    } =
+      await db.auth.signOut();
+
+    if (signOutError) {
+
+      throw new Error(
+        "Logout Admin gagal: " +
+        signOutError.message
+      );
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Logout Admin gagal:",
+      error
+    );
+
+    if (loginMessage) {
+
+      loginMessage.textContent =
+        "❌ Logout Admin gagal. Silakan coba lagi.";
+    }
+
+    return;
+  }
+
+  if (
+    typeof tutupAdminPanel ===
+      "function"
+  ) {
+
+    tutupAdminPanel();
+
+  } else {
+
+    console.error(
+      "Function tutupAdminPanel tidak tersedia."
+    );
+  }
+
+  if (
+    uploadForm &&
+    typeof uploadForm.reset ===
+      "function"
+  ) {
+
+    uploadForm.reset();
+  }
+
+  if (passwordInput) {
+
+    passwordInput.value =
+      "";
+  }
+
   if (loginMessage) {
+
     loginMessage.textContent =
       "✅ Admin berhasil logout.";
   }
