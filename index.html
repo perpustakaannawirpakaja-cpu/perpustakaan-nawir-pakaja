@@ -16872,6 +16872,7 @@ async function ambilOutputEpubSebelumnya(
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku output sebelumnya tidak valid."
     );
@@ -16897,51 +16898,101 @@ async function ambilOutputEpubSebelumnya(
       "book_id",
       idBuku
     )
-    .single();
+    .maybeSingle();
 
-  if (
-    sessionError ||
-    !session
-  ) {
+  if (sessionError) {
+
     throw new Error(
-      "Session ingestion tidak ditemukan: " +
-      (
-        sessionError?.message ||
-        "Data session kosong."
-      )
+      "Gagal membaca session ingestion output sebelumnya: " +
+      sessionError.message
+    );
+  }
+
+  if (!session) {
+
+    throw new Error(
+      "Session ingestion output sebelumnya tidak ditemukan."
     );
   }
 
   if (
-  !session.output_storage_path
-) {
-  return null;
-}
+    Number(
+      session.book_id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID session output sebelumnya tidak sesuai."
+    );
+  }
+
+  const storagePath =
+    typeof session.output_storage_path ===
+      "string"
+      ? session.output_storage_path.trim()
+      : "";
+
+  /*
+    Tidak ada storage path berarti
+    memang belum pernah ada file
+    output EPUB yang perlu dipakai
+    ulang atau dibersihkan.
+  */
+  if (!storagePath) {
+
+    return null;
+  }
+
+  const publicUrl =
+    typeof session.output_url ===
+      "string"
+      ? session.output_url.trim()
+      : "";
+
+  const outputFormat =
+    typeof session.output_format ===
+      "string"
+      ? session.output_format.trim()
+      : "";
+
+  const ukuranRaw =
+    Number(
+      session.output_size
+    );
+
+  const outputSize =
+    Number.isInteger(
+      ukuranRaw
+    ) &&
+    ukuranRaw > 0
+      ? ukuranRaw
+      : 0;
+
+  const createdAt =
+    session.output_created_at ||
+    null;
 
   return {
-  format:
-    session.output_format || "epub",
+    format:
+      outputFormat ||
+      null,
 
-  publicUrl:
-    session.output_url,
+    publicUrl:
+      publicUrl ||
+      null,
 
-  storagePath:
-    session.output_storage_path,
+    storagePath,
 
-  size:
-    Number(
-      session.output_size || 0
-    ),
+    size:
+      outputSize,
 
-  createdAt:
-    session.output_created_at,
+    createdAt,
 
-  stale:
-    session.output_format !== "epub"
-};
-
+    stale:
+      outputFormat !==
+      "epub"
+  };
 }
-
 async function resetMetadataOutputEpub(
   bookId
 ) {
