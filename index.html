@@ -18056,14 +18056,43 @@ async function loginAdmin() {
   );
 }
 
-function escapeXmlEpub(value = "") {
+function escapeXmlEpub(
+  value = ""
+) {
 
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
+  const teks =
+    value === null ||
+    value === undefined
+      ? ""
+      : String(
+          value
+        );
+
+  return teks
+    .replace(
+      /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g,
+      ""
+    )
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&apos;"
+    );
 }
 
 async function buatEpubSkeleton({
