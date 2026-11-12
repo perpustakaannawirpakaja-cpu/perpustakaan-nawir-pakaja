@@ -14632,78 +14632,152 @@ async function bukaEditBukuAdmin(
 
 function tutupEditBukuAdmin() {
 
-  document
-    .getElementById("editBookModal")
-    .classList
-    .remove("show");
+  const editModal =
+    document.getElementById(
+      "editBookModal"
+    );
 
-  document
-  .getElementById("adminPanel")
-  ?.removeAttribute("inert");
+  const adminPanel =
+    document.getElementById(
+      "adminPanel"
+    );
 
-  document
-    .getElementById("edit-book-form")
-    ?.reset();
+  const editForm =
+    document.getElementById(
+      "edit-book-form"
+    );
 
   const coverPreview =
-  document.getElementById(
-    "edit-book-cover-preview"
-  );
+    document.getElementById(
+      "edit-book-cover-preview"
+    );
 
-const currentCover =
-  document.getElementById(
-    "edit-book-current-cover"
-  );
+  const currentCover =
+    document.getElementById(
+      "edit-book-current-cover"
+    );
 
-const currentFile =
-  document.getElementById(
-    "edit-book-current-file"
-  );
+  const currentFile =
+    document.getElementById(
+      "edit-book-current-file"
+    );
 
-const newFileName =
-  document.getElementById(
-    "edit-book-new-file-name"
-  );
+  const currentFileLink =
+    document.getElementById(
+      "edit-book-file-link"
+    );
 
-const coverLabel =
-  document.getElementById(
-    "edit-book-cover-label"
-  );
+  const newFileName =
+    document.getElementById(
+      "edit-book-new-file-name"
+    );
 
-coverPreview.removeAttribute(
-  "src"
-);
-
-coverPreview.dataset.originalSrc =
-  "";
-
-currentCover.style.display =
-  "none";
-
-currentFile.style.display =
-  "none";
-
-newFileName.textContent = "";
-newFileName.style.display =
-  "none";
-
-coverLabel.textContent =
-  "Cover Saat Ini:";
+  const coverLabel =
+    document.getElementById(
+      "edit-book-cover-label"
+    );
 
   const editMessage =
     document.getElementById(
       "edit-book-message"
     );
 
-  if (editMessage) {
-    editMessage.textContent = "";
+  editModal
+    ?.classList
+    .remove(
+      "show"
+    );
+
+  adminPanel
+    ?.removeAttribute(
+      "inert"
+    );
+
+  editForm
+    ?.reset();
+
+  if (coverPreview) {
+
+    coverPreview
+      .removeAttribute(
+        "src"
+      );
+
+    coverPreview.dataset.originalSrc =
+      "";
+
+    coverPreview.style.display =
+      "none";
   }
 
-if (idFokusEditBuku !== null) {
+  if (currentCover) {
+
+    currentCover.style.display =
+      "none";
+  }
+
+  if (currentFile) {
+
+    currentFile.style.display =
+      "none";
+  }
+
+  if (currentFileLink) {
+
+    currentFileLink
+      .removeAttribute(
+        "href"
+      );
+  }
+
+  if (newFileName) {
+
+    newFileName.textContent =
+      "";
+
+    newFileName.style.display =
+      "none";
+  }
+
+  if (coverLabel) {
+
+    coverLabel.textContent =
+      "Cover Saat Ini:";
+  }
+
+  if (editMessage) {
+
+    editMessage.textContent =
+      "";
+  }
+
+  const idFokus =
+    Number(
+      idFokusEditBuku
+    );
+
+  idFokusEditBuku =
+    null;
+
+  if (
+    !Number.isInteger(
+      idFokus
+    ) ||
+    idFokus < 1
+  ) {
+
+    document
+      .getElementById(
+        "admin-book-search"
+      )
+      ?.focus();
+
+    return;
+  }
 
   const tombolEdit =
     document.querySelector(
-      `.admin-book-edit[data-book-id="${idFokusEditBuku}"]`
+      `.admin-book-edit[data-book-id="${idFokus}"]`
     );
 
   const resetFilter =
@@ -14718,27 +14792,30 @@ if (idFokusEditBuku !== null) {
 
   if (
     tombolEdit &&
-    tombolEdit.getClientRects().length > 0
+    tombolEdit
+      .getClientRects()
+      .length > 0
   ) {
 
     tombolEdit.focus();
 
-  } else if (
+    return;
+  }
+
+  if (
     resetFilter &&
-    resetFilter.getClientRects().length > 0
+    resetFilter
+      .getClientRects()
+      .length > 0
   ) {
 
     resetFilter.focus();
 
-  } else {
-
-    searchAdmin?.focus();
-
+    return;
   }
 
-  idFokusEditBuku = null;
-}
-
+  searchAdmin
+    ?.focus();
 }
 
 function tutupEditBukuDenganEscape(event) {
