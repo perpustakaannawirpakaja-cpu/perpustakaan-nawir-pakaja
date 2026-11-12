@@ -15951,6 +15951,7 @@ async function simpanMetadataOutputEpub({
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku metadata EPUB tidak valid."
     );
@@ -15958,14 +15959,43 @@ async function simpanMetadataOutputEpub({
 
   if (
     !output ||
-    output.format !== "epub" ||
-    !output.publicUrl ||
-    !output.storagePath ||
-    !Number.isFinite(
-      Number(output.size)
-    ) ||
-    Number(output.size) < 1
+    typeof output !==
+      "object"
   ) {
+
+    throw new Error(
+      "Metadata output EPUB tidak valid."
+    );
+  }
+
+  const publicUrl =
+    typeof output.publicUrl ===
+      "string"
+      ? output.publicUrl.trim()
+      : "";
+
+  const storagePath =
+    typeof output.storagePath ===
+      "string"
+      ? output.storagePath.trim()
+      : "";
+
+  const outputSize =
+    Number(
+      output.size
+    );
+
+  if (
+    output.format !==
+      "epub" ||
+    !publicUrl ||
+    !storagePath ||
+    !Number.isInteger(
+      outputSize
+    ) ||
+    outputSize < 1
+  ) {
+
     throw new Error(
       "Metadata output EPUB tidak valid."
     );
@@ -15986,13 +16016,13 @@ async function simpanMetadataOutputEpub({
         "epub",
 
       output_url:
-        output.publicUrl,
+        publicUrl,
 
       output_storage_path:
-        output.storagePath,
+        storagePath,
 
       output_size:
-        Number(output.size),
+        outputSize,
 
       output_created_at:
         outputCreatedAt
@@ -16010,18 +16040,102 @@ async function simpanMetadataOutputEpub({
       output_size,
       output_created_at
     `)
-    .single();
+    .maybeSingle();
 
-  if (
-    updateError ||
-    !session
-  ) {
+  if (updateError) {
+
     throw new Error(
       "Metadata output EPUB gagal disimpan: " +
-      (
-        updateError?.message ||
-        "Session ingestion tidak ditemukan."
+      updateError.message
+    );
+  }
+
+  if (!session) {
+
+    throw new Error(
+      "Session ingestion tidak ditemukan saat menyimpan metadata EPUB."
+    );
+  }
+
+  if (
+    Number(
+      session.book_id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID metadata EPUB hasil simpan tidak sesuai."
+    );
+  }
+
+  if (
+    session.output_format !==
+      "epub"
+  ) {
+
+    throw new Error(
+      "Format metadata EPUB hasil simpan tidak sesuai."
+    );
+  }
+
+  const sessionUrl =
+    typeof session.output_url ===
+      "string"
+      ? session.output_url.trim()
+      : "";
+
+  const sessionStoragePath =
+    typeof session.output_storage_path ===
+      "string"
+      ? session.output_storage_path.trim()
+      : "";
+
+  const sessionSize =
+    Number(
+      session.output_size
+    );
+
+  if (
+    sessionUrl !==
+      publicUrl
+  ) {
+
+    throw new Error(
+      "URL metadata EPUB hasil simpan tidak sesuai."
+    );
+  }
+
+  if (
+    sessionStoragePath !==
+      storagePath
+  ) {
+
+    throw new Error(
+      "Storage path metadata EPUB hasil simpan tidak sesuai."
+    );
+  }
+
+  if (
+    sessionSize !==
+      outputSize
+  ) {
+
+    throw new Error(
+      "Ukuran metadata EPUB hasil simpan tidak sesuai."
+    );
+  }
+
+  if (
+    String(
+      session.output_created_at
+    ) !==
+      String(
+        outputCreatedAt
       )
+  ) {
+
+    throw new Error(
+      "Waktu metadata EPUB hasil simpan tidak sesuai."
     );
   }
 
