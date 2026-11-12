@@ -15199,61 +15199,117 @@ function samakanKategoriYangSudahAda(
 ) {
 
   const kategoriBersih =
-    normalisasiKategori(kategoriInput);
+    normalisasiKategori(
+      kategoriInput
+    );
 
   if (!kategoriBersih) {
+
     return "";
   }
 
   const normalisasi =
     (teks) =>
-      normalisasiKategori(teks)
-        .toLocaleLowerCase("id-ID");
+      normalisasiKategori(
+        teks
+      )
+        .toLocaleLowerCase(
+          "id-ID"
+        );
+
+  const kategoriTarget =
+    normalisasi(
+      kategoriBersih
+    );
+
+  if (!kategoriTarget) {
+
+    return "";
+  }
+
+  const sumberBuku =
+    typeof semuaBuku !==
+      "undefined" &&
+    Array.isArray(
+      semuaBuku
+    )
+      ? semuaBuku
+      : [];
 
   const kategoriDariBuku =
-    semuaBuku
-      .map((buku) =>
-        normalisasiKategori(
-          buku.category
-        )
+    sumberBuku
+      .map(
+        (buku) => {
+
+          if (
+            !buku ||
+            typeof buku !==
+              "object"
+          ) {
+
+            return "";
+          }
+
+          return normalisasiKategori(
+            buku.category
+          );
+        }
       )
-      .filter(Boolean);
+      .filter(
+        Boolean
+      );
 
   const kategoriCocok =
     kategoriDariBuku.filter(
       (kategori) =>
-        normalisasi(kategori) ===
-        normalisasi(kategoriBersih)
+        normalisasi(
+          kategori
+        ) ===
+        kategoriTarget
     );
 
-  if (kategoriCocok.length > 0) {
+  if (
+    kategoriCocok.length >
+      0
+  ) {
 
     const jumlahKemunculan =
       new Map();
 
-    kategoriCocok.forEach(
-      (kategori) => {
+    for (
+      const kategori
+      of kategoriCocok
+    ) {
 
-        jumlahKemunculan.set(
-          kategori,
-          (
-            jumlahKemunculan.get(
-              kategori
-            ) || 0
-          ) + 1
-        );
+      jumlahKemunculan.set(
+        kategori,
+        (
+          jumlahKemunculan.get(
+            kategori
+          ) || 0
+        ) + 1
+      );
+    }
 
-      }
-    );
+    const kategoriTerbanyak =
+      [
+        ...jumlahKemunculan.entries()
+      ]
+        .sort(
+          (a, b) =>
+            b[1] -
+            a[1]
+        )[0];
 
-    return [
-      ...jumlahKemunculan.entries()
-    ]
-      .sort(
-        (a, b) =>
-          b[1] - a[1]
-      )[0][0];
+    if (
+      Array.isArray(
+        kategoriTerbanyak
+      ) &&
+      kategoriTerbanyak[0]
+    ) {
 
+      return kategoriTerbanyak[0];
+    }
   }
 
   const kategoriDropdown =
@@ -15262,25 +15318,33 @@ function samakanKategoriYangSudahAda(
         "#admin-book-category option, #book-category-select option"
       )
     )
-      .map((option) =>
-        normalisasiKategori(
-          option.value
-        )
+      .map(
+        (option) =>
+          normalisasiKategori(
+            option?.value
+          )
       )
-      .filter(Boolean);
+      .filter(
+        Boolean
+      );
 
   const kategoriDropdownCocok =
     kategoriDropdown.find(
       (kategori) =>
-        normalisasi(kategori) ===
-        normalisasi(kategoriBersih)
+        normalisasi(
+          kategori
+        ) ===
+        kategoriTarget
     );
 
-  return (
-    kategoriDropdownCocok ||
-    kategoriBersih
-  );
+  if (
+    kategoriDropdownCocok
+  ) {
 
+    return kategoriDropdownCocok;
+  }
+
+  return kategoriBersih;
 }
 
 async function simpanEditBuku(event) {
