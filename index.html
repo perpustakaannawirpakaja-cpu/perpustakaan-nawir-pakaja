@@ -15829,39 +15829,80 @@ async function uploadEpubOutput({
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku output EPUB tidak valid."
     );
   }
 
   if (
-    !(epubBlob instanceof Blob) ||
-    epubBlob.size < 1
+    !(epubBlob instanceof Blob)
   ) {
+
     throw new Error(
       "Blob output EPUB tidak valid."
     );
   }
 
+  const ukuranEpub =
+    Number(
+      epubBlob.size
+    );
+
+  if (
+    !Number.isInteger(
+      ukuranEpub
+    ) ||
+    ukuranEpub < 1
+  ) {
+
+    throw new Error(
+      "Ukuran Blob output EPUB tidak valid."
+    );
+  }
+
   const {
-    data: { user },
+    data: userData,
     error: userError
   } =
     await db.auth.getUser();
 
-  if (
-    userError ||
-    !user
-  ) {
+  if (userError) {
+
+    throw new Error(
+      "Gagal memeriksa sesi admin: " +
+      userError.message
+    );
+  }
+
+  const user =
+    userData?.user;
+
+  if (!user) {
+
     throw new Error(
       "Admin belum login."
     );
   }
 
+  const userId =
+    typeof user.id ===
+      "string"
+      ? user.id.trim()
+      : "";
+
+  if (!userId) {
+
+    throw new Error(
+      "ID admin tidak valid."
+    );
+  }
+
   const storagePath =
-    `${user.id}/incremental/${idBuku}/output-${Date.now()}.epub`;
+    `${userId}/incremental/${idBuku}/output-${Date.now()}.epub`;
 
   const {
+    data: uploadData,
     error: uploadError
   } =
     await db.storage
@@ -15884,9 +15925,64 @@ async function uploadEpubOutput({
       );
 
   if (uploadError) {
+
     throw new Error(
       "Upload EPUB gagal: " +
       uploadError.message
+    );
+  }
+
+  const uploadedPath =
+    typeof uploadData?.path ===
+      "string"
+      ? uploadData.path.trim()
+      : "";
+
+  if (
+    !uploadedPath ||
+    uploadedPath !==
+      storagePath
+  ) {
+
+    /*
+      Upload sudah terjadi tetapi hasil
+      Storage tidak sesuai dengan path
+      yang diminta.
+
+      File dicoba dibersihkan agar tidak
+      meninggalkan orphan output.
+    */
+    try {
+
+      const {
+        error: cleanupUploadError
+      } =
+        await db.storage
+          .from(
+            "book-files"
+          )
+          .remove([
+            storagePath
+          ]);
+
+      if (cleanupUploadError) {
+
+        console.error(
+          "Pembersihan EPUB dengan hasil upload tidak valid gagal:",
+          cleanupUploadError
+        );
+      }
+
+    } catch (cleanupUploadException) {
+
+      console.error(
+        "Pembersihan EPUB dengan hasil upload tidak valid mengalami exception:",
+        cleanupUploadException
+      );
+    }
+
+    throw new Error(
+      "Path hasil upload EPUB tidak sesuai."
     );
   }
 
@@ -15902,38 +15998,55 @@ async function uploadEpubOutput({
       );
 
   const publicUrl =
-    publicData?.publicUrl;
+    typeof publicData?.publicUrl ===
+      "string"
+      ? publicData.publicUrl.trim()
+      : "";
 
   if (!publicUrl) {
 
-  const {
-    error: cleanupError
-  } =
-    await db.storage
-      .from(
-        "book-files"
-      )
-      .remove([
-        storagePath
-      ]);
+    try {
 
-  if (cleanupError) {
-    console.error(
-      "Pembersihan EPUB tanpa URL gagal:",
-      cleanupError
+      const {
+        error: cleanupError
+      } =
+        await db.storage
+          .from(
+            "book-files"
+          )
+          .remove([
+            storagePath
+          ]);
+
+      if (cleanupError) {
+
+        console.error(
+          "Pembersihan EPUB tanpa URL gagal:",
+          cleanupError
+        );
+      }
+
+    } catch (cleanupException) {
+
+      console.error(
+        "Pembersihan EPUB tanpa URL mengalami exception:",
+        cleanupException
+      );
+    }
+
+    throw new Error(
+      "URL publik EPUB gagal dibuat."
     );
   }
 
-  throw new Error(
-    "URL publik EPUB gagal dibuat."
-  );
-}
-
   return {
     storagePath,
+
     publicUrl,
+
     size:
-      epubBlob.size,
+      ukuranEpub,
+
     format:
       "epub"
   };
