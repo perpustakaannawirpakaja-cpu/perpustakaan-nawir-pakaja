@@ -17310,55 +17310,150 @@ async function buatBookIngestionSession(
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku untuk sesi ingestion tidak valid."
     );
   }
 
-  if (!ingestionConfig) {
+  if (
+    !ingestionConfig ||
+    typeof ingestionConfig !==
+      "object"
+  ) {
+
     throw new Error(
       "Konfigurasi ingestion tidak tersedia."
     );
   }
 
+  const sourceType =
+    typeof ingestionConfig.sourceType ===
+      "string"
+      ? ingestionConfig.sourceType.trim()
+      : "";
+
+  const sourceFormat =
+    typeof ingestionConfig.sourceFormat ===
+      "string"
+      ? ingestionConfig.sourceFormat.trim()
+      : "";
+
+  const targetFormat =
+    typeof ingestionConfig.targetFormat ===
+      "string"
+      ? ingestionConfig.targetFormat.trim()
+      : "";
+
+  const epubLayout =
+    typeof ingestionConfig.epubLayout ===
+      "string"
+      ? ingestionConfig.epubLayout.trim()
+      : "";
+
+  if (
+    !sourceType ||
+    !sourceFormat ||
+    !targetFormat ||
+    !epubLayout
+  ) {
+
+    throw new Error(
+      "Konfigurasi ingestion tidak lengkap."
+    );
+  }
+
   const status =
-    options.status || "draft";
+    options.status ||
+    "draft";
+
+  const statusValid = [
+    "draft",
+    "ingesting",
+    "processing",
+    "ready",
+    "complete",
+    "failed",
+    "cancelled"
+  ];
+
+  if (
+    !statusValid.includes(
+      status
+    )
+  ) {
+
+    throw new Error(
+      "Status awal ingestion tidak valid."
+    );
+  }
 
   const totalPages =
-    Number.isInteger(options.totalPages) &&
-    options.totalPages >= 0
-      ? options.totalPages
-      : 0;
+    options.totalPages ??
+    0;
 
   const processedPages =
-    Number.isInteger(
-      options.processedPages
-    ) &&
-    options.processedPages >= 0
-      ? options.processedPages
-      : 0;
+    options.processedPages ??
+    0;
+
+  if (
+    !Number.isInteger(
+      totalPages
+    ) ||
+    totalPages < 0
+  ) {
+
+    throw new Error(
+      "Total halaman awal ingestion tidak valid."
+    );
+  }
+
+  if (
+    !Number.isInteger(
+      processedPages
+    ) ||
+    processedPages < 0
+  ) {
+
+    throw new Error(
+      "Processed pages awal ingestion tidak valid."
+    );
+  }
+
+  if (
+    processedPages >
+    totalPages
+  ) {
+
+    throw new Error(
+      "Processed pages awal tidak boleh melebihi total halaman."
+    );
+  }
 
   const {
     data: ingestionSession,
     error: ingestionError
   } = await db
-    .from("book_ingestion_sessions")
+    .from(
+      "book_ingestion_sessions"
+    )
     .insert({
-      book_id: idBuku,
+      book_id:
+        idBuku,
 
       source_type:
-        ingestionConfig.sourceType,
+        sourceType,
 
       source_format:
-        ingestionConfig.sourceFormat,
+        sourceFormat,
 
       target_format:
-        ingestionConfig.targetFormat,
+        targetFormat,
 
       epub_layout:
-        ingestionConfig.epubLayout,
+        epubLayout,
 
-      status: status,
+      status,
 
       total_pages:
         totalPages,
@@ -17366,31 +17461,108 @@ async function buatBookIngestionSession(
       processed_pages:
         processedPages,
 
-      last_error: null
+      last_error:
+        null
     })
     .select(`
       id,
       book_id,
       source_type,
-      status
+      source_format,
+      target_format,
+      epub_layout,
+      status,
+      total_pages,
+      processed_pages,
+      last_error
     `)
-    .single();
+    .maybeSingle();
 
-  if (
-    ingestionError ||
-    !ingestionSession
-  ) {
+  if (ingestionError) {
+
     throw new Error(
       "Pembuatan sesi ingestion gagal: " +
-      (
-        ingestionError?.message ||
-        "Data sesi tidak ditemukan."
-      )
+      ingestionError.message
+    );
+  }
+
+  if (!ingestionSession) {
+
+    throw new Error(
+      "Data sesi ingestion tidak ditemukan setelah insert."
+    );
+  }
+
+  if (
+    Number(
+      ingestionSession.book_id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID sesi ingestion hasil insert tidak sesuai."
+    );
+  }
+
+  if (
+    ingestionSession.source_type !==
+      sourceType ||
+    ingestionSession.source_format !==
+      sourceFormat ||
+    ingestionSession.target_format !==
+      targetFormat ||
+    ingestionSession.epub_layout !==
+      epubLayout
+  ) {
+
+    throw new Error(
+      "Konfigurasi sesi ingestion hasil insert tidak sesuai."
+    );
+  }
+
+  if (
+    ingestionSession.status !==
+      status
+  ) {
+
+    throw new Error(
+      "Status awal sesi ingestion hasil insert tidak sesuai."
+    );
+  }
+
+  if (
+    Number(
+      ingestionSession.total_pages
+    ) !== totalPages
+  ) {
+
+    throw new Error(
+      "Total halaman sesi ingestion hasil insert tidak sesuai."
+    );
+  }
+
+  if (
+    Number(
+      ingestionSession.processed_pages
+    ) !== processedPages
+  ) {
+
+    throw new Error(
+      "Processed pages sesi ingestion hasil insert tidak sesuai."
+    );
+  }
+
+  if (
+    ingestionSession.last_error !==
+      null
+  ) {
+
+    throw new Error(
+      "last_error sesi ingestion awal harus kosong."
     );
   }
 
   return ingestionSession;
-
 }
 
 async function sinkronkanProgressIngestionBuku(
