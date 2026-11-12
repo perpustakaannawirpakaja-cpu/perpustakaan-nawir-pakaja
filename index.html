@@ -19226,76 +19226,645 @@ async function resetMetadataOutputEpub(
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku reset output EPUB tidak valid."
     );
   }
 
-  const {
-    error: resetError
-  } = await db
-    .from(
-      "book_ingestion_sessions"
-    )
-    .update({
-      /*
-        output_format = null
-        menandakan output lama
-        sudah tidak lagi aktif/current.
+  /* =========================
+     AMBIL SNAPSHOT SEBELUM RESET
+     ========================= */
 
-        Lokasi file lama sengaja
-        DIPERTAHANKAN agar nanti
-        dapat dibersihkan setelah
-        EPUB baru berhasil dibuat.
-      */
-      output_format:
-        null,
+  const [
+    hasilSession,
+    hasilBook
+  ] = await Promise.all([
 
-      output_created_at:
-        null
-    })
-    .eq(
-      "book_id",
-      idBuku
-    );
+    db
+      .from(
+        "book_ingestion_sessions"
+      )
+      .select(`
+        id,
+        book_id,
+        output_format,
+        output_url,
+        output_storage_path,
+        output_size,
+        output_created_at
+      `)
+      .eq(
+        "book_id",
+        idBuku
+      )
+      .maybeSingle(),
 
-  if (resetError) {
+    db
+      .from(
+        "books"
+      )
+      .select(`
+        id,
+        epub_url,
+        epub_storage_path,
+        epub_size,
+        epub_created_at
+      `)
+      .eq(
+        "id",
+        idBuku
+      )
+      .maybeSingle()
+
+  ]);
+
+  /* =========================
+     VALIDASI SNAPSHOT SESSION
+     ========================= */
+
+  if (hasilSession.error) {
+
     throw new Error(
-      "Metadata output EPUB gagal direset: " +
-      resetError.message
+      "Gagal membaca session sebelum reset EPUB: " +
+      hasilSession.error.message
     );
   }
 
-  const {
-    error: resetBookError
-  } = await db
-    .from("books")
-    .update({
-      epub_url:
-        null,
+  if (!hasilSession.data) {
 
-      epub_storage_path:
-        null,
-
-      epub_size:
-        null,
-
-      epub_created_at:
-        null
-    })
-    .eq(
-      "id",
-      idBuku
-    );
-
-  if (resetBookError) {
     throw new Error(
-      "Metadata EPUB pada buku gagal direset: " +
-      resetBookError.message
+      "Session ingestion untuk reset EPUB tidak ditemukan."
     );
   }
 
-  return true;
+  if (
+    Number(
+      hasilSession.data.book_id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID pada session reset EPUB tidak sesuai."
+    );
+  }
+
+  /* =========================
+     VALIDASI SNAPSHOT BOOK
+     ========================= */
+
+  if (hasilBook.error) {
+
+    throw new Error(
+      "Gagal membaca data buku sebelum reset EPUB: " +
+      hasilBook.error.message
+    );
+  }
+
+  if (!hasilBook.data) {
+
+    throw new Error(
+      "Data buku untuk reset EPUB tidak ditemukan."
+    );
+  }
+
+  if (
+    Number(
+      hasilBook.data.id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "ID buku pada snapshot reset EPUB tidak sesuai."
+    );
+  }
+
+  const sessionSebelumnya =
+    hasilSession.data;
+
+  const bookSebelumnya =
+    hasilBook.data;
+
+  let sessionSudahDireset =
+    false;
+
+  let bookSudahDireset =
+    false;
+
+  /* =========================
+     HELPER ROLLBACK
+     ========================= */
+
+  async function rollbackMetadataSebelumnya() {
+
+    const masalahRollback = [];
+
+    /* =========================
+       ROLLBACK SESSION
+       ========================= */
+
+    if (sessionSudahDireset) {
+
+      try {
+
+        const {
+          data: sessionRollback,
+          error: sessionRollbackError
+        } = await db
+          .from(
+            "book_ingestion_sessions"
+          )
+          .update({
+            output_format:
+              sessionSebelumnya
+                .output_format,
+
+            output_url:
+              sessionSebelumnya
+                .output_url,
+
+            output_storage_path:
+              sessionSebelumnya
+                .output_storage_path,
+
+            output_size:
+              sessionSebelumnya
+                .output_size,
+
+            output_created_at:
+              sessionSebelumnya
+                .output_created_at
+          })
+          .eq(
+            "book_id",
+            idBuku
+          )
+          .select(`
+            id,
+            book_id,
+            output_format,
+            output_url,
+            output_storage_path,
+            output_size,
+            output_created_at
+          `)
+          .maybeSingle();
+
+        if (sessionRollbackError) {
+
+          masalahRollback.push(
+            "Rollback session EPUB gagal: " +
+            sessionRollbackError.message
+          );
+
+        } else if (!sessionRollback) {
+
+          masalahRollback.push(
+            "Rollback session EPUB tidak terkonfirmasi."
+          );
+
+        } else {
+
+          const formatRollback =
+            sessionRollback.output_format ??
+            null;
+
+          const urlRollback =
+            sessionRollback.output_url ??
+            null;
+
+          const pathRollback =
+            sessionRollback.output_storage_path ??
+            null;
+
+          const sizeRollback =
+            sessionRollback.output_size ??
+            null;
+
+          const createdAtRollback =
+            sessionRollback.output_created_at ??
+            null;
+
+          const formatSebelumnya =
+            sessionSebelumnya.output_format ??
+            null;
+
+          const urlSebelumnya =
+            sessionSebelumnya.output_url ??
+            null;
+
+          const pathSebelumnya =
+            sessionSebelumnya.output_storage_path ??
+            null;
+
+          const sizeSebelumnya =
+            sessionSebelumnya.output_size ??
+            null;
+
+          const createdAtSebelumnya =
+            sessionSebelumnya.output_created_at ??
+            null;
+
+          if (
+            Number(
+              sessionRollback.book_id
+            ) !== idBuku ||
+            formatRollback !==
+              formatSebelumnya ||
+            urlRollback !==
+              urlSebelumnya ||
+            pathRollback !==
+              pathSebelumnya ||
+            String(
+              sizeRollback
+            ) !==
+              String(
+                sizeSebelumnya
+              ) ||
+            createdAtRollback !==
+              createdAtSebelumnya
+          ) {
+
+            masalahRollback.push(
+              "Rollback session EPUB tidak menghasilkan metadata sebelumnya."
+            );
+          }
+        }
+
+      } catch (sessionRollbackException) {
+
+        masalahRollback.push(
+          "Rollback session EPUB gagal: " +
+          (
+            sessionRollbackException?.message ||
+            "Error tidak diketahui."
+          )
+        );
+      }
+    }
+
+    /* =========================
+       ROLLBACK BOOK
+       ========================= */
+
+    if (bookSudahDireset) {
+
+      try {
+
+        const {
+          data: bookRollback,
+          error: bookRollbackError
+        } = await db
+          .from(
+            "books"
+          )
+          .update({
+            epub_url:
+              bookSebelumnya
+                .epub_url,
+
+            epub_storage_path:
+              bookSebelumnya
+                .epub_storage_path,
+
+            epub_size:
+              bookSebelumnya
+                .epub_size,
+
+            epub_created_at:
+              bookSebelumnya
+                .epub_created_at
+          })
+          .eq(
+            "id",
+            idBuku
+          )
+          .select(`
+            id,
+            epub_url,
+            epub_storage_path,
+            epub_size,
+            epub_created_at
+          `)
+          .maybeSingle();
+
+        if (bookRollbackError) {
+
+          masalahRollback.push(
+            "Rollback metadata EPUB buku gagal: " +
+            bookRollbackError.message
+          );
+
+        } else if (!bookRollback) {
+
+          masalahRollback.push(
+            "Rollback metadata EPUB buku tidak terkonfirmasi."
+          );
+
+        } else {
+
+          const urlRollback =
+            bookRollback.epub_url ??
+            null;
+
+          const pathRollback =
+            bookRollback.epub_storage_path ??
+            null;
+
+          const sizeRollback =
+            bookRollback.epub_size ??
+            null;
+
+          const createdAtRollback =
+            bookRollback.epub_created_at ??
+            null;
+
+          const urlSebelumnya =
+            bookSebelumnya.epub_url ??
+            null;
+
+          const pathSebelumnya =
+            bookSebelumnya.epub_storage_path ??
+            null;
+
+          const sizeSebelumnya =
+            bookSebelumnya.epub_size ??
+            null;
+
+          const createdAtSebelumnya =
+            bookSebelumnya.epub_created_at ??
+            null;
+
+          if (
+            Number(
+              bookRollback.id
+            ) !== idBuku ||
+            urlRollback !==
+              urlSebelumnya ||
+            pathRollback !==
+              pathSebelumnya ||
+            String(
+              sizeRollback
+            ) !==
+              String(
+                sizeSebelumnya
+              ) ||
+            createdAtRollback !==
+              createdAtSebelumnya
+          ) {
+
+            masalahRollback.push(
+              "Rollback metadata EPUB buku tidak menghasilkan kondisi sebelumnya."
+            );
+          }
+        }
+
+      } catch (bookRollbackException) {
+
+        masalahRollback.push(
+          "Rollback metadata EPUB buku gagal: " +
+          (
+            bookRollbackException?.message ||
+            "Error tidak diketahui."
+          )
+        );
+      }
+    }
+
+    return masalahRollback;
+  }
+
+  try {
+
+    /* =========================
+       RESET SESSION INGESTION
+       ========================= */
+
+    const {
+      data: sessionReset,
+      error: resetError
+    } = await db
+      .from(
+        "book_ingestion_sessions"
+      )
+      .update({
+
+        /*
+         * output_format = null
+         * menandakan output lama
+         * sudah tidak lagi aktif/current.
+         *
+         * URL, storage path dan size
+         * sengaja DIPERTAHANKAN agar
+         * file lama masih dapat ditemukan
+         * dan dibersihkan setelah output
+         * pengganti berhasil dibuat.
+         */
+        output_format:
+          null,
+
+        output_created_at:
+          null
+      })
+      .eq(
+        "book_id",
+        idBuku
+      )
+      .select(`
+        id,
+        book_id,
+        output_format,
+        output_url,
+        output_storage_path,
+        output_size,
+        output_created_at
+      `)
+      .maybeSingle();
+
+    if (resetError) {
+
+      throw new Error(
+        "Metadata output EPUB gagal direset: " +
+        resetError.message
+      );
+    }
+
+    if (!sessionReset) {
+
+      throw new Error(
+        "Reset metadata output EPUB tidak terkonfirmasi."
+      );
+    }
+
+    sessionSudahDireset =
+      true;
+
+    if (
+      Number(
+        sessionReset.book_id
+      ) !== idBuku
+    ) {
+
+      throw new Error(
+        "Book ID hasil reset session EPUB tidak sesuai."
+      );
+    }
+
+    if (
+      sessionReset.output_format !==
+        null ||
+      sessionReset.output_created_at !==
+        null
+    ) {
+
+      throw new Error(
+        "Session ingestion belum benar-benar menandai output EPUB sebagai stale."
+      );
+    }
+
+    if (
+      (
+        sessionReset.output_url ??
+        null
+      ) !==
+        (
+          sessionSebelumnya.output_url ??
+          null
+        ) ||
+      (
+        sessionReset.output_storage_path ??
+        null
+      ) !==
+        (
+          sessionSebelumnya.output_storage_path ??
+          null
+        ) ||
+      String(
+        sessionReset.output_size ??
+        null
+      ) !==
+        String(
+          sessionSebelumnya.output_size ??
+          null
+        )
+    ) {
+
+      throw new Error(
+        "Metadata lokasi output EPUB lama berubah saat reset."
+      );
+    }
+
+    /* =========================
+       RESET EPUB DI BOOKS
+       ========================= */
+
+    const {
+      data: bookReset,
+      error: resetBookError
+    } = await db
+      .from(
+        "books"
+      )
+      .update({
+        epub_url:
+          null,
+
+        epub_storage_path:
+          null,
+
+        epub_size:
+          null,
+
+        epub_created_at:
+          null
+      })
+      .eq(
+        "id",
+        idBuku
+      )
+      .select(`
+        id,
+        epub_url,
+        epub_storage_path,
+        epub_size,
+        epub_created_at
+      `)
+      .maybeSingle();
+
+    if (resetBookError) {
+
+      throw new Error(
+        "Metadata EPUB pada buku gagal direset: " +
+        resetBookError.message
+      );
+    }
+
+    if (!bookReset) {
+
+      throw new Error(
+        "Reset metadata EPUB pada buku tidak terkonfirmasi."
+      );
+    }
+
+    bookSudahDireset =
+      true;
+
+    if (
+      Number(
+        bookReset.id
+      ) !== idBuku
+    ) {
+
+      throw new Error(
+        "ID buku hasil reset metadata EPUB tidak sesuai."
+      );
+    }
+
+    if (
+      bookReset.epub_url !==
+        null ||
+      bookReset.epub_storage_path !==
+        null ||
+      bookReset.epub_size !==
+        null ||
+      bookReset.epub_created_at !==
+        null
+    ) {
+
+      throw new Error(
+        "Metadata EPUB pada buku belum benar-benar dibersihkan."
+      );
+    }
+
+    /* =========================
+       RESET SUKSES
+       ========================= */
+
+    return true;
+
+  } catch (error) {
+
+    const masalahRollback =
+      await rollbackMetadataSebelumnya();
+
+    if (
+      masalahRollback.length > 0
+    ) {
+
+      throw new Error(
+        (
+          error?.message ||
+          "Reset metadata EPUB gagal."
+        ) +
+        " | " +
+        masalahRollback.join(
+          " | "
+        )
+      );
+    }
+
+    throw error;
+  }
 }
 
 function getBookIngestionConfig(
