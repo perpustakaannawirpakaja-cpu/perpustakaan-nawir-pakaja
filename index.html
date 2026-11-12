@@ -14256,9 +14256,29 @@ async function buatPdfFinalBuku() {
 
 let idFokusEditBuku = null;
 
-async function bukaEditBukuAdmin(bookId) {
+async function bukaEditBukuAdmin(
+  bookId
+) {
 
-  idFokusEditBuku = bookId;
+  const idBuku =
+    Number(
+      bookId
+    );
+
+  if (
+    !Number.isInteger(
+      idBuku
+    ) ||
+    idBuku < 1
+  ) {
+
+    console.error(
+      "ID buku untuk Edit Buku tidak valid:",
+      bookId
+    );
+
+    return;
+  }
 
   const editModal =
     document.getElementById(
@@ -14270,141 +14290,114 @@ async function bukaEditBukuAdmin(bookId) {
       "edit-book-message"
     );
 
-  editModal
-    .classList
-    .add("show");
+  const adminPanel =
+    document.getElementById(
+      "adminPanel"
+    );
 
-  document
-  .getElementById("adminPanel")
-  ?.setAttribute("inert", "");
+  const editId =
+    document.getElementById(
+      "edit-book-id"
+    );
 
-  editMessage.textContent =
-    "Memuat data buku...";
+  const editTitle =
+    document.getElementById(
+      "edit-book-title"
+    );
 
-  const oldCoverPreview =
-  document.getElementById(
-    "edit-book-cover-preview"
-  );
+  const editAuthor =
+    document.getElementById(
+      "edit-book-author"
+    );
 
-const oldCurrentCover =
-  document.getElementById(
-    "edit-book-current-cover"
-  );
+  const editCategory =
+    document.getElementById(
+      "edit-book-category"
+    );
 
-const oldCurrentFile =
-  document.getElementById(
-    "edit-book-current-file"
-  );
+  const editDescription =
+    document.getElementById(
+      "edit-book-description"
+    );
 
-const oldNewFileName =
-  document.getElementById(
-    "edit-book-new-file-name"
-  );
+  const coverPreview =
+    document.getElementById(
+      "edit-book-cover-preview"
+    );
 
-oldCoverPreview.removeAttribute(
-  "src"
-);
+  const currentCover =
+    document.getElementById(
+      "edit-book-current-cover"
+    );
 
-oldCurrentCover.style.display =
-  "none";
+  const currentFile =
+    document.getElementById(
+      "edit-book-current-file"
+    );
 
-oldCurrentFile.style.display =
-  "none";
+  const currentFileLink =
+    document.getElementById(
+      "edit-book-file-link"
+    );
 
-oldNewFileName.textContent = "";
-oldNewFileName.style.display =
-  "none";
+  const newFileName =
+    document.getElementById(
+      "edit-book-new-file-name"
+    );
 
-  const {
-    data: book,
-    error
-  } = await db
-    .from("books")
-    .select(`
-  id,
-  title,
-  author,
-  category,
-  description,
-  file_url,
-  cover_url
-`)
-    .eq("id", bookId)
-    .maybeSingle();
+  const coverLabel =
+    document.getElementById(
+      "edit-book-cover-label"
+    );
 
-  if (error || !book) {
-
-    editMessage.textContent =
-      "❌ Gagal memuat data buku.";
+  if (
+    !editModal ||
+    !editMessage ||
+    !editId ||
+    !editTitle ||
+    !editAuthor ||
+    !editCategory ||
+    !editDescription ||
+    !coverPreview ||
+    !currentCover ||
+    !currentFile ||
+    !currentFileLink ||
+    !newFileName ||
+    !coverLabel
+  ) {
 
     console.error(
-      "Gagal memuat buku:",
-      error
+      "Struktur UI Edit Buku belum lengkap."
     );
 
     return;
   }
 
-  document
-    .getElementById("edit-book-id")
-    .value = book.id;
+  idFokusEditBuku =
+    idBuku;
 
-  document
-    .getElementById("edit-book-title")
-    .value = book.title || "";
+  editModal
+    .classList
+    .add(
+      "show"
+    );
 
-  document
-    .getElementById("edit-book-author")
-    .value = book.author || "";
+  adminPanel
+    ?.setAttribute(
+      "inert",
+      ""
+    );
 
-  document
-    .getElementById("edit-book-category")
-    .value = book.category || "";
+  editMessage.textContent =
+    "Memuat data buku...";
 
-  document
-    .getElementById("edit-book-description")
-    .value = book.description || "";
-
-  const coverPreview =
-  document.getElementById(
-    "edit-book-cover-preview"
-  );
-
-const currentCover =
-  document.getElementById(
-    "edit-book-current-cover"
-  );
-
-  const coverLabel =
-  document.getElementById(
-    "edit-book-cover-label"
-  );
-
-coverLabel.textContent =
-  "Cover Saat Ini:";
-
-if (book.cover_url) {
-
-  coverPreview.src =
-    book.cover_url;
+  coverPreview
+    .removeAttribute(
+      "src"
+    );
 
   coverPreview.dataset.originalSrc =
-  book.cover_url;
-
-  coverPreview.style.display =
-    "block";
-
-  currentCover.style.display =
-    "block";
-
-} else {
-
-  coverPreview.removeAttribute(
-    "src"
-  );
-
-  coverPreview.dataset.originalSrc =
-  "";
+    "";
 
   coverPreview.style.display =
     "none";
@@ -14412,52 +14405,229 @@ if (book.cover_url) {
   currentCover.style.display =
     "none";
 
-}
-
-const currentFile =
-  document.getElementById(
-    "edit-book-current-file"
-  );
-
-const currentFileLink =
-  document.getElementById(
-    "edit-book-file-link"
-  );
-
-if (book.file_url) {
-
-  currentFileLink.href =
-    book.file_url;
-
-  currentFile.style.display =
-    "block";
-
-} else {
-
-  currentFileLink.removeAttribute(
-    "href"
-  );
-
   currentFile.style.display =
     "none";
 
-}
+  currentFileLink
+    .removeAttribute(
+      "href"
+    );
 
-const newFileName =
-  document.getElementById(
-    "edit-book-new-file-name"
+  newFileName.textContent =
+    "";
+
+  newFileName.style.display =
+    "none";
+
+  coverLabel.textContent =
+    "Cover Saat Ini:";
+
+  editId.value =
+    "";
+
+  editTitle.value =
+    "";
+
+  editAuthor.value =
+    "";
+
+  editCategory.value =
+    "";
+
+  editDescription.value =
+    "";
+
+  let book =
+    null;
+
+  try {
+
+    const {
+      data,
+      error
+    } = await db
+      .from(
+        "books"
+      )
+      .select(`
+        id,
+        title,
+        author,
+        category,
+        description,
+        file_url,
+        cover_url
+      `)
+      .eq(
+        "id",
+        idBuku
+      )
+      .maybeSingle();
+
+    if (error) {
+
+      throw new Error(
+        "Gagal membaca data buku: " +
+        error.message
+      );
+    }
+
+    if (!data) {
+
+      throw new Error(
+        "Data buku tidak ditemukan."
+      );
+    }
+
+    if (
+      Number(
+        data.id
+      ) !== idBuku
+    ) {
+
+      throw new Error(
+        "Book ID hasil query Edit Buku tidak sesuai."
+      );
+    }
+
+    book =
+      data;
+
+  } catch (error) {
+
+    console.error(
+      "Gagal memuat buku untuk diedit:",
+      error
+    );
+
+    editMessage.textContent =
+      "❌ " +
+      (
+        error?.message ||
+        "Gagal memuat data buku."
+      );
+
+    return;
+  }
+
+  const title =
+    typeof book.title ===
+      "string"
+      ? book.title
+      : "";
+
+  const author =
+    typeof book.author ===
+      "string"
+      ? book.author
+      : "";
+
+  const category =
+    typeof book.category ===
+      "string"
+      ? book.category
+      : "";
+
+  const description =
+    typeof book.description ===
+      "string"
+      ? book.description
+      : "";
+
+  const coverUrl =
+    typeof book.cover_url ===
+      "string"
+      ? book.cover_url.trim()
+      : "";
+
+  const fileUrl =
+    typeof book.file_url ===
+      "string"
+      ? book.file_url.trim()
+      : "";
+
+  editId.value =
+    String(
+      idBuku
+    );
+
+  editTitle.value =
+    title;
+
+  editAuthor.value =
+    author;
+
+  editCategory.value =
+    category;
+
+  editDescription.value =
+    description;
+
+  if (coverUrl) {
+
+    coverPreview.src =
+      coverUrl;
+
+    coverPreview.dataset.originalSrc =
+      coverUrl;
+
+    coverPreview.style.display =
+      "block";
+
+    currentCover.style.display =
+      "block";
+
+  } else {
+
+    coverPreview
+      .removeAttribute(
+        "src"
+      );
+
+    coverPreview.dataset.originalSrc =
+      "";
+
+    coverPreview.style.display =
+      "none";
+
+    currentCover.style.display =
+      "none";
+  }
+
+  if (fileUrl) {
+
+    currentFileLink.href =
+      fileUrl;
+
+    currentFile.style.display =
+      "block";
+
+  } else {
+
+    currentFileLink
+      .removeAttribute(
+        "href"
+      );
+
+    currentFile.style.display =
+      "none";
+  }
+
+  newFileName.textContent =
+    "";
+
+  newFileName.style.display =
+    "none";
+
+  editMessage.textContent =
+    "";
+
+  requestAnimationFrame(
+    () => {
+
+      editTitle.focus();
+    }
   );
-
-newFileName.textContent = "";
-newFileName.style.display =
-  "none";
-
-editMessage.textContent = "";
-
-document
-  .getElementById("edit-book-title")
-  ?.focus();
-
 }
 
 function tutupEditBukuAdmin() {
