@@ -14859,50 +14859,242 @@ async function ubahPdfHalamanKeGambarEpub({
   quality = 0.88
 }) {
 
-  if (!fileUrl) {
+  const urlPdf =
+    typeof fileUrl ===
+      "string"
+      ? fileUrl.trim()
+      : "";
+
+  if (!urlPdf) {
+
     throw new Error(
       "URL halaman PDF tidak tersedia."
+    );
+  }
+
+  const skalaRender =
+    Number(
+      scale
+    );
+
+  if (
+    !Number.isFinite(
+      skalaRender
+    ) ||
+    skalaRender <= 0
+  ) {
+
+    throw new Error(
+      "Skala render halaman EPUB tidak valid."
+    );
+  }
+
+  const kualitasJpeg =
+    Number(
+      quality
+    );
+
+  if (
+    !Number.isFinite(
+      kualitasJpeg
+    ) ||
+    kualitasJpeg <= 0 ||
+    kualitasJpeg > 1
+  ) {
+
+    throw new Error(
+      "Kualitas JPEG halaman EPUB tidak valid."
     );
   }
 
   const pdfjsLib =
     await muatPdfJsKompresi();
 
-  const response =
-    await fetch(fileUrl);
+  if (
+    !pdfjsLib ||
+    typeof pdfjsLib.getDocument !==
+      "function"
+  ) {
 
-  if (!response.ok) {
     throw new Error(
-      "File halaman PDF gagal diambil."
+      "PDF.js untuk konversi EPUB tidak tersedia."
+    );
+  }
+
+  let response =
+    null;
+
+  try {
+
+    response =
+      await fetch(
+        urlPdf,
+        {
+          cache:
+            "no-store"
+        }
+      );
+
+  } catch (fetchError) {
+
+    throw new Error(
+      "File halaman PDF gagal diambil: " +
+      (
+        fetchError?.message ||
+        "Koneksi ke file gagal."
+      )
+    );
+  }
+
+  if (
+    !response ||
+    !response.ok
+  ) {
+
+    const statusHttp =
+      response?.status ||
+      "tidak diketahui";
+
+    throw new Error(
+      `File halaman PDF gagal diambil. HTTP ${statusHttp}.`
+    );
+  }
+
+  let sourceBuffer =
+    null;
+
+  try {
+
+    sourceBuffer =
+      await response.arrayBuffer();
+
+  } catch (bufferError) {
+
+    throw new Error(
+      "Data halaman PDF gagal dibaca: " +
+      (
+        bufferError?.message ||
+        "ArrayBuffer tidak tersedia."
+      )
+    );
+  }
+
+  if (
+    !(sourceBuffer instanceof ArrayBuffer) ||
+    sourceBuffer.byteLength < 1
+  ) {
+
+    throw new Error(
+      "Data halaman PDF kosong."
     );
   }
 
   const sourceBytes =
     new Uint8Array(
-      await response.arrayBuffer()
+      sourceBuffer
     );
 
   const loadingTask =
     pdfjsLib.getDocument({
-      data: sourceBytes
+      data:
+        sourceBytes
     });
+
+  if (
+    !loadingTask ||
+    !loadingTask.promise
+  ) {
+
+    throw new Error(
+      "Proses pembukaan halaman PDF tidak valid."
+    );
+  }
 
   const pdf =
     await loadingTask.promise;
 
-  if (pdf.numPages !== 1) {
+  if (!pdf) {
+
     throw new Error(
-      `PDF halaman berisi ${pdf.numPages} halaman. EPUB hanya menerima satu halaman per slot.`
+      "Dokumen PDF halaman tidak berhasil dibuka."
+    );
+  }
+
+  const jumlahHalaman =
+    Number(
+      pdf.numPages
+    );
+
+  if (
+    !Number.isInteger(
+      jumlahHalaman
+    ) ||
+    jumlahHalaman < 1
+  ) {
+
+    throw new Error(
+      "Jumlah halaman PDF tidak valid."
+    );
+  }
+
+  if (
+    jumlahHalaman !== 1
+  ) {
+
+    throw new Error(
+      `PDF halaman berisi ${jumlahHalaman} halaman. EPUB hanya menerima satu halaman per slot.`
     );
   }
 
   const page =
-    await pdf.getPage(1);
+    await pdf.getPage(
+      1
+    );
+
+  if (
+    !page ||
+    typeof page.getViewport !==
+      "function" ||
+    typeof page.render !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Halaman PDF tidak dapat dirender."
+    );
+  }
 
   const viewport =
     page.getViewport({
-      scale
+      scale:
+        skalaRender
     });
+
+  const viewportWidth =
+    Number(
+      viewport?.width
+    );
+
+  const viewportHeight =
+    Number(
+      viewport?.height
+    );
+
+  if (
+    !Number.isFinite(
+      viewportWidth
+    ) ||
+    viewportWidth <= 0 ||
+    !Number.isFinite(
+      viewportHeight
+    ) ||
+    viewportHeight <= 0
+  ) {
+
+    throw new Error(
+      "Ukuran viewport halaman EPUB tidak valid."
+    );
+  }
 
   const canvas =
     document.createElement(
@@ -14913,25 +15105,49 @@ async function ubahPdfHalamanKeGambarEpub({
     canvas.getContext(
       "2d",
       {
-        alpha: false
+        alpha:
+          false
       }
     );
 
   if (!context) {
+
     throw new Error(
       "Canvas EPUB tidak dapat dibuat."
     );
   }
 
-  canvas.width =
+  const canvasWidth =
     Math.ceil(
-      viewport.width
+      viewportWidth
     );
 
-  canvas.height =
+  const canvasHeight =
     Math.ceil(
-      viewport.height
+      viewportHeight
     );
+
+  if (
+    !Number.isInteger(
+      canvasWidth
+    ) ||
+    canvasWidth < 1 ||
+    !Number.isInteger(
+      canvasHeight
+    ) ||
+    canvasHeight < 1
+  ) {
+
+    throw new Error(
+      "Ukuran canvas EPUB tidak valid."
+    );
+  }
+
+  canvas.width =
+    canvasWidth;
+
+  canvas.height =
+    canvasHeight;
 
   context.fillStyle =
     "#ffffff";
@@ -14939,12 +15155,14 @@ async function ubahPdfHalamanKeGambarEpub({
   context.fillRect(
     0,
     0,
-    canvas.width,
-    canvas.height
+    canvasWidth,
+    canvasHeight
   );
 
   await page.render({
-    canvasContext: context,
+    canvasContext:
+      context,
+
     viewport
   }).promise;
 
@@ -14952,23 +15170,50 @@ async function ubahPdfHalamanKeGambarEpub({
     await canvasKeBlob(
       canvas,
       "image/jpeg",
-      quality
+      kualitasJpeg
+    );
+
+  const ukuranGambar =
+    Number(
+      imageBlob?.size
     );
 
   if (
     !(imageBlob instanceof Blob) ||
-    imageBlob.size < 1
+    !Number.isInteger(
+      ukuranGambar
+    ) ||
+    ukuranGambar < 1
   ) {
+
     throw new Error(
       "Gambar halaman EPUB gagal dibuat."
     );
   }
 
+  if (
+    imageBlob.type &&
+    imageBlob.type.toLowerCase() !==
+      "image/jpeg"
+  ) {
+
+    throw new Error(
+      "Format gambar halaman EPUB bukan JPEG."
+    );
+  }
+
   return {
-    blob: imageBlob,
-    width: canvas.width,
-    height: canvas.height,
-    mediaType: "image/jpeg"
+    blob:
+      imageBlob,
+
+    width:
+      canvasWidth,
+
+    height:
+      canvasHeight,
+
+    mediaType:
+      "image/jpeg"
   };
 }
 
