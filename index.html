@@ -15050,31 +15050,128 @@ function previewCoverPengganti(
   }
 }
 
-function previewPdfPengganti(event) {
+function previewPdfPengganti(
+  event
+) {
 
   const file =
-    event.target.files[0];
+    event?.target?.files?.[0];
 
   const fileName =
     document.getElementById(
       "edit-book-new-file-name"
     );
 
+  if (!fileName) {
+
+    console.error(
+      "Elemen nama PDF pengganti tidak tersedia."
+    );
+
+    return;
+  }
+
+  const bersihkanPreview =
+    () => {
+
+      fileName.textContent =
+        "";
+
+      fileName.style.display =
+        "none";
+    };
+
   if (!file) {
 
-    fileName.textContent = "";
-    fileName.style.display =
-      "none";
+    bersihkanPreview();
+
+    return;
+  }
+
+  if (
+    !(file instanceof File)
+  ) {
+
+    console.error(
+      "File PDF pengganti tidak valid."
+    );
+
+    bersihkanPreview();
+
+    return;
+  }
+
+  const namaFile =
+    typeof file.name ===
+      "string"
+      ? file.name.trim()
+      : "";
+
+  if (
+    !namaFile ||
+    !namaFile
+      .toLowerCase()
+      .endsWith(
+        ".pdf"
+      )
+  ) {
+
+    console.error(
+      "File pengganti harus berformat PDF."
+    );
+
+    bersihkanPreview();
+
+    return;
+  }
+
+  const tipeFile =
+    typeof file.type ===
+      "string"
+      ? file.type.trim().toLowerCase()
+      : "";
+
+  if (
+    tipeFile &&
+    tipeFile !==
+      "application/pdf"
+  ) {
+
+    console.error(
+      "MIME type file pengganti bukan PDF."
+    );
+
+    bersihkanPreview();
+
+    return;
+  }
+
+  const ukuranFile =
+    Number(
+      file.size
+    );
+
+  if (
+    !Number.isInteger(
+      ukuranFile
+    ) ||
+    ukuranFile < 1
+  ) {
+
+    console.error(
+      "Ukuran file PDF pengganti tidak valid."
+    );
+
+    bersihkanPreview();
 
     return;
   }
 
   fileName.textContent =
-    `📄 PDF pengganti: ${file.name}`;
+    `📄 PDF pengganti: ${namaFile}`;
 
   fileName.style.display =
     "block";
-
 }
 
 function normalisasiKategori(teks) {
