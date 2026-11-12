@@ -18101,28 +18101,114 @@ async function buatEpubSkeleton({
   language = "id"
 }) {
 
+  const idBuku =
+    Number(
+      bookId
+    );
+
   if (
-    typeof JSZip === "undefined"
+    !Number.isInteger(
+      idBuku
+    ) ||
+    idBuku < 1
   ) {
+
     throw new Error(
-      "JSZip belum tersedia."
+      "ID buku untuk EPUB skeleton tidak valid."
     );
   }
+
+  if (
+    typeof JSZip !==
+      "function"
+  ) {
+
+    throw new Error(
+      "JSZip belum tersedia atau tidak valid."
+    );
+  }
+
+  if (
+    typeof escapeXmlEpub !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Function escapeXmlEpub tidak tersedia."
+    );
+  }
+
+  const judulBersih =
+    typeof title ===
+      "string"
+      ? title.trim()
+      : "";
+
+  const judulFinal =
+    judulBersih ||
+    "Buku";
+
+  const bahasaBersih =
+    typeof language ===
+      "string"
+      ? language.trim()
+      : "";
+
+  const bahasaFinal =
+    bahasaBersih ||
+    "id";
+
+  const safeTitle =
+    escapeXmlEpub(
+      judulFinal
+    );
+
+  const safeLanguage =
+    escapeXmlEpub(
+      bahasaFinal
+    );
+
+  if (
+    !safeTitle ||
+    !safeLanguage
+  ) {
+
+    throw new Error(
+      "Metadata EPUB skeleton tidak valid."
+    );
+  }
+
+  const identifier =
+    `urn:perpustakaan-nawir-pakaja:${idBuku}`;
+
+  const modifiedAt =
+    new Date()
+      .toISOString()
+      .replace(
+        /\.\d{3}Z$/,
+        "Z"
+      );
 
   const zip =
     new JSZip();
 
-  const safeTitle =
-    escapeXmlEpub(title);
+  if (
+    !zip ||
+    typeof zip.file !==
+      "function"
+  ) {
 
-  const identifier =
-    `urn:perpustakaan-nawir-pakaja:${bookId}`;
+    throw new Error(
+      "Objek JSZip EPUB skeleton tidak valid."
+    );
+  }
 
   zip.file(
     "mimetype",
     "application/epub+zip",
     {
-      compression: "STORE"
+      compression:
+        "STORE"
     }
   );
 
@@ -18149,7 +18235,7 @@ async function buatEpubSkeleton({
 <html
   xmlns="http://www.w3.org/1999/xhtml"
   xmlns:epub="http://www.idpf.org/2007/ops"
-  lang="${language}"
+  lang="${safeLanguage}"
 >
 <head>
   <meta charset="UTF-8"/>
@@ -18176,7 +18262,7 @@ async function buatEpubSkeleton({
 <!DOCTYPE html>
 <html
   xmlns="http://www.w3.org/1999/xhtml"
-  lang="${language}"
+  lang="${safeLanguage}"
 >
 <head>
   <meta charset="UTF-8"/>
@@ -18209,12 +18295,12 @@ async function buatEpubSkeleton({
     </dc:title>
 
     <dc:language>
-      ${language}
+      ${safeLanguage}
     </dc:language>
 
     <meta
       property="dcterms:modified"
-    >${new Date().toISOString().replace(/\.\d{3}Z$/, "Z")}</meta>
+    >${modifiedAt}</meta>
   </metadata>
 
   <manifest>
@@ -18237,6 +18323,35 @@ async function buatEpubSkeleton({
   </spine>
 </package>`
   );
+
+  const fileWajib = [
+    "mimetype",
+    "META-INF/container.xml",
+    "EPUB/package.opf",
+    "EPUB/nav.xhtml",
+    "EPUB/Text/start.xhtml"
+  ];
+
+  const fileHilang =
+    fileWajib.filter(
+      (path) =>
+        !zip.file(
+          path
+        )
+    );
+
+  if (
+    fileHilang.length >
+      0
+  ) {
+
+    throw new Error(
+      "Skeleton EPUB tidak lengkap: " +
+      fileHilang.join(
+        ", "
+      )
+    );
+  }
 
   return zip;
 }
