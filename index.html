@@ -17129,6 +17129,7 @@ async function validasiKesiapanFinalIngestionBuku(
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku final completion gate tidak valid."
     );
@@ -17144,16 +17145,23 @@ async function validasiKesiapanFinalIngestionBuku(
       .select(`
         id,
         total_pages,
-        upload_status
+        upload_status,
+        file_url,
+        epub_url,
+        epub_storage_path,
+        epub_size,
+        epub_created_at
       `)
       .eq(
         "id",
         idBuku
       )
-      .single(),
+      .maybeSingle(),
 
     db
-      .from("book_ingestion_sessions")
+      .from(
+        "book_ingestion_sessions"
+      )
       .select(`
         id,
         book_id,
@@ -17170,23 +17178,35 @@ async function validasiKesiapanFinalIngestionBuku(
         "book_id",
         idBuku
       )
-      .single()
+      .maybeSingle()
 
   ]);
 
-  if (
-    hasilBuku.error ||
-    !hasilBuku.data
-  ) {
+  if (hasilBuku.error) {
+
+    throw new Error(
+      "Gagal membaca data buku Final Completion Gate: " +
+      hasilBuku.error.message
+    );
+  }
+
+  if (!hasilBuku.data) {
+
     throw new Error(
       "Data buku Final Completion Gate tidak ditemukan."
     );
   }
 
-  if (
-    hasilSession.error ||
-    !hasilSession.data
-  ) {
+  if (hasilSession.error) {
+
+    throw new Error(
+      "Gagal membaca session ingestion Final Completion Gate: " +
+      hasilSession.error.message
+    );
+  }
+
+  if (!hasilSession.data) {
+
     throw new Error(
       "Session ingestion Final Completion Gate tidak ditemukan."
     );
@@ -17198,25 +17218,82 @@ async function validasiKesiapanFinalIngestionBuku(
   const session =
     hasilSession.data;
 
+  if (
+    Number(
+      book.id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID Final Completion Gate tidak sesuai."
+    );
+  }
+
+  if (
+    Number(
+      session.book_id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID session Final Completion Gate tidak sesuai."
+    );
+  }
+
   const totalPages =
     Number(
-      book.total_pages || 0
+      book.total_pages
     );
 
   const sessionTotalPages =
     Number(
-      session.total_pages || 0
+      session.total_pages
     );
 
   const processedPages =
     Number(
-      session.processed_pages || 0
+      session.processed_pages
     );
 
   const outputSize =
     Number(
-      session.output_size || 0
+      session.output_size
     );
+
+  const bookEpubSize =
+    Number(
+      book.epub_size
+    );
+
+  const bookFileUrl =
+    typeof book.file_url ===
+      "string"
+      ? book.file_url.trim()
+      : "";
+
+  const sessionOutputUrl =
+    typeof session.output_url ===
+      "string"
+      ? session.output_url.trim()
+      : "";
+
+  const sessionStoragePath =
+    typeof session.output_storage_path ===
+      "string"
+      ? session.output_storage_path.trim()
+      : "";
+
+  const bookEpubUrl =
+    typeof book.epub_url ===
+      "string"
+      ? book.epub_url.trim()
+      : "";
+
+  const bookEpubStoragePath =
+    typeof book.epub_storage_path ===
+      "string"
+      ? book.epub_storage_path.trim()
+      : "";
 
   const masalah = [];
 
@@ -17224,33 +17301,74 @@ async function validasiKesiapanFinalIngestionBuku(
     book.upload_status !==
     "complete"
   ) {
+
     masalah.push(
       "Status buku belum complete."
     );
   }
 
+  if (!bookFileUrl) {
+
+    masalah.push(
+      "PDF final buku belum tersedia."
+    );
+  }
+
   if (
-    !Number.isInteger(totalPages) ||
+    !Number.isInteger(
+      totalPages
+    ) ||
     totalPages < 1
   ) {
+
     masalah.push(
       "Total halaman buku tidak valid."
     );
   }
 
   if (
-    sessionTotalPages !==
-    totalPages
+    !Number.isInteger(
+      sessionTotalPages
+    ) ||
+    sessionTotalPages < 1
   ) {
+
+    masalah.push(
+      "Total halaman session ingestion tidak valid."
+    );
+  }
+
+  if (
+    !Number.isInteger(
+      processedPages
+    ) ||
+    processedPages < 0
+  ) {
+
+    masalah.push(
+      "Processed pages ingestion tidak valid."
+    );
+  }
+
+  if (
+    Number.isInteger(totalPages) &&
+    Number.isInteger(sessionTotalPages) &&
+    sessionTotalPages !==
+      totalPages
+  ) {
+
     masalah.push(
       `Total halaman ingestion ${sessionTotalPages}/${totalPages} tidak cocok.`
     );
   }
 
   if (
+    Number.isInteger(totalPages) &&
+    Number.isInteger(processedPages) &&
     processedPages !==
-    totalPages
+      totalPages
   ) {
+
     masalah.push(
       `Progress ingestion baru ${processedPages}/${totalPages}.`
     );
@@ -17260,6 +17378,7 @@ async function validasiKesiapanFinalIngestionBuku(
     session.status !==
     "ready"
   ) {
+
     masalah.push(
       `Status ingestion harus ready sebelum complete, sekarang ${session.status || "kosong"}.`
     );
@@ -17269,37 +17388,33 @@ async function validasiKesiapanFinalIngestionBuku(
     session.output_format !==
     "epub"
   ) {
+
     masalah.push(
       "Format output final bukan EPUB."
     );
   }
 
-  if (
-    typeof session.output_url !==
-      "string" ||
-    session.output_url.trim() ===
-      ""
-  ) {
+  if (!sessionOutputUrl) {
+
     masalah.push(
       "URL output EPUB belum tersedia."
     );
   }
 
-  if (
-    typeof session.output_storage_path !==
-      "string" ||
-    session.output_storage_path.trim() ===
-      ""
-  ) {
+  if (!sessionStoragePath) {
+
     masalah.push(
       "Storage path EPUB belum tersedia."
     );
   }
 
   if (
-    !Number.isFinite(outputSize) ||
+    !Number.isInteger(
+      outputSize
+    ) ||
     outputSize < 1
   ) {
+
     masalah.push(
       "Ukuran output EPUB tidak valid."
     );
@@ -17308,45 +17423,134 @@ async function validasiKesiapanFinalIngestionBuku(
   if (
     !session.output_created_at
   ) {
+
     masalah.push(
       "Waktu pembuatan EPUB belum tersedia."
     );
   }
 
-  let hasilStorageEpub = null;
-
-if (
-  typeof session.output_storage_path ===
-    "string" &&
-  session.output_storage_path.trim() !==
-    "" &&
-  Number.isFinite(outputSize) &&
-  outputSize > 0
-) {
-
-  try {
-
-    hasilStorageEpub =
-      await validasiFileOutputEpubStorage({
-        storagePath:
-          session.output_storage_path,
-
-        expectedSize:
-          outputSize
-      });
-
-  } catch (storageError) {
+  if (!bookEpubUrl) {
 
     masalah.push(
-      storageError?.message ||
-      "Validasi file EPUB di Storage gagal."
+      "EPUB URL pada data buku belum tersedia."
     );
   }
-}
+
+  if (!bookEpubStoragePath) {
+
+    masalah.push(
+      "EPUB storage path pada data buku belum tersedia."
+    );
+  }
+
+  if (
+    !Number.isInteger(
+      bookEpubSize
+    ) ||
+    bookEpubSize < 1
+  ) {
+
+    masalah.push(
+      "Ukuran EPUB pada data buku tidak valid."
+    );
+  }
+
+  if (
+    !book.epub_created_at
+  ) {
+
+    masalah.push(
+      "Waktu EPUB pada data buku belum tersedia."
+    );
+  }
+
+  if (
+    sessionOutputUrl &&
+    bookEpubUrl &&
+    sessionOutputUrl !==
+      bookEpubUrl
+  ) {
+
+    masalah.push(
+      "URL EPUB session dan data buku tidak sama."
+    );
+  }
+
+  if (
+    sessionStoragePath &&
+    bookEpubStoragePath &&
+    sessionStoragePath !==
+      bookEpubStoragePath
+  ) {
+
+    masalah.push(
+      "Storage path EPUB session dan data buku tidak sama."
+    );
+  }
+
+  if (
+    Number.isInteger(outputSize) &&
+    Number.isInteger(bookEpubSize) &&
+    outputSize !==
+      bookEpubSize
+  ) {
+
+    masalah.push(
+      "Ukuran EPUB session dan data buku tidak sama."
+    );
+  }
+
+  if (
+    session.output_created_at &&
+    book.epub_created_at &&
+    String(
+      session.output_created_at
+    ) !==
+      String(
+        book.epub_created_at
+      )
+  ) {
+
+    masalah.push(
+      "Waktu pembuatan EPUB session dan data buku tidak sama."
+    );
+  }
+
+  let hasilStorageEpub =
+    null;
+
+  if (
+    sessionStoragePath &&
+    Number.isInteger(
+      outputSize
+    ) &&
+    outputSize > 0
+  ) {
+
+    try {
+
+      hasilStorageEpub =
+        await validasiFileOutputEpubStorage({
+          storagePath:
+            sessionStoragePath,
+
+          expectedSize:
+            outputSize
+        });
+
+    } catch (storageError) {
+
+      masalah.push(
+        storageError?.message ||
+        "Validasi file EPUB di Storage gagal."
+      );
+    }
+  }
 
   if (
     masalah.length > 0
   ) {
+
     throw new Error(
       "Final Completion Gate gagal: " +
       masalah.join(" ")
@@ -17354,7 +17558,8 @@ if (
   }
 
   return {
-    valid: true,
+    valid:
+      true,
 
     bookId:
       idBuku,
@@ -17375,15 +17580,18 @@ if (
       session.output_created_at,
 
     storageVerified:
-      hasilStorageEpub?.valid === true,
+      hasilStorageEpub?.valid ===
+      true,
 
     storageFileName:
-      hasilStorageEpub?.fileName || null,
+      hasilStorageEpub?.fileName ||
+      null,
 
     storageSize:
-      hasilStorageEpub?.storageSize || 0
-    };
-  }
+      hasilStorageEpub?.storageSize ||
+      0
+  };
+}
 
 async function catatErrorIngestionBuku(
   bookId,
