@@ -15174,10 +15174,24 @@ function previewPdfPengganti(
     "block";
 }
 
-function normalisasiKategori(teks) {
-  return (teks || "")
+function normalisasiKategori(
+  teks
+) {
+
+  if (
+    typeof teks !==
+      "string"
+  ) {
+
+    return "";
+  }
+
+  return teks
     .trim()
-    .replace(/\s+/g, " ");
+    .replace(
+      /\s+/g,
+      " "
+    );
 }
 
 function samakanKategoriYangSudahAda(
