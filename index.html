@@ -17432,6 +17432,58 @@ async function setStatusIngestionBuku(
     return false;
   }
 
+  if (
+    Number(
+      ingestionSession.book_id
+    ) !== idBuku
+  ) {
+
+    console.error(
+      "Book ID hasil pembaruan status ingestion tidak sesuai."
+    );
+
+    return false;
+  }
+
+  if (
+    ingestionSession.status !==
+    status
+  ) {
+
+    console.error(
+      "Status ingestion tidak tersimpan dengan benar.",
+      {
+        diharapkan:
+          status,
+
+        ditemukan:
+          ingestionSession.status
+      }
+    );
+
+    return false;
+  }
+
+  if (
+    status !== "failed" &&
+    ingestionSession.last_error !==
+      null
+  ) {
+
+    console.error(
+      "last_error ingestion belum berhasil dibersihkan.",
+      {
+        status:
+          status,
+
+        lastError:
+          ingestionSession.last_error
+      }
+    );
+
+    return false;
+  }
+
   return true;
 }
 
