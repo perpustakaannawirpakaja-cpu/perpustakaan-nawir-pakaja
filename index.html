@@ -8144,16 +8144,87 @@ let pdfJsKompresi = null;
 async function muatPdfJsKompresi() {
 
   if (pdfJsKompresi) {
-    return pdfJsKompresi;
+
+    if (
+      typeof pdfJsKompresi.getDocument !==
+        "function" ||
+      !pdfJsKompresi.GlobalWorkerOptions
+    ) {
+
+      pdfJsKompresi =
+        null;
+
+    } else {
+
+      return pdfJsKompresi;
+    }
   }
 
-  const pdfjsLib =
-    await import(
-      "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.mjs"
+  let pdfjsLib =
+    null;
+
+  try {
+
+    pdfjsLib =
+      await import(
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.mjs"
+      );
+
+  } catch (importError) {
+
+    throw new Error(
+      "PDF.js gagal dimuat: " +
+      (
+        importError?.message ||
+        "Modul PDF.js tidak tersedia."
+      )
     );
+  }
+
+  if (
+    !pdfjsLib ||
+    typeof pdfjsLib.getDocument !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Modul PDF.js tidak valid atau getDocument() tidak tersedia."
+    );
+  }
+
+  if (
+    !pdfjsLib.GlobalWorkerOptions ||
+    typeof pdfjsLib.GlobalWorkerOptions !==
+      "object"
+  ) {
+
+    throw new Error(
+      "GlobalWorkerOptions PDF.js tidak tersedia."
+    );
+  }
+
+  const workerSrc =
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.worker.mjs";
+
+  if (!workerSrc) {
+
+    throw new Error(
+      "Worker PDF.js tidak tersedia."
+    );
+  }
 
   pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/build/pdf.worker.mjs";
+    workerSrc;
+
+  if (
+    pdfjsLib.GlobalWorkerOptions.workerSrc !==
+      workerSrc
+  ) {
+
+    throw new Error(
+      "Worker PDF.js gagal dikonfigurasi."
+    );
+  }
 
   pdfJsKompresi =
     pdfjsLib;
