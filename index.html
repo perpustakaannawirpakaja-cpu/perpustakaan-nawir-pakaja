@@ -10299,108 +10299,363 @@ async function selesaikanAksiUploadTerakhir(
     return true;
   }
 
+  const bookId =
+    Number(
+      aksi.bookId || 0
+    );
+
+  const message =
+    document.getElementById(
+      "book-pages-message"
+    );
+
+  /* =========================
+     VALIDASI DASAR
+     ========================= */
+
+  if (
+    !Number.isInteger(bookId) ||
+    bookId < 1
+  ) {
+
+    if (message) {
+      message.textContent =
+        "❌ ID buku pada perubahan terakhir tidak valid.";
+    }
+
+    return false;
+  }
+
+  const jenisAksiValid = [
+    "upload",
+    "insert",
+    "move",
+    "replace",
+    "delete"
+  ];
+
+  if (
+    !jenisAksiValid.includes(
+      aksi.tipe
+    )
+  ) {
+
+    if (message) {
+      message.textContent =
+        "❌ Jenis perubahan halaman tidak dikenali.";
+    }
+
+    return false;
+  }
+
   const namaBatal =
-  aksi.tipe === "delete"
-    ? "Batal Hapus"
-    : aksi.tipe === "insert"
-      ? "Batal Sisip"
-      : aksi.tipe === "move"
-        ? "Batal Pindah"
-        : "Batal Upload";
+    aksi.tipe === "delete"
+      ? "Batal Hapus"
+      : aksi.tipe === "insert"
+        ? "Batal Sisip"
+        : aksi.tipe === "move"
+          ? "Batal Pindah"
+          : aksi.tipe === "replace"
+            ? "Batal Ganti"
+            : "Batal Upload";
 
   const yakin =
     confirm(
       `Perubahan terakhir pada Halaman ${aksi.pageNumber} masih bisa dibatalkan.\n\n` +
       `Jika Anda ${tindakan}, perubahan akan dianggap final dan ${namaBatal} tidak dapat digunakan lagi.\n\n` +
-      `Lanjutkan?`
+      "Lanjutkan?"
     );
 
   if (!yakin) {
     return false;
   }
 
-  /* =========================
-     KUNCI AKSI GANTI HALAMAN
-     ========================= */
+  let penguncianPermanenBerhasil =
+    false;
 
-  if (
-    aksi.tipe === "replace" &&
-    aksi.oldStoragePath
-  ) {
-
-    const {
-      error: removeOldError
-    } = await db.storage
-      .from("book-files")
-      .remove([
-        aksi.oldStoragePath
-      ]);
-
-    if (removeOldError) {
-
-      console.error(
-        "Gagal membersihkan file lama:",
-        removeOldError
-      );
-
-      const message =
-        document.getElementById(
-          "book-pages-message"
-        );
-
-      if (message) {
-        message.textContent =
-          "❌ Perubahan belum dapat dikunci karena file cadangan lama gagal dibersihkan.";
-      }
-
-      return false;
-    }
-  }
-
-  /* =========================
-     KUNCI AKSI HAPUS HALAMAN
-     ========================= */
-
-  if (
-    aksi.tipe === "delete" &&
-    aksi.deletedPage?.storage_path
-  ) {
-
-    const {
-      error: removeDeletedError
-    } = await db.storage
-      .from("book-files")
-      .remove([
-        aksi.deletedPage.storage_path
-      ]);
-
-    if (removeDeletedError) {
-
-      console.error(
-        "Gagal menghapus file halaman:",
-        removeDeletedError
-      );
-
-      const message =
-        document.getElementById(
-          "book-pages-message"
-        );
-
-      if (message) {
-        message.textContent =
-          "❌ Penghapusan belum dapat dikunci karena file halaman gagal dibersihkan dari Storage.";
-      }
-
-      return false;
-    }
-  }
-
-  aksiUploadHalamanTerakhir =
+  let ingestionSyncWarning =
     null;
 
-  updateTombolUploadHalaman();
+  /* =========================
+     HELPER ERROR TRACKING
+     ========================= */
 
-  return true;
+  async function catatErrorDenganAman(
+    error
+  ) {
+
+    try {
+
+      const berhasilDicatat =
+        await catatErrorIngestionBuku(
+          bookId,
+          error
+        );
+
+      if (!berhasilDicatat) {
+
+        console.warn(
+          "Error ingestion penguncian perubahan tidak berhasil dicatat.",
+          {
+            bookId:
+              bookId,
+
+            actionType:
+              aksi.tipe,
+
+            pageNumber:
+              aksi.pageNumber,
+
+            error:
+              error
+          }
+        );
+      }
+
+    } catch (trackingError) {
+
+      console.error(
+        "Pencatatan error ingestion gagal:",
+        trackingError
+      );
+    }
+
+    try {
+
+      await tampilkanStatusIngestionKelolaHalaman(
+        bookId
+      );
+
+    } catch (statusError) {
+
+      console.error(
+        "Gagal memperbarui tampilan status ingestion:",
+        statusError
+      );
+    }
+  }
+
+  try {
+
+    /* =========================
+       KUNCI AKSI GANTI HALAMAN
+       ========================= */
+
+    if (
+      aksi.tipe === "replace" &&
+      aksi.oldStoragePath
+    ) {
+
+      const {
+        error: removeOldError
+      } = await db.storage
+        .from(
+          "book-files"
+        )
+        .remove([
+          aksi.oldStoragePath
+        ]);
+
+      if (removeOldError) {
+
+        throw new Error(
+          "Perubahan belum dapat dikunci karena file cadangan lama gagal dibersihkan: " +
+          removeOldError.message
+        );
+      }
+    }
+
+    /* =========================
+       KUNCI AKSI HAPUS HALAMAN
+       ========================= */
+
+    if (
+      aksi.tipe === "delete" &&
+      aksi.deletedPage
+        ?.storage_path
+    ) {
+
+      const {
+        error: removeDeletedError
+      } = await db.storage
+        .from(
+          "book-files"
+        )
+        .remove([
+          aksi.deletedPage
+            .storage_path
+        ]);
+
+      if (removeDeletedError) {
+
+        throw new Error(
+          "Penghapusan belum dapat dikunci karena file halaman gagal dibersihkan dari Storage: " +
+          removeDeletedError.message
+        );
+      }
+    }
+
+    /*
+     * Sampai titik ini semua cleanup
+     * permanen yang dibutuhkan sudah
+     * berhasil.
+     *
+     * Untuk upload / insert / move
+     * memang tidak ada file cadangan
+     * lama yang harus dibuang.
+     */
+    penguncianPermanenBerhasil =
+      true;
+
+    /*
+     * Hapus state Undo SEGERA.
+     *
+     * Untuk replace/delete, file cadangan
+     * sudah hilang dari Storage sehingga
+     * Undo tidak boleh ditawarkan lagi.
+     */
+    aksiUploadHalamanTerakhir =
+      null;
+
+    updateTombolUploadHalaman();
+
+    /* =========================
+       SINKRONISASI INGESTION
+       ========================= */
+
+    try {
+
+      await sinkronkanProgressIngestionBuku(
+        bookId
+      );
+
+    } catch (syncError) {
+
+      console.error(
+        "Perubahan berhasil dikunci, tetapi sinkronisasi ingestion gagal:",
+        syncError
+      );
+
+      ingestionSyncWarning =
+        syncError;
+
+      /*
+       * Sync gagal terjadi SETELAH
+       * penguncian permanen berhasil.
+       *
+       * Jangan kembalikan state Undo,
+       * karena file cadangan mungkin
+       * sudah benar-benar dihapus.
+       */
+      await catatErrorDenganAman(
+        syncError
+      );
+    }
+
+    /*
+     * Kalau sync sukses, fungsi
+     * sinkronisasi otomatis:
+     *
+     * - mengembalikan status draft/ready
+     * - membersihkan last_error lama
+     *
+     * Ini penting apabila sebelumnya
+     * percobaan cleanup pernah gagal.
+     */
+
+    try {
+
+      await tampilkanStatusIngestionKelolaHalaman(
+        bookId
+      );
+
+    } catch (statusUiError) {
+
+      console.warn(
+        "Perubahan sudah dikunci, tetapi tampilan status ingestion belum berhasil diperbarui:",
+        statusUiError
+      );
+    }
+
+    if (
+      ingestionSyncWarning &&
+      message
+    ) {
+
+      message.textContent =
+        "⚠️ Perubahan sudah dikunci permanen, " +
+        "tetapi progress ingestion belum berhasil disinkronkan.";
+    }
+
+    return true;
+
+  } catch (error) {
+
+    console.error(
+      "Gagal mengunci perubahan halaman:",
+      error
+    );
+
+    /*
+     * Jalur ini hanya terjadi sebelum
+     * penguncian permanen dinyatakan
+     * berhasil.
+     *
+     * Karena file cadangan belum berhasil
+     * dibersihkan, state Undo HARUS tetap
+     * dipertahankan.
+     */
+    if (
+      !penguncianPermanenBerhasil
+    ) {
+
+      await catatErrorDenganAman(
+        error
+      );
+
+      if (message) {
+
+        message.textContent =
+          "❌ " +
+          (
+            error?.message ||
+            "Perubahan halaman belum dapat dikunci."
+          );
+      }
+
+      updateTombolUploadHalaman();
+
+      return false;
+    }
+
+    /*
+     * Safety fallback:
+     * kalau suatu saat ada error baru
+     * setelah penguncian permanen,
+     * jangan hidupkan Undo kembali.
+     */
+    await catatErrorDenganAman(
+      error
+    );
+
+    aksiUploadHalamanTerakhir =
+      null;
+
+    updateTombolUploadHalaman();
+
+    if (message) {
+
+      message.textContent =
+        "⚠️ Perubahan sudah dikunci permanen, " +
+        "tetapi proses lanjutan mengalami masalah: " +
+        (
+          error?.message ||
+          "Error tidak diketahui."
+        );
+    }
+
+    return true;
+  }
 }
 
 async function aksiTombolUploadHalaman() {
