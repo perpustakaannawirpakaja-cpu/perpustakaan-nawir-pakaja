@@ -12703,6 +12703,27 @@ async function validasiIntegritasHalaman(
   bookId
 ) {
 
+  const idBuku =
+    Number(
+      bookId
+    );
+
+  if (
+    !Number.isInteger(
+      idBuku
+    ) ||
+    idBuku < 1
+  ) {
+
+    return {
+      valid:
+        false,
+
+      message:
+        "ID buku untuk validasi integritas tidak valid."
+    };
+  }
+
   const {
     data: book,
     error: bookError
@@ -12713,37 +12734,80 @@ async function validasiIntegritasHalaman(
       total_pages,
       upload_mode
     `)
-    .eq("id", bookId)
-    .single();
+    .eq(
+      "id",
+      idBuku
+    )
+    .maybeSingle();
 
-  if (bookError || !book) {
+  if (bookError) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
+      message:
+        "Gagal membaca data buku: " +
+        bookError.message
+    };
+  }
+
+  if (!book) {
+
+    return {
+      valid:
+        false,
+
       message:
         "Data buku tidak ditemukan."
     };
   }
 
   if (
-    book.upload_mode !==
-    "incremental"
+    Number(
+      book.id
+    ) !== idBuku
   ) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
+      message:
+        "Book ID hasil validasi integritas tidak sesuai."
+    };
+  }
+
+  if (
+    book.upload_mode !==
+      "incremental"
+  ) {
+
+    return {
+      valid:
+        false,
+
       message:
         "Validasi halaman hanya berlaku untuk buku mode bertahap."
     };
   }
 
   const totalPages =
-    Number(book.total_pages || 0);
+    Number(
+      book.total_pages
+    );
 
   if (
-    !Number.isInteger(totalPages) ||
+    !Number.isInteger(
+      totalPages
+    ) ||
     totalPages < 1
   ) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         "Total halaman buku tidak valid."
     };
@@ -12756,31 +12820,57 @@ async function validasiIntegritasHalaman(
     .from("book_pages")
     .select(`
       id,
+      book_id,
       page_number
     `)
-    .eq("book_id", bookId)
+    .eq(
+      "book_id",
+      idBuku
+    )
     .order(
       "page_number",
       {
-        ascending: true
+        ascending:
+          true
       }
     );
 
   if (pagesError) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
-        "Data halaman tidak dapat diperiksa."
+        "Data halaman tidak dapat diperiksa: " +
+        pagesError.message
+    };
+  }
+
+  if (
+    !Array.isArray(
+      pages
+    )
+  ) {
+
+    return {
+      valid:
+        false,
+
+      message:
+        "Data halaman hasil query tidak valid."
     };
   }
 
   if (
     pages.length !==
-    totalPages
+      totalPages
   ) {
 
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         `Jumlah halaman tidak cocok. ` +
         `Database memiliki ${pages.length} halaman, ` +
@@ -12791,29 +12881,87 @@ async function validasiIntegritasHalaman(
   const nomorTerlihat =
     new Set();
 
-  const nomorDuplikat = [];
-  const nomorDiLuarRentang = [];
+  const nomorDuplikat =
+    [];
 
-  for (const page of pages) {
+  const nomorDiLuarRentang =
+    [];
+
+  for (
+    let index = 0;
+    index < pages.length;
+    index++
+  ) {
+
+    const page =
+      pages[index];
+
+    const idHalaman =
+      Number(
+        page?.id
+      );
+
+    const bookIdHalaman =
+      Number(
+        page?.book_id
+      );
 
     const nomor =
-      Number(page.page_number);
+      Number(
+        page?.page_number
+      );
 
     if (
-      !Number.isInteger(nomor) ||
+      !Number.isInteger(
+        idHalaman
+      ) ||
+      idHalaman < 1
+    ) {
+
+      return {
+        valid:
+          false,
+
+        message:
+          `ID data halaman pada posisi ${index + 1} tidak valid.`
+      };
+    }
+
+    if (
+      bookIdHalaman !==
+        idBuku
+    ) {
+
+      return {
+        valid:
+          false,
+
+        message:
+          `Book ID halaman pada posisi ${index + 1} tidak sesuai.`
+      };
+    }
+
+    if (
+      !Number.isInteger(
+        nomor
+      ) ||
       nomor < 1 ||
       nomor > totalPages
     ) {
 
       nomorDiLuarRentang.push(
-        nomor
+        Number.isFinite(nomor)
+          ? nomor
+          : "tidak valid"
       );
 
       continue;
     }
 
     if (
-      nomorTerlihat.has(nomor)
+      nomorTerlihat.has(
+        nomor
+      )
     ) {
 
       nomorDuplikat.push(
@@ -12826,14 +12974,34 @@ async function validasiIntegritasHalaman(
         nomor
       );
     }
+
+    const nomorSeharusnya =
+      index + 1;
+
+    if (
+      nomor !==
+        nomorSeharusnya
+    ) {
+
+      return {
+        valid:
+          false,
+
+        message:
+          `Urutan halaman tidak sesuai pada posisi ${nomorSeharusnya}. Ditemukan Halaman ${nomor}.`
+      };
+    }
   }
 
   if (
-    nomorDiLuarRentang.length > 0
+    nomorDiLuarRentang.length >
+      0
   ) {
 
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         `Ditemukan nomor halaman di luar rentang 1-${totalPages}: ` +
         nomorDiLuarRentang.join(", ")
@@ -12841,18 +13009,22 @@ async function validasiIntegritasHalaman(
   }
 
   if (
-    nomorDuplikat.length > 0
+    nomorDuplikat.length >
+      0
   ) {
 
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         "Ditemukan nomor halaman ganda: " +
         nomorDuplikat.join(", ")
     };
   }
 
-  const halamanHilang = [];
+  const halamanHilang =
+    [];
 
   for (
     let nomor = 1;
@@ -12861,7 +13033,9 @@ async function validasiIntegritasHalaman(
   ) {
 
     if (
-      !nomorTerlihat.has(nomor)
+      !nomorTerlihat.has(
+        nomor
+      )
     ) {
 
       halamanHilang.push(
@@ -12871,11 +13045,14 @@ async function validasiIntegritasHalaman(
   }
 
   if (
-    halamanHilang.length > 0
+    halamanHilang.length >
+      0
   ) {
 
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         "Halaman yang belum ada: " +
         halamanHilang.join(", ")
@@ -12883,10 +13060,14 @@ async function validasiIntegritasHalaman(
   }
 
   return {
-    valid: true,
+    valid:
+      true,
+
     message:
       `Urutan halaman lengkap: 1-${totalPages}.`,
+
     totalPages,
+
     pages
   };
 }
