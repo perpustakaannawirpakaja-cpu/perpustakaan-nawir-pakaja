@@ -18363,41 +18363,128 @@ async function buatEpubBlobSkeleton({
 }) {
 
   const idBuku =
-    Number(bookId);
+    Number(
+      bookId
+    );
 
   if (
-    !Number.isInteger(idBuku) ||
+    !Number.isInteger(
+      idBuku
+    ) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku untuk EPUB tidak valid."
     );
   }
 
+  if (
+    typeof buatEpubSkeleton !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Function buatEpubSkeleton tidak tersedia."
+    );
+  }
+
   const zip =
     await buatEpubSkeleton({
-      bookId: idBuku,
+      bookId:
+        idBuku,
+
       title,
+
       language
     });
 
-  const blob =
-    await zip.generateAsync({
-      type: "blob",
-      mimeType:
-        "application/epub+zip",
-      compression: "DEFLATE",
-      compressionOptions: {
-        level: 6
-      }
-    });
+  if (
+    !zip ||
+    typeof zip.generateAsync !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Objek EPUB skeleton tidak valid."
+    );
+  }
+
+  let blob =
+    null;
+
+  try {
+
+    blob =
+      await zip.generateAsync({
+        type:
+          "blob",
+
+        mimeType:
+          "application/epub+zip",
+
+        compression:
+          "DEFLATE",
+
+        compressionOptions: {
+          level:
+            6
+        }
+      });
+
+  } catch (error) {
+
+    throw new Error(
+      "Blob EPUB gagal dibuat: " +
+      (
+        error?.message ||
+        "Proses generateAsync gagal."
+      )
+    );
+  }
 
   if (
-    !(blob instanceof Blob) ||
-    blob.size < 1
+    !(blob instanceof Blob)
   ) {
+
     throw new Error(
-      "Blob EPUB gagal dibuat."
+      "Hasil EPUB bukan Blob yang valid."
+    );
+  }
+
+  const ukuranBlob =
+    Number(
+      blob.size
+    );
+
+  if (
+    !Number.isInteger(
+      ukuranBlob
+    ) ||
+    ukuranBlob < 1
+  ) {
+
+    throw new Error(
+      "Ukuran Blob EPUB tidak valid."
+    );
+  }
+
+  const mimeType =
+    typeof blob.type ===
+      "string"
+      ? blob.type
+        .trim()
+        .toLowerCase()
+      : "";
+
+  if (
+    mimeType &&
+    mimeType !==
+      "application/epub+zip"
+  ) {
+
+    throw new Error(
+      "MIME type Blob EPUB tidak valid."
     );
   }
 
