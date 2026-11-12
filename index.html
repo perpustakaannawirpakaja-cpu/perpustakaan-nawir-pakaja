@@ -17891,10 +17891,116 @@ async function pastikanOutputEpubFinalisasi({
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku finalisasi EPUB tidak valid."
     );
   }
+
+  const bahasa =
+    typeof language === "string" &&
+    language.trim()
+      ? language.trim()
+      : "id";
+
+  /* =========================
+     HELPER BATALKAN OUTPUT BARU
+     ========================= */
+
+  async function batalkanOutputRebuildTidakValid({
+    storagePath = null,
+    errorUtama
+  }) {
+
+    const pesanTambahan = [];
+
+    /*
+     * Jika file baru sempat terupload,
+     * coba bersihkan dari Storage.
+     */
+    if (
+      typeof storagePath === "string" &&
+      storagePath.trim()
+    ) {
+
+      try {
+
+        const {
+          error: removeError
+        } = await db.storage
+          .from(
+            "book-files"
+          )
+          .remove([
+            storagePath.trim()
+          ]);
+
+        if (removeError) {
+
+          pesanTambahan.push(
+            "Cleanup Storage gagal: " +
+            removeError.message
+          );
+        }
+
+      } catch (cleanupError) {
+
+        pesanTambahan.push(
+          "Cleanup Storage gagal: " +
+          (
+            cleanupError?.message ||
+            "Error tidak diketahui."
+          )
+        );
+      }
+    }
+
+    /*
+     * Metadata output baru jangan dibiarkan
+     * terlihat sebagai EPUB aktif/current.
+     */
+    try {
+
+      await resetMetadataOutputEpub(
+        idBuku
+      );
+
+    } catch (resetError) {
+
+      pesanTambahan.push(
+        "Reset metadata EPUB gagal: " +
+        (
+          resetError?.message ||
+          "Error tidak diketahui."
+        )
+      );
+    }
+
+    const pesanUtama =
+      errorUtama?.message ||
+      "Output EPUB rebuild tidak valid.";
+
+    if (
+      pesanTambahan.length > 0
+    ) {
+
+      throw new Error(
+        pesanUtama +
+        " | " +
+        pesanTambahan.join(
+          " | "
+        )
+      );
+    }
+
+    throw new Error(
+      pesanUtama
+    );
+  }
+
+  /* =========================
+     AMBIL OUTPUT SEKARANG
+     ========================= */
 
   const outputSekarang =
     await ambilOutputEpubSebelumnya(
@@ -17912,63 +18018,240 @@ async function pastikanOutputEpubFinalisasi({
       "string" &&
     outputSekarang.storagePath.trim() !== "" &&
     Number.isFinite(
-      Number(outputSekarang.size)
+      Number(
+        outputSekarang.size
+      )
     ) &&
-    Number(outputSekarang.size) > 0;
+    Number(
+      outputSekarang.size
+    ) > 0;
 
   let recoveryStorageAktif =
-  false;
-  
+    false;
+
+  let recoveryStorageError =
+    null;
+
+  /* =========================
+     COBA REUSE EPUB AKTIF
+     ========================= */
+
   if (outputSiap) {
+
+    try {
+
+      await validasiFileOutputEpubStorage({
+        storagePath:
+          outputSekarang.storagePath,
+
+        expectedSize:
+          Number(
+            outputSekarang.size
+          )
+      });
+
+      return {
+        reused:
+          true,
+
+        rebuilt:
+          false,
+
+        recovered:
+          false,
+
+        output:
+          outputSekarang,
+
+        result:
+          null
+      };
+
+    } catch (storageError) {
+
+      recoveryStorageAktif =
+        true;
+
+      recoveryStorageError =
+        storageError;
+
+      console.warn(
+        "EPUB aktif tidak valid di Storage. Sistem akan membangun ulang EPUB:",
+        storageError
+      );
+    }
+  }
+
+  /* =========================
+     BUILD / REBUILD EPUB
+     ========================= */
+
+  let hasilRebuild;
+
+  try {
+
+    hasilRebuild =
+      await prosesOutputEpub({
+        bookId:
+          idBuku,
+
+        language:
+          bahasa
+      });
+
+  } catch (rebuildError) {
+
+    if (
+      recoveryStorageAktif
+    ) {
+
+      throw new Error(
+        "EPUB aktif bermasalah di Storage dan proses pemulihan EPUB gagal. " +
+        "Masalah Storage sebelumnya: " +
+        (
+          recoveryStorageError?.message ||
+          "Error tidak diketahui."
+        ) +
+        " | Rebuild: " +
+        (
+          rebuildError?.message ||
+          "Error tidak diketahui."
+        )
+      );
+    }
+
+    throw new Error(
+      "Pembuatan EPUB final gagal: " +
+      (
+        rebuildError?.message ||
+        "Error tidak diketahui."
+      )
+    );
+  }
+
+  /* =========================
+     VALIDASI HASIL REBUILD
+     ========================= */
+
+  const outputRebuild =
+    hasilRebuild?.output;
+
+  if (!outputRebuild) {
+
+    await batalkanOutputRebuildTidakValid({
+      storagePath:
+        null,
+
+      errorUtama:
+        new Error(
+          "Pembuatan EPUB selesai tetapi data output EPUB tidak tersedia."
+        )
+    });
+  }
+
+  const publicUrlRebuild =
+    typeof outputRebuild.publicUrl ===
+      "string"
+      ? outputRebuild.publicUrl.trim()
+      : "";
+
+  const storagePathRebuild =
+    typeof outputRebuild.storagePath ===
+      "string"
+      ? outputRebuild.storagePath.trim()
+      : "";
+
+  const sizeRebuild =
+    Number(
+      outputRebuild.size || 0
+    );
+
+  if (!publicUrlRebuild) {
+
+    await batalkanOutputRebuildTidakValid({
+      storagePath:
+        storagePathRebuild,
+
+      errorUtama:
+        new Error(
+          "Pembuatan EPUB selesai tetapi URL publik output kosong."
+        )
+    });
+  }
+
+  if (!storagePathRebuild) {
+
+    await batalkanOutputRebuildTidakValid({
+      storagePath:
+        null,
+
+      errorUtama:
+        new Error(
+          "Pembuatan EPUB selesai tetapi Storage Path output kosong."
+        )
+    });
+  }
+
+  if (
+    !Number.isFinite(
+      sizeRebuild
+    ) ||
+    sizeRebuild < 1
+  ) {
+
+    await batalkanOutputRebuildTidakValid({
+      storagePath:
+        storagePathRebuild,
+
+      errorUtama:
+        new Error(
+          "Pembuatan EPUB selesai tetapi ukuran output tidak valid."
+        )
+    });
+  }
+
+  /* =========================
+     VERIFIKASI STORAGE OUTPUT BARU
+     ========================= */
 
   try {
 
     await validasiFileOutputEpubStorage({
       storagePath:
-        outputSekarang.storagePath,
+        storagePathRebuild,
 
       expectedSize:
-        Number(
-          outputSekarang.size
+        sizeRebuild
+    });
+
+  } catch (validationError) {
+
+    await batalkanOutputRebuildTidakValid({
+      storagePath:
+        storagePathRebuild,
+
+      errorUtama:
+        new Error(
+          "EPUB baru berhasil dibuat tetapi gagal lolos verifikasi Storage: " +
+          (
+            validationError?.message ||
+            "Error tidak diketahui."
+          )
         )
     });
-
-    return {
-      reused: true,
-      rebuilt: false,
-      recovered: false,
-
-      output:
-        outputSekarang,
-
-      result:
-        null
-    };
-
-  } catch (storageError) {
-
-    recoveryStorageAktif =
-      true;
-
-    console.warn(
-      "EPUB aktif tidak valid di Storage. Sistem akan membangun ulang EPUB:",
-      storageError
-    );
-
   }
-}
 
-  const hasilRebuild =
-    await prosesOutputEpub({
-      bookId:
-        idBuku,
-
-      language
-    });
+  /* =========================
+     HASIL FINAL
+     ========================= */
 
   return {
-    reused: false,
-    rebuilt: true,
+    reused:
+      false,
+
+    rebuilt:
+      true,
+
     recovered:
       recoveryStorageAktif,
 
@@ -17977,15 +18260,13 @@ async function pastikanOutputEpubFinalisasi({
         "epub",
 
       publicUrl:
-        hasilRebuild.output.publicUrl,
+        publicUrlRebuild,
 
       storagePath:
-        hasilRebuild.output.storagePath,
+        storagePathRebuild,
 
       size:
-        Number(
-          hasilRebuild.output.size || 0
-        ),
+        sizeRebuild,
 
       createdAt:
         hasilRebuild.session
