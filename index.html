@@ -18822,29 +18822,156 @@ async function siapkanEpubSkeleton({
   language = "id"
 }) {
 
+  const idBuku =
+    Number(
+      bookId
+    );
+
+  if (
+    !Number.isInteger(
+      idBuku
+    ) ||
+    idBuku < 1
+  ) {
+
+    throw new Error(
+      "ID buku untuk persiapan EPUB skeleton tidak valid."
+    );
+  }
+
+  if (
+    typeof buatEpubBlobSkeleton !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Function buatEpubBlobSkeleton tidak tersedia."
+    );
+  }
+
+  if (
+    typeof validasiEpubSkeleton !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Function validasiEpubSkeleton tidak tersedia."
+    );
+  }
+
   const epubBlob =
     await buatEpubBlobSkeleton({
-      bookId,
+      bookId:
+        idBuku,
+
       title,
+
       language
     });
+
+  if (
+    !(epubBlob instanceof Blob)
+  ) {
+
+    throw new Error(
+      "Hasil pembuatan EPUB skeleton bukan Blob yang valid."
+    );
+  }
+
+  const ukuranBlob =
+    Number(
+      epubBlob.size
+    );
+
+  if (
+    !Number.isInteger(
+      ukuranBlob
+    ) ||
+    ukuranBlob < 1
+  ) {
+
+    throw new Error(
+      "Ukuran EPUB skeleton tidak valid."
+    );
+  }
 
   const hasilValidasi =
     await validasiEpubSkeleton(
       epubBlob
     );
 
-  if (!hasilValidasi.valid) {
+  if (
+    !hasilValidasi ||
+    typeof hasilValidasi !==
+      "object"
+  ) {
+
     throw new Error(
-      hasilValidasi.message
+      "Hasil validasi EPUB skeleton tidak valid."
+    );
+  }
+
+  if (
+    hasilValidasi.valid !==
+      true
+  ) {
+
+    throw new Error(
+      typeof hasilValidasi.message ===
+        "string" &&
+      hasilValidasi.message.trim()
+        ? hasilValidasi.message.trim()
+        : "Validasi EPUB skeleton gagal."
+    );
+  }
+
+  const ukuranTervalidasi =
+    Number(
+      hasilValidasi.size
+    );
+
+  if (
+    !Number.isInteger(
+      ukuranTervalidasi
+    ) ||
+    ukuranTervalidasi < 1 ||
+    ukuranTervalidasi !==
+      ukuranBlob
+  ) {
+
+    throw new Error(
+      "Ukuran EPUB skeleton hasil validasi tidak konsisten."
+    );
+  }
+
+  const mimeType =
+    typeof hasilValidasi.mimeType ===
+      "string"
+      ? hasilValidasi.mimeType
+        .trim()
+        .toLowerCase()
+      : "";
+
+  if (
+    mimeType !==
+      "application/epub+zip"
+  ) {
+
+    throw new Error(
+      "MIME type EPUB skeleton hasil validasi tidak sesuai."
     );
   }
 
   return {
-    blob: epubBlob,
-    size: epubBlob.size,
+    blob:
+      epubBlob,
+
+    size:
+      ukuranTervalidasi,
+
     mimeType:
-      "application/epub+zip",
+      mimeType,
+
     validation:
       hasilValidasi
   };
