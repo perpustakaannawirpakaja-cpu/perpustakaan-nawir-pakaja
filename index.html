@@ -19267,16 +19267,23 @@ async function sinkronkanProgressIngestionBuku(
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku untuk sinkronisasi ingestion tidak valid."
     );
   }
 
+  /* =========================
+     AMBIL DATA BUKU
+     ========================= */
+
   const {
     data: book,
     error: bookError
   } = await db
-    .from("books")
+    .from(
+      "books"
+    )
     .select(`
       id,
       total_pages,
@@ -19286,60 +19293,145 @@ async function sinkronkanProgressIngestionBuku(
       "id",
       idBuku
     )
-    .single();
+    .maybeSingle();
 
-  if (
-    bookError ||
-    !book
-  ) {
+  if (bookError) {
+
+    throw new Error(
+      "Gagal membaca data buku untuk sinkronisasi ingestion: " +
+      bookError.message
+    );
+  }
+
+  if (!book) {
+
     throw new Error(
       "Data buku untuk sinkronisasi ingestion tidak ditemukan."
     );
   }
 
+  /* =========================
+     VALIDASI TOTAL HALAMAN
+     ========================= */
+
+  const totalPages =
+    Number(
+      book.total_pages ?? 0
+    );
+
+  if (
+    !Number.isInteger(totalPages) ||
+    totalPages < 0
+  ) {
+
+    throw new Error(
+      "Total halaman buku untuk sinkronisasi ingestion tidak valid."
+    );
+  }
+
+  /* =========================
+     HITUNG HALAMAN TERPROSES
+     ========================= */
+
   const {
     count: jumlahHalaman,
     error: countError
   } = await db
-    .from("book_pages")
-    .select("*", {
-      count: "exact",
-      head: true
-    })
+    .from(
+      "book_pages"
+    )
+    .select(
+      "*",
+      {
+        count:
+          "exact",
+
+        head:
+          true
+      }
+    )
     .eq(
       "book_id",
       idBuku
     );
 
   if (countError) {
+
     throw new Error(
       "Gagal menghitung halaman ingestion: " +
       countError.message
     );
   }
 
+  if (
+    jumlahHalaman ===
+      null ||
+    jumlahHalaman ===
+      undefined
+  ) {
+
+    throw new Error(
+      "Jumlah halaman ingestion tidak berhasil dihitung."
+    );
+  }
+
+  const processedPages =
+    Number(
+      jumlahHalaman
+    );
+
+  if (
+    !Number.isInteger(
+      processedPages
+    ) ||
+    processedPages < 0
+  ) {
+
+    throw new Error(
+      "Jumlah halaman ingestion tidak valid."
+    );
+  }
+
+  /* =========================
+     TENTUKAN STATUS INGESTION
+     ========================= */
+
   const ingestionStatus =
-    book.upload_status === "complete"
+    book.upload_status ===
+      "complete"
       ? "ready"
       : "draft";
+
+  /* =========================
+     UPDATE SESSION INGESTION
+     ========================= */
 
   const {
     data: ingestionSession,
     error: updateError
   } = await db
-    .from("book_ingestion_sessions")
+    .from(
+      "book_ingestion_sessions"
+    )
     .update({
-  total_pages:
-    Number(book.total_pages || 0),
+      total_pages:
+        totalPages,
 
-  processed_pages:
-    jumlahHalaman || 0,
+      processed_pages:
+        processedPages,
 
-  status:
-    ingestionStatus,
+      status:
+        ingestionStatus,
 
-  last_error: null
-})
+      /*
+       * Sinkronisasi sukses adalah
+       * recovery point.
+       *
+       * Error lama dibersihkan.
+       */
+      last_error:
+        null
+    })
     .eq(
       "book_id",
       idBuku
@@ -19349,11 +19441,13 @@ async function sinkronkanProgressIngestionBuku(
       book_id,
       processed_pages,
       total_pages,
-      status
+      status,
+      last_error
     `)
     .maybeSingle();
 
   if (updateError) {
+
     throw new Error(
       "Sinkronisasi progress ingestion gagal: " +
       updateError.message
@@ -19361,13 +19455,72 @@ async function sinkronkanProgressIngestionBuku(
   }
 
   if (!ingestionSession) {
+
     throw new Error(
       "Sesi ingestion buku tidak ditemukan."
     );
   }
 
-  return ingestionSession;
+  /* =========================
+     VERIFIKASI HASIL UPDATE
+     ========================= */
 
+  if (
+    Number(
+      ingestionSession.book_id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID pada hasil sinkronisasi ingestion tidak sesuai."
+    );
+  }
+
+  if (
+    Number(
+      ingestionSession.total_pages
+    ) !== totalPages
+  ) {
+
+    throw new Error(
+      "Total halaman ingestion tidak tersinkron dengan benar."
+    );
+  }
+
+  if (
+    Number(
+      ingestionSession.processed_pages
+    ) !== processedPages
+  ) {
+
+    throw new Error(
+      "Processed pages ingestion tidak tersinkron dengan benar."
+    );
+  }
+
+  if (
+    ingestionSession.status !==
+      ingestionStatus
+  ) {
+
+    throw new Error(
+      "Status ingestion tidak tersinkron dengan benar. " +
+      `Diharapkan ${ingestionStatus}, ` +
+      `tetapi ditemukan ${ingestionSession.status || "kosong"}.`
+    );
+  }
+
+  if (
+    ingestionSession.last_error !==
+      null
+  ) {
+
+    throw new Error(
+      "last_error ingestion belum berhasil dibersihkan setelah sinkronisasi."
+    );
+  }
+
+  return ingestionSession;
 }
 
 async function validasiFileOutputEpubStorage({
