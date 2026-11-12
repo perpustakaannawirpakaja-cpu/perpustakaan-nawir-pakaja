@@ -17775,100 +17775,285 @@ async function logoutAdmin() {
 
 async function loginAdmin() {
 
-  const email =
-    document.getElementById("admin-email").value.trim();
+  const emailInput =
+    document.getElementById(
+      "admin-email"
+    );
 
-  const password =
-    document.getElementById("admin-password").value;
+  const passwordInput =
+    document.getElementById(
+      "admin-password"
+    );
 
   const message =
-    document.getElementById("admin-login-message");
+    document.getElementById(
+      "admin-login-message"
+    );
 
   const loginButton =
-    document.getElementById("admin-login-btn");
+    document.getElementById(
+      "admin-login-btn"
+    );
 
-  message.textContent = "";
-
-  if (!email || !password) {
-    message.textContent =
-      "⚠️ Email dan password harus diisi.";
-    return;
-  }
-
-  loginButton.disabled = true;
-  loginButton.textContent = "⏳ Masuk...";
-
-  const { data, error } =
-    await db.auth.signInWithPassword({
-      email,
-      password
-    });
-
-  if (error || !data.user) {
-    loginButton.disabled = false;
-    loginButton.textContent = "Masuk";
-
-    message.textContent =
-  "❌ Login gagal: " +
-  (error?.message || "User tidak ditemukan.");
-
-document
-  .getElementById("admin-password")
-  ?.focus();
-
-return;
-  }
-
-  const { data: adminData, error: adminError } =
-    await db
-      .from("admin_users")
-      .select("user_id")
-      .eq("user_id", data.user.id)
-      .maybeSingle();
-
-  if (adminError) {
-
-    await db.auth.signOut();
-
-    loginButton.disabled = false;
-    loginButton.textContent = "Masuk";
-
-    message.textContent =
-      "❌ Gagal memeriksa hak akses Admin.";
+  if (
+    !emailInput ||
+    !passwordInput ||
+    !message ||
+    !loginButton
+  ) {
 
     console.error(
-      "Admin check error:",
-      adminError
+      "Struktur UI Login Admin belum lengkap."
     );
 
     return;
   }
 
-  if (!adminData) {
+  const email =
+    typeof emailInput.value ===
+      "string"
+      ? emailInput.value.trim()
+      : "";
 
-    await db.auth.signOut();
+  const password =
+    typeof passwordInput.value ===
+      "string"
+      ? passwordInput.value
+      : "";
 
-    loginButton.disabled = false;
-    loginButton.textContent = "Masuk";
+  message.textContent =
+    "";
+
+  if (
+    !email ||
+    !password
+  ) {
 
     message.textContent =
-      "⛔ Akun ini bukan Admin.";
+      "⚠️ Email dan password harus diisi.";
+
+    if (!email) {
+
+      emailInput.focus();
+
+    } else {
+
+      passwordInput.focus();
+    }
 
     return;
   }
 
-  loginButton.disabled = false;
-  loginButton.textContent = "Masuk";
+  loginButton.disabled =
+    true;
 
-  message.textContent =
-    "✅ Login Admin berhasil.";
+  loginButton.textContent =
+    "⏳ Masuk...";
 
-  document.getElementById("admin-password").value = "";
+  let loginBerhasil =
+    false;
 
-  setTimeout(() => {
-  tutupAdmin();
-  bukaAdminPanel();
-}, 800);
+  try {
+
+    const {
+      data,
+      error: loginError
+    } =
+      await db.auth
+        .signInWithPassword({
+          email,
+          password
+        });
+
+    if (loginError) {
+
+      throw new Error(
+        "Login gagal: " +
+        loginError.message
+      );
+    }
+
+    const user =
+      data?.user;
+
+    if (!user) {
+
+      throw new Error(
+        "User tidak ditemukan."
+      );
+    }
+
+    const userId =
+      typeof user.id ===
+        "string"
+        ? user.id.trim()
+        : "";
+
+    if (!userId) {
+
+      throw new Error(
+        "ID user login tidak tersedia."
+      );
+    }
+
+    const {
+      data: adminData,
+      error: adminError
+    } = await db
+      .from(
+        "admin_users"
+      )
+      .select(
+        "user_id"
+      )
+      .eq(
+        "user_id",
+        userId
+      )
+      .maybeSingle();
+
+    if (adminError) {
+
+      try {
+
+        const {
+          error: signOutError
+        } =
+          await db.auth.signOut();
+
+        if (signOutError) {
+
+          console.error(
+            "Sign-out setelah gagal memeriksa Admin juga gagal:",
+            signOutError
+          );
+        }
+
+      } catch (signOutException) {
+
+        console.error(
+          "Sign-out setelah gagal memeriksa Admin juga gagal:",
+          signOutException
+        );
+      }
+
+      throw new Error(
+        "Gagal memeriksa hak akses Admin: " +
+        adminError.message
+      );
+    }
+
+    if (
+      !adminData ||
+      adminData.user_id !==
+        userId
+    ) {
+
+      try {
+
+        const {
+          error: signOutError
+        } =
+          await db.auth.signOut();
+
+        if (signOutError) {
+
+          console.error(
+            "Sign-out akun non-Admin gagal:",
+            signOutError
+          );
+        }
+
+      } catch (signOutException) {
+
+        console.error(
+          "Sign-out akun non-Admin gagal:",
+          signOutException
+        );
+      }
+
+      message.textContent =
+        "⛔ Akun ini bukan Admin.";
+
+      passwordInput.focus();
+
+      return;
+    }
+
+    loginBerhasil =
+      true;
+
+    passwordInput.value =
+      "";
+
+    message.textContent =
+      "✅ Login Admin berhasil.";
+
+  } catch (error) {
+
+    console.error(
+      "Login Admin gagal:",
+      error
+    );
+
+    message.textContent =
+      "❌ " +
+      (
+        error?.message ||
+        "Login Admin gagal."
+      );
+
+    passwordInput.focus();
+
+    return;
+
+  } finally {
+
+    loginButton.disabled =
+      false;
+
+    loginButton.textContent =
+      "Masuk";
+  }
+
+  if (!loginBerhasil) {
+
+    return;
+  }
+
+  setTimeout(
+    () => {
+
+      if (
+        typeof tutupAdmin ===
+          "function"
+      ) {
+
+        tutupAdmin();
+
+      } else {
+
+        console.error(
+          "Function tutupAdmin tidak tersedia."
+        );
+      }
+
+      if (
+        typeof bukaAdminPanel ===
+          "function"
+      ) {
+
+        bukaAdminPanel();
+
+      } else {
+
+        console.error(
+          "Function bukaAdminPanel tidak tersedia."
+        );
+      }
+    },
+    800
+  );
 }
 
 function escapeXmlEpub(value = "") {
