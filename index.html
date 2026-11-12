@@ -17075,11 +17075,16 @@ async function catatErrorIngestionBuku(
   }
 
   const pesanError =
-    String(
-      error?.message ||
-      error ||
-      "Terjadi kesalahan ingestion."
-    ).trim();
+  String(
+    error?.message ||
+    error ||
+    "Terjadi kesalahan ingestion."
+  )
+    .trim()
+    .slice(
+      0,
+      1000
+    );
 
   const {
     error: updateError
