@@ -15797,44 +15797,102 @@ async function validasiEpubFixedLayout({
 }) {
 
   const totalHalaman =
-    Number(expectedPages);
+    Number(
+      expectedPages
+    );
+
+  const ukuranEpub =
+    Number(
+      epubBlob?.size
+    );
 
   if (
     !(epubBlob instanceof Blob) ||
-    epubBlob.size < 1
+    !Number.isInteger(
+      ukuranEpub
+    ) ||
+    ukuranEpub < 1
   ) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         "Blob EPUB Fixed Layout kosong atau tidak valid."
     };
   }
 
   if (
-    !Number.isInteger(totalHalaman) ||
+    !Number.isInteger(
+      totalHalaman
+    ) ||
     totalHalaman < 1
   ) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         "Jumlah halaman EPUB yang diharapkan tidak valid."
     };
   }
 
   if (
-    typeof JSZip === "undefined"
+    typeof JSZip ===
+      "undefined"
   ) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         "JSZip belum tersedia."
     };
   }
 
-  const zip =
-    await JSZip.loadAsync(
-      epubBlob
-    );
+  let zip =
+    null;
+
+  try {
+
+    zip =
+      await JSZip.loadAsync(
+        epubBlob
+      );
+
+  } catch (zipError) {
+
+    return {
+      valid:
+        false,
+
+      message:
+        "File EPUB tidak dapat dibuka sebagai arsip ZIP: " +
+        (
+          zipError?.message ||
+          "Struktur ZIP tidak valid."
+        )
+    };
+  }
+
+  if (
+    !zip ||
+    typeof zip.file !==
+      "function" ||
+    !zip.files
+  ) {
+
+    return {
+      valid:
+        false,
+
+      message:
+        "Struktur arsip EPUB tidak valid."
+    };
+  }
 
   const fileWajib = [
     "mimetype",
@@ -15849,29 +15907,56 @@ async function validasiEpubFixedLayout({
         !zip.file(path)
     );
 
-  if (fileHilang.length) {
+  if (
+    fileHilang.length > 0
+  ) {
 
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         "Struktur EPUB Fixed Layout belum lengkap: " +
         fileHilang.join(", ")
     };
   }
 
-  const mimetype =
-    (
-      await zip
-        .file("mimetype")
-        .async("string")
-    ).trim();
+  let mimetype =
+    "";
+
+  try {
+
+    mimetype =
+      (
+        await zip
+          .file(
+            "mimetype"
+          )
+          .async(
+            "string"
+          )
+      ).trim();
+
+  } catch (mimetypeError) {
+
+    return {
+      valid:
+        false,
+
+      message:
+        "File mimetype EPUB tidak dapat dibaca."
+    };
+  }
 
   if (
     mimetype !==
-    "application/epub+zip"
+      "application/epub+zip"
   ) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         "Mimetype EPUB Fixed Layout tidak sesuai."
     };
@@ -15882,8 +15967,11 @@ async function validasiEpubFixedLayout({
       "EPUB/Text/start.xhtml"
     )
   ) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         "Placeholder start.xhtml masih terdapat pada EPUB final."
     };
@@ -15895,27 +15983,34 @@ async function validasiEpubFixedLayout({
     );
 
   const imageFiles =
-    fileNames.filter(
-      (path) =>
-        /^EPUB\/Images\/page-\d{4}\.jpg$/.test(
-          path
-        )
-    );
+    fileNames
+      .filter(
+        (path) =>
+          /^EPUB\/Images\/page-\d{4}\.jpg$/.test(
+            path
+          )
+      )
+      .sort();
 
   const xhtmlFiles =
-    fileNames.filter(
-      (path) =>
-        /^EPUB\/Text\/page-\d{4}\.xhtml$/.test(
-          path
-        )
-    );
+    fileNames
+      .filter(
+        (path) =>
+          /^EPUB\/Text\/page-\d{4}\.xhtml$/.test(
+            path
+          )
+      )
+      .sort();
 
   if (
     imageFiles.length !==
-    totalHalaman
+      totalHalaman
   ) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         `Jumlah gambar EPUB ${imageFiles.length}, seharusnya ${totalHalaman}.`
     };
@@ -15923,21 +16018,106 @@ async function validasiEpubFixedLayout({
 
   if (
     xhtmlFiles.length !==
-    totalHalaman
+      totalHalaman
   ) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         `Jumlah XHTML EPUB ${xhtmlFiles.length}, seharusnya ${totalHalaman}.`
     };
   }
 
-  const packageOpf =
-    await zip
-      .file(
-        "EPUB/package.opf"
+  const imageFilesSeharusnya =
+    [];
+
+  const xhtmlFilesSeharusnya =
+    [];
+
+  for (
+    let nomor = 1;
+    nomor <= totalHalaman;
+    nomor++
+  ) {
+
+    const nomorFile =
+      String(
+        nomor
       )
-      .async("string");
+        .padStart(
+          4,
+          "0"
+        );
+
+    imageFilesSeharusnya.push(
+      `EPUB/Images/page-${nomorFile}.jpg`
+    );
+
+    xhtmlFilesSeharusnya.push(
+      `EPUB/Text/page-${nomorFile}.xhtml`
+    );
+  }
+
+  if (
+    imageFiles.some(
+      (path, index) =>
+        path !==
+        imageFilesSeharusnya[index]
+    )
+  ) {
+
+    return {
+      valid:
+        false,
+
+      message:
+        "Urutan file gambar EPUB tidak lengkap atau tidak berurutan."
+    };
+  }
+
+  if (
+    xhtmlFiles.some(
+      (path, index) =>
+        path !==
+        xhtmlFilesSeharusnya[index]
+    )
+  ) {
+
+    return {
+      valid:
+        false,
+
+      message:
+        "Urutan file XHTML EPUB tidak lengkap atau tidak berurutan."
+    };
+  }
+
+  let packageOpf =
+    "";
+
+  try {
+
+    packageOpf =
+      await zip
+        .file(
+          "EPUB/package.opf"
+        )
+        .async(
+          "string"
+        );
+
+  } catch (packageError) {
+
+    return {
+      valid:
+        false,
+
+      message:
+        "package.opf EPUB tidak dapat dibaca."
+    };
+  }
 
   if (
     !packageOpf.includes(
@@ -15947,8 +16127,11 @@ async function validasiEpubFixedLayout({
       ">pre-paginated</meta>"
     )
   ) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
         "package.opf belum ditandai sebagai EPUB Fixed Layout."
     };
@@ -15961,7 +16144,9 @@ async function validasiEpubFixedLayout({
   ) {
 
     const nomorFile =
-      String(nomor)
+      String(
+        nomor
+      )
         .padStart(
           4,
           "0"
@@ -15974,61 +16159,197 @@ async function validasiEpubFixedLayout({
       `EPUB/Text/page-${nomorFile}.xhtml`;
 
     if (
-      !zip.file(imagePath) ||
-      !zip.file(xhtmlPath)
+      !zip.file(
+        imagePath
+      ) ||
+      !zip.file(
+        xhtmlPath
+      )
     ) {
+
       return {
-        valid: false,
+        valid:
+          false,
+
         message:
           `Pasangan file Halaman ${nomor} tidak lengkap.`
       };
     }
 
-    const xhtml =
-      await zip
-        .file(xhtmlPath)
-        .async("string");
+    let xhtml =
+      "";
+
+    try {
+
+      xhtml =
+        await zip
+          .file(
+            xhtmlPath
+          )
+          .async(
+            "string"
+          );
+
+    } catch (xhtmlError) {
+
+      return {
+        valid:
+          false,
+
+        message:
+          `XHTML Halaman ${nomor} tidak dapat dibaca.`
+      };
+    }
 
     if (
       !xhtml.includes(
         `../Images/page-${nomorFile}.jpg`
       )
     ) {
+
       return {
-        valid: false,
+        valid:
+          false,
+
         message:
           `XHTML Halaman ${nomor} tidak menunjuk ke gambar yang benar.`
       };
     }
+
+    if (
+      !packageOpf.includes(
+        `href="Images/page-${nomorFile}.jpg"`
+      )
+    ) {
+
+      return {
+        valid:
+          false,
+
+        message:
+          `Gambar Halaman ${nomor} belum terdaftar di manifest EPUB.`
+      };
+    }
+
+    if (
+      !packageOpf.includes(
+        `href="Text/page-${nomorFile}.xhtml"`
+      )
+    ) {
+
+      return {
+        valid:
+          false,
+
+        message:
+          `XHTML Halaman ${nomor} belum terdaftar di manifest EPUB.`
+      };
+    }
+
+    if (
+      !packageOpf.includes(
+        `idref="page-${nomorFile}"`
+      )
+    ) {
+
+      return {
+        valid:
+          false,
+
+        message:
+          `Halaman ${nomor} belum terdaftar di spine EPUB.`
+      };
+    }
   }
 
-  const navXhtml =
-    await zip
-      .file(
-        "EPUB/nav.xhtml"
-      )
-      .async("string");
+  let navXhtml =
+    "";
 
-  const jumlahLinkNav =
-    (
-      navXhtml.match(
-        /Text\/page-\d{4}\.xhtml/g
-      ) || []
-    ).length;
+  try {
 
-  if (
-    jumlahLinkNav !==
-    totalHalaman
-  ) {
+    navXhtml =
+      await zip
+        .file(
+          "EPUB/nav.xhtml"
+        )
+        .async(
+          "string"
+        );
+
+  } catch (navError) {
+
     return {
-      valid: false,
+      valid:
+        false,
+
       message:
-        `Navigasi EPUB memiliki ${jumlahLinkNav} halaman, seharusnya ${totalHalaman}.`
+        "nav.xhtml EPUB tidak dapat dibaca."
     };
   }
 
+  const linkNav =
+    navXhtml.match(
+      /Text\/page-\d{4}\.xhtml/g
+    ) || [];
+
+  if (
+    linkNav.length !==
+      totalHalaman
+  ) {
+
+    return {
+      valid:
+        false,
+
+      message:
+        `Navigasi EPUB memiliki ${linkNav.length} halaman, seharusnya ${totalHalaman}.`
+    };
+  }
+
+  for (
+    let nomor = 1;
+    nomor <= totalHalaman;
+    nomor++
+  ) {
+
+    const nomorFile =
+      String(
+        nomor
+      )
+        .padStart(
+          4,
+          "0"
+        );
+
+    const targetNav =
+      `Text/page-${nomorFile}.xhtml`;
+
+    const jumlahKemunculan =
+      linkNav.filter(
+        (path) =>
+          path ===
+          targetNav
+      ).length;
+
+    if (
+      jumlahKemunculan !==
+        1
+    ) {
+
+      return {
+        valid:
+          false,
+
+        message:
+          `Navigasi Halaman ${nomor} tidak valid atau terduplikasi.`
+      };
+    }
+  }
+
   return {
-    valid: true,
+    valid:
+      true,
+
     message:
       `EPUB Fixed Layout valid: ${totalHalaman} halaman.`
   };
