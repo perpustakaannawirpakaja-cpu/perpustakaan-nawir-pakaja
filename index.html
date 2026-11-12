@@ -17620,8 +17620,11 @@ async function tampilkanStatusIngestionKelolaHalaman(
     data: ingestion,
     error
   } = await db
-    .from("book_ingestion_sessions")
+    .from(
+      "book_ingestion_sessions"
+    )
     .select(`
+      book_id,
       status,
       total_pages,
       processed_pages,
@@ -17654,20 +17657,58 @@ async function tampilkanStatusIngestionKelolaHalaman(
     return true;
   }
 
+  if (
+    Number(
+      ingestion.book_id
+    ) !== idBuku
+  ) {
+
+    console.error(
+      "Book ID status ingestion tidak sesuai."
+    );
+
+    statusElement.textContent =
+      "⚠️ Ingestion: Data status tidak sesuai.";
+
+    return false;
+  }
+
   const info =
     getIngestionStatusInfo(
       ingestion.status
     );
 
-  const processedPages =
+  const processedPagesRaw =
     Number(
-      ingestion.processed_pages || 0
+      ingestion.processed_pages
     );
 
-  const totalPages =
+  const totalPagesRaw =
     Number(
-      ingestion.total_pages || 0
+      ingestion.total_pages
     );
+
+  const processedPages =
+    Number.isInteger(
+      processedPagesRaw
+    ) &&
+    processedPagesRaw >= 0
+      ? processedPagesRaw
+      : 0;
+
+  const totalPages =
+    Number.isInteger(
+      totalPagesRaw
+    ) &&
+    totalPagesRaw >= 0
+      ? totalPagesRaw
+      : 0;
+
+  const lastError =
+    typeof ingestion.last_error ===
+      "string"
+      ? ingestion.last_error.trim()
+      : "";
 
   statusElement.classList.remove(
     "ingestion-unknown"
@@ -17684,11 +17725,11 @@ async function tampilkanStatusIngestionKelolaHalaman(
 
   if (
     ingestion.status === "failed" &&
-    ingestion.last_error
+    lastError
   ) {
 
     statusElement.textContent +=
-      ` — ❌ ${ingestion.last_error}`;
+      ` — ❌ ${lastError}`;
   }
 
   return true;
