@@ -17004,28 +17004,95 @@ async function resetMetadataOutputEpub(
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku reset output EPUB tidak valid."
     );
   }
 
+  /*
+    Baca metadata lama terlebih dahulu.
+
+    URL, storage path, dan ukuran lama
+    sengaja dipertahankan pada session
+    agar file lama masih dapat ditemukan
+    dan dibersihkan setelah EPUB baru
+    berhasil dibuat.
+  */
   const {
+    data: sessionSebelum,
+    error: sessionReadError
+  } = await db
+    .from(
+      "book_ingestion_sessions"
+    )
+    .select(`
+      book_id,
+      output_format,
+      output_url,
+      output_storage_path,
+      output_size,
+      output_created_at
+    `)
+    .eq(
+      "book_id",
+      idBuku
+    )
+    .maybeSingle();
+
+  if (sessionReadError) {
+
+    throw new Error(
+      "Gagal membaca metadata output EPUB sebelum reset: " +
+      sessionReadError.message
+    );
+  }
+
+  if (!sessionSebelum) {
+
+    throw new Error(
+      "Session ingestion untuk reset output EPUB tidak ditemukan."
+    );
+  }
+
+  if (
+    Number(
+      sessionSebelum.book_id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID session reset output EPUB tidak sesuai."
+    );
+  }
+
+  const outputUrlSebelum =
+    sessionSebelum.output_url;
+
+  const storagePathSebelum =
+    sessionSebelum.output_storage_path;
+
+  const outputSizeSebelum =
+    sessionSebelum.output_size;
+
+  /*
+    Reset session lebih dahulu.
+
+    output_format = null
+    menandakan output lama sudah stale
+    dan tidak boleh dipakai ulang sebagai
+    EPUB aktif.
+
+    URL, path, dan size lama tidak dihapus.
+  */
+  const {
+    data: sessionSesudah,
     error: resetError
   } = await db
     .from(
       "book_ingestion_sessions"
     )
     .update({
-      /*
-        output_format = null
-        menandakan output lama
-        sudah tidak lagi aktif/current.
-
-        Lokasi file lama sengaja
-        DIPERTAHANKAN agar nanti
-        dapat dibersihkan setelah
-        EPUB baru berhasil dibuat.
-      */
       output_format:
         null,
 
@@ -17035,16 +17102,101 @@ async function resetMetadataOutputEpub(
     .eq(
       "book_id",
       idBuku
-    );
+    )
+    .select(`
+      book_id,
+      output_format,
+      output_url,
+      output_storage_path,
+      output_size,
+      output_created_at
+    `)
+    .maybeSingle();
 
   if (resetError) {
+
     throw new Error(
       "Metadata output EPUB gagal direset: " +
       resetError.message
     );
   }
 
+  if (!sessionSesudah) {
+
+    throw new Error(
+      "Session ingestion tidak ditemukan setelah reset output EPUB."
+    );
+  }
+
+  if (
+    Number(
+      sessionSesudah.book_id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID hasil reset output EPUB tidak sesuai."
+    );
+  }
+
+  if (
+    sessionSesudah.output_format !==
+      null
+  ) {
+
+    throw new Error(
+      "Format output EPUB belum berhasil dinonaktifkan."
+    );
+  }
+
+  if (
+    sessionSesudah.output_created_at !==
+      null
+  ) {
+
+    throw new Error(
+      "Waktu output EPUB belum berhasil direset."
+    );
+  }
+
+  if (
+    sessionSesudah.output_url !==
+      outputUrlSebelum
+  ) {
+
+    throw new Error(
+      "URL output EPUB lama berubah saat reset."
+    );
+  }
+
+  if (
+    sessionSesudah.output_storage_path !==
+      storagePathSebelum
+  ) {
+
+    throw new Error(
+      "Storage path EPUB lama berubah saat reset."
+    );
+  }
+
+  if (
+    sessionSesudah.output_size !==
+      outputSizeSebelum
+  ) {
+
+    throw new Error(
+      "Ukuran EPUB lama berubah saat reset."
+    );
+  }
+
+  /*
+    Setelah source metadata session
+    sudah dinonaktifkan, hapus metadata
+    EPUB aktif dari tabel books agar
+    reader tidak lagi memakai EPUB lama.
+  */
   const {
+    data: bookSesudah,
     error: resetBookError
   } = await db
     .from("books")
@@ -17064,12 +17216,55 @@ async function resetMetadataOutputEpub(
     .eq(
       "id",
       idBuku
-    );
+    )
+    .select(`
+      id,
+      epub_url,
+      epub_storage_path,
+      epub_size,
+      epub_created_at
+    `)
+    .maybeSingle();
 
   if (resetBookError) {
+
     throw new Error(
       "Metadata EPUB pada buku gagal direset: " +
       resetBookError.message
+    );
+  }
+
+  if (!bookSesudah) {
+
+    throw new Error(
+      "Data buku tidak ditemukan setelah reset metadata EPUB."
+    );
+  }
+
+  if (
+    Number(
+      bookSesudah.id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID hasil reset metadata EPUB tidak sesuai."
+    );
+  }
+
+  if (
+    bookSesudah.epub_url !==
+      null ||
+    bookSesudah.epub_storage_path !==
+      null ||
+    bookSesudah.epub_size !==
+      null ||
+    bookSesudah.epub_created_at !==
+      null
+  ) {
+
+    throw new Error(
+      "Metadata EPUB pada buku belum berhasil dibersihkan sepenuhnya."
     );
   }
 
