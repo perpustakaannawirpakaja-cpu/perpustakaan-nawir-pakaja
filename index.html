@@ -18330,10 +18330,15 @@ async function sinkronkanOutputEpubKeBuku(
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku sinkron EPUB tidak valid."
     );
   }
+
+  /* =========================
+     AMBIL OUTPUT EPUB SESSION
+     ========================= */
 
   const {
     data: session,
@@ -18343,6 +18348,8 @@ async function sinkronkanOutputEpubKeBuku(
       "book_ingestion_sessions"
     )
     .select(`
+      id,
+      book_id,
       output_format,
       output_url,
       output_storage_path,
@@ -18355,59 +18362,132 @@ async function sinkronkanOutputEpubKeBuku(
     )
     .maybeSingle();
 
-  if (
-    sessionError ||
-    !session
-  ) {
+  if (sessionError) {
+
+    throw new Error(
+      "Gagal membaca session ingestion EPUB: " +
+      sessionError.message
+    );
+  }
+
+  if (!session) {
+
     throw new Error(
       "Session ingestion EPUB tidak ditemukan."
     );
   }
+
+  if (
+    Number(
+      session.book_id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID pada session ingestion EPUB tidak sesuai."
+    );
+  }
+
+  /* =========================
+     NORMALISASI OUTPUT
+     ========================= */
+
+  const outputFormat =
+    typeof session.output_format ===
+      "string"
+      ? session.output_format.trim()
+      : "";
+
+  const outputUrl =
+    typeof session.output_url ===
+      "string"
+      ? session.output_url.trim()
+      : "";
+
+  const outputStoragePath =
+    typeof session.output_storage_path ===
+      "string"
+      ? session.output_storage_path.trim()
+      : "";
 
   const outputSize =
     Number(
       session.output_size || 0
     );
 
+  const outputCreatedAt =
+    session.output_created_at;
+
+  /* =========================
+     VALIDASI OUTPUT AKTIF
+     ========================= */
+
   if (
-    session.output_format !==
-      "epub" ||
-    typeof session.output_url !==
-      "string" ||
-    session.output_url.trim() ===
-      "" ||
-    typeof session.output_storage_path !==
-      "string" ||
-    session.output_storage_path.trim() ===
-      "" ||
+    outputFormat !==
+    "epub"
+  ) {
+
+    throw new Error(
+      "Format output ingestion aktif bukan EPUB."
+    );
+  }
+
+  if (!outputUrl) {
+
+    throw new Error(
+      "URL output EPUB ingestion belum tersedia."
+    );
+  }
+
+  if (!outputStoragePath) {
+
+    throw new Error(
+      "Storage path output EPUB ingestion belum tersedia."
+    );
+  }
+
+  if (
     !Number.isFinite(
       outputSize
     ) ||
-    outputSize < 1 ||
-    !session.output_created_at
+    outputSize < 1
   ) {
+
     throw new Error(
-      "Metadata EPUB aktif belum lengkap untuk disinkronkan ke buku."
+      "Ukuran output EPUB ingestion tidak valid."
     );
   }
+
+  if (!outputCreatedAt) {
+
+    throw new Error(
+      "Waktu pembuatan output EPUB ingestion belum tersedia."
+    );
+  }
+
+  /* =========================
+     UPDATE METADATA EPUB BUKU
+     ========================= */
 
   const {
     data: book,
     error: updateError
   } = await db
-    .from("books")
+    .from(
+      "books"
+    )
     .update({
       epub_url:
-        session.output_url,
+        outputUrl,
 
       epub_storage_path:
-        session.output_storage_path,
+        outputStoragePath,
 
       epub_size:
         outputSize,
 
       epub_created_at:
-        session.output_created_at
+        outputCreatedAt
     })
     .eq(
       "id",
@@ -18420,18 +18500,102 @@ async function sinkronkanOutputEpubKeBuku(
       epub_size,
       epub_created_at
     `)
-    .single();
+    .maybeSingle();
 
-  if (
-    updateError ||
-    !book
-  ) {
+  if (updateError) {
+
     throw new Error(
       "Metadata EPUB gagal disinkronkan ke buku: " +
-      (
-        updateError?.message ||
-        "Data buku tidak ditemukan."
-      )
+      updateError.message
+    );
+  }
+
+  if (!book) {
+
+    throw new Error(
+      "Metadata EPUB gagal disinkronkan karena data buku tidak ditemukan."
+    );
+  }
+
+  /* =========================
+     VERIFIKASI HASIL UPDATE
+     ========================= */
+
+  if (
+    Number(
+      book.id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "ID buku hasil sinkronisasi EPUB tidak sesuai."
+    );
+  }
+
+  const bookEpubUrl =
+    typeof book.epub_url ===
+      "string"
+      ? book.epub_url.trim()
+      : "";
+
+  const bookStoragePath =
+    typeof book.epub_storage_path ===
+      "string"
+      ? book.epub_storage_path.trim()
+      : "";
+
+  const bookEpubSize =
+    Number(
+      book.epub_size || 0
+    );
+
+  const bookCreatedAt =
+    book.epub_created_at;
+
+  if (
+    bookEpubUrl !==
+      outputUrl
+  ) {
+
+    throw new Error(
+      "URL EPUB pada buku tidak tersinkron dengan output ingestion."
+    );
+  }
+
+  if (
+    bookStoragePath !==
+      outputStoragePath
+  ) {
+
+    throw new Error(
+      "Storage path EPUB pada buku tidak tersinkron dengan output ingestion."
+    );
+  }
+
+  if (
+    bookEpubSize !==
+      outputSize
+  ) {
+
+    throw new Error(
+      `Ukuran EPUB pada buku tidak tersinkron. ` +
+      `Ditemukan ${bookEpubSize} byte, ` +
+      `seharusnya ${outputSize} byte.`
+    );
+  }
+
+  if (
+    !bookCreatedAt ||
+    String(
+      bookCreatedAt
+    ) !==
+    String(
+      outputCreatedAt
+    )
+  ) {
+
+    throw new Error(
+      "Waktu pembuatan EPUB pada buku tidak tersinkron dengan output ingestion."
     );
   }
 
