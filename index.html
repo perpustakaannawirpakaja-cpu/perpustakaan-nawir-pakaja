@@ -14871,14 +14871,12 @@ function tutupEditBukuDenganEscape(
   tutupEditBukuAdmin();
 }
 
-function previewCoverPengganti(event) {
+function previewCoverPengganti(
+  event
+) {
 
   const file =
-    event.target.files[0];
-
-  if (!file) {
-    return;
-  }
+    event?.target?.files?.[0];
 
   const coverPreview =
     document.getElementById(
@@ -14891,31 +14889,165 @@ function previewCoverPengganti(event) {
     );
 
   const coverLabel =
-  document.getElementById(
-    "edit-book-cover-label"
-  );
+    document.getElementById(
+      "edit-book-cover-label"
+    );
+
+  if (
+    !coverPreview ||
+    !currentCover ||
+    !coverLabel
+  ) {
+
+    console.error(
+      "Struktur UI preview cover pengganti belum lengkap."
+    );
+
+    return;
+  }
+
+  if (!file) {
+
+    return;
+  }
+
+  if (
+    !(file instanceof File)
+  ) {
+
+    console.error(
+      "File cover pengganti tidak valid."
+    );
+
+    return;
+  }
+
+  const tipeFile =
+    typeof file.type ===
+      "string"
+      ? file.type.trim().toLowerCase()
+      : "";
+
+  if (
+    !tipeFile ||
+    !tipeFile.startsWith(
+      "image/"
+    )
+  ) {
+
+    console.error(
+      "Cover pengganti harus berupa file gambar."
+    );
+
+    return;
+  }
+
+  const ukuranFile =
+    Number(
+      file.size
+    );
+
+  if (
+    !Number.isInteger(
+      ukuranFile
+    ) ||
+    ukuranFile < 1
+  ) {
+
+    console.error(
+      "Ukuran file cover pengganti tidak valid."
+    );
+
+    return;
+  }
+
+  if (
+    typeof FileReader ===
+      "undefined"
+  ) {
+
+    console.error(
+      "FileReader browser tidak tersedia."
+    );
+
+    return;
+  }
 
   const reader =
     new FileReader();
 
-  reader.onload = function(e) {
+  reader.onload =
+    function() {
 
-    coverPreview.src =
-      e.target.result;
+      const hasilBaca =
+        typeof reader.result ===
+          "string"
+          ? reader.result
+          : "";
 
-    coverPreview.style.display =
-      "block";
+      if (
+        !hasilBaca ||
+        !hasilBaca.startsWith(
+          "data:image/"
+        )
+      ) {
 
-    currentCover.style.display =
-      "block";
+        console.error(
+          "Preview cover pengganti tidak valid."
+        );
 
-    coverLabel.textContent =
-  "Preview Cover Pengganti:";
+        return;
+      }
 
-  };
+      coverPreview.src =
+        hasilBaca;
 
-  reader.readAsDataURL(file);
+      coverPreview.style.display =
+        "block";
 
+      currentCover.style.display =
+        "block";
+
+      coverLabel.textContent =
+        "Preview Cover Pengganti:";
+    };
+
+  reader.onerror =
+    function() {
+
+      console.error(
+        "File cover pengganti gagal dibaca:",
+        reader.error
+      );
+
+      coverPreview
+        .removeAttribute(
+          "src"
+        );
+
+      coverPreview.style.display =
+        "none";
+
+      currentCover.style.display =
+        "none";
+
+      coverLabel.textContent =
+        "Cover Saat Ini:";
+    };
+
+  try {
+
+    reader.readAsDataURL(
+      file
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Preview cover pengganti gagal dimulai:",
+      error
+    );
+  }
 }
 
 function previewPdfPengganti(event) {
