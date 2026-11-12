@@ -17535,27 +17535,86 @@ requestAnimationFrame(() => {
 
 function tutupAdminPanel() {
 
-  document
-    .getElementById("adminPanel")
-    .classList
-    .remove("show");
+  const adminPanel =
+    document.getElementById(
+      "adminPanel"
+    );
+
+  const header =
+    document.querySelector(
+      "header"
+    );
+
+  const main =
+    document.querySelector(
+      "main"
+    );
+
+  const footer =
+    document.querySelector(
+      "footer"
+    );
+
+  const adminOpenButton =
+    document.getElementById(
+      "admin-open-btn"
+    );
+
+  adminPanel
+    ?.classList
+    .remove(
+      "show"
+    );
+
+  header
+    ?.removeAttribute(
+      "inert"
+    );
+
+  main
+    ?.removeAttribute(
+      "inert"
+    );
+
+  footer
+    ?.removeAttribute(
+      "inert"
+    );
+
+  if (
+    adminOpenButton &&
+    adminOpenButton
+      .getClientRects()
+      .length > 0
+  ) {
+
+    adminOpenButton.focus();
+
+    return;
+  }
+
+  const searchInput =
+    document.getElementById(
+      "searchInput"
+    );
+
+  if (
+    searchInput &&
+    searchInput
+      .getClientRects()
+      .length > 0
+  ) {
+
+    searchInput.focus();
+
+    return;
+  }
 
   document
-    .querySelector("header")
-    ?.removeAttribute("inert");
-
-  document
-    .querySelector("main")
-    ?.removeAttribute("inert");
-
-  document
-    .querySelector("footer")
-    ?.removeAttribute("inert");
-
-  document
-  .getElementById("admin-open-btn")
-  ?.focus();
-
+    .querySelector(
+      "a, button, input, select, textarea, [tabindex]:not([tabindex='-1'])"
+    )
+    ?.focus();
 }
 
 function tutupAdminDenganEscape(event) {
