@@ -5167,8 +5167,8 @@ function updateActiveFilterChips() {
       ? searchInput.value.trim()
       : "";
 
-const tambahChip =
-  (teks, onClick, fokusKembali) => {
+  const tambahChip =
+    (teks, onClick, fokusKembali) => {
 
     const chip =
       document.createElement("span");
@@ -9595,60 +9595,27 @@ function updateTombolUploadHalaman() {
   }
 }
 
-async function pilihHapusHalaman(
-  pageNumber
-) {
+async function pilihHapusHalaman(pageNumber) {
 
   const bookId =
     Number(
-      document
-        .getElementById(
-          "book-pages-book-id"
-        )
-        ?.value || 0
+      document.getElementById(
+        "book-pages-book-id"
+      )?.value
     );
-
-  const nomorHalaman =
-    Number(pageNumber);
 
   const message =
     document.getElementById(
       "book-pages-message"
     );
 
-  /* =========================
-     VALIDASI DASAR
-     ========================= */
-
-  if (
-    !Number.isInteger(bookId) ||
-    bookId < 1
-  ) {
-
-    if (message) {
-      message.textContent =
-        "❌ ID buku tidak ditemukan.";
-    }
-
+  if (!bookId || !pageNumber) {
     return;
   }
 
-  if (
-    !Number.isInteger(nomorHalaman) ||
-    nomorHalaman < 1
-  ) {
-
-    if (message) {
-      message.textContent =
-        "❌ Nomor halaman tidak valid.";
-    }
-
-    return;
-  }
-
-  if (
-    aksiUploadHalamanTerakhir
-  ) {
+  // Jangan izinkan aksi baru
+  // kalau masih ada Undo sebelumnya.
+  if (aksiUploadHalamanTerakhir) {
 
     alert(
       "Masih ada perubahan halaman yang dapat dibatalkan.\n\n" +
@@ -9658,32 +9625,20 @@ async function pilihHapusHalaman(
     return;
   }
 
-  const yakin =
-    confirm(
-      `Hapus Halaman ${nomorHalaman}?\n\n` +
-      "File belum akan dihapus permanen dari Storage, " +
-      "sehingga masih dapat dibatalkan."
-    );
+  const yakin = confirm(
+    `Hapus Halaman ${pageNumber}?\n\n` +
+    `File belum akan dihapus permanen dari Storage, sehingga masih dapat dibatalkan.`
+  );
 
   if (!yakin) {
     return;
   }
 
-  /* =========================
-     RESET MODE EDIT HALAMAN
-     ========================= */
+  nomorHalamanPengganti = null;
+  modeSisipHalamanAktif = false;
 
-  nomorHalamanPengganti =
-    null;
-
-  modeSisipHalamanAktif =
-    false;
-
-  modePindahHalamanAktif =
-    false;
-
-  halamanAsalPindah =
-    null;
+  modePindahHalamanAktif = false;
+  halamanAsalPindah = null;
 
   const pageNumberInput =
     document.getElementById(
@@ -9691,143 +9646,63 @@ async function pilihHapusHalaman(
     );
 
   if (pageNumberInput) {
-
-    delete pageNumberInput
-      .dataset
-      .mode;
+    delete pageNumberInput.dataset.mode;
   }
 
   if (message) {
-
     message.textContent =
-      `⏳ Menghapus Halaman ${nomorHalaman}...`;
-  }
-
-  let rowHalamanTerhapus =
-    false;
-
-  let rollbackPenghapusanGagal =
-    false;
-
-  let penghapusanBerhasil =
-    false;
-
-  let ingestionDeleteSyncWarning =
-    null;
-
-  let refreshUiWarning =
-    null;
-
-  /* =========================
-     HELPER ERROR TRACKING
-     ========================= */
-
-  async function catatErrorDenganAman(
-    error
-  ) {
-
-    try {
-
-      const berhasilDicatat =
-        await catatErrorIngestionBuku(
-          bookId,
-          error
-        );
-
-      if (!berhasilDicatat) {
-
-        console.warn(
-          "Error ingestion penghapusan tidak berhasil dicatat.",
-          {
-            bookId:
-              bookId,
-
-            pageNumber:
-              nomorHalaman,
-
-            error:
-              error
-          }
-        );
-      }
-
-    } catch (trackingError) {
-
-      console.error(
-        "Pencatatan error ingestion gagal:",
-        trackingError
-      );
-    }
-
-    try {
-
-      await tampilkanStatusIngestionKelolaHalaman(
-        bookId
-      );
-
-    } catch (statusError) {
-
-      console.error(
-        "Gagal memperbarui tampilan status ingestion:",
-        statusError
-      );
-    }
+      `Menghapus Halaman ${pageNumber}...`;
   }
 
   try {
 
-    /* =========================
-       AMBIL DATA BUKU
-       ========================= */
+  const statusIngestionAktif =
+    await setStatusIngestionBuku(
+      bookId,
+      "ingesting"
+    );
 
-    const {
-      data: book,
+  if (!statusIngestionAktif) {
+
+    console.warn(
+      "Status ingestion belum berhasil diubah ke ingesting."
+    );
+
+  } else {
+
+    await tampilkanStatusIngestionKelolaHalaman(
+      bookId
+    );
+  }
+
+  // Ambil status buku sebelum diubah.
+  const {
+    data: book,
       error: bookError
     } = await db
-      .from(
-        "books"
-      )
+      .from("books")
       .select(`
         id,
         upload_status,
         file_url
       `)
-      .eq(
-        "id",
-        bookId
-      )
-      .maybeSingle();
+      .eq("id", bookId)
+      .single();
 
-    if (bookError) {
-
+    if (bookError || !book) {
       throw new Error(
-        "Gagal membaca data buku: " +
-        bookError.message
+        bookError?.message ||
+        "Data buku tidak ditemukan."
       );
     }
 
-    if (!book) {
-
-      if (message) {
-
-        message.textContent =
-          "❌ Data buku tidak ditemukan.";
-      }
-
-      return;
-    }
-
-    /* =========================
-       AMBIL DATA HALAMAN
-       ========================= */
-
+    // Ambil seluruh data halaman
+    // untuk cadangan Undo.
     const {
       data: page,
       error: pageError
     } = await db
-      .from(
-        "book_pages"
-      )
+      .from("book_pages")
       .select(`
         id,
         book_id,
@@ -9840,122 +9715,94 @@ async function pilihHapusHalaman(
         compression_mode,
         created_at
       `)
-      .eq(
-        "book_id",
-        bookId
-      )
-      .eq(
-        "page_number",
-        nomorHalaman
-      )
-      .maybeSingle();
+      .eq("book_id", bookId)
+      .eq("page_number", pageNumber)
+      .single();
 
-    if (pageError) {
-
+    if (pageError || !page) {
       throw new Error(
-        "Gagal membaca data halaman: " +
-        pageError.message
+        pageError?.message ||
+        `Halaman ${pageNumber} tidak ditemukan.`
       );
     }
 
-    if (!page) {
-
-      if (message) {
-
-        message.textContent =
-          `❌ Halaman ${nomorHalaman} tidak ditemukan.`;
-      }
-
-      return;
-    }
-
-    /* =========================
-       AKTIFKAN INGESTION
-       ========================= */
-
-    const statusIngestionAktif =
-      await setStatusIngestionBuku(
-        bookId,
-        "ingesting"
-      );
-
-    if (!statusIngestionAktif) {
-
-      throw new Error(
-        "Status ingestion gagal diubah ke ingesting."
-      );
-    }
-
-    try {
-
-      await tampilkanStatusIngestionKelolaHalaman(
-        bookId
-      );
-
-    } catch (statusUiError) {
-
-      console.warn(
-        "Status ingestion aktif, tetapi tampilan status belum berhasil diperbarui:",
-        statusUiError
-      );
-    }
-
-    /* =========================
-       HAPUS ROW HALAMAN
-       ========================= */
-
+    // Hapus dari database.
+    // FILE STORAGE BELUM DIHAPUS.
     const {
-      data: deletedPage,
       error: deleteError
     } = await db
-      .from(
-        "book_pages"
-      )
+      .from("book_pages")
       .delete()
-      .eq(
-        "id",
-        page.id
-      )
-      .select(`
-        id
-      `)
-      .maybeSingle();
+      .eq("id", page.id);
 
     if (deleteError) {
-
-      throw new Error(
-        "Penghapusan halaman gagal: " +
-        deleteError.message
-      );
+      throw deleteError;
     }
 
-    if (!deletedPage) {
+    // Kalau buku sebelumnya sudah Final,
+    // kembalikan menjadi Draft.
+    if (
+      book.upload_status ===
+      "complete"
+    ) {
 
-      throw new Error(
-        "Penghapusan halaman tidak terkonfirmasi. " +
-        "Tidak ada row halaman yang terhapus."
-      );
+      const {
+        error: resetBookError
+      } = await db
+        .from("books")
+        .update({
+          upload_status: "draft",
+          file_url: null
+        })
+        .eq("id", bookId);
+
+      if (resetBookError) {
+
+        // Rollback halaman kalau
+        // status buku gagal diubah.
+        const {
+          error: rollbackError
+        } = await db
+          .from("book_pages")
+          .insert({
+            book_id: page.book_id,
+            page_number:
+              page.page_number,
+            file_url:
+              page.file_url,
+            storage_path:
+              page.storage_path,
+            file_size:
+              page.file_size,
+            original_size:
+              page.original_size,
+            compression_status:
+              page.compression_status,
+            compression_mode:
+              page.compression_mode,
+            created_at:
+              page.created_at
+          });
+
+        if (rollbackError) {
+          throw new Error(
+            "Status buku gagal diubah dan rollback halaman juga gagal: " +
+            rollbackError.message
+          );
+        }
+
+        throw resetBookError;
+      }
     }
 
-    rowHalamanTerhapus =
-      true;
-
-    /* =========================
-       SIMPAN CADANGAN UNDO
-       ========================= */
-
+    // Simpan cadangan untuk Undo.
     aksiUploadHalamanTerakhir = {
-      tipe:
-        "delete",
+      tipe: "delete",
 
-      bookId:
-        bookId,
-
-      pageNumber:
-        nomorHalaman,
+      bookId,
+      pageNumber,
 
       deletedPage: {
-
         book_id:
           page.book_id,
 
@@ -9991,220 +9838,59 @@ async function pilihHapusHalaman(
         book.file_url
     };
 
-    /* =========================
-       RESET BUKU FINAL → DRAFT
-       ========================= */
+try {
 
-    if (
-      book.upload_status ===
-      "complete"
-    ) {
+  await resetMetadataOutputEpub(
+    bookId
+  );
 
-      const {
-        data: updatedBook,
-        error: resetBookError
-      } = await db
-        .from(
-          "books"
-        )
-        .update({
-          upload_status:
-            "draft",
+} catch (resetOutputError) {
 
-          file_url:
-            null
-        })
-        .eq(
-          "id",
-          bookId
-        )
-        .select(`
-          id,
-          upload_status,
-          file_url
-        `)
-        .maybeSingle();
+  console.warn(
+    "Penghapusan halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
+    resetOutputError
+  );
+}    
 
-      if (
-        resetBookError ||
-        !updatedBook
-      ) {
+    let ingestionDeleteSyncWarning = null;
 
-        const pesanResetBuku =
-          resetBookError?.message ||
-          "Perubahan status buku tidak terkonfirmasi.";
+try {
 
-        /* =========================
-           ROLLBACK HALAMAN
-           ========================= */
+  await sinkronkanProgressIngestionBuku(
+    bookId
+  );
 
-        const {
-          data: rollbackPage,
-          error: rollbackError
-        } = await db
-          .from(
-            "book_pages"
-          )
-          .insert({
-            book_id:
-              page.book_id,
+} catch (syncError) {
 
-            page_number:
-              page.page_number,
+  console.error(
+    "Sinkronisasi progress ingestion setelah hapus gagal:",
+    syncError
+  );
 
-            file_url:
-              page.file_url,
+  try {
 
-            storage_path:
-              page.storage_path,
+    await catatErrorIngestionBuku(
+      bookId,
+      syncError
+    );
 
-            file_size:
-              page.file_size,
+  } catch (trackingError) {
 
-            original_size:
-              page.original_size,
+    console.error(
+      "Pencatatan error ingestion gagal:",
+      trackingError
+    );
+  }
 
-            compression_status:
-              page.compression_status,
+  ingestionDeleteSyncWarning =
+    syncError;
+}
 
-            compression_mode:
-              page.compression_mode,
-
-            created_at:
-              page.created_at
-          })
-          .select(`
-            id
-          `)
-          .maybeSingle();
-
-        if (
-          rollbackError ||
-          !rollbackPage
-        ) {
-
-          rollbackPenghapusanGagal =
-            true;
-
-          throw new Error(
-            "Status buku gagal dikembalikan ke draft, " +
-            "dan rollback halaman juga gagal: " +
-            (
-              rollbackError?.message ||
-              "Rollback halaman tidak terkonfirmasi."
-            ) +
-            " | Error awal: " +
-            pesanResetBuku
-          );
-        }
-
-        /*
-         * Rollback berhasil.
-         * Halaman kembali seperti semula.
-         */
-        rowHalamanTerhapus =
-          false;
-
-        aksiUploadHalamanTerakhir =
-          null;
-
-        throw new Error(
-          "Status buku gagal dikembalikan ke draft: " +
-          pesanResetBuku
-        );
-      }
-
-      /*
-       * Verifikasi tambahan terhadap
-       * hasil update buku.
-       */
-      if (
-        updatedBook.upload_status !==
-        "draft"
-      ) {
-
-        throw new Error(
-          "Status buku tidak berubah menjadi draft sebagaimana diharapkan."
-        );
-      }
-    }
-
-    penghapusanBerhasil =
-      true;
-
-    /* =========================
-       RESET OUTPUT EPUB
-       ========================= */
-
-    try {
-
-      await resetMetadataOutputEpub(
-        bookId
-      );
-
-    } catch (resetOutputError) {
-
-      console.warn(
-        "Penghapusan halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
-        resetOutputError
-      );
-    }
-
-    /* =========================
-       SINKRONISASI INGESTION
-       ========================= */
-
-    try {
-
-      await sinkronkanProgressIngestionBuku(
-        bookId
-      );
-
-    } catch (syncError) {
-
-      console.error(
-        "Sinkronisasi progress ingestion setelah hapus gagal:",
-        syncError
-      );
-
-      await catatErrorDenganAman(
-        syncError
-      );
-
-      ingestionDeleteSyncWarning =
-        syncError;
-    }
-
-    /* =========================
-       REFRESH UI
-       ========================= */
-
-    try {
-
-      await tampilkanBuku();
-
-      await muatDaftarBukuAdmin();
-
-      await bukaKelolaHalaman(
-        bookId
-      );
-
-    } catch (uiError) {
-
-      console.error(
-        "Halaman berhasil dihapus, tetapi refresh UI gagal:",
-        uiError
-      );
-
-      refreshUiWarning =
-        uiError;
-    }
+    await tampilkanBuku();
+    await muatDaftarBukuAdmin();
+    await bukaKelolaHalaman(bookId);
 
     updateTombolUploadHalaman();
-
-    /* =========================
-       PESAN SUKSES
-       ========================= */
 
     const pesanBaru =
       document.getElementById(
@@ -10213,26 +9899,15 @@ async function pilihHapusHalaman(
 
     if (pesanBaru) {
 
-      pesanBaru.textContent =
-        `✅ Halaman ${nomorHalaman} dihapus. ` +
-        "Anda masih dapat menggunakan Batal Hapus Halaman.";
+  pesanBaru.textContent =
+    `✅ Halaman ${pageNumber} dihapus. ` +
+    `Anda masih dapat menggunakan Batal Hapus Halaman.`;
 
-      if (
-        ingestionDeleteSyncWarning
-      ) {
-
-        pesanBaru.textContent +=
-          " ⚠️ Progress ingestion belum tersinkron.";
-      }
-
-      if (
-        refreshUiWarning
-      ) {
-
-        pesanBaru.textContent +=
-          " ⚠️ Data berhasil dihapus, tetapi tampilan belum sepenuhnya diperbarui.";
-      }
-    }
+  if (ingestionDeleteSyncWarning) {
+    pesanBaru.textContent +=
+      " ⚠️ Progress ingestion belum tersinkron.";
+  }
+}
 
   } catch (error) {
 
@@ -10241,49 +9916,29 @@ async function pilihHapusHalaman(
       error
     );
 
-    await catatErrorDenganAman(
-      error
+    try {
+
+      await catatErrorIngestionBuku(
+        bookId,
+        error
+      );
+
+    } catch (trackingError) {
+
+      console.error(
+        "Pencatatan error ingestion gagal:",
+        trackingError
+      );
+    }
+
+    await tampilkanStatusIngestionKelolaHalaman(
+      bookId
     );
 
-    updateTombolUploadHalaman();
-
     if (message) {
-
-      if (
-        rollbackPenghapusanGagal &&
-        rowHalamanTerhapus
-      ) {
-
-        message.textContent =
-          "⚠️ Halaman sudah terhapus, tetapi pemulihan otomatis gagal. " +
-          "Data Undo masih disimpan. " +
-          (
-            error?.message ||
-            "Periksa kondisi halaman."
-          );
-
-      } else if (
-        penghapusanBerhasil ||
-        rowHalamanTerhapus
-      ) {
-
-        message.textContent =
-          "⚠️ Halaman sudah terhapus, " +
-          "tetapi proses lanjutan mengalami masalah: " +
-          (
-            error?.message ||
-            "Error tidak diketahui."
-          );
-
-      } else {
-
-        message.textContent =
-          "❌ Gagal menghapus halaman: " +
-          (
-            error?.message ||
-            "Error tidak diketahui."
-          );
-      }
+      message.textContent =
+        "❌ Gagal menghapus halaman: " +
+        error.message;
     }
   }
 }
@@ -10299,363 +9954,108 @@ async function selesaikanAksiUploadTerakhir(
     return true;
   }
 
-  const bookId =
-    Number(
-      aksi.bookId || 0
-    );
-
-  const message =
-    document.getElementById(
-      "book-pages-message"
-    );
-
-  /* =========================
-     VALIDASI DASAR
-     ========================= */
-
-  if (
-    !Number.isInteger(bookId) ||
-    bookId < 1
-  ) {
-
-    if (message) {
-      message.textContent =
-        "❌ ID buku pada perubahan terakhir tidak valid.";
-    }
-
-    return false;
-  }
-
-  const jenisAksiValid = [
-    "upload",
-    "insert",
-    "move",
-    "replace",
-    "delete"
-  ];
-
-  if (
-    !jenisAksiValid.includes(
-      aksi.tipe
-    )
-  ) {
-
-    if (message) {
-      message.textContent =
-        "❌ Jenis perubahan halaman tidak dikenali.";
-    }
-
-    return false;
-  }
-
   const namaBatal =
-    aksi.tipe === "delete"
-      ? "Batal Hapus"
-      : aksi.tipe === "insert"
-        ? "Batal Sisip"
-        : aksi.tipe === "move"
-          ? "Batal Pindah"
-          : aksi.tipe === "replace"
-            ? "Batal Ganti"
-            : "Batal Upload";
+  aksi.tipe === "delete"
+    ? "Batal Hapus"
+    : aksi.tipe === "insert"
+      ? "Batal Sisip"
+      : aksi.tipe === "move"
+        ? "Batal Pindah"
+        : "Batal Upload";
 
   const yakin =
     confirm(
       `Perubahan terakhir pada Halaman ${aksi.pageNumber} masih bisa dibatalkan.\n\n` +
       `Jika Anda ${tindakan}, perubahan akan dianggap final dan ${namaBatal} tidak dapat digunakan lagi.\n\n` +
-      "Lanjutkan?"
+      `Lanjutkan?`
     );
 
   if (!yakin) {
     return false;
   }
 
-  let penguncianPermanenBerhasil =
-    false;
-
-  let ingestionSyncWarning =
-    null;
-
   /* =========================
-     HELPER ERROR TRACKING
+     KUNCI AKSI GANTI HALAMAN
      ========================= */
 
-  async function catatErrorDenganAman(
-    error
+  if (
+    aksi.tipe === "replace" &&
+    aksi.oldStoragePath
   ) {
 
-    try {
+    const {
+      error: removeOldError
+    } = await db.storage
+      .from("book-files")
+      .remove([
+        aksi.oldStoragePath
+      ]);
 
-      const berhasilDicatat =
-        await catatErrorIngestionBuku(
-          bookId,
-          error
-        );
-
-      if (!berhasilDicatat) {
-
-        console.warn(
-          "Error ingestion penguncian perubahan tidak berhasil dicatat.",
-          {
-            bookId:
-              bookId,
-
-            actionType:
-              aksi.tipe,
-
-            pageNumber:
-              aksi.pageNumber,
-
-            error:
-              error
-          }
-        );
-      }
-
-    } catch (trackingError) {
+    if (removeOldError) {
 
       console.error(
-        "Pencatatan error ingestion gagal:",
-        trackingError
-      );
-    }
-
-    try {
-
-      await tampilkanStatusIngestionKelolaHalaman(
-        bookId
+        "Gagal membersihkan file lama:",
+        removeOldError
       );
 
-    } catch (statusError) {
-
-      console.error(
-        "Gagal memperbarui tampilan status ingestion:",
-        statusError
-      );
-    }
-  }
-
-  try {
-
-    /* =========================
-       KUNCI AKSI GANTI HALAMAN
-       ========================= */
-
-    if (
-      aksi.tipe === "replace" &&
-      aksi.oldStoragePath
-    ) {
-
-      const {
-        error: removeOldError
-      } = await db.storage
-        .from(
-          "book-files"
-        )
-        .remove([
-          aksi.oldStoragePath
-        ]);
-
-      if (removeOldError) {
-
-        throw new Error(
-          "Perubahan belum dapat dikunci karena file cadangan lama gagal dibersihkan: " +
-          removeOldError.message
+      const message =
+        document.getElementById(
+          "book-pages-message"
         );
-      }
-    }
-
-    /* =========================
-       KUNCI AKSI HAPUS HALAMAN
-       ========================= */
-
-    if (
-      aksi.tipe === "delete" &&
-      aksi.deletedPage
-        ?.storage_path
-    ) {
-
-      const {
-        error: removeDeletedError
-      } = await db.storage
-        .from(
-          "book-files"
-        )
-        .remove([
-          aksi.deletedPage
-            .storage_path
-        ]);
-
-      if (removeDeletedError) {
-
-        throw new Error(
-          "Penghapusan belum dapat dikunci karena file halaman gagal dibersihkan dari Storage: " +
-          removeDeletedError.message
-        );
-      }
-    }
-
-    /*
-     * Sampai titik ini semua cleanup
-     * permanen yang dibutuhkan sudah
-     * berhasil.
-     *
-     * Untuk upload / insert / move
-     * memang tidak ada file cadangan
-     * lama yang harus dibuang.
-     */
-    penguncianPermanenBerhasil =
-      true;
-
-    /*
-     * Hapus state Undo SEGERA.
-     *
-     * Untuk replace/delete, file cadangan
-     * sudah hilang dari Storage sehingga
-     * Undo tidak boleh ditawarkan lagi.
-     */
-    aksiUploadHalamanTerakhir =
-      null;
-
-    updateTombolUploadHalaman();
-
-    /* =========================
-       SINKRONISASI INGESTION
-       ========================= */
-
-    try {
-
-      await sinkronkanProgressIngestionBuku(
-        bookId
-      );
-
-    } catch (syncError) {
-
-      console.error(
-        "Perubahan berhasil dikunci, tetapi sinkronisasi ingestion gagal:",
-        syncError
-      );
-
-      ingestionSyncWarning =
-        syncError;
-
-      /*
-       * Sync gagal terjadi SETELAH
-       * penguncian permanen berhasil.
-       *
-       * Jangan kembalikan state Undo,
-       * karena file cadangan mungkin
-       * sudah benar-benar dihapus.
-       */
-      await catatErrorDenganAman(
-        syncError
-      );
-    }
-
-    /*
-     * Kalau sync sukses, fungsi
-     * sinkronisasi otomatis:
-     *
-     * - mengembalikan status draft/ready
-     * - membersihkan last_error lama
-     *
-     * Ini penting apabila sebelumnya
-     * percobaan cleanup pernah gagal.
-     */
-
-    try {
-
-      await tampilkanStatusIngestionKelolaHalaman(
-        bookId
-      );
-
-    } catch (statusUiError) {
-
-      console.warn(
-        "Perubahan sudah dikunci, tetapi tampilan status ingestion belum berhasil diperbarui:",
-        statusUiError
-      );
-    }
-
-    if (
-      ingestionSyncWarning &&
-      message
-    ) {
-
-      message.textContent =
-        "⚠️ Perubahan sudah dikunci permanen, " +
-        "tetapi progress ingestion belum berhasil disinkronkan.";
-    }
-
-    return true;
-
-  } catch (error) {
-
-    console.error(
-      "Gagal mengunci perubahan halaman:",
-      error
-    );
-
-    /*
-     * Jalur ini hanya terjadi sebelum
-     * penguncian permanen dinyatakan
-     * berhasil.
-     *
-     * Karena file cadangan belum berhasil
-     * dibersihkan, state Undo HARUS tetap
-     * dipertahankan.
-     */
-    if (
-      !penguncianPermanenBerhasil
-    ) {
-
-      await catatErrorDenganAman(
-        error
-      );
 
       if (message) {
-
         message.textContent =
-          "❌ " +
-          (
-            error?.message ||
-            "Perubahan halaman belum dapat dikunci."
-          );
+          "❌ Perubahan belum dapat dikunci karena file cadangan lama gagal dibersihkan.";
       }
-
-      updateTombolUploadHalaman();
 
       return false;
     }
-
-    /*
-     * Safety fallback:
-     * kalau suatu saat ada error baru
-     * setelah penguncian permanen,
-     * jangan hidupkan Undo kembali.
-     */
-    await catatErrorDenganAman(
-      error
-    );
-
-    aksiUploadHalamanTerakhir =
-      null;
-
-    updateTombolUploadHalaman();
-
-    if (message) {
-
-      message.textContent =
-        "⚠️ Perubahan sudah dikunci permanen, " +
-        "tetapi proses lanjutan mengalami masalah: " +
-        (
-          error?.message ||
-          "Error tidak diketahui."
-        );
-    }
-
-    return true;
   }
+
+  /* =========================
+     KUNCI AKSI HAPUS HALAMAN
+     ========================= */
+
+  if (
+    aksi.tipe === "delete" &&
+    aksi.deletedPage?.storage_path
+  ) {
+
+    const {
+      error: removeDeletedError
+    } = await db.storage
+      .from("book-files")
+      .remove([
+        aksi.deletedPage.storage_path
+      ]);
+
+    if (removeDeletedError) {
+
+      console.error(
+        "Gagal menghapus file halaman:",
+        removeDeletedError
+      );
+
+      const message =
+        document.getElementById(
+          "book-pages-message"
+        );
+
+      if (message) {
+        message.textContent =
+          "❌ Penghapusan belum dapat dikunci karena file halaman gagal dibersihkan dari Storage.";
+      }
+
+      return false;
+    }
+  }
+
+  aksiUploadHalamanTerakhir =
+    null;
+
+  updateTombolUploadHalaman();
+
+  return true;
 }
 
 async function aksiTombolUploadHalaman() {
@@ -10693,73 +10093,18 @@ async function batalUploadHalaman() {
     );
 
   if (!aksi) {
-
     updateTombolUploadHalaman();
-
-    return;
-  }
-
-  const bookId =
-    Number(
-      aksi.bookId || 0
-    );
-
-  const nomorHalaman =
-    Number(
-      aksi.pageNumber || 0
-    );
-
-  /* =========================
-     VALIDASI DASAR
-     ========================= */
-
-  if (
-    !Number.isInteger(bookId) ||
-    bookId < 1
-  ) {
-
-    if (message) {
-
-      message.textContent =
-        "❌ ID buku pada data Undo tidak valid.";
-    }
-
-    return;
-  }
-
-  const jenisAksiValid = [
-    "upload",
-    "insert",
-    "move",
-    "replace",
-    "delete"
-  ];
-
-  if (
-    !jenisAksiValid.includes(
-      aksi.tipe
-    )
-  ) {
-
-    if (message) {
-
-      message.textContent =
-        "❌ Jenis perubahan halaman tidak dikenali.";
-    }
-
     return;
   }
 
   const teksKonfirmasi =
-    aksi.tipe === "delete"
-      ? `Batalkan penghapusan Halaman ${aksi.pageNumber}?`
-      : aksi.tipe === "insert"
-        ? `Batalkan penyisipan Halaman ${aksi.pageNumber}?`
-        : aksi.tipe === "move"
-          ? `Batalkan pemindahan Halaman ${aksi.fromPage} ke posisi ${aksi.toPage}?`
-          : aksi.tipe === "replace"
-            ? `Batalkan penggantian Halaman ${aksi.pageNumber}?`
-            : `Batalkan upload terakhir untuk Halaman ${aksi.pageNumber}?`;
+  aksi.tipe === "delete"
+    ? `Batalkan penghapusan Halaman ${aksi.pageNumber}?`
+    : aksi.tipe === "insert"
+      ? `Batalkan penyisipan Halaman ${aksi.pageNumber}?`
+      : aksi.tipe === "move"
+        ? `Batalkan pemindahan Halaman ${aksi.fromPage} ke posisi ${aksi.toPage}?`
+        : `Batalkan upload terakhir untuk Halaman ${aksi.pageNumber}?`;
 
   const yakin =
     confirm(
@@ -10770,436 +10115,149 @@ async function batalUploadHalaman() {
     return;
   }
 
-  /* =========================
-     STATE PROSES
-     ========================= */
+  tombol.disabled = true;
 
-  let undoDatabaseBerhasil =
-    false;
-
-  let verificationWarning =
-    null;
-
-  let storageCleanupWarning =
-    null;
-
-  let ingestionUndoSyncWarning =
-    null;
-
-  let refreshUiWarning =
-    null;
-
-  /* =========================
-     HELPER ERROR TRACKING
-     ========================= */
-
-  async function catatErrorDenganAman(
-    error
-  ) {
-
-    try {
-
-      const berhasilDicatat =
-        await catatErrorIngestionBuku(
-          bookId,
-          error
-        );
-
-      if (!berhasilDicatat) {
-
-        console.warn(
-          "Error ingestion Undo tidak berhasil dicatat.",
-          {
-            bookId:
-              bookId,
-
-            actionType:
-              aksi.tipe,
-
-            pageNumber:
-              nomorHalaman,
-
-            error:
-              error
-          }
-        );
-      }
-
-    } catch (trackingError) {
-
-      console.error(
-        "Pencatatan error ingestion gagal:",
-        trackingError
-      );
-    }
-
-    try {
-
-      await tampilkanStatusIngestionKelolaHalaman(
-        bookId
-      );
-
-    } catch (statusError) {
-
-      console.error(
-        "Gagal memperbarui tampilan status ingestion:",
-        statusError
-      );
-    }
-  }
-
-  /* =========================
-     HELPER VERIFIKASI BUKU
-     ========================= */
-
-  async function verifikasiStatusBukuSebelumnya() {
-
-    const {
-      data: book,
-      error: bookError
-    } = await db
-      .from(
-        "books"
-      )
-      .select(`
-        id,
-        upload_status,
-        file_url
-      `)
-      .eq(
-        "id",
-        bookId
-      )
-      .maybeSingle();
-
-    if (bookError) {
-
-      throw new Error(
-        "Gagal memverifikasi status buku setelah Undo: " +
-        bookError.message
-      );
-    }
-
-    if (!book) {
-
-      throw new Error(
-        "Data buku tidak ditemukan saat verifikasi Undo."
-      );
-    }
-
-    if (
-      aksi.statusSebelumnya !==
-        undefined &&
-      aksi.statusSebelumnya !==
-        null &&
-      book.upload_status !==
-        aksi.statusSebelumnya
-    ) {
-
-      throw new Error(
-        "Status buku setelah Undo tidak sesuai. " +
-        `Diharapkan ${aksi.statusSebelumnya}, ` +
-        `tetapi ditemukan ${book.upload_status}.`
-      );
-    }
-
-    if (
-      aksi.fileUrlFinalSebelumnya !==
-        undefined
-    ) {
-
-      const fileUrlSekarang =
-        book.file_url ?? null;
-
-      const fileUrlSebelumnya =
-        aksi.fileUrlFinalSebelumnya ??
-        null;
-
-      if (
-        fileUrlSekarang !==
-        fileUrlSebelumnya
-      ) {
-
-        throw new Error(
-          "File final buku setelah Undo tidak sesuai dengan kondisi sebelumnya."
-        );
-      }
-    }
-  }
-
-  /* =========================
-     DISABLE TOMBOL
-     ========================= */
-
-  if (tombol) {
-
-    tombol.disabled =
-      true;
-
-    tombol.textContent =
-      "⏳ Membatalkan...";
-  }
+  tombol.textContent =
+    "⏳ Membatalkan...";
 
   try {
 
-    /* =========================
-       AKTIFKAN INGESTION
-       ========================= */
+  const statusIngestionAktif =
+    await setStatusIngestionBuku(
+      aksi.bookId,
+      "ingesting"
+    );
 
-    const statusIngestionAktif =
-      await setStatusIngestionBuku(
-        bookId,
-        "ingesting"
-      );
+  if (!statusIngestionAktif) {
 
-    if (!statusIngestionAktif) {
+    console.warn(
+      "Status ingestion belum berhasil diubah ke ingesting."
+    );
 
-      throw new Error(
-        "Status ingestion gagal diubah ke ingesting."
-      );
-    }
+  } else {
 
-    try {
+  await tampilkanStatusIngestionKelolaHalaman(
+    aksi.bookId
+  );
+}
 
-      await tampilkanStatusIngestionKelolaHalaman(
-        bookId
-      );
+  /* =========================
+     BATAL UPLOAD HALAMAN BARU
+     ========================= */
 
-    } catch (statusUiError) {
-
-      console.warn(
-        "Status ingestion aktif, tetapi tampilan status belum berhasil diperbarui:",
-        statusUiError
-      );
-    }
-
-    /* =========================
-       BATAL UPLOAD HALAMAN BARU
-       ========================= */
-
-    if (
-      aksi.tipe ===
-      "upload"
-    ) {
+    if (aksi.tipe === "upload") {
 
       const {
-        data: deletedPage,
         error: deletePageError
       } = await db
-        .from(
-          "book_pages"
-        )
+        .from("book_pages")
         .delete()
         .eq(
           "book_id",
-          bookId
+          aksi.bookId
         )
         .eq(
           "page_number",
-          nomorHalaman
+          aksi.pageNumber
         )
         .eq(
           "storage_path",
           aksi.newStoragePath
-        )
-        .select(`
-          id
-        `)
-        .maybeSingle();
+        );
 
       if (deletePageError) {
-
         throw new Error(
           "Gagal membatalkan data halaman: " +
           deletePageError.message
         );
       }
 
-      if (!deletedPage) {
+/* =========================
+   BATAL SISIP HALAMAN
+   ========================= */
 
-        throw new Error(
-          "Undo upload tidak terkonfirmasi. " +
-          "Tidak ada row halaman yang terhapus."
-        );
-      }
+} else if (
+  aksi.tipe === "insert"
+) {
 
-      undoDatabaseBerhasil =
-        true;
+  const {
+    error: undoInsertError
+  } = await db.rpc(
+    "undo_insert_incremental_book_page",
+    {
+      p_book_id:
+        aksi.bookId,
 
-    /* =========================
-       BATAL SISIP HALAMAN
-       ========================= */
+      p_page_number:
+        aksi.pageNumber,
 
-    } else if (
-      aksi.tipe ===
-      "insert"
-    ) {
+      p_storage_path:
+        aksi.newStoragePath,
 
-      const {
-        error: undoInsertError
-      } = await db.rpc(
-        "undo_insert_incremental_book_page",
-        {
-          p_book_id:
-            bookId,
+      p_previous_status:
+        aksi.statusSebelumnya,
 
-          p_page_number:
-            nomorHalaman,
+      p_previous_file_url:
+        aksi.fileUrlFinalSebelumnya
+    }
+  );
 
-          p_storage_path:
-            aksi.newStoragePath,
+  if (undoInsertError) {
+    throw new Error(
+      "Gagal membatalkan penyisipan halaman: " +
+      undoInsertError.message
+    );
+  }
 
-          p_previous_status:
-            aksi.statusSebelumnya,
+  /* =========================
+   BATAL PINDAH HALAMAN
+   ========================= */
 
-          p_previous_file_url:
-            aksi.fileUrlFinalSebelumnya
-        }
-      );
+} else if (
+  aksi.tipe === "move"
+) {
 
-      if (undoInsertError) {
+  const {
+    error: undoMoveError
+  } = await db.rpc(
+    "undo_move_incremental_book_page",
+    {
+      p_book_id:
+        aksi.bookId,
 
-        throw new Error(
-          "Gagal membatalkan penyisipan halaman: " +
-          undoInsertError.message
-        );
-      }
+      p_original_from_page:
+        aksi.fromPage,
 
-      /*
-       * RPC sukses berarti transaksi Undo
-       * pada server sudah selesai.
-       */
-      undoDatabaseBerhasil =
-        true;
+      p_original_to_page:
+        aksi.toPage,
 
-      /*
-       * Verifikasi tambahan.
-       * Kalau query verifikasi gagal,
-       * jangan ulangi RPC otomatis.
-       */
-      try {
+      p_previous_status:
+        aksi.statusSebelumnya,
 
-        const {
-          data: halamanMasihAda,
-          error: verifyInsertError
-        } = await db
-          .from(
-            "book_pages"
-          )
-          .select(`
-            id
-          `)
-          .eq(
-            "book_id",
-            bookId
-          )
-          .eq(
-            "storage_path",
-            aksi.newStoragePath
-          )
-          .maybeSingle();
+      p_previous_file_url:
+        aksi.fileUrlFinalSebelumnya
+    }
+  );
 
-        if (verifyInsertError) {
-
-          throw new Error(
-            "Gagal memverifikasi Undo sisip: " +
-            verifyInsertError.message
-          );
-        }
-
-        if (halamanMasihAda) {
-
-          throw new Error(
-            "Halaman hasil penyisipan masih ditemukan setelah Undo."
-          );
-        }
-
-        await verifikasiStatusBukuSebelumnya();
-
-      } catch (verifyError) {
-
-        console.error(
-          "Undo sisip selesai tetapi verifikasi mengalami masalah:",
-          verifyError
-        );
-
-        verificationWarning =
-          verifyError;
-      }
-
-    /* =========================
-       BATAL PINDAH HALAMAN
-       ========================= */
-
-    } else if (
-      aksi.tipe ===
-      "move"
-    ) {
-
-      const {
-        error: undoMoveError
-      } = await db.rpc(
-        "undo_move_incremental_book_page",
-        {
-          p_book_id:
-            bookId,
-
-          p_original_from_page:
-            aksi.fromPage,
-
-          p_original_to_page:
-            aksi.toPage,
-
-          p_previous_status:
-            aksi.statusSebelumnya,
-
-          p_previous_file_url:
-            aksi.fileUrlFinalSebelumnya
-        }
-      );
-
-      if (undoMoveError) {
-
-        throw new Error(
-          "Gagal membatalkan pemindahan halaman: " +
-          undoMoveError.message
-        );
-      }
-
-      undoDatabaseBerhasil =
-        true;
-
-      try {
-
-        await verifikasiStatusBukuSebelumnya();
-
-      } catch (verifyError) {
-
-        console.error(
-          "Undo pindah selesai tetapi verifikasi mengalami masalah:",
-          verifyError
-        );
-
-        verificationWarning =
-          verifyError;
-      }
+  if (undoMoveError) {
+    throw new Error(
+      "Gagal membatalkan pemindahan halaman: " +
+      undoMoveError.message
+    );
+  }
 
     /* =========================
        BATAL GANTI HALAMAN
        ========================= */
 
     } else if (
-      aksi.tipe ===
-      "replace"
+      aksi.tipe === "replace"
     ) {
 
       const {
-        data: restoredPage,
         error: restorePageError
       } = await db
-        .from(
-          "book_pages"
-        )
+        .from("book_pages")
         .update({
           file_url:
             aksi.oldFileUrl,
@@ -11221,40 +10279,24 @@ async function batalUploadHalaman() {
         })
         .eq(
           "book_id",
-          bookId
+          aksi.bookId
         )
         .eq(
           "page_number",
-          nomorHalaman
-        )
-        .select(`
-          id,
-          storage_path
-        `)
-        .maybeSingle();
+          aksi.pageNumber
+        );
 
       if (restorePageError) {
-
         throw new Error(
           "Gagal mengembalikan halaman lama: " +
           restorePageError.message
         );
       }
 
-      if (!restoredPage) {
-
-        throw new Error(
-          "Pemulihan halaman lama tidak terkonfirmasi."
-        );
-      }
-
       const {
-        data: restoredBook,
         error: restoreBookError
       } = await db
-        .from(
-          "books"
-        )
+        .from("books")
         .update({
           upload_status:
             aksi.statusSebelumnya,
@@ -11264,35 +10306,16 @@ async function batalUploadHalaman() {
         })
         .eq(
           "id",
-          bookId
-        )
-        .select(`
-          id,
-          upload_status,
-          file_url
-        `)
-        .maybeSingle();
+          aksi.bookId
+        );
 
-      if (
-        restoreBookError ||
-        !restoredBook
-      ) {
+      if (restoreBookError) {
 
-        const pesanRestoreBook =
-          restoreBookError?.message ||
-          "Pemulihan status buku tidak terkonfirmasi.";
+        /* Rollback lagi ke kondisi
+           setelah penggantian */
 
-        /*
-         * Kembalikan page ke kondisi
-         * sesudah replace.
-         */
-        const {
-          data: rollbackPage,
-          error: rollbackPageError
-        } = await db
-          .from(
-            "book_pages"
-          )
+        await db
+          .from("book_pages")
           .update({
             file_url:
               aksi.newFileUrl,
@@ -11314,70 +10337,34 @@ async function batalUploadHalaman() {
           })
           .eq(
             "book_id",
-            bookId
+            aksi.bookId
           )
           .eq(
             "page_number",
-            nomorHalaman
-          )
-          .select(`
-            id,
-            storage_path
-          `)
-          .maybeSingle();
-
-        if (
-          rollbackPageError ||
-          !rollbackPage
-        ) {
-
-          throw new Error(
-            "Status buku gagal dikembalikan, " +
-            "dan rollback halaman pengganti juga gagal: " +
-            (
-              rollbackPageError?.message ||
-              "Rollback halaman tidak terkonfirmasi."
-            ) +
-            " | Error awal: " +
-            pesanRestoreBook
+            aksi.pageNumber
           );
-        }
 
         throw new Error(
           "Gagal mengembalikan status buku: " +
-          pesanRestoreBook
+          restoreBookError.message
         );
       }
 
-      undoDatabaseBerhasil =
-        true;
-
-    /* =========================
-       BATAL HAPUS HALAMAN
-       ========================= */
+        /* =========================
+           BATAL HAPUS HALAMAN
+           ========================= */
 
     } else if (
-      aksi.tipe ===
-      "delete"
+      aksi.tipe === "delete"
     ) {
 
       const page =
         aksi.deletedPage;
 
-      if (!page) {
-
-        throw new Error(
-          "Data halaman untuk Undo Hapus tidak ditemukan."
-        );
-      }
-
       const {
-        data: restoredDeletedPage,
         error: restoreDeletedPageError
       } = await db
-        .from(
-          "book_pages"
-        )
+        .from("book_pages")
         .insert({
           book_id:
             page.book_id,
@@ -11405,34 +10392,19 @@ async function batalUploadHalaman() {
 
           created_at:
             page.created_at
-        })
-        .select(`
-          id
-        `)
-        .maybeSingle();
+        });
 
       if (restoreDeletedPageError) {
-
         throw new Error(
           "Gagal mengembalikan halaman yang dihapus: " +
           restoreDeletedPageError.message
         );
       }
 
-      if (!restoredDeletedPage) {
-
-        throw new Error(
-          "Pemulihan halaman yang dihapus tidak terkonfirmasi."
-        );
-      }
-
       const {
-        data: restoredBook,
         error: restoreBookError
       } = await db
-        .from(
-          "books"
-        )
+        .from("books")
         .update({
           upload_status:
             aksi.statusSebelumnya,
@@ -11442,117 +10414,66 @@ async function batalUploadHalaman() {
         })
         .eq(
           "id",
-          bookId
-        )
-        .select(`
-          id,
-          upload_status,
-          file_url
-        `)
-        .maybeSingle();
+          aksi.bookId
+        );
 
-      if (
-        restoreBookError ||
-        !restoredBook
-      ) {
+      if (restoreBookError) {
 
-        const pesanRestoreBook =
-          restoreBookError?.message ||
-          "Pemulihan status buku tidak terkonfirmasi.";
-
-        /*
-         * Status buku gagal dipulihkan.
-         * Hapus kembali halaman yang tadi
-         * sempat direstore.
-         */
-        const {
-          data: rollbackDelete,
-          error: rollbackDeleteError
-        } = await db
-          .from(
-            "book_pages"
-          )
+        // Kalau status buku gagal
+        // dikembalikan, hapus lagi
+        // halaman yang baru direstore.
+        await db
+          .from("book_pages")
           .delete()
           .eq(
-            "id",
-            restoredDeletedPage.id
+            "book_id",
+            aksi.bookId
           )
-          .select(`
-            id
-          `)
-          .maybeSingle();
-
-        if (
-          rollbackDeleteError ||
-          !rollbackDelete
-        ) {
-
-          throw new Error(
-            "Status buku gagal dikembalikan, " +
-            "dan rollback halaman hasil restore juga gagal: " +
-            (
-              rollbackDeleteError?.message ||
-              "Rollback penghapusan tidak terkonfirmasi."
-            ) +
-            " | Error awal: " +
-            pesanRestoreBook
+          .eq(
+            "page_number",
+            aksi.pageNumber
           );
-        }
 
         throw new Error(
           "Gagal mengembalikan status buku: " +
-          pesanRestoreBook
+          restoreBookError.message
         );
       }
 
-      undoDatabaseBerhasil =
-        true;
+    } else {
+
+      throw new Error(
+        "Jenis aksi upload tidak dikenali."
+      );
     }
 
     /* =========================
-       CLEANUP FILE BARU
+       HAPUS FILE BARU
        ========================= */
 
-    if (
-      undoDatabaseBerhasil &&
-      aksi.newStoragePath
-    ) {
+    if (aksi.newStoragePath) {
 
-      try {
+      const {
+        error: removeNewError
+      } = await db.storage
+        .from("book-files")
+        .remove([
+          aksi.newStoragePath
+        ]);
 
-        const {
-          error: removeNewError
-        } = await db.storage
-          .from(
-            "book-files"
-          )
-          .remove([
-            aksi.newStoragePath
-          ]);
-
-        if (removeNewError) {
-
-          throw new Error(
-            "File baru gagal dibersihkan dari Storage: " +
-            removeNewError.message
-          );
-        }
-
-      } catch (cleanupError) {
-
-        console.error(
-          "Undo database berhasil, tetapi cleanup Storage gagal:",
-          cleanupError
+      if (removeNewError) {
+        console.warn(
+          "File baru gagal dibersihkan:",
+          removeNewError
         );
-
-        storageCleanupWarning =
-          cleanupError;
       }
     }
 
-    /* =========================
-       RESET OUTPUT EPUB
-       ========================= */
+    const nomorHalaman =
+      aksi.pageNumber;
+
+    const bookId =
+      aksi.bookId;
 
     try {
 
@@ -11568,228 +10489,108 @@ async function batalUploadHalaman() {
       );
     }
 
-    /* =========================
-       SINKRONISASI INGESTION
-       ========================= */
+    let ingestionUndoSyncWarning = null;
 
-    try {
+try {
 
-      await sinkronkanProgressIngestionBuku(
-        bookId
-      );
+  await sinkronkanProgressIngestionBuku(
+    bookId
+  );
 
-    } catch (syncError) {
+} catch (syncError) {
 
-      console.error(
-        "Sinkronisasi progress ingestion setelah Undo gagal:",
-        syncError
-      );
+  console.error(
+    "Sinkronisasi progress ingestion setelah Undo gagal:",
+    syncError
+  );
 
-      ingestionUndoSyncWarning =
-        syncError;
-    }
+  try {
 
-    /* =========================
-       CATAT WARNING FINAL
-       ========================= */
+    await catatErrorIngestionBuku(
+      bookId,
+      syncError
+    );
 
-    if (
-      verificationWarning ||
-      storageCleanupWarning ||
-      ingestionUndoSyncWarning
-    ) {
+  } catch (trackingError) {
 
-      const pesanWarning = [];
+    console.error(
+      "Pencatatan error ingestion gagal:",
+      trackingError
+    );
+  }
 
-      if (
-        verificationWarning
-      ) {
+  ingestionUndoSyncWarning =
+    syncError;
+}
 
-        pesanWarning.push(
-          "Verifikasi: " +
-          (
-            verificationWarning?.message ||
-            "Error tidak diketahui."
-          )
-        );
-      }
-
-      if (
-        storageCleanupWarning
-      ) {
-
-        pesanWarning.push(
-          "Storage: " +
-          (
-            storageCleanupWarning?.message ||
-            "Error tidak diketahui."
-          )
-        );
-      }
-
-      if (
-        ingestionUndoSyncWarning
-      ) {
-
-        pesanWarning.push(
-          "Sinkronisasi: " +
-          (
-            ingestionUndoSyncWarning?.message ||
-            "Error tidak diketahui."
-          )
-        );
-      }
-
-      await catatErrorDenganAman(
-        new Error(
-          "Undo perubahan halaman berhasil, " +
-          "tetapi ada proses lanjutan yang bermasalah. " +
-          pesanWarning.join(
-            " | "
-          )
-        )
-      );
-    }
-
-    /* =========================
-       HAPUS STATE UNDO
-       ========================= */
-
-    /*
-     * Database sudah berhasil kembali
-     * ke kondisi sebelum perubahan.
-     *
-     * Jangan mempertahankan aksi Undo
-     * hanya karena cleanup Storage,
-     * verifikasi tambahan, atau refresh
-     * UI gagal, karena menjalankan Undo
-     * yang sama untuk kedua kali justru
-     * berbahaya.
-     */
     aksiUploadHalamanTerakhir =
       null;
 
-    /* =========================
-       REFRESH UI
-       ========================= */
+    await tampilkanBuku();
 
-    try {
+    await muatDaftarBukuAdmin();
 
-      await tampilkanBuku();
-
-      await muatDaftarBukuAdmin();
-
-      await bukaKelolaHalaman(
-        bookId
-      );
-
-    } catch (uiError) {
-
-      console.error(
-        "Undo berhasil, tetapi refresh UI gagal:",
-        uiError
-      );
-
-      refreshUiWarning =
-        uiError;
-    }
+    await bukaKelolaHalaman(
+      bookId
+    );
 
     updateTombolUploadHalaman();
 
-    /* =========================
-       PESAN HASIL
-       ========================= */
+    message.textContent =
+      aksi.tipe === "delete"
+        ? `✅ Penghapusan Halaman ${nomorHalaman} berhasil dibatalkan.`
+        : aksi.tipe === "insert"
+          ? `✅ Penyisipan Halaman ${nomorHalaman} berhasil dibatalkan.`
+          : aksi.tipe === "move"
+            ? `✅ Pemindahan Halaman ${aksi.fromPage} ke posisi ${aksi.toPage} berhasil dibatalkan.`
+            : `✅ Upload Halaman ${nomorHalaman} berhasil dibatalkan.`;
 
-    const pesanBaru =
-      document.getElementById(
-        "book-pages-message"
-      );
-
-    if (pesanBaru) {
-
-      pesanBaru.textContent =
-        aksi.tipe === "delete"
-          ? `✅ Penghapusan Halaman ${nomorHalaman} berhasil dibatalkan.`
-          : aksi.tipe === "insert"
-            ? `✅ Penyisipan Halaman ${nomorHalaman} berhasil dibatalkan.`
-            : aksi.tipe === "move"
-              ? `✅ Pemindahan Halaman ${aksi.fromPage} ke posisi ${aksi.toPage} berhasil dibatalkan.`
-              : aksi.tipe === "replace"
-                ? `✅ Penggantian Halaman ${nomorHalaman} berhasil dibatalkan.`
-                : `✅ Upload Halaman ${nomorHalaman} berhasil dibatalkan.`;
-
-      if (
-        verificationWarning
-      ) {
-
-        pesanBaru.textContent +=
-          " ⚠️ Verifikasi hasil Undo perlu diperiksa.";
-      }
-
-      if (
-        storageCleanupWarning
-      ) {
-
-        pesanBaru.textContent +=
-          " ⚠️ File baru belum berhasil dibersihkan dari Storage.";
-      }
-
-      if (
-        ingestionUndoSyncWarning
-      ) {
-
-        pesanBaru.textContent +=
-          " ⚠️ Progress ingestion belum tersinkron.";
-      }
-
-      if (
-        refreshUiWarning
-      ) {
-
-        pesanBaru.textContent +=
-          " ⚠️ Data sudah dipulihkan, tetapi tampilan belum sepenuhnya diperbarui.";
-      }
+    if (ingestionUndoSyncWarning) {
+      message.textContent +=
+        " ⚠️ Progress ingestion belum tersinkron.";
     }
 
   } catch (error) {
 
+  console.error(
+    "Batal perubahan halaman gagal:",
+    error
+  );
+
+  try {
+
+    await catatErrorIngestionBuku(
+      aksi.bookId,
+      error
+    );
+
+  } catch (trackingError) {
+
     console.error(
-      "Batal perubahan halaman gagal:",
-      error
+      "Pencatatan error ingestion gagal:",
+      trackingError
     );
+  }
 
-    /*
-     * Jalur catch ini berarti Undo database
-     * belum berhasil diselesaikan dengan aman.
-     * State Undo dipertahankan agar kondisi
-     * masih dapat diperiksa/dicoba kembali.
-     */
-    await catatErrorDenganAman(
-      error
-    );
+  await tampilkanStatusIngestionKelolaHalaman(
+    aksi.bookId
+  );
 
-    updateTombolUploadHalaman();
-
-    if (message) {
-
-      message.textContent =
-        "❌ " +
-        (
-          error?.message ||
-          "Batal perubahan halaman gagal."
-        );
-    }
+    message.textContent =
+      "❌ " +
+      (
+        error?.message ||
+        "Batal upload halaman gagal."
+      );
 
   } finally {
 
-    if (tombol) {
-
-      tombol.disabled =
-        false;
-    }
+    tombol.disabled = false;
 
     updateTombolUploadHalaman();
+
   }
+
 }
 
 let nomorHalamanPengganti = null;
@@ -12027,11 +10828,9 @@ async function pindahkanHalamanBuku() {
 
   const bookId =
     Number(
-      document
-        .getElementById(
-          "book-pages-book-id"
-        )
-        ?.value || 0
+      document.getElementById(
+        "book-pages-book-id"
+      )?.value
     );
 
   const pageNumberInput =
@@ -12059,27 +10858,10 @@ async function pindahkanHalamanBuku() {
       halamanAsalPindah || 0
     );
 
-  /* =========================
-     VALIDASI DASAR
-     ========================= */
-
   if (
-    !Number.isInteger(bookId) ||
-    bookId < 1
-  ) {
-
-    if (message) {
-      message.textContent =
-        "❌ ID buku tidak ditemukan.";
-    }
-
-    return;
-  }
-
-  if (
+    !bookId ||
     !modePindahHalamanAktif ||
-    !Number.isInteger(halamanAsal) ||
-    halamanAsal < 1
+    !halamanAsal
   ) {
 
     if (message) {
@@ -12101,19 +10883,58 @@ async function pindahkanHalamanBuku() {
     }
 
     pageNumberInput?.focus();
+    return;
+  }
+
+  const {
+    data: book,
+    error: bookError
+  } = await db
+    .from("books")
+    .select(`
+      id,
+      total_pages,
+      upload_mode,
+      upload_status,
+      file_url
+    `)
+    .eq("id", bookId)
+    .single();
+
+  if (bookError || !book) {
+
+    if (message) {
+      message.textContent =
+        "❌ Data buku tidak ditemukan.";
+    }
 
     return;
   }
 
   if (
-    aksiUploadHalamanTerakhir
+    book.upload_mode !==
+    "incremental"
   ) {
 
-    alert(
-      "Masih ada perubahan halaman yang dapat dibatalkan.\n\n" +
-      "Selesaikan atau batalkan perubahan tersebut terlebih dahulu."
-    );
+    if (message) {
+      message.textContent =
+        "❌ Pindahkan halaman hanya tersedia untuk buku mode bertahap.";
+    }
 
+    return;
+  }
+
+  if (
+    halamanTujuan >
+    Number(book.total_pages)
+  ) {
+
+    if (message) {
+      message.textContent =
+        `⚠️ Posisi tujuan maksimal ${book.total_pages}.`;
+    }
+
+    pageNumberInput?.focus();
     return;
   }
 
@@ -12123,95 +10944,17 @@ async function pindahkanHalamanBuku() {
   ) {
 
     if (message) {
-
       message.textContent =
         `⚠️ Halaman ${halamanAsal} sudah berada di posisi ${halamanTujuan}.`;
     }
 
     pageNumberInput?.focus();
-
     return;
-  }
-
-  /* =========================
-     STATE PROSES
-     ========================= */
-
-  let pemindahanBerhasil =
-    false;
-
-  let ingestionMoveSyncWarning =
-    null;
-
-  let refreshUiWarning =
-    null;
-
-  let verificationWarning =
-    null;
-
-  /* =========================
-     HELPER ERROR TRACKING
-     ========================= */
-
-  async function catatErrorDenganAman(
-    error
-  ) {
-
-    try {
-
-      const berhasilDicatat =
-        await catatErrorIngestionBuku(
-          bookId,
-          error
-        );
-
-      if (!berhasilDicatat) {
-
-        console.warn(
-          "Error ingestion pemindahan tidak berhasil dicatat.",
-          {
-            bookId:
-              bookId,
-
-            fromPage:
-              halamanAsal,
-
-            toPage:
-              halamanTujuan,
-
-            error:
-              error
-          }
-        );
-      }
-
-    } catch (trackingError) {
-
-      console.error(
-        "Pencatatan error ingestion gagal:",
-        trackingError
-      );
-    }
-
-    try {
-
-      await tampilkanStatusIngestionKelolaHalaman(
-        bookId
-      );
-
-    } catch (statusError) {
-
-      console.error(
-        "Gagal memperbarui tampilan status ingestion:",
-        statusError
-      );
-    }
   }
 
   if (tombol) {
 
-    tombol.disabled =
-      true;
+    tombol.disabled = true;
 
     tombol.textContent =
       "⏳ Memindahkan...";
@@ -12219,194 +10962,28 @@ async function pindahkanHalamanBuku() {
 
   try {
 
-    /* =========================
-       AMBIL DATA BUKU
-       ========================= */
+  const statusIngestionAktif =
+  await setStatusIngestionBuku(
+    bookId,
+    "ingesting"
+  );
 
-    const {
-      data: book,
-      error: bookError
-    } = await db
-      .from(
-        "books"
-      )
-      .select(`
-        id,
-        total_pages,
-        upload_mode,
-        upload_status,
-        file_url
-      `)
-      .eq(
-        "id",
-        bookId
-      )
-      .maybeSingle();
+if (!statusIngestionAktif) {
 
-    if (bookError) {
+  console.warn(
+    "Status ingestion belum berhasil diubah ke ingesting."
+  );
 
-      throw new Error(
-        "Gagal membaca data buku: " +
-        bookError.message
-      );
-    }
+} else {
 
-    if (!book) {
+  await tampilkanStatusIngestionKelolaHalaman(
+    bookId
+  );
+}
 
-      if (message) {
-        message.textContent =
-          "❌ Data buku tidak ditemukan.";
-      }
-
-      return;
-    }
-
-    if (
-      book.upload_mode !==
-      "incremental"
-    ) {
-
-      if (message) {
-
-        message.textContent =
-          "❌ Pindahkan halaman hanya tersedia untuk buku mode bertahap.";
-      }
-
-      return;
-    }
-
-    const totalPages =
-      Number(
-        book.total_pages || 0
-      );
-
-    if (
-      !Number.isInteger(totalPages) ||
-      totalPages < 1
-    ) {
-
-      if (message) {
-
-        message.textContent =
-          "❌ Total halaman buku belum valid.";
-      }
-
-      return;
-    }
-
-    if (
-      halamanAsal >
-      totalPages
-    ) {
-
-      if (message) {
-
-        message.textContent =
-          `⚠️ Halaman asal maksimal ${totalPages}.`;
-      }
-
-      return;
-    }
-
-    if (
-      halamanTujuan >
-      totalPages
-    ) {
-
-      if (message) {
-
-        message.textContent =
-          `⚠️ Posisi tujuan maksimal ${totalPages}.`;
-      }
-
-      pageNumberInput?.focus();
-
-      return;
-    }
-
-    /* =========================
-       VERIFIKASI HALAMAN ASAL
-       ========================= */
-
-    const {
-      data: halamanSumber,
-      error: sourcePageError
-    } = await db
-      .from(
-        "book_pages"
-      )
-      .select(`
-        id,
-        book_id,
-        page_number
-      `)
-      .eq(
-        "book_id",
-        bookId
-      )
-      .eq(
-        "page_number",
-        halamanAsal
-      )
-      .maybeSingle();
-
-    if (sourcePageError) {
-
-      throw new Error(
-        "Gagal memeriksa halaman asal: " +
-        sourcePageError.message
-      );
-    }
-
-    if (!halamanSumber) {
-
-      if (message) {
-
-        message.textContent =
-          `❌ Halaman asal ${halamanAsal} tidak ditemukan.`;
-      }
-
-      return;
-    }
-
-    /* =========================
-       AKTIFKAN INGESTION
-       ========================= */
-
-    const statusIngestionAktif =
-      await setStatusIngestionBuku(
-        bookId,
-        "ingesting"
-      );
-
-    if (!statusIngestionAktif) {
-
-      throw new Error(
-        "Status ingestion gagal diubah ke ingesting."
-      );
-    }
-
-    try {
-
-      await tampilkanStatusIngestionKelolaHalaman(
-        bookId
-      );
-
-    } catch (statusUiError) {
-
-      console.warn(
-        "Status ingestion aktif, tetapi tampilan status belum berhasil diperbarui:",
-        statusUiError
-      );
-    }
-
-    /* =========================
-       PINDAHKAN HALAMAN
-       ========================= */
-
-    const {
-      error: moveError
-    } = await db.rpc(
+  const {
+    error: moveError
+  } = await db.rpc(
       "move_incremental_book_page",
       {
         p_book_id:
@@ -12421,26 +10998,14 @@ async function pindahkanHalamanBuku() {
     );
 
     if (moveError) {
-
       throw new Error(
         "Pemindahan halaman gagal: " +
         moveError.message
       );
     }
 
-    /*
-     * RPC berhasil.
-     */
-    pemindahanBerhasil =
-      true;
-
-    /* =========================
-       SIMPAN UNDO
-       ========================= */
-
     aksiUploadHalamanTerakhir = {
-      tipe:
-        "move",
+      tipe: "move",
 
       bookId:
         bookId,
@@ -12461,89 +11026,12 @@ async function pindahkanHalamanBuku() {
         book.file_url
     };
 
-    modePindahHalamanAktif =
-      false;
-
-    halamanAsalPindah =
-      null;
+    modePindahHalamanAktif = false;
+    halamanAsalPindah = null;
 
     if (pageNumberInput) {
-
-      pageNumberInput.value =
-        "";
+      pageNumberInput.value = "";
     }
-
-    /* =========================
-       VERIFIKASI HASIL RPC
-       ========================= */
-
-    try {
-
-      const {
-        data: halamanSesudahPindah,
-        error: verifyMoveError
-      } = await db
-        .from(
-          "book_pages"
-        )
-        .select(`
-          id,
-          page_number
-        `)
-        .eq(
-          "id",
-          halamanSumber.id
-        )
-        .maybeSingle();
-
-      if (verifyMoveError) {
-
-        throw new Error(
-          "Gagal memverifikasi hasil pemindahan: " +
-          verifyMoveError.message
-        );
-      }
-
-      if (!halamanSesudahPindah) {
-
-        throw new Error(
-          "Halaman sumber tidak ditemukan setelah pemindahan."
-        );
-      }
-
-      if (
-        Number(
-          halamanSesudahPindah.page_number
-        ) !==
-        halamanTujuan
-      ) {
-
-        throw new Error(
-          "Posisi halaman setelah pemindahan tidak sesuai. " +
-          `Diharapkan ${halamanTujuan}, ` +
-          `tetapi ditemukan ${halamanSesudahPindah.page_number}.`
-        );
-      }
-
-    } catch (verifyError) {
-
-      console.error(
-        "Pemindahan selesai tetapi verifikasi hasil mengalami masalah:",
-        verifyError
-      );
-
-      /*
-       * Jangan catat ke ingestion dulu.
-       * sinkronkanProgressIngestionBuku()
-       * dapat menghapus last_error jika sukses.
-       */
-      verificationWarning =
-        verifyError;
-    }
-
-    /* =========================
-       RESET OUTPUT EPUB
-       ========================= */
 
     try {
 
@@ -12559,117 +11047,47 @@ async function pindahkanHalamanBuku() {
       );
     }
 
-    /* =========================
-       SINKRONISASI INGESTION
-       ========================= */
+    let ingestionMoveSyncWarning = null;
 
-    try {
+try {
 
-      await sinkronkanProgressIngestionBuku(
-        bookId
-      );
+  await sinkronkanProgressIngestionBuku(
+    bookId
+  );
 
-    } catch (syncError) {
+} catch (syncError) {
 
-      console.error(
-        "Sinkronisasi progress ingestion setelah pindah gagal:",
-        syncError
-      );
+  console.error(
+    "Sinkronisasi progress ingestion setelah pindah gagal:",
+    syncError
+  );
 
-      /*
-       * Sama seperti verificationWarning:
-       * pencatatan final dilakukan setelah
-       * blok sync selesai.
-       */
-      ingestionMoveSyncWarning =
-        syncError;
-    }
+  try {
 
-    /* =========================
-       CATAT ERROR FINAL INGESTION
-       ========================= */
+    await catatErrorIngestionBuku(
+      bookId,
+      syncError
+    );
 
-    if (
-      verificationWarning ||
-      ingestionMoveSyncWarning
-    ) {
+  } catch (trackingError) {
 
-      let errorIngestionAkhir;
+    console.error(
+      "Pencatatan error ingestion gagal:",
+      trackingError
+    );
+  }
 
-      if (
-        verificationWarning &&
-        ingestionMoveSyncWarning
-      ) {
+  ingestionMoveSyncWarning =
+    syncError;
+}
 
-        errorIngestionAkhir =
-          new Error(
-            "Pemindahan halaman tersimpan, " +
-            "tetapi verifikasi dan sinkronisasi ingestion mengalami masalah. " +
-            "Verifikasi: " +
-            (
-              verificationWarning?.message ||
-              "Error tidak diketahui."
-            ) +
-            " | Sinkronisasi: " +
-            (
-              ingestionMoveSyncWarning?.message ||
-              "Error tidak diketahui."
-            )
-          );
+    await tampilkanBuku();
 
-      } else if (
-        verificationWarning
-      ) {
+    await muatDaftarBukuAdmin();
 
-        errorIngestionAkhir =
-          verificationWarning;
-
-      } else {
-
-        errorIngestionAkhir =
-          ingestionMoveSyncWarning;
-      }
-
-      /*
-       * Pencatatan dilakukan SETELAH sync,
-       * sehingga last_error tidak akan
-       * langsung dihapus oleh sync sukses.
-       */
-      await catatErrorDenganAman(
-        errorIngestionAkhir
-      );
-    }
-
-    /* =========================
-       REFRESH UI
-       ========================= */
-
-    try {
-
-      await tampilkanBuku();
-
-      await muatDaftarBukuAdmin();
-
-      await bukaKelolaHalaman(
-        bookId
-      );
-
-    } catch (uiError) {
-
-      console.error(
-        "Halaman berhasil dipindahkan, tetapi refresh UI gagal:",
-        uiError
-      );
-
-      refreshUiWarning =
-        uiError;
-    }
-
-    updateTombolUploadHalaman();
-
-    /* =========================
-       PESAN SUKSES
-       ========================= */
+    await bukaKelolaHalaman(
+      bookId
+    );
 
     const pesanBaru =
       document.getElementById(
@@ -12679,31 +11097,11 @@ async function pindahkanHalamanBuku() {
     if (pesanBaru) {
 
       pesanBaru.textContent =
-        `✅ Halaman ${halamanAsal} berhasil dipindahkan ke posisi ${halamanTujuan}. ` +
-        "Anda masih dapat menggunakan Batal Pindah Halaman.";
+        `✅ Halaman ${halamanAsal} berhasil dipindahkan ke posisi ${halamanTujuan}.`;
 
-      if (
-        verificationWarning
-      ) {
-
-        pesanBaru.textContent +=
-          " ⚠️ Verifikasi hasil pemindahan perlu diperiksa.";
-      }
-
-      if (
-        ingestionMoveSyncWarning
-      ) {
-
+      if (ingestionMoveSyncWarning) {
         pesanBaru.textContent +=
           " ⚠️ Progress ingestion belum tersinkron.";
-      }
-
-      if (
-        refreshUiWarning
-      ) {
-
-        pesanBaru.textContent +=
-          " ⚠️ Data berhasil dipindahkan, tetapi tampilan belum sepenuhnya diperbarui.";
       }
     }
 
@@ -12714,39 +11112,38 @@ async function pindahkanHalamanBuku() {
       error
     );
 
-    await catatErrorDenganAman(
-      error
+    try {
+
+      await catatErrorIngestionBuku(
+        bookId,
+        error
+      );
+
+    } catch (trackingError) {
+
+      console.error(
+        "Pencatatan error ingestion gagal:",
+        trackingError
+      );
+    }
+
+    await tampilkanStatusIngestionKelolaHalaman(
+      bookId
     );
 
-    updateTombolUploadHalaman();
-
     if (message) {
-
       message.textContent =
-        pemindahanBerhasil
-          ? (
-              "⚠️ Pemindahan halaman sudah tersimpan, " +
-              "tetapi proses lanjutan mengalami masalah: " +
-              (
-                error?.message ||
-                "Error tidak diketahui."
-              )
-            )
-          : (
-              "❌ " +
-              (
-                error?.message ||
-                "Pindahkan halaman gagal."
-              )
-            );
+        "❌ " +
+        (
+          error?.message ||
+          "Pindahkan halaman gagal."
+        );
     }
 
   } finally {
 
     if (tombol) {
-
-      tombol.disabled =
-        false;
+      tombol.disabled = false;
     }
 
     updateTombolUploadHalaman();
@@ -14044,19 +12441,65 @@ async function validasiIntegritasHalaman(
 
 async function buatPdfFinalBuku() {
 
-  const bookId =
-    Number(
-      document
-        .getElementById(
-          "book-pages-book-id"
-        )
-        ?.value || 0
-    );
-
-  const message =
+const bookId =
+  Number(
     document.getElementById(
-      "book-pages-message"
-    );
+      "book-pages-book-id"
+    )?.value || 0
+  );
+
+const message =
+  document.getElementById(
+    "book-pages-message"
+  );
+
+if (!bookId) {
+
+  if (message) {
+    message.textContent =
+      "❌ ID buku tidak ditemukan.";
+  }
+
+  return;
+}
+
+const hasilValidasi =
+  await validasiIntegritasHalaman(
+    bookId
+  );
+
+if (!hasilValidasi.valid) {
+
+  if (message) {
+    message.textContent =
+      "❌ PDF Final tidak dapat dibuat. " +
+      hasilValidasi.message;
+
+    requestAnimationFrame(() => {
+      message.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+    });
+  }
+
+  return;
+}
+
+if (message) {
+  message.textContent =
+    "✅ Integritas halaman valid. " +
+    hasilValidasi.message;
+}
+
+const bolehFinalisasi =
+  await selesaikanAksiUploadTerakhir(
+    "membuat PDF Final"
+  );
+
+if (!bolehFinalisasi) {
+  return;
+}
 
   const finalizeButton =
     document.getElementById(
@@ -14068,762 +12511,283 @@ async function buatPdfFinalBuku() {
       "book-page-upload-btn"
     );
 
-  /* =========================
-     VALIDASI ID
-     ========================= */
-
   if (
-    !Number.isInteger(bookId) ||
-    bookId < 1
+    typeof PDFLib === "undefined" ||
+    !PDFLib.PDFDocument
   ) {
-
-    if (message) {
-
-      message.textContent =
-        "❌ ID buku tidak ditemukan.";
-    }
-
+    message.textContent =
+      "❌ Mesin PDF belum berhasil dimuat.";
     return;
   }
 
-  /* =========================
-     STATE FINALISASI
-     ========================= */
+  const {
+    data: { user },
+    error: userError
+  } = await db.auth.getUser();
 
-  let finalStoragePath =
-    null;
-
-  let finalFilePerluDibersihkan =
-    false;
-
-  let bukuSudahDiubahComplete =
-    false;
-
-  let finalisasiDataBerhasil =
-    false;
-
-  let refreshUiWarning =
-    null;
-
-  let bookSebelumFinalisasi =
-    null;
-
-  let hasilEpubFinalisasi =
-    null;
-
-  /* =========================
-     HELPER MESSAGE
-     ========================= */
-
-  function setMessage(teks) {
-
-    if (message) {
-
-      message.textContent =
-        teks;
-    }
-  }
-
-  /* =========================
-     HELPER ERROR TRACKING
-     ========================= */
-
-  async function catatErrorDenganAman(
-    error
+  if (
+    userError ||
+    !user
   ) {
 
-    try {
-
-      const berhasilDicatat =
-        await catatErrorIngestionBuku(
-          bookId,
-          error
-        );
-
-      if (!berhasilDicatat) {
-
-        console.warn(
-          "Error ingestion finalisasi tidak berhasil dicatat.",
-          {
-            bookId:
-              bookId,
-
-            error:
-              error
-          }
-        );
-      }
-
-    } catch (trackingError) {
-
-      console.error(
-        "Pencatatan error ingestion finalisasi gagal:",
-        trackingError
-      );
-    }
-
-    try {
-
-      await tampilkanStatusIngestionKelolaHalaman(
-        bookId
-      );
-
-    } catch (statusError) {
-
-      console.error(
-        "Gagal memperbarui tampilan status ingestion finalisasi:",
-        statusError
-      );
-    }
-  }
-
-  /* =========================
-     HELPER CLEANUP PDF FINAL
-     ========================= */
-
-  async function bersihkanPdfFinalBaru() {
-
-    if (
-      !finalFilePerluDibersihkan ||
-      !finalStoragePath
-    ) {
-
-      return true;
-    }
-
-    try {
-
-      const {
-        error: removeError
-      } = await db.storage
-        .from(
-          "book-files"
-        )
-        .remove([
-          finalStoragePath
-        ]);
-
-      if (removeError) {
-
-        console.error(
-          "Cleanup PDF final baru gagal:",
-          removeError
-        );
-
-        return false;
-      }
-
-      finalFilePerluDibersihkan =
-        false;
-
-      finalStoragePath =
-        null;
-
-      return true;
-
-    } catch (cleanupError) {
-
-      console.error(
-        "Cleanup PDF final baru gagal:",
-        cleanupError
-      );
-
-      return false;
-    }
-  }
-
-  /* =========================
-     HELPER ROLLBACK BUKU
-     ========================= */
-
-  async function rollbackBukuKeKondisiSebelumnya() {
-
-    if (!bookSebelumFinalisasi) {
-
-      throw new Error(
-        "Data kondisi buku sebelum finalisasi tidak tersedia."
-      );
-    }
-
-    const statusSebelumnya =
-      bookSebelumFinalisasi
-        .upload_status ||
-      "draft";
-
-    const fileUrlSebelumnya =
-      bookSebelumFinalisasi
-        .file_url ??
-      null;
-
-    const {
-      data: rollbackBook,
-      error: rollbackBookError
-    } = await db
-      .from(
-        "books"
-      )
-      .update({
-        upload_status:
-          statusSebelumnya,
-
-        file_url:
-          fileUrlSebelumnya
-      })
-      .eq(
-        "id",
-        bookId
-      )
-      .select(`
-        id,
-        upload_status,
-        file_url
-      `)
-      .maybeSingle();
-
-    if (rollbackBookError) {
-
-      throw new Error(
-        "Rollback status buku gagal: " +
-        rollbackBookError.message
-      );
-    }
-
-    if (!rollbackBook) {
-
-      throw new Error(
-        "Rollback status buku tidak terkonfirmasi."
-      );
-    }
-
-    const fileUrlRollback =
-      rollbackBook.file_url ??
-      null;
-
-    if (
-      rollbackBook.upload_status !==
-        statusSebelumnya ||
-      fileUrlRollback !==
-        fileUrlSebelumnya
-    ) {
-
-      throw new Error(
-        "Rollback buku tidak menghasilkan kondisi sebelumnya."
-      );
-    }
-
-    /*
-     * DB sudah pasti tidak lagi
-     * menunjuk PDF final baru.
-     */
-    bukuSudahDiubahComplete =
-      false;
-
-    finalFilePerluDibersihkan =
-      true;
-
-    return rollbackBook;
-  }
-
-  try {
-
-    /* =========================
-       VALIDASI INTEGRITAS
-       ========================= */
-
-    let hasilValidasi;
-
-    try {
-
-      hasilValidasi =
-        await validasiIntegritasHalaman(
-          bookId
-        );
-
-    } catch (validationError) {
-
-      throw new Error(
-        "Validasi integritas halaman gagal: " +
-        (
-          validationError?.message ||
-          "Error tidak diketahui."
-        )
-      );
-    }
-
-    if (
-      !hasilValidasi?.valid
-    ) {
-
-      setMessage(
-        "❌ PDF Final tidak dapat dibuat. " +
-        (
-          hasilValidasi?.message ||
-          "Integritas halaman tidak valid."
-        )
-      );
-
-      if (message) {
-
-        requestAnimationFrame(() => {
-
-          message.scrollIntoView({
-            behavior:
-              "smooth",
-
-            block:
-              "center"
-          });
-        });
-      }
-
-      return;
-    }
-
-    setMessage(
-      "✅ Integritas halaman valid. " +
-      hasilValidasi.message
-    );
-
-    /* =========================
-       KUNCI PERUBAHAN TERAKHIR
-       ========================= */
-
-    const bolehFinalisasi =
-      await selesaikanAksiUploadTerakhir(
-        "membuat PDF Final"
-      );
-
-    if (!bolehFinalisasi) {
-      return;
-    }
-
-    /* =========================
-       CEK PDFLIB
-       ========================= */
-
-    if (
-      typeof PDFLib ===
-        "undefined" ||
-      !PDFLib.PDFDocument
-    ) {
-
-      throw new Error(
-        "Mesin PDF belum berhasil dimuat."
-      );
-    }
-
-    /* =========================
-       AUTH ADMIN
-       ========================= */
-
-    const {
-      data: userData,
-      error: userError
-    } =
-      await db.auth.getUser();
-
-    const user =
-      userData?.user;
-
-    if (
-      userError ||
-      !user
-    ) {
-
-      throw new Error(
+    const errorAdmin =
+      new Error(
         "Sesi Admin tidak ditemukan: " +
         (
           userError?.message ||
           "User tidak tersedia."
         )
       );
-    }
 
-    /* =========================
-       AMBIL DATA BUKU
-       ========================= */
-
-    const {
-      data: book,
-      error: bookError
-    } = await db
-      .from(
-        "books"
-      )
-      .select(`
-        id,
-        title,
-        total_pages,
-        upload_mode,
-        upload_status,
-        file_url
-      `)
-      .eq(
-        "id",
-        bookId
-      )
-      .maybeSingle();
-
-    if (bookError) {
-
-      throw new Error(
-        "Gagal membaca data buku: " +
-        bookError.message
-      );
-    }
-
-    if (!book) {
-
-      setMessage(
-        "❌ Data buku tidak ditemukan."
-      );
-
-      return;
-    }
-
-    if (
-      book.upload_mode !==
-      "incremental"
-    ) {
-
-      setMessage(
-        "⚠️ Buku ini bukan mode Upload Bertahap."
-      );
-
-      return;
-    }
-
-    bookSebelumFinalisasi = {
-      upload_status:
-        book.upload_status,
-
-      file_url:
-        book.file_url
-    };
-
-    /* =========================
-       AMBIL HALAMAN
-       ========================= */
-
-    const {
-      data: pages,
-      error: pagesError
-    } = await db
-      .from(
-        "book_pages"
-      )
-      .select(`
-        id,
-        page_number,
-        file_url,
-        storage_path
-      `)
-      .eq(
-        "book_id",
-        bookId
-      )
-      .order(
-        "page_number",
-        {
-          ascending:
-            true
-        }
-      );
-
-    if (pagesError) {
-
-      throw new Error(
-        "Gagal mengambil daftar halaman: " +
-        pagesError.message
-      );
-    }
-
-    const totalHalaman =
-      Number(
-        book.total_pages || 0
-      );
-
-    if (
-      !Number.isInteger(
-        totalHalaman
-      ) ||
-      totalHalaman < 1
-    ) {
-
-      setMessage(
-        "⚠️ Total halaman buku belum valid."
-      );
-
-      return;
-    }
-
-    if (
-      !Array.isArray(pages) ||
-      pages.length !==
-        totalHalaman
-    ) {
-
-      setMessage(
-        "⚠️ Semua halaman harus lengkap sebelum membuat PDF final."
-      );
-
-      return;
-    }
-
-    for (
-      let nomor = 1;
-      nomor <= totalHalaman;
-      nomor++
-    ) {
-
-      const halaman =
-        pages.find(
-          (page) =>
-            Number(
-              page.page_number
-            ) === nomor
-        );
-
-      if (!halaman) {
-
-        setMessage(
-          `⚠️ Halaman ${nomor} belum tersedia.`
-        );
-
-        return;
-      }
-
-      if (
-        typeof halaman.file_url !==
-          "string" ||
-        halaman.file_url.trim() ===
-          ""
-      ) {
-
-        throw new Error(
-          `URL file Halaman ${nomor} tidak tersedia.`
-        );
-      }
-    }
-
-    /* =========================
-       DISABLE TOMBOL
-       ========================= */
-
-    if (finalizeButton) {
-
-      finalizeButton.disabled =
-        true;
-
-      finalizeButton.textContent =
-        "⏳ Membuat PDF...";
-    }
-
-    if (uploadButton) {
-
-      uploadButton.disabled =
-        true;
-    }
-
-    setMessage(
-      "⏳ Menggabungkan halaman menjadi PDF final..."
+    console.error(
+      "Gagal membaca sesi Admin:",
+      errorAdmin
     );
-
-    /* =========================
-       STATUS PROCESSING
-       ========================= */
-
-    const statusProcessingAktif =
-      await setStatusIngestionBuku(
-        bookId,
-        "processing"
-      );
-
-    if (!statusProcessingAktif) {
-
-      throw new Error(
-        "Status ingestion gagal diubah ke processing."
-      );
-    }
 
     try {
 
-      await tampilkanStatusIngestionKelolaHalaman(
-        bookId
+      await catatErrorIngestionBuku(
+        bookId,
+        errorAdmin
       );
 
-    } catch (statusUiError) {
+    } catch (trackingError) {
 
-      console.warn(
-        "Status processing aktif, tetapi tampilan ingestion belum berhasil diperbarui:",
-        statusUiError
-      );
-    }
-
-    /* =========================
-       PASTIKAN EPUB FINAL
-       ========================= */
-
-    setMessage(
-      "⏳ Menyiapkan EPUB final..."
-    );
-
-    hasilEpubFinalisasi =
-      await pastikanOutputEpubFinalisasi({
-        bookId:
-          bookId,
-
-        language:
-          "id"
-      });
-
-    if (
-      hasilEpubFinalisasi.reused
-    ) {
-
-      console.log(
-        "EPUB final sudah aktif. Output lama digunakan kembali.",
-        hasilEpubFinalisasi.output
-      );
-
-    } else if (
-      hasilEpubFinalisasi.recovered
-    ) {
-
-      console.log(
-        "EPUB final berhasil dipulihkan otomatis dari masalah Storage.",
-        hasilEpubFinalisasi.output
-      );
-
-    } else if (
-      hasilEpubFinalisasi.rebuilt
-    ) {
-
-      console.log(
-        "EPUB final berhasil dibangun ulang.",
-        hasilEpubFinalisasi.output
+      console.error(
+        "Pencatatan error ingestion gagal:",
+        trackingError
       );
     }
 
-    /* =========================
-       SINKRON EPUB KE BOOKS
-       ========================= */
-
-    const bukuDenganEpub =
-      await sinkronkanOutputEpubKeBuku(
-        bookId
-      );
-
-    console.log(
-      "Metadata EPUB berhasil disinkronkan ke books.",
-      bukuDenganEpub
+    await tampilkanStatusIngestionKelolaHalaman(
+      bookId
     );
 
-    /* =========================
-       BUAT PDF FINAL
-       ========================= */
+    message.textContent =
+      "❌ Sesi Admin tidak ditemukan.";
 
-    const {
-      PDFDocument
-    } = PDFLib;
+    return;
+  }
+
+  const {
+    data: book,
+    error: bookError
+  } = await db
+    .from("books")
+    .select(`
+      id,
+      title,
+      total_pages,
+      upload_mode,
+      upload_status,
+      file_url
+    `)
+    .eq("id", bookId)
+    .maybeSingle();
+
+  if (
+    bookError ||
+    !book
+  ) {
+    message.textContent =
+      "❌ Data buku tidak ditemukan.";
+    return;
+  }
+
+  if (
+    book.upload_mode !==
+    "incremental"
+  ) {
+    message.textContent =
+      "⚠️ Buku ini bukan mode Upload Bertahap.";
+    return;
+  }
+
+  const {
+    data: pages,
+    error: pagesError
+  } = await db
+    .from("book_pages")
+    .select(`
+      page_number,
+      file_url,
+      storage_path
+    `)
+    .eq("book_id", bookId)
+    .order("page_number", {
+      ascending: true
+    });
+
+  if (pagesError) {
+    console.error(
+      "Gagal mengambil halaman:",
+      pagesError
+    );
+
+    message.textContent =
+      "❌ Gagal mengambil daftar halaman.";
+    return;
+  }
+
+  const totalHalaman =
+    Number(book.total_pages || 0);
+
+  if (
+    !totalHalaman ||
+    !pages ||
+    pages.length !== totalHalaman
+  ) {
+    message.textContent =
+      "⚠️ Semua halaman harus lengkap sebelum membuat PDF final.";
+    return;
+  }
+
+  for (
+    let nomor = 1;
+    nomor <= totalHalaman;
+    nomor++
+  ) {
+
+    const halaman =
+      pages.find(
+        (page) =>
+          Number(page.page_number) ===
+          nomor
+      );
+
+    if (!halaman) {
+      message.textContent =
+        `⚠️ Halaman ${nomor} belum tersedia.`;
+      return;
+    }
+  }
+
+  finalizeButton.disabled = true;
+
+  if (uploadButton) {
+    uploadButton.disabled = true;
+  }
+
+  finalizeButton.textContent =
+    "⏳ Membuat PDF...";
+
+  message.textContent =
+    "⏳ Menggabungkan halaman menjadi PDF final...";
+
+  let finalStoragePath = null;
+
+try {
+
+  const statusProcessingAktif =
+    await setStatusIngestionBuku(
+      bookId,
+      "processing"
+    );
+
+  if (!statusProcessingAktif) {
+
+    console.warn(
+      "Status ingestion belum berhasil diubah ke processing."
+    );
+
+  } else {
+
+    await tampilkanStatusIngestionKelolaHalaman(
+      bookId
+    );
+  }
+
+    message.textContent =
+    "⏳ Menyiapkan EPUB final...";
+
+  const hasilEpubFinalisasi =
+    await pastikanOutputEpubFinalisasi({
+      bookId,
+      language: "id"
+    });
+
+  if (
+  hasilEpubFinalisasi.reused
+) {
+
+  console.log(
+    "EPUB final sudah aktif. Output lama digunakan kembali.",
+    hasilEpubFinalisasi.output
+  );
+
+} else if (
+  hasilEpubFinalisasi.recovered
+) {
+
+  console.log(
+    "EPUB final berhasil dipulihkan otomatis dari masalah Storage.",
+    hasilEpubFinalisasi.output
+  );
+
+} else if (
+  hasilEpubFinalisasi.rebuilt
+) {
+
+  console.log(
+    "EPUB final berhasil dibangun ulang.",
+    hasilEpubFinalisasi.output
+  );
+}
+
+const bukuDenganEpub =
+  await sinkronkanOutputEpubKeBuku(
+    bookId
+  );
+
+console.log(
+  "Metadata EPUB berhasil disinkronkan ke books.",
+  bukuDenganEpub
+);
+
+  const {
+    PDFDocument
+  } = PDFLib;
 
     const finalPdf =
       await PDFDocument.create();
 
-    for (
-      const page of pages
-    ) {
+    for (const page of pages) {
 
-      setMessage(
-        `⏳ Memproses halaman ${page.page_number} dari ${totalHalaman}...`
-      );
+      message.textContent =
+        `⏳ Memproses halaman ${page.page_number} dari ${totalHalaman}...`;
 
-      let response;
-
-      try {
-
-        response =
-          await fetch(
-            page.file_url,
-            {
-              cache:
-                "no-store"
-            }
-          );
-
-      } catch (fetchError) {
-
-        throw new Error(
-          `Gagal mengambil file Halaman ${page.page_number}: ` +
-          (
-            fetchError?.message ||
-            "File tidak dapat diakses."
-          )
+      const response =
+        await fetch(
+          page.file_url,
+          {
+            cache: "no-store"
+          }
         );
-      }
 
       if (!response.ok) {
-
         throw new Error(
-          `Gagal mengambil file Halaman ${page.page_number}. ` +
-          `HTTP ${response.status}.`
+          `Gagal mengambil file halaman ${page.page_number}.`
         );
       }
 
-      let sourceBytes;
+      const sourceBytes =
+        await response.arrayBuffer();
 
-      try {
-
-        sourceBytes =
-          await response.arrayBuffer();
-
-      } catch (readError) {
-
-        throw new Error(
-          `Gagal membaca file Halaman ${page.page_number}: ` +
-          (
-            readError?.message ||
-            "Error tidak diketahui."
-          )
+      const sourcePdf =
+        await PDFDocument.load(
+          sourceBytes
         );
-      }
-
-      let sourcePdf;
-
-      try {
-
-        sourcePdf =
-          await PDFDocument.load(
-            sourceBytes
-          );
-
-      } catch (pdfError) {
-
-        throw new Error(
-          `PDF Halaman ${page.page_number} tidak dapat dibaca: ` +
-          (
-            pdfError?.message ||
-            "File PDF tidak valid."
-          )
-        );
-      }
 
       const sourcePageCount =
         sourcePdf.getPageCount();
 
-      if (
-        sourcePageCount !== 1
-      ) {
-
+      if (sourcePageCount !== 1) {
         throw new Error(
-          `File untuk Halaman ${page.page_number} berisi ${sourcePageCount} halaman. ` +
-          "Setiap slot halaman harus menggunakan PDF satu halaman."
+          `File untuk Halaman ${page.page_number} berisi ${sourcePageCount} halaman. Setiap slot halaman harus menggunakan PDF satu halaman.`
         );
       }
 
-      const [
-        copiedPage
-      ] =
+      const [copiedPage] =
         await finalPdf.copyPages(
           sourcePdf,
           [0]
@@ -14841,37 +12805,18 @@ async function buatPdfFinalBuku() {
       finalPageCount !==
       totalHalaman
     ) {
-
       throw new Error(
-        `Jumlah halaman PDF final tidak sesuai. ` +
-        `Ditemukan ${finalPageCount}, ` +
-        `seharusnya ${totalHalaman}.`
+        `Jumlah halaman PDF final tidak sesuai. Ditemukan ${finalPageCount}, seharusnya ${totalHalaman}.`
       );
     }
 
-    /* =========================
-       GENERATE PDF BLOB
-       ========================= */
-
-    setMessage(
-      "⏳ Menyimpan PDF final..."
-    );
+    message.textContent =
+      "⏳ Menyimpan PDF final...";
 
     const finalBytes =
       await finalPdf.save({
-        useObjectStreams:
-          true
+        useObjectStreams: true
       });
-
-    if (
-      !finalBytes ||
-      finalBytes.length < 1
-    ) {
-
-      throw new Error(
-        "PDF final berhasil diproses tetapi hasil file kosong."
-      );
-    }
 
     const finalBlob =
       new Blob(
@@ -14882,118 +12827,66 @@ async function buatPdfFinalBuku() {
         }
       );
 
-    if (
-      !Number.isFinite(
-        Number(finalBlob.size)
-      ) ||
-      finalBlob.size < 1
-    ) {
-
-      throw new Error(
-        "Ukuran PDF final tidak valid."
-      );
-    }
-
-    /* =========================
-       UPLOAD PDF FINAL
-       ========================= */
-
     finalStoragePath =
       `${user.id}/incremental/${bookId}/final-${Date.now()}.pdf`;
 
     const {
       error: finalUploadError
     } = await db.storage
-      .from(
-        "book-files"
-      )
+      .from("book-files")
       .upload(
         finalStoragePath,
         finalBlob,
         {
-          cacheControl:
-            "3600",
-
-          upsert:
-            false,
-
+          cacheControl: "3600",
+          upsert: false,
           contentType:
             "application/pdf"
         }
       );
 
     if (finalUploadError) {
-
-      finalStoragePath =
-        null;
-
       throw new Error(
         "Upload PDF final gagal: " +
         finalUploadError.message
       );
     }
 
-    finalFilePerluDibersihkan =
-      true;
-
     const {
       data: finalPublicData
     } = db.storage
-      .from(
-        "book-files"
-      )
+      .from("book-files")
       .getPublicUrl(
         finalStoragePath
       );
 
     const finalUrl =
-      typeof finalPublicData
-        ?.publicUrl ===
-        "string"
-        ? finalPublicData.publicUrl.trim()
-        : "";
+      finalPublicData.publicUrl;
 
-    if (!finalUrl) {
-
-      throw new Error(
-        "URL publik PDF final gagal dibuat."
-      );
-    }
-
-    /* =========================
-       UPDATE BUKU → COMPLETE
-       ========================= */
-
-    setMessage(
-      "⏳ Menyelesaikan buku..."
-    );
+    message.textContent =
+      "⏳ Menyelesaikan buku...";
 
     const {
-      data: completedBook,
       error: updateBookError
     } = await db
-      .from(
-        "books"
-      )
+      .from("books")
       .update({
         file_url:
           finalUrl,
-
         upload_status:
           "complete"
       })
-      .eq(
-        "id",
-        bookId
-      )
-      .select(`
-        id,
-        upload_status,
-        file_url
-      `)
-      .maybeSingle();
+      .eq("id", bookId);
 
     if (updateBookError) {
+
+      await db.storage
+        .from("book-files")
+        .remove([
+          finalStoragePath
+        ]);
+
+      finalStoragePath = null;
 
       throw new Error(
         "Gagal menyelesaikan buku: " +
@@ -15001,218 +12894,92 @@ async function buatPdfFinalBuku() {
       );
     }
 
-    if (!completedBook) {
+let ingestionFinalizeSyncWarning = null;
 
-      throw new Error(
-        "Update buku menjadi complete tidak terkonfirmasi."
-      );
-    }
+try {
 
-    /*
-     * Mulai titik ini DB sudah terbukti
-     * mengembalikan row hasil update.
-     *
-     * Anggap buku mungkin sudah menunjuk
-     * PDF baru sampai rollback terbukti
-     * berhasil.
-     */
-    bukuSudahDiubahComplete =
-      true;
+  await sinkronkanProgressIngestionBuku(
+    bookId
+  );
 
-    finalFilePerluDibersihkan =
-      false;
+const hasilFinalCompletionGate =
+  await validasiKesiapanFinalIngestionBuku(
+    bookId
+  );
 
-    if (
-      completedBook.upload_status !==
-        "complete" ||
-      completedBook.file_url !==
-        finalUrl
-    ) {
+if (
+  !hasilFinalCompletionGate.valid
+) {
+  throw new Error(
+    "Final Completion Gate tidak lolos."
+  );
+}
 
-      const mismatchError =
-        new Error(
-          "Status buku atau URL PDF final tidak sesuai setelah update."
-        );
+const statusCompleteAktif =
+  await setStatusIngestionBuku(
+    bookId,
+    "complete"
+  );
 
-      try {
+  if (!statusCompleteAktif) {
+    throw new Error(
+      "Status ingestion final gagal diubah menjadi complete."
+    );
+  }
 
-        await rollbackBukuKeKondisiSebelumnya();
+  await tampilkanStatusIngestionKelolaHalaman(
+    bookId
+  );
 
-      } catch (rollbackError) {
+} catch (syncError) {
 
-        throw new Error(
-          mismatchError.message +
-          " | Rollback buku juga gagal: " +
-          (
-            rollbackError?.message ||
-            "Error tidak diketahui."
-          )
-        );
-      }
+  console.error(
+    "Sinkronisasi ingestion setelah finalisasi gagal:",
+    syncError
+  );
 
-      throw mismatchError;
-    }
+  try {
 
-    /* =========================
-       FINAL COMPLETION PIPELINE
-       ========================= */
+    await catatErrorIngestionBuku(
+      bookId,
+      syncError
+    );
 
-    try {
+  } catch (trackingError) {
 
-      /*
-       * Karena books sekarang complete,
-       * sinkronisasi harus menghasilkan
-       * session status ready.
-       */
-      await sinkronkanProgressIngestionBuku(
-        bookId
-      );
+    console.error(
+      "Pencatatan error ingestion gagal:",
+      trackingError
+    );
+  }
 
-      const hasilFinalCompletionGate =
-        await validasiKesiapanFinalIngestionBuku(
-          bookId
-        );
+  ingestionFinalizeSyncWarning =
+    syncError;
+}
 
-      if (
-        !hasilFinalCompletionGate?.valid
-      ) {
+    await tampilkanBuku();
 
-        throw new Error(
-          "Final Completion Gate tidak lolos."
-        );
-      }
+    await muatDaftarBukuAdmin();
 
-      const statusCompleteAktif =
-        await setStatusIngestionBuku(
-          bookId,
-          "complete"
-        );
+    await bukaKelolaHalaman(
+      bookId
+    );
 
-      if (!statusCompleteAktif) {
+    const statusEpubFinal =
+      hasilEpubFinalisasi.recovered
+        ? "EPUB final berhasil dipulihkan otomatis dari masalah Storage."
+        : hasilEpubFinalisasi.rebuilt
+          ? "EPUB final berhasil dibangun ulang."
+          : "EPUB final aktif digunakan kembali.";
 
-        throw new Error(
-          "Status ingestion final gagal diubah menjadi complete."
-        );
-      }
+    message.textContent =
+      `✅ Finalisasi berhasil. ` +
+      `${statusEpubFinal} ` +
+      `PDF final ${totalHalaman} halaman berhasil dibuat dan buku sudah berstatus Selesai.`;
 
-      finalisasiDataBerhasil =
-        true;
-
-    } catch (completionError) {
-
-      try {
-
-        await rollbackBukuKeKondisiSebelumnya();
-
-      } catch (rollbackError) {
-
-        /*
-         * Jangan hapus PDF baru.
-         * DB mungkin masih menunjuk file baru.
-         */
-        finalFilePerluDibersihkan =
-          false;
-
-        throw new Error(
-          "Final Completion Pipeline gagal, " +
-          "dan rollback status buku juga gagal: " +
-          (
-            rollbackError?.message ||
-            "Error tidak diketahui."
-          ) +
-          " | Error awal: " +
-          (
-            completionError?.message ||
-            "Error tidak diketahui."
-          )
-        );
-      }
-
-      throw new Error(
-        "Finalisasi belum dapat diselesaikan: " +
-        (
-          completionError?.message ||
-          "Final Completion Pipeline gagal."
-        )
-      );
-    }
-
-    /* =========================
-       REFRESH STATUS INGESTION
-       ========================= */
-
-    try {
-
-      await tampilkanStatusIngestionKelolaHalaman(
-        bookId
-      );
-
-    } catch (statusUiError) {
-
-      console.warn(
-        "Finalisasi selesai, tetapi tampilan status ingestion belum berhasil diperbarui:",
-        statusUiError
-      );
-    }
-
-    /* =========================
-       REFRESH UI
-       ========================= */
-
-    try {
-
-      await tampilkanBuku();
-
-      await muatDaftarBukuAdmin();
-
-      await bukaKelolaHalaman(
-        bookId
-      );
-
-    } catch (uiError) {
-
-      console.error(
-        "Finalisasi berhasil, tetapi refresh UI gagal:",
-        uiError
-      );
-
-      refreshUiWarning =
-        uiError;
-    }
-
-    /* =========================
-       PESAN SUKSES
-       ========================= */
-
-    const pesanBaru =
-      document.getElementById(
-        "book-pages-message"
-      );
-
-    if (pesanBaru) {
-
-      const statusEpubFinal =
-        hasilEpubFinalisasi
-          ?.recovered
-          ? "EPUB final berhasil dipulihkan otomatis dari masalah Storage."
-          : hasilEpubFinalisasi
-              ?.rebuilt
-            ? "EPUB final berhasil dibangun ulang."
-            : "EPUB final aktif digunakan kembali.";
-
-      pesanBaru.textContent =
-        "✅ Finalisasi berhasil. " +
-        statusEpubFinal +
-        " " +
-        `PDF final ${totalHalaman} halaman berhasil dibuat dan buku sudah berstatus Selesai.`;
-
-      if (
-        refreshUiWarning
-      ) {
-
-        pesanBaru.textContent +=
-          " ⚠️ Finalisasi tersimpan, tetapi tampilan belum sepenuhnya diperbarui.";
-      }
+    if (ingestionFinalizeSyncWarning) {
+      message.textContent +=
+        " ⚠️ Status ingestion belum tersinkron.";
     }
 
   } catch (error) {
@@ -15222,107 +12989,49 @@ async function buatPdfFinalBuku() {
       error
     );
 
-    /* =========================
-       CLEANUP PDF ORPHAN
-       ========================= */
+    try {
 
-    let cleanupWarning =
-      null;
+      await catatErrorIngestionBuku(
+        bookId,
+        error
+      );
 
-    if (
-      finalFilePerluDibersihkan
-    ) {
+    } catch (trackingError) {
 
-      const cleanupBerhasil =
-        await bersihkanPdfFinalBaru();
-
-      if (!cleanupBerhasil) {
-
-        cleanupWarning =
-          new Error(
-            "File PDF final baru belum berhasil dibersihkan dari Storage."
-          );
-      }
+      console.error(
+        "Pencatatan error ingestion gagal:",
+        trackingError
+      );
     }
 
-    /* =========================
-       ERROR INGESTION
-       ========================= */
-
-    let errorUntukDicatat =
-      error;
-
-    if (cleanupWarning) {
-
-      errorUntukDicatat =
-        new Error(
-          (
-            error?.message ||
-            "Pembuatan PDF final gagal."
-          ) +
-          " | Cleanup: " +
-          cleanupWarning.message
-        );
-    }
-
-    await catatErrorDenganAman(
-      errorUntukDicatat
+    await tampilkanStatusIngestionKelolaHalaman(
+      bookId
     );
 
-    /* =========================
-       PESAN ERROR
-       ========================= */
+    message.textContent =
+      "❌ " +
+      (
+        error?.message ||
+        "Pembuatan PDF final gagal."
+      );
 
-    if (message) {
+    finalizeButton.disabled = false;
 
-      if (
-        bukuSudahDiubahComplete &&
-        !finalisasiDataBerhasil
-      ) {
+} finally {
 
-        message.textContent =
-          "⚠️ Buku sempat diubah menjadi Selesai, " +
-          "tetapi finalisasi tidak dapat diselesaikan sepenuhnya. " +
-          "PDF baru dipertahankan karena database mungkin masih menunjuk file tersebut. " +
-          (
-            error?.message ||
-            "Periksa status buku dan ingestion."
-          );
+  finalizeButton.disabled =
+    false;
 
-      } else {
+  finalizeButton.textContent =
+    "📚 Buat PDF Final";
 
-        message.textContent =
-          "❌ " +
-          (
-            error?.message ||
-            "Pembuatan PDF final gagal."
-          );
-
-        if (cleanupWarning) {
-
-          message.textContent +=
-            " ⚠️ File PDF final baru belum berhasil dibersihkan dari Storage.";
-        }
-      }
-    }
-
-  } finally {
-
-    if (finalizeButton) {
-
-      finalizeButton.disabled =
-        false;
-
-      finalizeButton.textContent =
-        "📚 Buat PDF Final";
-    }
-
-    if (uploadButton) {
-
-      uploadButton.disabled =
-        false;
-    }
+  if (uploadButton) {
+    uploadButton.disabled =
+      false;
   }
+
+}
+
 }
 
 let idFokusEditBuku = null;
@@ -18330,15 +16039,10 @@ async function sinkronkanOutputEpubKeBuku(
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
-
     throw new Error(
       "ID buku sinkron EPUB tidak valid."
     );
   }
-
-  /* =========================
-     AMBIL OUTPUT EPUB SESSION
-     ========================= */
 
   const {
     data: session,
@@ -18348,8 +16052,6 @@ async function sinkronkanOutputEpubKeBuku(
       "book_ingestion_sessions"
     )
     .select(`
-      id,
-      book_id,
       output_format,
       output_url,
       output_storage_path,
@@ -18362,132 +16064,59 @@ async function sinkronkanOutputEpubKeBuku(
     )
     .maybeSingle();
 
-  if (sessionError) {
-
-    throw new Error(
-      "Gagal membaca session ingestion EPUB: " +
-      sessionError.message
-    );
-  }
-
-  if (!session) {
-
+  if (
+    sessionError ||
+    !session
+  ) {
     throw new Error(
       "Session ingestion EPUB tidak ditemukan."
     );
   }
-
-  if (
-    Number(
-      session.book_id
-    ) !== idBuku
-  ) {
-
-    throw new Error(
-      "Book ID pada session ingestion EPUB tidak sesuai."
-    );
-  }
-
-  /* =========================
-     NORMALISASI OUTPUT
-     ========================= */
-
-  const outputFormat =
-    typeof session.output_format ===
-      "string"
-      ? session.output_format.trim()
-      : "";
-
-  const outputUrl =
-    typeof session.output_url ===
-      "string"
-      ? session.output_url.trim()
-      : "";
-
-  const outputStoragePath =
-    typeof session.output_storage_path ===
-      "string"
-      ? session.output_storage_path.trim()
-      : "";
 
   const outputSize =
     Number(
       session.output_size || 0
     );
 
-  const outputCreatedAt =
-    session.output_created_at;
-
-  /* =========================
-     VALIDASI OUTPUT AKTIF
-     ========================= */
-
   if (
-    outputFormat !==
-    "epub"
-  ) {
-
-    throw new Error(
-      "Format output ingestion aktif bukan EPUB."
-    );
-  }
-
-  if (!outputUrl) {
-
-    throw new Error(
-      "URL output EPUB ingestion belum tersedia."
-    );
-  }
-
-  if (!outputStoragePath) {
-
-    throw new Error(
-      "Storage path output EPUB ingestion belum tersedia."
-    );
-  }
-
-  if (
+    session.output_format !==
+      "epub" ||
+    typeof session.output_url !==
+      "string" ||
+    session.output_url.trim() ===
+      "" ||
+    typeof session.output_storage_path !==
+      "string" ||
+    session.output_storage_path.trim() ===
+      "" ||
     !Number.isFinite(
       outputSize
     ) ||
-    outputSize < 1
+    outputSize < 1 ||
+    !session.output_created_at
   ) {
-
     throw new Error(
-      "Ukuran output EPUB ingestion tidak valid."
+      "Metadata EPUB aktif belum lengkap untuk disinkronkan ke buku."
     );
   }
-
-  if (!outputCreatedAt) {
-
-    throw new Error(
-      "Waktu pembuatan output EPUB ingestion belum tersedia."
-    );
-  }
-
-  /* =========================
-     UPDATE METADATA EPUB BUKU
-     ========================= */
 
   const {
     data: book,
     error: updateError
   } = await db
-    .from(
-      "books"
-    )
+    .from("books")
     .update({
       epub_url:
-        outputUrl,
+        session.output_url,
 
       epub_storage_path:
-        outputStoragePath,
+        session.output_storage_path,
 
       epub_size:
         outputSize,
 
       epub_created_at:
-        outputCreatedAt
+        session.output_created_at
     })
     .eq(
       "id",
@@ -18500,102 +16129,18 @@ async function sinkronkanOutputEpubKeBuku(
       epub_size,
       epub_created_at
     `)
-    .maybeSingle();
+    .single();
 
-  if (updateError) {
-
+  if (
+    updateError ||
+    !book
+  ) {
     throw new Error(
       "Metadata EPUB gagal disinkronkan ke buku: " +
-      updateError.message
-    );
-  }
-
-  if (!book) {
-
-    throw new Error(
-      "Metadata EPUB gagal disinkronkan karena data buku tidak ditemukan."
-    );
-  }
-
-  /* =========================
-     VERIFIKASI HASIL UPDATE
-     ========================= */
-
-  if (
-    Number(
-      book.id
-    ) !== idBuku
-  ) {
-
-    throw new Error(
-      "ID buku hasil sinkronisasi EPUB tidak sesuai."
-    );
-  }
-
-  const bookEpubUrl =
-    typeof book.epub_url ===
-      "string"
-      ? book.epub_url.trim()
-      : "";
-
-  const bookStoragePath =
-    typeof book.epub_storage_path ===
-      "string"
-      ? book.epub_storage_path.trim()
-      : "";
-
-  const bookEpubSize =
-    Number(
-      book.epub_size || 0
-    );
-
-  const bookCreatedAt =
-    book.epub_created_at;
-
-  if (
-    bookEpubUrl !==
-      outputUrl
-  ) {
-
-    throw new Error(
-      "URL EPUB pada buku tidak tersinkron dengan output ingestion."
-    );
-  }
-
-  if (
-    bookStoragePath !==
-      outputStoragePath
-  ) {
-
-    throw new Error(
-      "Storage path EPUB pada buku tidak tersinkron dengan output ingestion."
-    );
-  }
-
-  if (
-    bookEpubSize !==
-      outputSize
-  ) {
-
-    throw new Error(
-      `Ukuran EPUB pada buku tidak tersinkron. ` +
-      `Ditemukan ${bookEpubSize} byte, ` +
-      `seharusnya ${outputSize} byte.`
-    );
-  }
-
-  if (
-    !bookCreatedAt ||
-    String(
-      bookCreatedAt
-    ) !==
-    String(
-      outputCreatedAt
-    )
-  ) {
-
-    throw new Error(
-      "Waktu pembuatan EPUB pada buku tidak tersinkron dengan output ingestion."
+      (
+        updateError?.message ||
+        "Data buku tidak ditemukan."
+      )
     );
   }
 
@@ -18614,682 +16159,86 @@ async function prosesOutputEpub({
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
-
     throw new Error(
       "ID buku proses EPUB tidak valid."
     );
   }
 
-  const bahasa =
-    typeof language === "string" &&
-    language.trim()
-      ? language.trim()
-      : "id";
-
-  /* =========================
-     SNAPSHOT METADATA SEBELUM PROSES
-     ========================= */
-
-  const {
-    data: sessionSebelumnya,
-    error: snapshotError
-  } = await db
-    .from(
-      "book_ingestion_sessions"
-    )
-    .select(`
-      id,
-      book_id,
-      output_format,
-      output_url,
-      output_storage_path,
-      output_size,
-      output_created_at
-    `)
-    .eq(
-      "book_id",
-      idBuku
-    )
-    .maybeSingle();
-
-  if (snapshotError) {
-
-    throw new Error(
-      "Gagal membaca metadata EPUB sebelum proses: " +
-      snapshotError.message
-    );
-  }
-
-  if (!sessionSebelumnya) {
-
-    throw new Error(
-      "Session ingestion untuk proses EPUB tidak ditemukan."
-    );
-  }
-
-  if (
-    Number(
-      sessionSebelumnya.book_id
-    ) !== idBuku
-  ) {
-
-    throw new Error(
-      "Book ID pada session proses EPUB tidak sesuai."
-    );
-  }
-
-  /* =========================
-     OUTPUT SEBELUMNYA
-     ========================= */
-
-  const pathSebelumnya =
-    typeof sessionSebelumnya
-      .output_storage_path ===
-      "string"
-      ? sessionSebelumnya
-          .output_storage_path
-          .trim()
-      : "";
-
   const outputSebelumnya =
-    pathSebelumnya
-      ? {
-          format:
-            sessionSebelumnya
-              .output_format ||
-            "epub",
-
-          publicUrl:
-            sessionSebelumnya
-              .output_url,
-
-          storagePath:
-            pathSebelumnya,
-
-          size:
-            Number(
-              sessionSebelumnya
-                .output_size || 0
-            ),
-
-          createdAt:
-            sessionSebelumnya
-              .output_created_at,
-
-          stale:
-            sessionSebelumnya
-              .output_format !==
-            "epub"
-        }
-      : null;
-
-  let hasilEpub =
-    null;
-
-  let outputUpload =
-    null;
-
-  /* =========================
-     HELPER RESTORE METADATA
-     ========================= */
-
-  async function pulihkanMetadataSebelumnya() {
-
-    const {
-      data: sessionRollback,
-      error: rollbackError
-    } = await db
-      .from(
-        "book_ingestion_sessions"
-      )
-      .update({
-        output_format:
-          sessionSebelumnya
-            .output_format,
-
-        output_url:
-          sessionSebelumnya
-            .output_url,
-
-        output_storage_path:
-          sessionSebelumnya
-            .output_storage_path,
-
-        output_size:
-          sessionSebelumnya
-            .output_size,
-
-        output_created_at:
-          sessionSebelumnya
-            .output_created_at
-      })
-      .eq(
-        "book_id",
-        idBuku
-      )
-      .select(`
-        id,
-        book_id,
-        output_format,
-        output_url,
-        output_storage_path,
-        output_size,
-        output_created_at
-      `)
-      .maybeSingle();
-
-    if (rollbackError) {
-
-      throw new Error(
-        "Rollback metadata output EPUB gagal: " +
-        rollbackError.message
-      );
-    }
-
-    if (!sessionRollback) {
-
-      throw new Error(
-        "Rollback metadata output EPUB tidak terkonfirmasi."
-      );
-    }
-
-    if (
-      Number(
-        sessionRollback.book_id
-      ) !== idBuku
-    ) {
-
-      throw new Error(
-        "Book ID hasil rollback metadata EPUB tidak sesuai."
-      );
-    }
-
-    const formatRollback =
-      sessionRollback.output_format ??
-      null;
-
-    const urlRollback =
-      sessionRollback.output_url ??
-      null;
-
-    const pathRollback =
-      sessionRollback
-        .output_storage_path ??
-      null;
-
-    const sizeRollback =
-      sessionRollback.output_size ??
-      null;
-
-    const createdAtRollback =
-      sessionRollback
-        .output_created_at ??
-      null;
-
-    const formatSebelumnya =
-      sessionSebelumnya
-        .output_format ??
-      null;
-
-    const urlSebelumnya =
-      sessionSebelumnya
-        .output_url ??
-      null;
-
-    const pathSebelumnyaSnapshot =
-      sessionSebelumnya
-        .output_storage_path ??
-      null;
-
-    const sizeSebelumnya =
-      sessionSebelumnya
-        .output_size ??
-      null;
-
-    const createdAtSebelumnya =
-      sessionSebelumnya
-        .output_created_at ??
-      null;
-
-    if (
-      formatRollback !==
-        formatSebelumnya ||
-      urlRollback !==
-        urlSebelumnya ||
-      pathRollback !==
-        pathSebelumnyaSnapshot ||
-      String(
-        sizeRollback
-      ) !==
-        String(
-          sizeSebelumnya
-        ) ||
-      createdAtRollback !==
-        createdAtSebelumnya
-    ) {
-
-      throw new Error(
-        "Rollback metadata output EPUB tidak menghasilkan kondisi sebelumnya."
-      );
-    }
-
-    return sessionRollback;
-  }
-
-  /* =========================
-     HELPER CEK SESSION AKTIF
-     ========================= */
-
-  async function cekSessionMenunjukOutputBaru() {
-
-    const {
-      data: sessionSekarang,
-      error: sessionError
-    } = await db
-      .from(
-        "book_ingestion_sessions"
-      )
-      .select(`
-        id,
-        book_id,
-        output_storage_path
-      `)
-      .eq(
-        "book_id",
-        idBuku
-      )
-      .maybeSingle();
-
-    if (sessionError) {
-
-      throw new Error(
-        "Gagal memeriksa metadata EPUB setelah kegagalan: " +
-        sessionError.message
-      );
-    }
-
-    if (!sessionSekarang) {
-
-      throw new Error(
-        "Session ingestion tidak ditemukan saat pemeriksaan recovery EPUB."
-      );
-    }
-
-    if (
-      Number(
-        sessionSekarang.book_id
-      ) !== idBuku
-    ) {
-
-      throw new Error(
-        "Book ID session pada recovery EPUB tidak sesuai."
-      );
-    }
-
-    const pathSessionSekarang =
-      typeof sessionSekarang
-        .output_storage_path ===
-        "string"
-        ? sessionSekarang
-            .output_storage_path
-            .trim()
-        : "";
-
-    const pathOutputBaru =
-      typeof outputUpload
-        ?.storagePath ===
-        "string"
-        ? outputUpload
-            .storagePath
-            .trim()
-        : "";
-
-    return (
-      !!pathOutputBaru &&
-      pathSessionSekarang ===
-        pathOutputBaru
+    await ambilOutputEpubSebelumnya(
+      idBuku
     );
-  }
 
-  /* =========================
-     HELPER CLEANUP OUTPUT BARU
-     ========================= */
-
-  async function bersihkanOutputBaru() {
-
-    const pathBaru =
-      typeof outputUpload
-        ?.storagePath ===
-        "string"
-        ? outputUpload
-            .storagePath
-            .trim()
-        : "";
-
-    if (!pathBaru) {
-
-      return true;
-    }
-
-    const {
-      error: cleanupError
-    } = await db.storage
-      .from(
-        "book-files"
-      )
-      .remove([
-        pathBaru
-      ]);
-
-    if (cleanupError) {
-
-      throw new Error(
-        "Cleanup file EPUB baru gagal: " +
-        cleanupError.message
-      );
-    }
-
-    return true;
-  }
+  let outputUpload = null;
 
   try {
 
-    /* =========================
-       BUILD EPUB
-       ========================= */
-
-    hasilEpub =
+    const hasilEpub =
       await buatEpubFixedDariBookPages({
         bookId:
           idBuku,
-
-        language:
-          bahasa
+        language
       });
-
-    if (
-      !hasilEpub ||
-      !(hasilEpub.blob instanceof Blob) ||
-      hasilEpub.blob.size < 1
-    ) {
-
-      throw new Error(
-        "Hasil build EPUB tidak valid."
-      );
-    }
-
-    /* =========================
-       UPLOAD EPUB BARU
-       ========================= */
 
     outputUpload =
       await uploadEpubOutput({
         bookId:
           idBuku,
-
         epubBlob:
           hasilEpub.blob
       });
-
-    const storagePathBaru =
-      typeof outputUpload
-        ?.storagePath ===
-        "string"
-        ? outputUpload
-            .storagePath
-            .trim()
-        : "";
-
-    const publicUrlBaru =
-      typeof outputUpload
-        ?.publicUrl ===
-        "string"
-        ? outputUpload
-            .publicUrl
-            .trim()
-        : "";
-
-    const ukuranBaru =
-      Number(
-        outputUpload?.size || 0
-      );
-
-    if (!storagePathBaru) {
-
-      throw new Error(
-        "Storage path EPUB hasil upload kosong."
-      );
-    }
-
-    if (!publicUrlBaru) {
-
-      throw new Error(
-        "URL publik EPUB hasil upload kosong."
-      );
-    }
-
-    if (
-      !Number.isFinite(
-        ukuranBaru
-      ) ||
-      ukuranBaru < 1
-    ) {
-
-      throw new Error(
-        "Ukuran EPUB hasil upload tidak valid."
-      );
-    }
-
-    /* =========================
-       VALIDASI FILE FISIK BARU
-       ========================= */
-
-    await validasiFileOutputEpubStorage({
-      storagePath:
-        storagePathBaru,
-
-      expectedSize:
-        ukuranBaru
-    });
-
-    /* =========================
-       SIMPAN METADATA BARU
-       ========================= */
 
     const session =
       await simpanMetadataOutputEpub({
         bookId:
           idBuku,
-
-        output: {
-          format:
-            "epub",
-
-          publicUrl:
-            publicUrlBaru,
-
-          storagePath:
-            storagePathBaru,
-
-          size:
-            ukuranBaru
-        }
+        output:
+          outputUpload
       });
-
-    if (!session) {
-
-      throw new Error(
-        "Metadata EPUB baru tidak berhasil dikonfirmasi."
-      );
-    }
-
-    /* =========================
-       VERIFIKASI METADATA BARU
-       ========================= */
-
-    if (
-      Number(
-        session.book_id
-      ) !== idBuku
-    ) {
-
-      throw new Error(
-        "Book ID metadata EPUB baru tidak sesuai."
-      );
-    }
-
-    if (
-      session.output_format !==
-        "epub"
-    ) {
-
-      throw new Error(
-        "Format metadata EPUB baru tidak sesuai."
-      );
-    }
-
-    if (
-      typeof session.output_url !==
-        "string" ||
-      session.output_url.trim() !==
-        publicUrlBaru
-    ) {
-
-      throw new Error(
-        "URL metadata EPUB baru tidak sesuai dengan hasil upload."
-      );
-    }
-
-    if (
-      typeof session
-        .output_storage_path !==
-        "string" ||
-      session
-        .output_storage_path
-        .trim() !==
-        storagePathBaru
-    ) {
-
-      throw new Error(
-        "Storage path metadata EPUB baru tidak sesuai dengan hasil upload."
-      );
-    }
-
-    if (
-      Number(
-        session.output_size
-      ) !== ukuranBaru
-    ) {
-
-      throw new Error(
-        "Ukuran metadata EPUB baru tidak sesuai dengan hasil upload."
-      );
-    }
-
-    if (
-      !session.output_created_at
-    ) {
-
-      throw new Error(
-        "Waktu pembuatan metadata EPUB baru tidak tersedia."
-      );
-    }
-
-    /* =========================
-       CLEANUP OUTPUT LAMA
-       NON-FATAL / BEST EFFORT
-       ========================= */
 
     let outputLamaDihapus =
       false;
 
     if (
-      outputSebelumnya
-        ?.storagePath &&
+      outputSebelumnya?.storagePath &&
       outputSebelumnya.storagePath !==
-        storagePathBaru
+        outputUpload.storagePath
     ) {
 
-      try {
-
-        const {
-          error: hapusLamaError
-        } = await db.storage
+      const {
+        error: hapusLamaError
+      } =
+        await db.storage
           .from(
             "book-files"
           )
           .remove([
-            outputSebelumnya
-              .storagePath
+            outputSebelumnya.storagePath
           ]);
 
-        if (hapusLamaError) {
+      if (hapusLamaError) {
 
-          /*
-           * EPUB baru sudah tervalidasi
-           * dan metadata sudah aktif.
-           *
-           * Kegagalan cleanup file lama
-           * hanya menghasilkan orphan lama.
-           *
-           * Jangan rollback EPUB baru.
-           */
-          console.warn(
-            "EPUB baru berhasil dan tervalidasi, tetapi file EPUB lama gagal dihapus:",
-            hapusLamaError
-          );
-
-        } else {
-
-          outputLamaDihapus =
-            true;
-        }
-
-      } catch (hapusLamaException) {
-
-        /*
-         * Exception/network failure saat
-         * cleanup output lama juga NON-FATAL.
-         *
-         * Operasi Storage mungkin sudah
-         * berhasil di server tetapi response
-         * tidak sampai ke client.
-         *
-         * Karena metadata baru sudah valid,
-         * jangan pernah rollback ke output lama
-         * hanya akibat cleanup ini.
-         */
         console.warn(
-          "EPUB baru berhasil dan tervalidasi, tetapi cleanup file EPUB lama mengalami exception:",
-          hapusLamaException
+          "EPUB baru berhasil, tetapi file EPUB lama gagal dihapus:",
+          hapusLamaError
         );
+
+      } else {
+
+        outputLamaDihapus =
+          true;
+
       }
     }
-
-    /* =========================
-       SUKSES
-       ========================= */
 
     return {
       epub:
         hasilEpub,
 
-      output: {
-        format:
-          "epub",
+      output:
+        outputUpload,
 
-        publicUrl:
-          publicUrlBaru,
-
-        storagePath:
-          storagePathBaru,
-
-        size:
-          ukuranBaru
-      },
-
-      session:
-        session,
+      session,
 
       previousOutput:
         outputSebelumnya,
@@ -19300,115 +16249,27 @@ async function prosesOutputEpub({
 
   } catch (error) {
 
-    /* =========================
-       RECOVERY OUTPUT BARU
-       ========================= */
-
-    const masalahRecovery = [];
-
     if (
-      outputUpload
-        ?.storagePath
+      outputUpload?.storagePath
     ) {
 
-      let metadataMenunjukBaru =
-        false;
+      const {
+        error: rollbackError
+      } =
+        await db.storage
+          .from(
+            "book-files"
+          )
+          .remove([
+            outputUpload.storagePath
+          ]);
 
-      let statusMetadataDiketahui =
-        false;
-
-      try {
-
-        metadataMenunjukBaru =
-          await cekSessionMenunjukOutputBaru();
-
-        statusMetadataDiketahui =
-          true;
-
-      } catch (cekMetadataError) {
-
-        /*
-         * Kita tidak tahu apakah session
-         * sudah menunjuk file baru.
-         *
-         * Jangan hapus file baru karena
-         * berisiko membuat broken reference.
-         */
-        masalahRecovery.push(
-          cekMetadataError?.message ||
-          "Status metadata EPUB setelah kegagalan tidak dapat dipastikan."
+      if (rollbackError) {
+        console.error(
+          "Rollback file EPUB gagal:",
+          rollbackError
         );
       }
-
-      if (
-        statusMetadataDiketahui &&
-        metadataMenunjukBaru
-      ) {
-
-        try {
-
-          await pulihkanMetadataSebelumnya();
-
-        } catch (rollbackMetadataError) {
-
-          /*
-           * Metadata mungkin masih menunjuk
-           * file baru.
-           *
-           * Jangan hapus file baru.
-           */
-          masalahRecovery.push(
-            rollbackMetadataError?.message ||
-            "Rollback metadata EPUB gagal."
-          );
-
-          statusMetadataDiketahui =
-            false;
-        }
-      }
-
-      /*
-       * File baru hanya boleh dibersihkan jika:
-       *
-       * - kita berhasil memastikan session
-       *   tidak menunjuk file baru, ATAU
-       * - session tadi menunjuk file baru
-       *   dan rollback metadata berhasil.
-       */
-      if (statusMetadataDiketahui) {
-
-        try {
-
-          await bersihkanOutputBaru();
-
-        } catch (cleanupError) {
-
-          masalahRecovery.push(
-            cleanupError?.message ||
-            "Cleanup EPUB baru gagal."
-          );
-        }
-      }
-    }
-
-    /* =========================
-       THROW ERROR AKHIR
-       ========================= */
-
-    if (
-      masalahRecovery.length > 0
-    ) {
-
-      throw new Error(
-        (
-          error?.message ||
-          "Proses output EPUB gagal."
-        ) +
-        " | Recovery: " +
-        masalahRecovery.join(
-          " | "
-        )
-      );
     }
 
     throw error;
@@ -19427,135 +16288,10 @@ async function pastikanOutputEpubFinalisasi({
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
-
     throw new Error(
       "ID buku finalisasi EPUB tidak valid."
     );
   }
-
-  const bahasa =
-    typeof language === "string" &&
-    language.trim()
-      ? language.trim()
-      : "id";
-
-  /* =========================
-     HELPER BATALKAN OUTPUT BARU
-     ========================= */
-
-  async function batalkanOutputRebuildTidakValid({
-    storagePath = null,
-    errorUtama
-  }) {
-
-    const pesanUtama =
-      errorUtama?.message ||
-      "Output EPUB rebuild tidak valid.";
-
-    const pathOutput =
-      typeof storagePath === "string"
-        ? storagePath.trim()
-        : "";
-
-    /*
-     * PENTING:
-     *
-     * Metadata harus lebih dulu dibuat stale.
-     *
-     * Jangan hapus file fisik terlebih dahulu,
-     * karena kalau reset metadata gagal dan
-     * melakukan rollback, metadata bisa kembali
-     * menunjuk file yang sudah terhapus.
-     */
-    try {
-
-      await resetMetadataOutputEpub(
-        idBuku
-      );
-
-    } catch (resetError) {
-
-      /*
-       * Reset metadata gagal.
-       *
-       * File EPUB baru sengaja DIPERTAHANKAN
-       * karena metadata mungkin masih menunjuk
-       * file tersebut setelah rollback.
-       */
-      throw new Error(
-        pesanUtama +
-        " | Reset metadata EPUB gagal: " +
-        (
-          resetError?.message ||
-          "Error tidak diketahui."
-        ) +
-        " | File EPUB baru dipertahankan untuk mencegah referensi Storage rusak."
-      );
-    }
-
-    /*
-     * Sampai titik ini metadata sudah
-     * berhasil ditandai stale dan books
-     * tidak lagi mempublikasikan EPUB baru.
-     *
-     * File fisik sekarang aman dibersihkan.
-     */
-    if (pathOutput) {
-
-      try {
-
-        const {
-          error: removeError
-        } = await db.storage
-          .from(
-            "book-files"
-          )
-          .remove([
-            pathOutput
-          ]);
-
-        if (removeError) {
-
-          throw new Error(
-            removeError.message
-          );
-        }
-
-      } catch (cleanupError) {
-
-        /*
-         * Metadata sudah stale, jadi file yang
-         * gagal dihapus hanya menjadi orphan.
-         *
-         * Jangan hidupkan metadata kembali.
-         */
-        throw new Error(
-          pesanUtama +
-          " | Metadata EPUB sudah berhasil direset, " +
-          "tetapi cleanup file EPUB baru gagal: " +
-          (
-            cleanupError?.message ||
-            "Error tidak diketahui."
-          )
-        );
-      }
-    }
-
-    /*
-     * Metadata sudah stale dan file baru
-     * berhasil dibersihkan.
-     *
-     * Tetap throw error utama karena output
-     * rebuild memang tidak boleh digunakan.
-     */
-    throw new Error(
-      pesanUtama
-    );
-  }
-
-  /* =========================
-     AMBIL OUTPUT SEKARANG
-     ========================= */
 
   const outputSekarang =
     await ambilOutputEpubSebelumnya(
@@ -19573,240 +16309,63 @@ async function pastikanOutputEpubFinalisasi({
       "string" &&
     outputSekarang.storagePath.trim() !== "" &&
     Number.isFinite(
-      Number(
-        outputSekarang.size
-      )
+      Number(outputSekarang.size)
     ) &&
-    Number(
-      outputSekarang.size
-    ) > 0;
+    Number(outputSekarang.size) > 0;
 
   let recoveryStorageAktif =
-    false;
-
-  let recoveryStorageError =
-    null;
-
-  /* =========================
-     COBA REUSE EPUB AKTIF
-     ========================= */
-
+  false;
+  
   if (outputSiap) {
-
-    try {
-
-      await validasiFileOutputEpubStorage({
-        storagePath:
-          outputSekarang.storagePath,
-
-        expectedSize:
-          Number(
-            outputSekarang.size
-          )
-      });
-
-      return {
-        reused:
-          true,
-
-        rebuilt:
-          false,
-
-        recovered:
-          false,
-
-        output:
-          outputSekarang,
-
-        result:
-          null
-      };
-
-    } catch (storageError) {
-
-      recoveryStorageAktif =
-        true;
-
-      recoveryStorageError =
-        storageError;
-
-      console.warn(
-        "EPUB aktif tidak valid di Storage. Sistem akan membangun ulang EPUB:",
-        storageError
-      );
-    }
-  }
-
-  /* =========================
-     BUILD / REBUILD EPUB
-     ========================= */
-
-  let hasilRebuild;
-
-  try {
-
-    hasilRebuild =
-      await prosesOutputEpub({
-        bookId:
-          idBuku,
-
-        language:
-          bahasa
-      });
-
-  } catch (rebuildError) {
-
-    if (
-      recoveryStorageAktif
-    ) {
-
-      throw new Error(
-        "EPUB aktif bermasalah di Storage dan proses pemulihan EPUB gagal. " +
-        "Masalah Storage sebelumnya: " +
-        (
-          recoveryStorageError?.message ||
-          "Error tidak diketahui."
-        ) +
-        " | Rebuild: " +
-        (
-          rebuildError?.message ||
-          "Error tidak diketahui."
-        )
-      );
-    }
-
-    throw new Error(
-      "Pembuatan EPUB final gagal: " +
-      (
-        rebuildError?.message ||
-        "Error tidak diketahui."
-      )
-    );
-  }
-
-  /* =========================
-     VALIDASI HASIL REBUILD
-     ========================= */
-
-  const outputRebuild =
-    hasilRebuild?.output;
-
-  if (!outputRebuild) {
-
-    await batalkanOutputRebuildTidakValid({
-      storagePath:
-        null,
-
-      errorUtama:
-        new Error(
-          "Pembuatan EPUB selesai tetapi data output EPUB tidak tersedia."
-        )
-    });
-  }
-
-  const publicUrlRebuild =
-    typeof outputRebuild.publicUrl ===
-      "string"
-      ? outputRebuild.publicUrl.trim()
-      : "";
-
-  const storagePathRebuild =
-    typeof outputRebuild.storagePath ===
-      "string"
-      ? outputRebuild.storagePath.trim()
-      : "";
-
-  const sizeRebuild =
-    Number(
-      outputRebuild.size || 0
-    );
-
-  if (!publicUrlRebuild) {
-
-    await batalkanOutputRebuildTidakValid({
-      storagePath:
-        storagePathRebuild,
-
-      errorUtama:
-        new Error(
-          "Pembuatan EPUB selesai tetapi URL publik output kosong."
-        )
-    });
-  }
-
-  if (!storagePathRebuild) {
-
-    await batalkanOutputRebuildTidakValid({
-      storagePath:
-        null,
-
-      errorUtama:
-        new Error(
-          "Pembuatan EPUB selesai tetapi Storage Path output kosong."
-        )
-    });
-  }
-
-  if (
-    !Number.isFinite(
-      sizeRebuild
-    ) ||
-    sizeRebuild < 1
-  ) {
-
-    await batalkanOutputRebuildTidakValid({
-      storagePath:
-        storagePathRebuild,
-
-      errorUtama:
-        new Error(
-          "Pembuatan EPUB selesai tetapi ukuran output tidak valid."
-        )
-    });
-  }
-
-  /* =========================
-     VERIFIKASI STORAGE OUTPUT BARU
-     ========================= */
 
   try {
 
     await validasiFileOutputEpubStorage({
       storagePath:
-        storagePathRebuild,
+        outputSekarang.storagePath,
 
       expectedSize:
-        sizeRebuild
-    });
-
-  } catch (validationError) {
-
-    await batalkanOutputRebuildTidakValid({
-      storagePath:
-        storagePathRebuild,
-
-      errorUtama:
-        new Error(
-          "EPUB baru berhasil dibuat tetapi gagal lolos verifikasi Storage: " +
-          (
-            validationError?.message ||
-            "Error tidak diketahui."
-          )
+        Number(
+          outputSekarang.size
         )
     });
-  }
 
-  /* =========================
-     HASIL FINAL
-     ========================= */
+    return {
+      reused: true,
+      rebuilt: false,
+      recovered: false,
+
+      output:
+        outputSekarang,
+
+      result:
+        null
+    };
+
+  } catch (storageError) {
+
+    recoveryStorageAktif =
+      true;
+
+    console.warn(
+      "EPUB aktif tidak valid di Storage. Sistem akan membangun ulang EPUB:",
+      storageError
+    );
+
+  }
+}
+
+  const hasilRebuild =
+    await prosesOutputEpub({
+      bookId:
+        idBuku,
+
+      language
+    });
 
   return {
-    reused:
-      false,
-
-    rebuilt:
-      true,
-
+    reused: false,
+    rebuilt: true,
     recovered:
       recoveryStorageAktif,
 
@@ -19815,13 +16374,15 @@ async function pastikanOutputEpubFinalisasi({
         "epub",
 
       publicUrl:
-        publicUrlRebuild,
+        hasilRebuild.output.publicUrl,
 
       storagePath:
-        storagePathRebuild,
+        hasilRebuild.output.storagePath,
 
       size:
-        sizeRebuild,
+        Number(
+          hasilRebuild.output.size || 0
+        ),
 
       createdAt:
         hasilRebuild.session
@@ -19929,645 +16490,76 @@ async function resetMetadataOutputEpub(
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
-
     throw new Error(
       "ID buku reset output EPUB tidak valid."
     );
   }
 
-  /* =========================
-     AMBIL SNAPSHOT SEBELUM RESET
-     ========================= */
-
-  const [
-    hasilSession,
-    hasilBook
-  ] = await Promise.all([
-
-    db
-      .from(
-        "book_ingestion_sessions"
-      )
-      .select(`
-        id,
-        book_id,
-        output_format,
-        output_url,
-        output_storage_path,
-        output_size,
-        output_created_at
-      `)
-      .eq(
-        "book_id",
-        idBuku
-      )
-      .maybeSingle(),
-
-    db
-      .from(
-        "books"
-      )
-      .select(`
-        id,
-        epub_url,
-        epub_storage_path,
-        epub_size,
-        epub_created_at
-      `)
-      .eq(
-        "id",
-        idBuku
-      )
-      .maybeSingle()
-
-  ]);
-
-  /* =========================
-     VALIDASI SNAPSHOT SESSION
-     ========================= */
-
-  if (hasilSession.error) {
-
-    throw new Error(
-      "Gagal membaca session sebelum reset EPUB: " +
-      hasilSession.error.message
-    );
-  }
-
-  if (!hasilSession.data) {
-
-    throw new Error(
-      "Session ingestion untuk reset EPUB tidak ditemukan."
-    );
-  }
-
-  if (
-    Number(
-      hasilSession.data.book_id
-    ) !== idBuku
-  ) {
-
-    throw new Error(
-      "Book ID pada session reset EPUB tidak sesuai."
-    );
-  }
-
-  /* =========================
-     VALIDASI SNAPSHOT BOOK
-     ========================= */
-
-  if (hasilBook.error) {
-
-    throw new Error(
-      "Gagal membaca data buku sebelum reset EPUB: " +
-      hasilBook.error.message
-    );
-  }
-
-  if (!hasilBook.data) {
-
-    throw new Error(
-      "Data buku untuk reset EPUB tidak ditemukan."
-    );
-  }
-
-  if (
-    Number(
-      hasilBook.data.id
-    ) !== idBuku
-  ) {
-
-    throw new Error(
-      "ID buku pada snapshot reset EPUB tidak sesuai."
-    );
-  }
-
-  const sessionSebelumnya =
-    hasilSession.data;
-
-  const bookSebelumnya =
-    hasilBook.data;
-
-  let sessionSudahDireset =
-    false;
-
-  let bookSudahDireset =
-    false;
-
-  /* =========================
-     HELPER ROLLBACK
-     ========================= */
-
-  async function rollbackMetadataSebelumnya() {
-
-    const masalahRollback = [];
-
-    /* =========================
-       ROLLBACK SESSION
-       ========================= */
-
-    if (sessionSudahDireset) {
-
-      try {
-
-        const {
-          data: sessionRollback,
-          error: sessionRollbackError
-        } = await db
-          .from(
-            "book_ingestion_sessions"
-          )
-          .update({
-            output_format:
-              sessionSebelumnya
-                .output_format,
-
-            output_url:
-              sessionSebelumnya
-                .output_url,
-
-            output_storage_path:
-              sessionSebelumnya
-                .output_storage_path,
-
-            output_size:
-              sessionSebelumnya
-                .output_size,
-
-            output_created_at:
-              sessionSebelumnya
-                .output_created_at
-          })
-          .eq(
-            "book_id",
-            idBuku
-          )
-          .select(`
-            id,
-            book_id,
-            output_format,
-            output_url,
-            output_storage_path,
-            output_size,
-            output_created_at
-          `)
-          .maybeSingle();
-
-        if (sessionRollbackError) {
-
-          masalahRollback.push(
-            "Rollback session EPUB gagal: " +
-            sessionRollbackError.message
-          );
-
-        } else if (!sessionRollback) {
-
-          masalahRollback.push(
-            "Rollback session EPUB tidak terkonfirmasi."
-          );
-
-        } else {
-
-          const formatRollback =
-            sessionRollback.output_format ??
-            null;
-
-          const urlRollback =
-            sessionRollback.output_url ??
-            null;
-
-          const pathRollback =
-            sessionRollback.output_storage_path ??
-            null;
-
-          const sizeRollback =
-            sessionRollback.output_size ??
-            null;
-
-          const createdAtRollback =
-            sessionRollback.output_created_at ??
-            null;
-
-          const formatSebelumnya =
-            sessionSebelumnya.output_format ??
-            null;
-
-          const urlSebelumnya =
-            sessionSebelumnya.output_url ??
-            null;
-
-          const pathSebelumnya =
-            sessionSebelumnya.output_storage_path ??
-            null;
-
-          const sizeSebelumnya =
-            sessionSebelumnya.output_size ??
-            null;
-
-          const createdAtSebelumnya =
-            sessionSebelumnya.output_created_at ??
-            null;
-
-          if (
-            Number(
-              sessionRollback.book_id
-            ) !== idBuku ||
-            formatRollback !==
-              formatSebelumnya ||
-            urlRollback !==
-              urlSebelumnya ||
-            pathRollback !==
-              pathSebelumnya ||
-            String(
-              sizeRollback
-            ) !==
-              String(
-                sizeSebelumnya
-              ) ||
-            createdAtRollback !==
-              createdAtSebelumnya
-          ) {
-
-            masalahRollback.push(
-              "Rollback session EPUB tidak menghasilkan metadata sebelumnya."
-            );
-          }
-        }
-
-      } catch (sessionRollbackException) {
-
-        masalahRollback.push(
-          "Rollback session EPUB gagal: " +
-          (
-            sessionRollbackException?.message ||
-            "Error tidak diketahui."
-          )
-        );
-      }
-    }
-
-    /* =========================
-       ROLLBACK BOOK
-       ========================= */
-
-    if (bookSudahDireset) {
-
-      try {
-
-        const {
-          data: bookRollback,
-          error: bookRollbackError
-        } = await db
-          .from(
-            "books"
-          )
-          .update({
-            epub_url:
-              bookSebelumnya
-                .epub_url,
-
-            epub_storage_path:
-              bookSebelumnya
-                .epub_storage_path,
-
-            epub_size:
-              bookSebelumnya
-                .epub_size,
-
-            epub_created_at:
-              bookSebelumnya
-                .epub_created_at
-          })
-          .eq(
-            "id",
-            idBuku
-          )
-          .select(`
-            id,
-            epub_url,
-            epub_storage_path,
-            epub_size,
-            epub_created_at
-          `)
-          .maybeSingle();
-
-        if (bookRollbackError) {
-
-          masalahRollback.push(
-            "Rollback metadata EPUB buku gagal: " +
-            bookRollbackError.message
-          );
-
-        } else if (!bookRollback) {
-
-          masalahRollback.push(
-            "Rollback metadata EPUB buku tidak terkonfirmasi."
-          );
-
-        } else {
-
-          const urlRollback =
-            bookRollback.epub_url ??
-            null;
-
-          const pathRollback =
-            bookRollback.epub_storage_path ??
-            null;
-
-          const sizeRollback =
-            bookRollback.epub_size ??
-            null;
-
-          const createdAtRollback =
-            bookRollback.epub_created_at ??
-            null;
-
-          const urlSebelumnya =
-            bookSebelumnya.epub_url ??
-            null;
-
-          const pathSebelumnya =
-            bookSebelumnya.epub_storage_path ??
-            null;
-
-          const sizeSebelumnya =
-            bookSebelumnya.epub_size ??
-            null;
-
-          const createdAtSebelumnya =
-            bookSebelumnya.epub_created_at ??
-            null;
-
-          if (
-            Number(
-              bookRollback.id
-            ) !== idBuku ||
-            urlRollback !==
-              urlSebelumnya ||
-            pathRollback !==
-              pathSebelumnya ||
-            String(
-              sizeRollback
-            ) !==
-              String(
-                sizeSebelumnya
-              ) ||
-            createdAtRollback !==
-              createdAtSebelumnya
-          ) {
-
-            masalahRollback.push(
-              "Rollback metadata EPUB buku tidak menghasilkan kondisi sebelumnya."
-            );
-          }
-        }
-
-      } catch (bookRollbackException) {
-
-        masalahRollback.push(
-          "Rollback metadata EPUB buku gagal: " +
-          (
-            bookRollbackException?.message ||
-            "Error tidak diketahui."
-          )
-        );
-      }
-    }
-
-    return masalahRollback;
-  }
-
-  try {
-
-    /* =========================
-       RESET SESSION INGESTION
-       ========================= */
-
-    const {
-      data: sessionReset,
-      error: resetError
-    } = await db
-      .from(
-        "book_ingestion_sessions"
-      )
-      .update({
-
-        /*
-         * output_format = null
-         * menandakan output lama
-         * sudah tidak lagi aktif/current.
-         *
-         * URL, storage path dan size
-         * sengaja DIPERTAHANKAN agar
-         * file lama masih dapat ditemukan
-         * dan dibersihkan setelah output
-         * pengganti berhasil dibuat.
-         */
-        output_format:
-          null,
-
-        output_created_at:
-          null
-      })
-      .eq(
-        "book_id",
-        idBuku
-      )
-      .select(`
-        id,
-        book_id,
-        output_format,
-        output_url,
-        output_storage_path,
-        output_size,
-        output_created_at
-      `)
-      .maybeSingle();
-
-    if (resetError) {
-
-      throw new Error(
-        "Metadata output EPUB gagal direset: " +
-        resetError.message
-      );
-    }
-
-    if (!sessionReset) {
-
-      throw new Error(
-        "Reset metadata output EPUB tidak terkonfirmasi."
-      );
-    }
-
-    sessionSudahDireset =
-      true;
-
-    if (
-      Number(
-        sessionReset.book_id
-      ) !== idBuku
-    ) {
-
-      throw new Error(
-        "Book ID hasil reset session EPUB tidak sesuai."
-      );
-    }
-
-    if (
-      sessionReset.output_format !==
-        null ||
-      sessionReset.output_created_at !==
+  const {
+    error: resetError
+  } = await db
+    .from(
+      "book_ingestion_sessions"
+    )
+    .update({
+      /*
+        output_format = null
+        menandakan output lama
+        sudah tidak lagi aktif/current.
+
+        Lokasi file lama sengaja
+        DIPERTAHANKAN agar nanti
+        dapat dibersihkan setelah
+        EPUB baru berhasil dibuat.
+      */
+      output_format:
+        null,
+
+      output_created_at:
         null
-    ) {
+    })
+    .eq(
+      "book_id",
+      idBuku
+    );
 
-      throw new Error(
-        "Session ingestion belum benar-benar menandai output EPUB sebagai stale."
-      );
-    }
-
-    if (
-      (
-        sessionReset.output_url ??
-        null
-      ) !==
-        (
-          sessionSebelumnya.output_url ??
-          null
-        ) ||
-      (
-        sessionReset.output_storage_path ??
-        null
-      ) !==
-        (
-          sessionSebelumnya.output_storage_path ??
-          null
-        ) ||
-      String(
-        sessionReset.output_size ??
-        null
-      ) !==
-        String(
-          sessionSebelumnya.output_size ??
-          null
-        )
-    ) {
-
-      throw new Error(
-        "Metadata lokasi output EPUB lama berubah saat reset."
-      );
-    }
-
-    /* =========================
-       RESET EPUB DI BOOKS
-       ========================= */
-
-    const {
-      data: bookReset,
-      error: resetBookError
-    } = await db
-      .from(
-        "books"
-      )
-      .update({
-        epub_url:
-          null,
-
-        epub_storage_path:
-          null,
-
-        epub_size:
-          null,
-
-        epub_created_at:
-          null
-      })
-      .eq(
-        "id",
-        idBuku
-      )
-      .select(`
-        id,
-        epub_url,
-        epub_storage_path,
-        epub_size,
-        epub_created_at
-      `)
-      .maybeSingle();
-
-    if (resetBookError) {
-
-      throw new Error(
-        "Metadata EPUB pada buku gagal direset: " +
-        resetBookError.message
-      );
-    }
-
-    if (!bookReset) {
-
-      throw new Error(
-        "Reset metadata EPUB pada buku tidak terkonfirmasi."
-      );
-    }
-
-    bookSudahDireset =
-      true;
-
-    if (
-      Number(
-        bookReset.id
-      ) !== idBuku
-    ) {
-
-      throw new Error(
-        "ID buku hasil reset metadata EPUB tidak sesuai."
-      );
-    }
-
-    if (
-      bookReset.epub_url !==
-        null ||
-      bookReset.epub_storage_path !==
-        null ||
-      bookReset.epub_size !==
-        null ||
-      bookReset.epub_created_at !==
-        null
-    ) {
-
-      throw new Error(
-        "Metadata EPUB pada buku belum benar-benar dibersihkan."
-      );
-    }
-
-    /* =========================
-       RESET SUKSES
-       ========================= */
-
-    return true;
-
-  } catch (error) {
-
-    const masalahRollback =
-      await rollbackMetadataSebelumnya();
-
-    if (
-      masalahRollback.length > 0
-    ) {
-
-      throw new Error(
-        (
-          error?.message ||
-          "Reset metadata EPUB gagal."
-        ) +
-        " | " +
-        masalahRollback.join(
-          " | "
-        )
-      );
-    }
-
-    throw error;
+  if (resetError) {
+    throw new Error(
+      "Metadata output EPUB gagal direset: " +
+      resetError.message
+    );
   }
+
+  const {
+    error: resetBookError
+  } = await db
+    .from("books")
+    .update({
+      epub_url:
+        null,
+
+      epub_storage_path:
+        null,
+
+      epub_size:
+        null,
+
+      epub_created_at:
+        null
+    })
+    .eq(
+      "id",
+      idBuku
+    );
+
+  if (resetBookError) {
+    throw new Error(
+      "Metadata EPUB pada buku gagal direset: " +
+      resetBookError.message
+    );
+  }
+
+  return true;
 }
 
 function getBookIngestionConfig(
@@ -20703,23 +16695,16 @@ async function sinkronkanProgressIngestionBuku(
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
-
     throw new Error(
       "ID buku untuk sinkronisasi ingestion tidak valid."
     );
   }
 
-  /* =========================
-     AMBIL DATA BUKU
-     ========================= */
-
   const {
     data: book,
     error: bookError
   } = await db
-    .from(
-      "books"
-    )
+    .from("books")
     .select(`
       id,
       total_pages,
@@ -20729,145 +16714,60 @@ async function sinkronkanProgressIngestionBuku(
       "id",
       idBuku
     )
-    .maybeSingle();
+    .single();
 
-  if (bookError) {
-
-    throw new Error(
-      "Gagal membaca data buku untuk sinkronisasi ingestion: " +
-      bookError.message
-    );
-  }
-
-  if (!book) {
-
+  if (
+    bookError ||
+    !book
+  ) {
     throw new Error(
       "Data buku untuk sinkronisasi ingestion tidak ditemukan."
     );
   }
 
-  /* =========================
-     VALIDASI TOTAL HALAMAN
-     ========================= */
-
-  const totalPages =
-    Number(
-      book.total_pages ?? 0
-    );
-
-  if (
-    !Number.isInteger(totalPages) ||
-    totalPages < 0
-  ) {
-
-    throw new Error(
-      "Total halaman buku untuk sinkronisasi ingestion tidak valid."
-    );
-  }
-
-  /* =========================
-     HITUNG HALAMAN TERPROSES
-     ========================= */
-
   const {
     count: jumlahHalaman,
     error: countError
   } = await db
-    .from(
-      "book_pages"
-    )
-    .select(
-      "*",
-      {
-        count:
-          "exact",
-
-        head:
-          true
-      }
-    )
+    .from("book_pages")
+    .select("*", {
+      count: "exact",
+      head: true
+    })
     .eq(
       "book_id",
       idBuku
     );
 
   if (countError) {
-
     throw new Error(
       "Gagal menghitung halaman ingestion: " +
       countError.message
     );
   }
 
-  if (
-    jumlahHalaman ===
-      null ||
-    jumlahHalaman ===
-      undefined
-  ) {
-
-    throw new Error(
-      "Jumlah halaman ingestion tidak berhasil dihitung."
-    );
-  }
-
-  const processedPages =
-    Number(
-      jumlahHalaman
-    );
-
-  if (
-    !Number.isInteger(
-      processedPages
-    ) ||
-    processedPages < 0
-  ) {
-
-    throw new Error(
-      "Jumlah halaman ingestion tidak valid."
-    );
-  }
-
-  /* =========================
-     TENTUKAN STATUS INGESTION
-     ========================= */
-
   const ingestionStatus =
-    book.upload_status ===
-      "complete"
+    book.upload_status === "complete"
       ? "ready"
       : "draft";
-
-  /* =========================
-     UPDATE SESSION INGESTION
-     ========================= */
 
   const {
     data: ingestionSession,
     error: updateError
   } = await db
-    .from(
-      "book_ingestion_sessions"
-    )
+    .from("book_ingestion_sessions")
     .update({
-      total_pages:
-        totalPages,
+  total_pages:
+    Number(book.total_pages || 0),
 
-      processed_pages:
-        processedPages,
+  processed_pages:
+    jumlahHalaman || 0,
 
-      status:
-        ingestionStatus,
+  status:
+    ingestionStatus,
 
-      /*
-       * Sinkronisasi sukses adalah
-       * recovery point.
-       *
-       * Error lama dibersihkan.
-       */
-      last_error:
-        null
-    })
+  last_error: null
+})
     .eq(
       "book_id",
       idBuku
@@ -20877,13 +16777,11 @@ async function sinkronkanProgressIngestionBuku(
       book_id,
       processed_pages,
       total_pages,
-      status,
-      last_error
+      status
     `)
     .maybeSingle();
 
   if (updateError) {
-
     throw new Error(
       "Sinkronisasi progress ingestion gagal: " +
       updateError.message
@@ -20891,72 +16789,13 @@ async function sinkronkanProgressIngestionBuku(
   }
 
   if (!ingestionSession) {
-
     throw new Error(
       "Sesi ingestion buku tidak ditemukan."
     );
   }
 
-  /* =========================
-     VERIFIKASI HASIL UPDATE
-     ========================= */
-
-  if (
-    Number(
-      ingestionSession.book_id
-    ) !== idBuku
-  ) {
-
-    throw new Error(
-      "Book ID pada hasil sinkronisasi ingestion tidak sesuai."
-    );
-  }
-
-  if (
-    Number(
-      ingestionSession.total_pages
-    ) !== totalPages
-  ) {
-
-    throw new Error(
-      "Total halaman ingestion tidak tersinkron dengan benar."
-    );
-  }
-
-  if (
-    Number(
-      ingestionSession.processed_pages
-    ) !== processedPages
-  ) {
-
-    throw new Error(
-      "Processed pages ingestion tidak tersinkron dengan benar."
-    );
-  }
-
-  if (
-    ingestionSession.status !==
-      ingestionStatus
-  ) {
-
-    throw new Error(
-      "Status ingestion tidak tersinkron dengan benar. " +
-      `Diharapkan ${ingestionStatus}, ` +
-      `tetapi ditemukan ${ingestionSession.status || "kosong"}.`
-    );
-  }
-
-  if (
-    ingestionSession.last_error !==
-      null
-  ) {
-
-    throw new Error(
-      "last_error ingestion belum berhasil dibersihkan setelah sinkronisasi."
-    );
-  }
-
   return ingestionSession;
+
 }
 
 async function validasiFileOutputEpubStorage({
@@ -21124,15 +16963,10 @@ async function validasiKesiapanFinalIngestionBuku(
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
-
     throw new Error(
       "ID buku final completion gate tidak valid."
     );
   }
-
-  /* =========================
-     AMBIL DATA BUKU + SESSION
-     ========================= */
 
   const [
     hasilBuku,
@@ -21140,29 +16974,20 @@ async function validasiKesiapanFinalIngestionBuku(
   ] = await Promise.all([
 
     db
-      .from(
-        "books"
-      )
+      .from("books")
       .select(`
         id,
         total_pages,
-        upload_status,
-        file_url,
-        epub_url,
-        epub_storage_path,
-        epub_size,
-        epub_created_at
+        upload_status
       `)
       .eq(
         "id",
         idBuku
       )
-      .maybeSingle(),
+      .single(),
 
     db
-      .from(
-        "book_ingestion_sessions"
-      )
+      .from("book_ingestion_sessions")
       .select(`
         id,
         book_id,
@@ -21179,43 +17004,23 @@ async function validasiKesiapanFinalIngestionBuku(
         "book_id",
         idBuku
       )
-      .maybeSingle()
+      .single()
 
   ]);
 
-  /* =========================
-     VALIDASI QUERY BUKU
-     ========================= */
-
-  if (hasilBuku.error) {
-
-    throw new Error(
-      "Gagal membaca data buku pada Final Completion Gate: " +
-      hasilBuku.error.message
-    );
-  }
-
-  if (!hasilBuku.data) {
-
+  if (
+    hasilBuku.error ||
+    !hasilBuku.data
+  ) {
     throw new Error(
       "Data buku Final Completion Gate tidak ditemukan."
     );
   }
 
-  /* =========================
-     VALIDASI QUERY SESSION
-     ========================= */
-
-  if (hasilSession.error) {
-
-    throw new Error(
-      "Gagal membaca session ingestion pada Final Completion Gate: " +
-      hasilSession.error.message
-    );
-  }
-
-  if (!hasilSession.data) {
-
+  if (
+    hasilSession.error ||
+    !hasilSession.data
+  ) {
     throw new Error(
       "Session ingestion Final Completion Gate tidak ditemukan."
     );
@@ -21226,10 +17031,6 @@ async function validasiKesiapanFinalIngestionBuku(
 
   const session =
     hasilSession.data;
-
-  /* =========================
-     NORMALISASI NILAI
-     ========================= */
 
   const totalPages =
     Number(
@@ -21251,168 +17052,88 @@ async function validasiKesiapanFinalIngestionBuku(
       session.output_size || 0
     );
 
-  const bookEpubSize =
-    Number(
-      book.epub_size || 0
-    );
-
-  const sessionOutputUrl =
-    typeof session.output_url ===
-      "string"
-      ? session.output_url.trim()
-      : "";
-
-  const sessionStoragePath =
-    typeof session.output_storage_path ===
-      "string"
-      ? session.output_storage_path.trim()
-      : "";
-
-  const bookEpubUrl =
-    typeof book.epub_url ===
-      "string"
-      ? book.epub_url.trim()
-      : "";
-
-  const bookEpubStoragePath =
-    typeof book.epub_storage_path ===
-      "string"
-      ? book.epub_storage_path.trim()
-      : "";
-
   const masalah = [];
-
-  /* =========================
-     VALIDASI STATUS BUKU
-     ========================= */
 
   if (
     book.upload_status !==
     "complete"
   ) {
-
     masalah.push(
       "Status buku belum complete."
     );
   }
 
   if (
-    typeof book.file_url !==
-      "string" ||
-    book.file_url.trim() ===
-      ""
-  ) {
-
-    masalah.push(
-      "URL PDF final buku belum tersedia."
-    );
-  }
-
-  /* =========================
-     VALIDASI TOTAL HALAMAN
-     ========================= */
-
-  if (
     !Number.isInteger(totalPages) ||
     totalPages < 1
   ) {
-
     masalah.push(
       "Total halaman buku tidak valid."
     );
   }
 
   if (
-    !Number.isInteger(
-      sessionTotalPages
-    ) ||
-    sessionTotalPages < 1
-  ) {
-
-    masalah.push(
-      "Total halaman ingestion tidak valid."
-    );
-
-  } else if (
     sessionTotalPages !==
     totalPages
   ) {
-
     masalah.push(
       `Total halaman ingestion ${sessionTotalPages}/${totalPages} tidak cocok.`
     );
   }
 
   if (
-    !Number.isInteger(
-      processedPages
-    ) ||
-    processedPages < 0
-  ) {
-
-    masalah.push(
-      "Jumlah halaman yang diproses tidak valid."
-    );
-
-  } else if (
     processedPages !==
     totalPages
   ) {
-
     masalah.push(
       `Progress ingestion baru ${processedPages}/${totalPages}.`
     );
   }
 
-  /* =========================
-     VALIDASI STATUS INGESTION
-     ========================= */
-
   if (
     session.status !==
     "ready"
   ) {
-
     masalah.push(
       `Status ingestion harus ready sebelum complete, sekarang ${session.status || "kosong"}.`
     );
   }
 
-  /* =========================
-     VALIDASI OUTPUT SESSION
-     ========================= */
-
   if (
     session.output_format !==
     "epub"
   ) {
-
     masalah.push(
       "Format output final bukan EPUB."
     );
   }
 
-  if (!sessionOutputUrl) {
-
+  if (
+    typeof session.output_url !==
+      "string" ||
+    session.output_url.trim() ===
+      ""
+  ) {
     masalah.push(
       "URL output EPUB belum tersedia."
     );
   }
 
-  if (!sessionStoragePath) {
-
+  if (
+    typeof session.output_storage_path !==
+      "string" ||
+    session.output_storage_path.trim() ===
+      ""
+  ) {
     masalah.push(
       "Storage path EPUB belum tersedia."
     );
   }
 
   if (
-    !Number.isFinite(
-      outputSize
-    ) ||
+    !Number.isFinite(outputSize) ||
     outputSize < 1
   ) {
-
     masalah.push(
       "Ukuran output EPUB tidak valid."
     );
@@ -21421,172 +17142,60 @@ async function validasiKesiapanFinalIngestionBuku(
   if (
     !session.output_created_at
   ) {
-
     masalah.push(
       "Waktu pembuatan EPUB belum tersedia."
     );
   }
 
-  /* =========================
-     VALIDASI EPUB DI BOOKS
-     ========================= */
+  let hasilStorageEpub = null;
 
-  if (!bookEpubUrl) {
+if (
+  typeof session.output_storage_path ===
+    "string" &&
+  session.output_storage_path.trim() !==
+    "" &&
+  Number.isFinite(outputSize) &&
+  outputSize > 0
+) {
 
-    masalah.push(
-      "URL EPUB pada buku belum tersedia."
-    );
-  }
+  try {
 
-  if (!bookEpubStoragePath) {
+    hasilStorageEpub =
+      await validasiFileOutputEpubStorage({
+        storagePath:
+          session.output_storage_path,
 
-    masalah.push(
-      "Storage path EPUB pada buku belum tersedia."
-    );
-  }
+        expectedSize:
+          outputSize
+      });
 
-  if (
-    !Number.isFinite(
-      bookEpubSize
-    ) ||
-    bookEpubSize < 1
-  ) {
-
-    masalah.push(
-      "Ukuran EPUB pada buku tidak valid."
-    );
-  }
-
-  if (
-    !book.epub_created_at
-  ) {
+  } catch (storageError) {
 
     masalah.push(
-      "Waktu pembuatan EPUB pada buku belum tersedia."
+      storageError?.message ||
+      "Validasi file EPUB di Storage gagal."
     );
   }
-
-  /* =========================
-     COCOKKAN SESSION ↔ BOOKS
-     ========================= */
-
-  if (
-    sessionOutputUrl &&
-    bookEpubUrl &&
-    sessionOutputUrl !==
-      bookEpubUrl
-  ) {
-
-    masalah.push(
-      "URL EPUB pada buku tidak cocok dengan output ingestion."
-    );
-  }
-
-  if (
-    sessionStoragePath &&
-    bookEpubStoragePath &&
-    sessionStoragePath !==
-      bookEpubStoragePath
-  ) {
-
-    masalah.push(
-      "Storage path EPUB pada buku tidak cocok dengan output ingestion."
-    );
-  }
-
-  if (
-    Number.isFinite(outputSize) &&
-    outputSize > 0 &&
-    Number.isFinite(bookEpubSize) &&
-    bookEpubSize > 0 &&
-    outputSize !==
-      bookEpubSize
-  ) {
-
-    masalah.push(
-      `Ukuran EPUB buku ${bookEpubSize} byte tidak cocok dengan ingestion ${outputSize} byte.`
-    );
-  }
-
-  if (
-    session.output_created_at &&
-    book.epub_created_at &&
-    String(
-      session.output_created_at
-    ) !==
-    String(
-      book.epub_created_at
-    )
-  ) {
-
-    masalah.push(
-      "Waktu pembuatan EPUB pada buku tidak cocok dengan ingestion."
-    );
-  }
-
-  /* =========================
-     VALIDASI FILE EPUB STORAGE
-     ========================= */
-
-  let hasilStorageEpub =
-    null;
-
-  if (
-    sessionStoragePath &&
-    Number.isFinite(
-      outputSize
-    ) &&
-    outputSize > 0
-  ) {
-
-    try {
-
-      hasilStorageEpub =
-        await validasiFileOutputEpubStorage({
-          storagePath:
-            sessionStoragePath,
-
-          expectedSize:
-            outputSize
-        });
-
-    } catch (storageError) {
-
-      masalah.push(
-        storageError?.message ||
-        "Validasi file EPUB di Storage gagal."
-      );
-    }
-  }
-
-  /* =========================
-     HASIL GATE
-     ========================= */
+}
 
   if (
     masalah.length > 0
   ) {
-
     throw new Error(
       "Final Completion Gate gagal: " +
-      masalah.join(
-        " "
-      )
+      masalah.join(" ")
     );
   }
 
   return {
-    valid:
-      true,
+    valid: true,
 
     bookId:
       idBuku,
 
-    totalPages:
-      totalPages,
+    totalPages,
 
-    processedPages:
-      processedPages,
+    processedPages,
 
     status:
       session.status,
@@ -21594,28 +17203,21 @@ async function validasiKesiapanFinalIngestionBuku(
     outputFormat:
       session.output_format,
 
-    outputSize:
-      outputSize,
+    outputSize,
 
     outputCreatedAt:
       session.output_created_at,
 
-    bookEpubSynced:
-      true,
-
     storageVerified:
-      hasilStorageEpub?.valid ===
-      true,
+      hasilStorageEpub?.valid === true,
 
     storageFileName:
-      hasilStorageEpub?.fileName ||
-      null,
+      hasilStorageEpub?.fileName || null,
 
     storageSize:
-      hasilStorageEpub?.storageSize ||
-      0
-  };
-}
+      hasilStorageEpub?.storageSize || 0
+    };
+  }
 
 async function catatErrorIngestionBuku(
   bookId,
@@ -21688,6 +17290,43 @@ async function catatErrorIngestionBuku(
         bookId:
           idBuku
       }
+    );
+
+    return false;
+  }
+
+  if (
+    Number(
+      ingestionSession.book_id
+    ) !== idBuku
+  ) {
+
+    console.error(
+      "Book ID hasil pencatatan error ingestion tidak sesuai."
+    );
+
+    return false;
+  }
+
+  if (
+    ingestionSession.status !==
+    "failed"
+  ) {
+
+    console.error(
+      "Status ingestion gagal berubah menjadi failed."
+    );
+
+    return false;
+  }
+
+  if (
+    ingestionSession.last_error !==
+    pesanError
+  ) {
+
+    console.error(
+      "Pesan last_error ingestion tidak tersimpan dengan benar."
     );
 
     return false;
