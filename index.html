@@ -16262,6 +16262,7 @@ async function prosesOutputEpub({
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku proses EPUB tidak valid."
     );
@@ -16272,7 +16273,11 @@ async function prosesOutputEpub({
       idBuku
     );
 
-  let outputUpload = null;
+  let outputUpload =
+    null;
+
+  let metadataTersimpan =
+    false;
 
   try {
 
@@ -16280,6 +16285,7 @@ async function prosesOutputEpub({
       await buatEpubFixedDariBookPages({
         bookId:
           idBuku,
+
         language
       });
 
@@ -16287,50 +16293,209 @@ async function prosesOutputEpub({
       await uploadEpubOutput({
         bookId:
           idBuku,
+
         epubBlob:
           hasilEpub.blob
       });
+
+    const storagePath =
+      typeof outputUpload?.storagePath ===
+        "string"
+        ? outputUpload.storagePath.trim()
+        : "";
+
+    const publicUrl =
+      typeof outputUpload?.publicUrl ===
+        "string"
+        ? outputUpload.publicUrl.trim()
+        : "";
+
+    const outputSize =
+      Number(
+        outputUpload?.size
+      );
+
+    if (
+      outputUpload?.format !==
+        "epub" ||
+      !storagePath ||
+      !publicUrl ||
+      !Number.isInteger(
+        outputSize
+      ) ||
+      outputSize < 1
+    ) {
+
+      throw new Error(
+        "Hasil upload EPUB tidak valid."
+      );
+    }
+
+    const outputValid = {
+      format:
+        "epub",
+
+      publicUrl,
+
+      storagePath,
+
+      size:
+        outputSize
+    };
+
+    await validasiFileOutputEpubStorage({
+      storagePath:
+        outputValid.storagePath,
+
+      expectedSize:
+        outputValid.size
+    });
 
     const session =
       await simpanMetadataOutputEpub({
         bookId:
           idBuku,
+
         output:
-          outputUpload
+          outputValid
       });
+
+    /*
+      Mulai titik ini metadata baru
+      sudah tersimpan di database.
+
+      Jika proses sesudah ini gagal,
+      file EPUB baru tidak boleh
+      dihapus otomatis karena metadata
+      sudah menunjuk ke file tersebut.
+    */
+    metadataTersimpan =
+      true;
+
+    if (
+      Number(
+        session?.book_id
+      ) !== idBuku
+    ) {
+
+      throw new Error(
+        "Book ID metadata EPUB hasil proses tidak sesuai."
+      );
+    }
+
+    if (
+      session.output_format !==
+        "epub"
+    ) {
+
+      throw new Error(
+        "Format metadata EPUB hasil proses tidak sesuai."
+      );
+    }
+
+    const sessionUrl =
+      typeof session.output_url ===
+        "string"
+        ? session.output_url.trim()
+        : "";
+
+    const sessionStoragePath =
+      typeof session.output_storage_path ===
+        "string"
+        ? session.output_storage_path.trim()
+        : "";
+
+    const sessionSize =
+      Number(
+        session.output_size
+      );
+
+    if (
+      sessionUrl !==
+        outputValid.publicUrl
+    ) {
+
+      throw new Error(
+        "URL metadata EPUB hasil proses tidak sesuai."
+      );
+    }
+
+    if (
+      sessionStoragePath !==
+        outputValid.storagePath
+    ) {
+
+      throw new Error(
+        "Storage path metadata EPUB hasil proses tidak sesuai."
+      );
+    }
+
+    if (
+      sessionSize !==
+        outputValid.size
+    ) {
+
+      throw new Error(
+        "Ukuran metadata EPUB hasil proses tidak sesuai."
+      );
+    }
+
+    if (
+      !session.output_created_at
+    ) {
+
+      throw new Error(
+        "Waktu metadata EPUB hasil proses tidak tersedia."
+      );
+    }
 
     let outputLamaDihapus =
       false;
 
+    const storagePathLama =
+      typeof outputSebelumnya?.storagePath ===
+        "string"
+        ? outputSebelumnya.storagePath.trim()
+        : "";
+
     if (
-      outputSebelumnya?.storagePath &&
-      outputSebelumnya.storagePath !==
-        outputUpload.storagePath
+      storagePathLama &&
+      storagePathLama !==
+        outputValid.storagePath
     ) {
 
-      const {
-        error: hapusLamaError
-      } =
-        await db.storage
-          .from(
-            "book-files"
-          )
-          .remove([
-            outputSebelumnya.storagePath
-          ]);
+      try {
 
-      if (hapusLamaError) {
+        const {
+          error: hapusLamaError
+        } =
+          await db.storage
+            .from(
+              "book-files"
+            )
+            .remove([
+              storagePathLama
+            ]);
+
+        if (hapusLamaError) {
+
+          console.warn(
+            "EPUB baru berhasil, tetapi file EPUB lama gagal dihapus:",
+            hapusLamaError
+          );
+
+        } else {
+
+          outputLamaDihapus =
+            true;
+        }
+
+      } catch (hapusLamaException) {
 
         console.warn(
-          "EPUB baru berhasil, tetapi file EPUB lama gagal dihapus:",
-          hapusLamaError
+          "EPUB baru berhasil, tetapi pembersihan file EPUB lama mengalami exception:",
+          hapusLamaException
         );
-
-      } else {
-
-        outputLamaDihapus =
-          true;
-
       }
     }
 
@@ -16339,7 +16504,7 @@ async function prosesOutputEpub({
         hasilEpub,
 
       output:
-        outputUpload,
+        outputValid,
 
       session,
 
@@ -16352,25 +16517,44 @@ async function prosesOutputEpub({
 
   } catch (error) {
 
+    /*
+      Rollback file baru hanya aman
+      apabila metadata baru BELUM
+      berhasil disimpan.
+    */
     if (
-      outputUpload?.storagePath
+      !metadataTersimpan &&
+      typeof outputUpload?.storagePath ===
+        "string" &&
+      outputUpload.storagePath.trim()
     ) {
 
-      const {
-        error: rollbackError
-      } =
-        await db.storage
-          .from(
-            "book-files"
-          )
-          .remove([
-            outputUpload.storagePath
-          ]);
+      try {
 
-      if (rollbackError) {
+        const {
+          error: rollbackError
+        } =
+          await db.storage
+            .from(
+              "book-files"
+            )
+            .remove([
+              outputUpload.storagePath.trim()
+            ]);
+
+        if (rollbackError) {
+
+          console.error(
+            "Rollback file EPUB gagal:",
+            rollbackError
+          );
+        }
+
+      } catch (rollbackException) {
+
         console.error(
-          "Rollback file EPUB gagal:",
-          rollbackError
+          "Rollback file EPUB mengalami exception:",
+          rollbackException
         );
       }
     }
