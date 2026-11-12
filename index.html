@@ -16575,6 +16575,7 @@ async function pastikanOutputEpubFinalisasi({
     !Number.isInteger(idBuku) ||
     idBuku < 1
   ) {
+
     throw new Error(
       "ID buku finalisasi EPUB tidak valid."
     );
@@ -16585,62 +16586,105 @@ async function pastikanOutputEpubFinalisasi({
       idBuku
     );
 
-  const outputSiap =
-    outputSekarang &&
-    outputSekarang.stale === false &&
-    outputSekarang.format === "epub" &&
-    typeof outputSekarang.publicUrl ===
-      "string" &&
-    outputSekarang.publicUrl.trim() !== "" &&
-    typeof outputSekarang.storagePath ===
-      "string" &&
-    outputSekarang.storagePath.trim() !== "" &&
-    Number.isFinite(
-      Number(outputSekarang.size)
-    ) &&
-    Number(outputSekarang.size) > 0;
+  const punyaOutputSebelumnya =
+    outputSekarang !==
+      null;
 
-  let recoveryStorageAktif =
-  false;
-  
-  if (outputSiap) {
+  const publicUrlSekarang =
+    typeof outputSekarang?.publicUrl ===
+      "string"
+      ? outputSekarang.publicUrl.trim()
+      : "";
 
-  try {
+  const storagePathSekarang =
+    typeof outputSekarang?.storagePath ===
+      "string"
+      ? outputSekarang.storagePath.trim()
+      : "";
 
-    await validasiFileOutputEpubStorage({
-      storagePath:
-        outputSekarang.storagePath,
-
-      expectedSize:
-        Number(
-          outputSekarang.size
-        )
-    });
-
-    return {
-      reused: true,
-      rebuilt: false,
-      recovered: false,
-
-      output:
-        outputSekarang,
-
-      result:
-        null
-    };
-
-  } catch (storageError) {
-
-    recoveryStorageAktif =
-      true;
-
-    console.warn(
-      "EPUB aktif tidak valid di Storage. Sistem akan membangun ulang EPUB:",
-      storageError
+  const sizeSekarang =
+    Number(
+      outputSekarang?.size
     );
 
+  const createdAtSekarang =
+    outputSekarang?.createdAt;
+
+  const outputSiap =
+    outputSekarang &&
+    outputSekarang.stale ===
+      false &&
+    outputSekarang.format ===
+      "epub" &&
+    publicUrlSekarang &&
+    storagePathSekarang &&
+    Number.isInteger(
+      sizeSekarang
+    ) &&
+    sizeSekarang > 0 &&
+    createdAtSekarang;
+
+  let recoveryAktif =
+    punyaOutputSebelumnya &&
+    !outputSiap;
+
+  if (outputSiap) {
+
+    try {
+
+      await validasiFileOutputEpubStorage({
+        storagePath:
+          storagePathSekarang,
+
+        expectedSize:
+          sizeSekarang
+      });
+
+      return {
+        reused:
+          true,
+
+        rebuilt:
+          false,
+
+        recovered:
+          false,
+
+        output: {
+          format:
+            "epub",
+
+          publicUrl:
+            publicUrlSekarang,
+
+          storagePath:
+            storagePathSekarang,
+
+          size:
+            sizeSekarang,
+
+          createdAt:
+            createdAtSekarang,
+
+          stale:
+            false
+        },
+
+        result:
+          null
+      };
+
+    } catch (storageError) {
+
+      recoveryAktif =
+        true;
+
+      console.warn(
+        "EPUB aktif tidak valid di Storage. Sistem akan membangun ulang EPUB:",
+        storageError
+      );
+    }
   }
-}
 
   const hasilRebuild =
     await prosesOutputEpub({
@@ -16650,31 +16694,163 @@ async function pastikanOutputEpubFinalisasi({
       language
     });
 
+  const rebuildPublicUrl =
+    typeof hasilRebuild?.output
+      ?.publicUrl ===
+      "string"
+      ? hasilRebuild.output
+          .publicUrl
+          .trim()
+      : "";
+
+  const rebuildStoragePath =
+    typeof hasilRebuild?.output
+      ?.storagePath ===
+      "string"
+      ? hasilRebuild.output
+          .storagePath
+          .trim()
+      : "";
+
+  const rebuildSize =
+    Number(
+      hasilRebuild?.output
+        ?.size
+    );
+
+  const rebuildCreatedAt =
+    hasilRebuild?.session
+      ?.output_created_at ||
+    null;
+
+  if (
+    hasilRebuild?.output
+      ?.format !==
+      "epub" ||
+    !rebuildPublicUrl ||
+    !rebuildStoragePath ||
+    !Number.isInteger(
+      rebuildSize
+    ) ||
+    rebuildSize < 1 ||
+    !rebuildCreatedAt
+  ) {
+
+    throw new Error(
+      "Hasil rebuild EPUB finalisasi tidak valid."
+    );
+  }
+
+  if (
+    Number(
+      hasilRebuild?.session
+        ?.book_id
+    ) !== idBuku
+  ) {
+
+    throw new Error(
+      "Book ID hasil rebuild EPUB finalisasi tidak sesuai."
+    );
+  }
+
+  if (
+    hasilRebuild.session
+      .output_format !==
+      "epub"
+  ) {
+
+    throw new Error(
+      "Format metadata hasil rebuild EPUB finalisasi tidak sesuai."
+    );
+  }
+
+  const sessionUrl =
+    typeof hasilRebuild.session
+      .output_url ===
+      "string"
+      ? hasilRebuild.session
+          .output_url
+          .trim()
+      : "";
+
+  const sessionStoragePath =
+    typeof hasilRebuild.session
+      .output_storage_path ===
+      "string"
+      ? hasilRebuild.session
+          .output_storage_path
+          .trim()
+      : "";
+
+  const sessionSize =
+    Number(
+      hasilRebuild.session
+        .output_size
+    );
+
+  if (
+    sessionUrl !==
+      rebuildPublicUrl
+  ) {
+
+    throw new Error(
+      "URL metadata hasil rebuild EPUB finalisasi tidak sesuai."
+    );
+  }
+
+  if (
+    sessionStoragePath !==
+      rebuildStoragePath
+  ) {
+
+    throw new Error(
+      "Storage path metadata hasil rebuild EPUB finalisasi tidak sesuai."
+    );
+  }
+
+  if (
+    sessionSize !==
+      rebuildSize
+  ) {
+
+    throw new Error(
+      "Ukuran metadata hasil rebuild EPUB finalisasi tidak sesuai."
+    );
+  }
+
+  await validasiFileOutputEpubStorage({
+    storagePath:
+      rebuildStoragePath,
+
+    expectedSize:
+      rebuildSize
+  });
+
   return {
-    reused: false,
-    rebuilt: true,
+    reused:
+      false,
+
+    rebuilt:
+      true,
+
     recovered:
-      recoveryStorageAktif,
+      recoveryAktif,
 
     output: {
       format:
         "epub",
 
       publicUrl:
-        hasilRebuild.output.publicUrl,
+        rebuildPublicUrl,
 
       storagePath:
-        hasilRebuild.output.storagePath,
+        rebuildStoragePath,
 
       size:
-        Number(
-          hasilRebuild.output.size || 0
-        ),
+        rebuildSize,
 
       createdAt:
-        hasilRebuild.session
-          ?.output_created_at ||
-        null,
+        rebuildCreatedAt,
 
       stale:
         false
