@@ -13074,65 +13074,17 @@ async function validasiIntegritasHalaman(
 
 async function buatPdfFinalBuku() {
 
-const bookId =
-  Number(
+  const bookId =
+    Number(
+      document.getElementById(
+        "book-pages-book-id"
+      )?.value
+    );
+
+  const message =
     document.getElementById(
-      "book-pages-book-id"
-    )?.value || 0
-  );
-
-const message =
-  document.getElementById(
-    "book-pages-message"
-  );
-
-if (!bookId) {
-
-  if (message) {
-    message.textContent =
-      "❌ ID buku tidak ditemukan.";
-  }
-
-  return;
-}
-
-const hasilValidasi =
-  await validasiIntegritasHalaman(
-    bookId
-  );
-
-if (!hasilValidasi.valid) {
-
-  if (message) {
-    message.textContent =
-      "❌ PDF Final tidak dapat dibuat. " +
-      hasilValidasi.message;
-
-    requestAnimationFrame(() => {
-      message.scrollIntoView({
-        behavior: "smooth",
-        block: "center"
-      });
-    });
-  }
-
-  return;
-}
-
-if (message) {
-  message.textContent =
-    "✅ Integritas halaman valid. " +
-    hasilValidasi.message;
-}
-
-const bolehFinalisasi =
-  await selesaikanAksiUploadTerakhir(
-    "membuat PDF Final"
-  );
-
-if (!bolehFinalisasi) {
-  return;
-}
+      "book-pages-message"
+    );
 
   const finalizeButton =
     document.getElementById(
@@ -13145,325 +13097,740 @@ if (!bolehFinalisasi) {
     );
 
   if (
-    typeof PDFLib === "undefined" ||
-    !PDFLib.PDFDocument
+    !Number.isInteger(
+      bookId
+    ) ||
+    bookId < 1
   ) {
-    message.textContent =
-      "❌ Mesin PDF belum berhasil dimuat.";
+
+    if (message) {
+      message.textContent =
+        "❌ ID buku tidak ditemukan atau tidak valid.";
+    }
+
     return;
   }
 
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
+  const hasilValidasi =
+    await validasiIntegritasHalaman(
+      bookId
+    );
 
   if (
-    userError ||
-    !user
+    !hasilValidasi ||
+    hasilValidasi.valid !==
+      true
   ) {
 
-    const errorAdmin =
-      new Error(
+    if (message) {
+
+      message.textContent =
+        "❌ PDF Final tidak dapat dibuat. " +
+        (
+          hasilValidasi?.message ||
+          "Integritas halaman tidak valid."
+        );
+
+      requestAnimationFrame(
+        () => {
+
+          message.scrollIntoView({
+            behavior:
+              "smooth",
+
+            block:
+              "center"
+          });
+        }
+      );
+    }
+
+    return;
+  }
+
+  if (message) {
+
+    message.textContent =
+      "✅ Integritas halaman valid. " +
+      hasilValidasi.message;
+  }
+
+  let bolehFinalisasi =
+    false;
+
+  try {
+
+    bolehFinalisasi =
+      await selesaikanAksiUploadTerakhir(
+        "membuat PDF Final"
+      );
+
+  } catch (pendingActionError) {
+
+    if (message) {
+
+      message.textContent =
+        "❌ Gagal menyelesaikan aksi halaman terakhir: " +
+        (
+          pendingActionError?.message ||
+          "Kesalahan tidak diketahui."
+        );
+    }
+
+    return;
+  }
+
+  if (!bolehFinalisasi) {
+    return;
+  }
+
+  if (
+    typeof PDFLib ===
+      "undefined" ||
+    !PDFLib ||
+    !PDFLib.PDFDocument ||
+    typeof PDFLib.PDFDocument.create !==
+      "function" ||
+    typeof PDFLib.PDFDocument.load !==
+      "function"
+  ) {
+
+    if (message) {
+
+      message.textContent =
+        "❌ Mesin PDF belum berhasil dimuat.";
+    }
+
+    return;
+  }
+
+  if (!finalizeButton) {
+
+    if (message) {
+
+      message.textContent =
+        "❌ Tombol finalisasi PDF tidak ditemukan.";
+    }
+
+    return;
+  }
+
+  finalizeButton.disabled =
+    true;
+
+  finalizeButton.textContent =
+    "⏳ Membuat PDF...";
+
+  if (uploadButton) {
+
+    uploadButton.disabled =
+      true;
+  }
+
+  if (message) {
+
+    message.textContent =
+      "⏳ Menyiapkan proses finalisasi...";
+  }
+
+  let finalStoragePath =
+    null;
+
+  let metadataPdfFinalAktif =
+    false;
+
+  let finalisasiIntiSelesai =
+    false;
+
+  let fileUrlSebelumnya =
+    null;
+
+  let uploadStatusSebelumnya =
+    null;
+
+  let hasilEpubFinalisasi =
+    null;
+
+  try {
+
+    const {
+      data: {
+        user
+      },
+      error: userError
+    } =
+      await db.auth.getUser();
+
+    if (
+      userError ||
+      !user
+    ) {
+
+      throw new Error(
         "Sesi Admin tidak ditemukan: " +
         (
           userError?.message ||
           "User tidak tersedia."
         )
       );
+    }
 
-    console.error(
-      "Gagal membaca sesi Admin:",
-      errorAdmin
-    );
+    const userId =
+      typeof user.id ===
+        "string"
+        ? user.id.trim()
+        : "";
+
+    if (!userId) {
+
+      throw new Error(
+        "ID Admin tidak tersedia."
+      );
+    }
+
+    const {
+      data: book,
+      error: bookError
+    } = await db
+      .from("books")
+      .select(`
+        id,
+        title,
+        total_pages,
+        upload_mode,
+        upload_status,
+        file_url
+      `)
+      .eq(
+        "id",
+        bookId
+      )
+      .maybeSingle();
+
+    if (bookError) {
+
+      throw new Error(
+        "Gagal membaca data buku: " +
+        bookError.message
+      );
+    }
+
+    if (!book) {
+
+      throw new Error(
+        "Data buku tidak ditemukan."
+      );
+    }
+
+    if (
+      Number(
+        book.id
+      ) !== bookId
+    ) {
+
+      throw new Error(
+        "Book ID finalisasi tidak sesuai."
+      );
+    }
+
+    if (
+      book.upload_mode !==
+        "incremental"
+    ) {
+
+      throw new Error(
+        "Buku ini bukan mode Upload Bertahap."
+      );
+    }
+
+    const totalHalaman =
+      Number(
+        book.total_pages
+      );
+
+    if (
+      !Number.isInteger(
+        totalHalaman
+      ) ||
+      totalHalaman < 1
+    ) {
+
+      throw new Error(
+        "Total halaman buku tidak valid."
+      );
+    }
+
+    if (
+      totalHalaman !==
+        Number(
+          hasilValidasi.totalPages
+        )
+    ) {
+
+      throw new Error(
+        "Total halaman berubah setelah pemeriksaan integritas."
+      );
+    }
+
+    fileUrlSebelumnya =
+      typeof book.file_url ===
+        "string"
+        ? book.file_url.trim() ||
+          null
+        : null;
+
+    uploadStatusSebelumnya =
+      book.upload_status ??
+      null;
+
+    const {
+      data: pages,
+      error: pagesError
+    } = await db
+      .from("book_pages")
+      .select(`
+        id,
+        book_id,
+        page_number,
+        file_url,
+        storage_path
+      `)
+      .eq(
+        "book_id",
+        bookId
+      )
+      .order(
+        "page_number",
+        {
+          ascending:
+            true
+        }
+      );
+
+    if (pagesError) {
+
+      throw new Error(
+        "Gagal mengambil daftar halaman: " +
+        pagesError.message
+      );
+    }
+
+    if (
+      !Array.isArray(
+        pages
+      )
+    ) {
+
+      throw new Error(
+        "Daftar halaman hasil query tidak valid."
+      );
+    }
+
+    if (
+      pages.length !==
+        totalHalaman
+    ) {
+
+      throw new Error(
+        `Jumlah halaman berubah. Ditemukan ${pages.length}, seharusnya ${totalHalaman}.`
+      );
+    }
+
+    for (
+      let index = 0;
+      index < pages.length;
+      index++
+    ) {
+
+      const page =
+        pages[index];
+
+      const nomorSeharusnya =
+        index + 1;
+
+      if (
+        !Number.isInteger(
+          Number(
+            page?.id
+          )
+        ) ||
+        Number(
+          page.id
+        ) < 1
+      ) {
+
+        throw new Error(
+          `ID Halaman ${nomorSeharusnya} tidak valid.`
+        );
+      }
+
+      if (
+        Number(
+          page?.book_id
+        ) !== bookId
+      ) {
+
+        throw new Error(
+          `Book ID Halaman ${nomorSeharusnya} tidak sesuai.`
+        );
+      }
+
+      if (
+        Number(
+          page?.page_number
+        ) !== nomorSeharusnya
+      ) {
+
+        throw new Error(
+          `Urutan halaman berubah pada posisi ${nomorSeharusnya}.`
+        );
+      }
+
+      const fileUrl =
+        typeof page?.file_url ===
+          "string"
+          ? page.file_url.trim()
+          : "";
+
+      if (!fileUrl) {
+
+        throw new Error(
+          `URL file Halaman ${nomorSeharusnya} tidak tersedia.`
+        );
+      }
+
+      const storagePath =
+        typeof page?.storage_path ===
+          "string"
+          ? page.storage_path.trim()
+          : "";
+
+      if (!storagePath) {
+
+        throw new Error(
+          `Storage path Halaman ${nomorSeharusnya} tidak tersedia.`
+        );
+      }
+
+      page.file_url =
+        fileUrl;
+
+      page.storage_path =
+        storagePath;
+    }
+
+    const statusProcessingAktif =
+      await setStatusIngestionBuku(
+        bookId,
+        "processing"
+      );
+
+    if (!statusProcessingAktif) {
+
+      throw new Error(
+        "Status ingestion gagal diubah menjadi processing."
+      );
+    }
 
     try {
 
-      await catatErrorIngestionBuku(
-        bookId,
-        errorAdmin
+      await tampilkanStatusIngestionKelolaHalaman(
+        bookId
       );
 
-    } catch (trackingError) {
+    } catch (statusUiError) {
 
-      console.error(
-        "Pencatatan error ingestion gagal:",
-        trackingError
+      console.warn(
+        "Tampilan status ingestion belum dapat diperbarui:",
+        statusUiError
       );
     }
 
-    await tampilkanStatusIngestionKelolaHalaman(
-      bookId
-    );
+    if (message) {
 
-    message.textContent =
-      "❌ Sesi Admin tidak ditemukan.";
-
-    return;
-  }
-
-  const {
-    data: book,
-    error: bookError
-  } = await db
-    .from("books")
-    .select(`
-      id,
-      title,
-      total_pages,
-      upload_mode,
-      upload_status,
-      file_url
-    `)
-    .eq("id", bookId)
-    .maybeSingle();
-
-  if (
-    bookError ||
-    !book
-  ) {
-    message.textContent =
-      "❌ Data buku tidak ditemukan.";
-    return;
-  }
-
-  if (
-    book.upload_mode !==
-    "incremental"
-  ) {
-    message.textContent =
-      "⚠️ Buku ini bukan mode Upload Bertahap.";
-    return;
-  }
-
-  const {
-    data: pages,
-    error: pagesError
-  } = await db
-    .from("book_pages")
-    .select(`
-      page_number,
-      file_url,
-      storage_path
-    `)
-    .eq("book_id", bookId)
-    .order("page_number", {
-      ascending: true
-    });
-
-  if (pagesError) {
-    console.error(
-      "Gagal mengambil halaman:",
-      pagesError
-    );
-
-    message.textContent =
-      "❌ Gagal mengambil daftar halaman.";
-    return;
-  }
-
-  const totalHalaman =
-    Number(book.total_pages || 0);
-
-  if (
-    !totalHalaman ||
-    !pages ||
-    pages.length !== totalHalaman
-  ) {
-    message.textContent =
-      "⚠️ Semua halaman harus lengkap sebelum membuat PDF final.";
-    return;
-  }
-
-  for (
-    let nomor = 1;
-    nomor <= totalHalaman;
-    nomor++
-  ) {
-
-    const halaman =
-      pages.find(
-        (page) =>
-          Number(page.page_number) ===
-          nomor
-      );
-
-    if (!halaman) {
       message.textContent =
-        `⚠️ Halaman ${nomor} belum tersedia.`;
-      return;
+        "⏳ Menyiapkan EPUB final...";
     }
-  }
 
-  finalizeButton.disabled = true;
+    hasilEpubFinalisasi =
+      await pastikanOutputEpubFinalisasi({
+        bookId,
+        language:
+          "id"
+      });
 
-  if (uploadButton) {
-    uploadButton.disabled = true;
-  }
+    if (
+      !hasilEpubFinalisasi ||
+      !hasilEpubFinalisasi.output
+    ) {
 
-  finalizeButton.textContent =
-    "⏳ Membuat PDF...";
+      throw new Error(
+        "Hasil finalisasi EPUB tidak valid."
+      );
+    }
 
-  message.textContent =
-    "⏳ Menggabungkan halaman menjadi PDF final...";
+    const bukuDenganEpub =
+      await sinkronkanOutputEpubKeBuku(
+        bookId
+      );
 
-  let finalStoragePath = null;
+    if (
+      !bukuDenganEpub ||
+      Number(
+        bukuDenganEpub.id
+      ) !== bookId
+    ) {
 
-try {
+      throw new Error(
+        "Sinkronisasi metadata EPUB ke buku tidak valid."
+      );
+    }
 
-  const statusProcessingAktif =
-    await setStatusIngestionBuku(
-      bookId,
-      "processing"
-    );
-
-  if (!statusProcessingAktif) {
-
-    console.warn(
-      "Status ingestion belum berhasil diubah ke processing."
-    );
-
-  } else {
-
-    await tampilkanStatusIngestionKelolaHalaman(
-      bookId
-    );
-  }
-
-    message.textContent =
-    "⏳ Menyiapkan EPUB final...";
-
-  const hasilEpubFinalisasi =
-    await pastikanOutputEpubFinalisasi({
-      bookId,
-      language: "id"
-    });
-
-  if (
-  hasilEpubFinalisasi.reused
-) {
-
-  console.log(
-    "EPUB final sudah aktif. Output lama digunakan kembali.",
-    hasilEpubFinalisasi.output
-  );
-
-} else if (
-  hasilEpubFinalisasi.recovered
-) {
-
-  console.log(
-    "EPUB final berhasil dipulihkan otomatis dari masalah Storage.",
-    hasilEpubFinalisasi.output
-  );
-
-} else if (
-  hasilEpubFinalisasi.rebuilt
-) {
-
-  console.log(
-    "EPUB final berhasil dibangun ulang.",
-    hasilEpubFinalisasi.output
-  );
-}
-
-const bukuDenganEpub =
-  await sinkronkanOutputEpubKeBuku(
-    bookId
-  );
-
-console.log(
-  "Metadata EPUB berhasil disinkronkan ke books.",
-  bukuDenganEpub
-);
-
-  const {
-    PDFDocument
-  } = PDFLib;
+    const {
+      PDFDocument
+    } =
+      PDFLib;
 
     const finalPdf =
       await PDFDocument.create();
 
-    for (const page of pages) {
+    if (
+      !finalPdf ||
+      typeof finalPdf.copyPages !==
+        "function" ||
+      typeof finalPdf.addPage !==
+        "function" ||
+      typeof finalPdf.getPageCount !==
+        "function" ||
+      typeof finalPdf.save !==
+        "function"
+    ) {
 
-      message.textContent =
-        `⏳ Memproses halaman ${page.page_number} dari ${totalHalaman}...`;
+      throw new Error(
+        "Dokumen PDF final tidak dapat dibuat."
+      );
+    }
 
-      const response =
-        await fetch(
-          page.file_url,
-          {
-            cache: "no-store"
-          }
-        );
+    for (
+      let index = 0;
+      index < pages.length;
+      index++
+    ) {
 
-      if (!response.ok) {
+      const page =
+        pages[index];
+
+      const nomorHalaman =
+        index + 1;
+
+      if (message) {
+
+        message.textContent =
+          `⏳ Memproses halaman ${nomorHalaman} dari ${totalHalaman}...`;
+      }
+
+      let response =
+        null;
+
+      try {
+
+        response =
+          await fetch(
+            page.file_url,
+            {
+              cache:
+                "no-store"
+            }
+          );
+
+      } catch (fetchError) {
+
         throw new Error(
-          `Gagal mengambil file halaman ${page.page_number}.`
+          `Gagal mengambil file Halaman ${nomorHalaman}: ` +
+          (
+            fetchError?.message ||
+            "Koneksi file gagal."
+          )
         );
       }
 
-      const sourceBytes =
-        await response.arrayBuffer();
+      if (
+        !response ||
+        !response.ok
+      ) {
+
+        throw new Error(
+          `Gagal mengambil file Halaman ${nomorHalaman}. HTTP ${response?.status || "tidak diketahui"}.`
+        );
+      }
+
+      let sourceBytes =
+        null;
+
+      try {
+
+        sourceBytes =
+          await response.arrayBuffer();
+
+      } catch (bufferError) {
+
+        throw new Error(
+          `Data Halaman ${nomorHalaman} gagal dibaca: ` +
+          (
+            bufferError?.message ||
+            "ArrayBuffer tidak tersedia."
+          )
+        );
+      }
+
+      if (
+        !(
+          sourceBytes instanceof
+            ArrayBuffer
+        ) ||
+        sourceBytes.byteLength < 1
+      ) {
+
+        throw new Error(
+          `Data PDF Halaman ${nomorHalaman} kosong.`
+        );
+      }
 
       const sourcePdf =
         await PDFDocument.load(
           sourceBytes
         );
 
-      const sourcePageCount =
-        sourcePdf.getPageCount();
+      if (
+        !sourcePdf ||
+        typeof sourcePdf.getPageCount !==
+          "function"
+      ) {
 
-      if (sourcePageCount !== 1) {
         throw new Error(
-          `File untuk Halaman ${page.page_number} berisi ${sourcePageCount} halaman. Setiap slot halaman harus menggunakan PDF satu halaman.`
+          `PDF Halaman ${nomorHalaman} tidak valid.`
         );
       }
 
-      const [copiedPage] =
-        await finalPdf.copyPages(
-          sourcePdf,
-          [0]
+      const sourcePageCount =
+        Number(
+          sourcePdf.getPageCount()
         );
 
+      if (
+        !Number.isInteger(
+          sourcePageCount
+        ) ||
+        sourcePageCount !== 1
+      ) {
+
+        throw new Error(
+          `File untuk Halaman ${nomorHalaman} berisi ${sourcePageCount} halaman. Setiap slot halaman harus menggunakan PDF satu halaman.`
+        );
+      }
+
+      const copiedPages =
+        await finalPdf.copyPages(
+          sourcePdf,
+          [
+            0
+          ]
+        );
+
+      if (
+        !Array.isArray(
+          copiedPages
+        ) ||
+        copiedPages.length !== 1 ||
+        !copiedPages[0]
+      ) {
+
+        throw new Error(
+          `Halaman ${nomorHalaman} gagal disalin ke PDF final.`
+        );
+      }
+
       finalPdf.addPage(
-        copiedPage
+        copiedPages[0]
       );
     }
 
     const finalPageCount =
-      finalPdf.getPageCount();
+      Number(
+        finalPdf.getPageCount()
+      );
 
     if (
+      !Number.isInteger(
+        finalPageCount
+      ) ||
       finalPageCount !==
-      totalHalaman
+        totalHalaman
     ) {
+
       throw new Error(
         `Jumlah halaman PDF final tidak sesuai. Ditemukan ${finalPageCount}, seharusnya ${totalHalaman}.`
       );
     }
 
-    message.textContent =
-      "⏳ Menyimpan PDF final...";
+    if (message) {
+
+      message.textContent =
+        "⏳ Menyimpan PDF final...";
+    }
 
     const finalBytes =
       await finalPdf.save({
-        useObjectStreams: true
+        useObjectStreams:
+          true
       });
+
+    if (
+      !finalBytes ||
+      !Number.isInteger(
+        finalBytes.byteLength
+      ) ||
+      finalBytes.byteLength < 1
+    ) {
+
+      throw new Error(
+        "Data PDF final kosong atau tidak valid."
+      );
+    }
 
     const finalBlob =
       new Blob(
-        [finalBytes],
+        [
+          finalBytes
+        ],
         {
           type:
             "application/pdf"
         }
       );
 
+    if (
+      !(finalBlob instanceof Blob) ||
+      !Number.isInteger(
+        Number(
+          finalBlob.size
+        )
+      ) ||
+      finalBlob.size < 1 ||
+      finalBlob.type !==
+        "application/pdf"
+    ) {
+
+      throw new Error(
+        "Blob PDF final tidak valid."
+      );
+    }
+
     finalStoragePath =
-      `${user.id}/incremental/${bookId}/final-${Date.now()}.pdf`;
+      `${userId}/incremental/${bookId}/final-${Date.now()}.pdf`;
 
     const {
+      data: finalUploadData,
       error: finalUploadError
     } = await db.storage
       .from("book-files")
@@ -13471,17 +13838,39 @@ console.log(
         finalStoragePath,
         finalBlob,
         {
-          cacheControl: "3600",
-          upsert: false,
+          cacheControl:
+            "3600",
+
+          upsert:
+            false,
+
           contentType:
             "application/pdf"
         }
       );
 
     if (finalUploadError) {
+
       throw new Error(
         "Upload PDF final gagal: " +
         finalUploadError.message
+      );
+    }
+
+    const uploadedPath =
+      typeof finalUploadData?.path ===
+        "string"
+        ? finalUploadData.path.trim()
+        : "";
+
+    if (
+      !uploadedPath ||
+      uploadedPath !==
+        finalStoragePath
+    ) {
+
+      throw new Error(
+        "Storage path PDF final hasil upload tidak sesuai."
       );
     }
 
@@ -13494,32 +13883,48 @@ console.log(
       );
 
     const finalUrl =
-      finalPublicData.publicUrl;
+      typeof finalPublicData?.publicUrl ===
+        "string"
+        ? finalPublicData.publicUrl.trim()
+        : "";
 
-    message.textContent =
-      "⏳ Menyelesaikan buku...";
+    if (!finalUrl) {
+
+      throw new Error(
+        "Public URL PDF final tidak tersedia."
+      );
+    }
+
+    if (message) {
+
+      message.textContent =
+        "⏳ Menyelesaikan buku...";
+    }
 
     const {
+      data: bookFinal,
       error: updateBookError
     } = await db
       .from("books")
       .update({
         file_url:
           finalUrl,
+
         upload_status:
           "complete"
       })
-      .eq("id", bookId);
+      .eq(
+        "id",
+        bookId
+      )
+      .select(`
+        id,
+        file_url,
+        upload_status
+      `)
+      .maybeSingle();
 
     if (updateBookError) {
-
-      await db.storage
-        .from("book-files")
-        .remove([
-          finalStoragePath
-        ]);
-
-      finalStoragePath = null;
 
       throw new Error(
         "Gagal menyelesaikan buku: " +
@@ -13527,93 +13932,96 @@ console.log(
       );
     }
 
-let ingestionFinalizeSyncWarning = null;
+    if (!bookFinal) {
 
-try {
-
-  await sinkronkanProgressIngestionBuku(
-    bookId
-  );
-
-const hasilFinalCompletionGate =
-  await validasiKesiapanFinalIngestionBuku(
-    bookId
-  );
-
-if (
-  !hasilFinalCompletionGate.valid
-) {
-  throw new Error(
-    "Final Completion Gate tidak lolos."
-  );
-}
-
-const statusCompleteAktif =
-  await setStatusIngestionBuku(
-    bookId,
-    "complete"
-  );
-
-  if (!statusCompleteAktif) {
-    throw new Error(
-      "Status ingestion final gagal diubah menjadi complete."
-    );
-  }
-
-  await tampilkanStatusIngestionKelolaHalaman(
-    bookId
-  );
-
-} catch (syncError) {
-
-  console.error(
-    "Sinkronisasi ingestion setelah finalisasi gagal:",
-    syncError
-  );
-
-  try {
-
-    await catatErrorIngestionBuku(
-      bookId,
-      syncError
-    );
-
-  } catch (trackingError) {
-
-    console.error(
-      "Pencatatan error ingestion gagal:",
-      trackingError
-    );
-  }
-
-  ingestionFinalizeSyncWarning =
-    syncError;
-}
-
-    await tampilkanBuku();
-
-    await muatDaftarBukuAdmin();
-
-    await bukaKelolaHalaman(
-      bookId
-    );
-
-    const statusEpubFinal =
-      hasilEpubFinalisasi.recovered
-        ? "EPUB final berhasil dipulihkan otomatis dari masalah Storage."
-        : hasilEpubFinalisasi.rebuilt
-          ? "EPUB final berhasil dibangun ulang."
-          : "EPUB final aktif digunakan kembali.";
-
-    message.textContent =
-      `✅ Finalisasi berhasil. ` +
-      `${statusEpubFinal} ` +
-      `PDF final ${totalHalaman} halaman berhasil dibuat dan buku sudah berstatus Selesai.`;
-
-    if (ingestionFinalizeSyncWarning) {
-      message.textContent +=
-        " ⚠️ Status ingestion belum tersinkron.";
+      throw new Error(
+        "Metadata PDF final tidak ditemukan setelah penyimpanan."
+      );
     }
+
+    if (
+      Number(
+        bookFinal.id
+      ) !== bookId
+    ) {
+
+      throw new Error(
+        "Book ID metadata PDF final tidak sesuai."
+      );
+    }
+
+    if (
+      typeof bookFinal.file_url !==
+        "string" ||
+      bookFinal.file_url.trim() !==
+        finalUrl
+    ) {
+
+      throw new Error(
+        "URL PDF final gagal tersimpan dengan benar."
+      );
+    }
+
+    if (
+      bookFinal.upload_status !==
+        "complete"
+    ) {
+
+      throw new Error(
+        "Status buku gagal berubah menjadi complete."
+      );
+    }
+
+    metadataPdfFinalAktif =
+      true;
+
+    const hasilSinkron =
+      await sinkronkanProgressIngestionBuku(
+        bookId
+      );
+
+    if (!hasilSinkron) {
+
+      throw new Error(
+        "Sinkronisasi progress ingestion setelah finalisasi gagal."
+      );
+    }
+
+    const hasilFinalCompletionGate =
+      await validasiKesiapanFinalIngestionBuku(
+        bookId
+      );
+
+    if (
+      !hasilFinalCompletionGate ||
+      hasilFinalCompletionGate.valid !==
+        true
+    ) {
+
+      throw new Error(
+        "Final Completion Gate tidak lolos: " +
+        (
+          hasilFinalCompletionGate?.message ||
+          "Validasi final tidak berhasil."
+        )
+      );
+    }
+
+    const statusCompleteAktif =
+      await setStatusIngestionBuku(
+        bookId,
+        "complete"
+      );
+
+    if (!statusCompleteAktif) {
+
+      throw new Error(
+        "Status ingestion final gagal diubah menjadi complete."
+      );
+    }
+
+    finalisasiIntiSelesai =
+      true;
 
   } catch (error) {
 
@@ -13621,6 +14029,122 @@ const statusCompleteAktif =
       "Pembuatan PDF final gagal:",
       error
     );
+
+    if (
+      !finalisasiIntiSelesai &&
+      metadataPdfFinalAktif
+    ) {
+
+      try {
+
+        const {
+          data: bookRollback,
+          error: rollbackBookError
+        } = await db
+          .from("books")
+          .update({
+            file_url:
+              fileUrlSebelumnya,
+
+            upload_status:
+              uploadStatusSebelumnya
+          })
+          .eq(
+            "id",
+            bookId
+          )
+          .select(`
+            id,
+            file_url,
+            upload_status
+          `)
+          .maybeSingle();
+
+        if (rollbackBookError) {
+
+          throw rollbackBookError;
+        }
+
+        if (
+          !bookRollback ||
+          Number(
+            bookRollback.id
+          ) !== bookId
+        ) {
+
+          throw new Error(
+            "Read-back rollback buku tidak valid."
+          );
+        }
+
+        const fileUrlRollback =
+          typeof bookRollback.file_url ===
+            "string"
+            ? bookRollback.file_url.trim() ||
+              null
+            : null;
+
+        if (
+          fileUrlRollback !==
+            fileUrlSebelumnya ||
+          bookRollback.upload_status !==
+            uploadStatusSebelumnya
+        ) {
+
+          throw new Error(
+            "Metadata buku tidak kembali ke kondisi sebelum finalisasi."
+          );
+        }
+
+        metadataPdfFinalAktif =
+          false;
+
+      } catch (rollbackError) {
+
+        console.error(
+          "Rollback metadata PDF final gagal:",
+          rollbackError
+        );
+      }
+    }
+
+    if (
+      finalStoragePath &&
+      !metadataPdfFinalAktif &&
+      !finalisasiIntiSelesai
+    ) {
+
+      try {
+
+        const {
+          error: removeFinalError
+        } = await db.storage
+          .from("book-files")
+          .remove([
+            finalStoragePath
+          ]);
+
+        if (removeFinalError) {
+
+          console.error(
+            "Cleanup PDF final gagal:",
+            removeFinalError
+          );
+
+        } else {
+
+          finalStoragePath =
+            null;
+        }
+
+      } catch (cleanupError) {
+
+        console.error(
+          "Cleanup PDF final gagal:",
+          cleanupError
+        );
+      }
+    }
 
     try {
 
@@ -13637,34 +14161,97 @@ const statusCompleteAktif =
       );
     }
 
+    try {
+
+      await tampilkanStatusIngestionKelolaHalaman(
+        bookId
+      );
+
+    } catch (statusError) {
+
+      console.error(
+        "Pembaruan tampilan status ingestion gagal:",
+        statusError
+      );
+    }
+
+    if (message) {
+
+      message.textContent =
+        "❌ " +
+        (
+          error?.message ||
+          "Pembuatan PDF final gagal."
+        );
+    }
+
+    return;
+
+  } finally {
+
+    finalizeButton.disabled =
+      false;
+
+    finalizeButton.textContent =
+      "📚 Buat PDF Final";
+
+    if (uploadButton) {
+
+      uploadButton.disabled =
+        false;
+    }
+  }
+
+  let refreshWarning =
+    null;
+
+  try {
+
     await tampilkanStatusIngestionKelolaHalaman(
       bookId
     );
 
-    message.textContent =
-      "❌ " +
-      (
-        error?.message ||
-        "Pembuatan PDF final gagal."
-      );
+    await tampilkanBuku();
 
-    finalizeButton.disabled = false;
+    await muatDaftarBukuAdmin();
 
-} finally {
+    await bukaKelolaHalaman(
+      bookId
+    );
 
-  finalizeButton.disabled =
-    false;
+  } catch (refreshError) {
 
-  finalizeButton.textContent =
-    "📚 Buat PDF Final";
+    refreshWarning =
+      refreshError;
 
-  if (uploadButton) {
-    uploadButton.disabled =
-      false;
+    console.error(
+      "Finalisasi berhasil tetapi refresh UI gagal:",
+      refreshError
+    );
   }
 
-}
+  const statusEpubFinal =
+    hasilEpubFinalisasi?.recovered
+      ? "EPUB final berhasil dipulihkan otomatis dari masalah Storage."
+      : hasilEpubFinalisasi?.rebuilt
+        ? "EPUB final berhasil dibangun ulang."
+        : hasilEpubFinalisasi?.reused
+          ? "EPUB final aktif digunakan kembali."
+          : "EPUB final berhasil disiapkan.";
 
+  if (message) {
+
+    message.textContent =
+      `✅ Finalisasi berhasil. ` +
+      `${statusEpubFinal} ` +
+      `PDF final ${hasilValidasi.totalPages} halaman berhasil dibuat dan buku sudah berstatus Selesai.`;
+
+    if (refreshWarning) {
+
+      message.textContent +=
+        " ⚠️ Data berhasil disimpan, tetapi sebagian tampilan Admin belum berhasil dimuat ulang.";
+    }
+  }
 }
 
 let idFokusEditBuku = null;
