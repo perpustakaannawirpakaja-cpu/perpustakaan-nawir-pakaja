@@ -8270,77 +8270,325 @@ async function kompresPdfSatuHalaman(
   mode = "balanced"
 ) {
 
+  if (
+    !(file instanceof File)
+  ) {
+
+    throw new Error(
+      "File PDF untuk kompresi tidak valid."
+    );
+  }
+
+  const namaFile =
+    typeof file.name ===
+      "string"
+      ? file.name.trim()
+      : "";
+
+  if (
+    !namaFile ||
+    !namaFile
+      .toLowerCase()
+      .endsWith(".pdf")
+  ) {
+
+    throw new Error(
+      "File kompresi harus berformat PDF."
+    );
+  }
+
+  if (
+    file.type &&
+    file.type !==
+      "application/pdf"
+  ) {
+
+    throw new Error(
+      "MIME type file kompresi bukan PDF."
+    );
+  }
+
+  const ukuranAsli =
+    Number(
+      file.size
+    );
+
+  if (
+    !Number.isInteger(
+      ukuranAsli
+    ) ||
+    ukuranAsli < 1
+  ) {
+
+    throw new Error(
+      "Ukuran file PDF untuk kompresi tidak valid."
+    );
+  }
+
+  const modeValid = [
+    "balanced",
+    "high",
+    "small"
+  ];
+
+  if (
+    !modeValid.includes(
+      mode
+    )
+  ) {
+
+    throw new Error(
+      "Mode kompresi PDF tidak valid."
+    );
+  }
+
   const pdfjsLib =
     await muatPdfJsKompresi();
 
+  if (
+    !pdfjsLib ||
+    typeof pdfjsLib.getDocument !==
+      "function"
+  ) {
+
+    throw new Error(
+      "PDF.js untuk kompresi tidak tersedia."
+    );
+  }
+
+  let sourceBuffer =
+    null;
+
+  try {
+
+    sourceBuffer =
+      await file.arrayBuffer();
+
+  } catch (bufferError) {
+
+    throw new Error(
+      "File PDF gagal dibaca untuk kompresi: " +
+      (
+        bufferError?.message ||
+        "ArrayBuffer tidak tersedia."
+      )
+    );
+  }
+
+  if (
+    !(sourceBuffer instanceof ArrayBuffer) ||
+    sourceBuffer.byteLength < 1
+  ) {
+
+    throw new Error(
+      "Data PDF untuk kompresi kosong."
+    );
+  }
+
   const sourceBytes =
     new Uint8Array(
-      await file.arrayBuffer()
+      sourceBuffer
     );
 
   const loadingTask =
     pdfjsLib.getDocument({
-      data: sourceBytes
+      data:
+        sourceBytes
     });
+
+  if (
+    !loadingTask ||
+    !loadingTask.promise
+  ) {
+
+    throw new Error(
+      "Proses pembukaan PDF untuk kompresi tidak valid."
+    );
+  }
 
   const sourcePdf =
     await loadingTask.promise;
 
-  if (sourcePdf.numPages !== 1) {
+  if (!sourcePdf) {
+
     throw new Error(
-      `PDF berisi ${sourcePdf.numPages} halaman. Kompresi halaman incremental hanya menerima PDF satu halaman.`
+      "PDF untuk kompresi gagal dibuka."
+    );
+  }
+
+  const jumlahHalaman =
+    Number(
+      sourcePdf.numPages
+    );
+
+  if (
+    !Number.isInteger(
+      jumlahHalaman
+    ) ||
+    jumlahHalaman < 1
+  ) {
+
+    throw new Error(
+      "Jumlah halaman PDF untuk kompresi tidak valid."
+    );
+  }
+
+  if (
+    jumlahHalaman !== 1
+  ) {
+
+    throw new Error(
+      `PDF berisi ${jumlahHalaman} halaman. Kompresi halaman incremental hanya menerima PDF satu halaman.`
     );
   }
 
   const page =
-    await sourcePdf.getPage(1);
+    await sourcePdf.getPage(
+      1
+    );
+
+  if (
+    !page ||
+    typeof page.getViewport !==
+      "function" ||
+    typeof page.render !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Halaman PDF untuk kompresi tidak dapat dirender."
+    );
+  }
 
   const setting =
     mode === "high"
       ? {
-          scale: 2,
-          quality: 0.88
+          scale:
+            2,
+
+          quality:
+            0.88
         }
       : mode === "small"
         ? {
-            scale: 1.2,
-            quality: 0.62
+            scale:
+              1.2,
+
+            quality:
+              0.62
           }
         : {
-            scale: 2.6,
-            quality: 0.88
+            scale:
+              2.6,
+
+            quality:
+              0.88
           };
 
   const viewport =
     page.getViewport({
-      scale: setting.scale
+      scale:
+        setting.scale
     });
 
   const originalViewport =
     page.getViewport({
-      scale: 1
+      scale:
+        1
     });
+
+  const viewportWidth =
+    Number(
+      viewport?.width
+    );
+
+  const viewportHeight =
+    Number(
+      viewport?.height
+    );
+
+  const originalWidth =
+    Number(
+      originalViewport?.width
+    );
+
+  const originalHeight =
+    Number(
+      originalViewport?.height
+    );
+
+  if (
+    !Number.isFinite(
+      viewportWidth
+    ) ||
+    viewportWidth <= 0 ||
+    !Number.isFinite(
+      viewportHeight
+    ) ||
+    viewportHeight <= 0 ||
+    !Number.isFinite(
+      originalWidth
+    ) ||
+    originalWidth <= 0 ||
+    !Number.isFinite(
+      originalHeight
+    ) ||
+    originalHeight <= 0
+  ) {
+
+    throw new Error(
+      "Ukuran halaman PDF untuk kompresi tidak valid."
+    );
+  }
 
   const canvas =
     document.createElement(
       "canvas"
     );
 
+  const canvasWidth =
+    Math.ceil(
+      viewportWidth
+    );
+
+  const canvasHeight =
+    Math.ceil(
+      viewportHeight
+    );
+
+  if (
+    !Number.isInteger(
+      canvasWidth
+    ) ||
+    canvasWidth < 1 ||
+    !Number.isInteger(
+      canvasHeight
+    ) ||
+    canvasHeight < 1
+  ) {
+
+    throw new Error(
+      "Ukuran canvas kompresi PDF tidak valid."
+    );
+  }
+
   canvas.width =
-    Math.ceil(viewport.width);
+    canvasWidth;
 
   canvas.height =
-    Math.ceil(viewport.height);
+    canvasHeight;
 
   const context =
     canvas.getContext(
       "2d",
       {
-        alpha: false
+        alpha:
+          false
       }
     );
 
   if (!context) {
+
     throw new Error(
       "Canvas browser tidak tersedia."
     );
@@ -8352,12 +8600,14 @@ async function kompresPdfSatuHalaman(
   context.fillRect(
     0,
     0,
-    canvas.width,
-    canvas.height
+    canvasWidth,
+    canvasHeight
   );
 
   await page.render({
-    canvasContext: context,
+    canvasContext:
+      context,
+
     viewport
   }).promise;
 
@@ -8366,7 +8616,47 @@ async function kompresPdfSatuHalaman(
       canvas,
       "image/jpeg",
       setting.quality
-    );  
+    );
+
+  if (
+    !(jpegBlob instanceof Blob) ||
+    !Number.isInteger(
+      Number(
+        jpegBlob.size
+      )
+    ) ||
+    jpegBlob.size < 1
+  ) {
+
+    throw new Error(
+      "JPEG hasil kompresi PDF tidak valid."
+    );
+  }
+
+  if (
+    jpegBlob.type &&
+    jpegBlob.type.toLowerCase() !==
+      "image/jpeg"
+  ) {
+
+    throw new Error(
+      "Format gambar hasil kompresi bukan JPEG."
+    );
+  }
+
+  if (
+    typeof PDFLib ===
+      "undefined" ||
+    !PDFLib ||
+    !PDFLib.PDFDocument ||
+    typeof PDFLib.PDFDocument.create !==
+      "function"
+  ) {
+
+    throw new Error(
+      "PDFLib tidak tersedia untuk membuat PDF hasil kompresi."
+    );
+  }
 
   const {
     PDFDocument
@@ -8375,53 +8665,144 @@ async function kompresPdfSatuHalaman(
   const hasilPdf =
     await PDFDocument.create();
 
+  if (
+    !hasilPdf ||
+    typeof hasilPdf.embedJpg !==
+      "function" ||
+    typeof hasilPdf.addPage !==
+      "function" ||
+    typeof hasilPdf.save !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Dokumen PDF hasil kompresi tidak valid."
+    );
+  }
+
+  const jpegBuffer =
+    await jpegBlob.arrayBuffer();
+
+  if (
+    !(jpegBuffer instanceof ArrayBuffer) ||
+    jpegBuffer.byteLength < 1
+  ) {
+
+    throw new Error(
+      "Data JPEG hasil kompresi kosong."
+    );
+  }
+
   const jpegImage =
     await hasilPdf.embedJpg(
-      await jpegBlob.arrayBuffer()
+      jpegBuffer
     );
+
+  if (!jpegImage) {
+
+    throw new Error(
+      "JPEG gagal ditanam ke PDF hasil kompresi."
+    );
+  }
 
   const halamanBaru =
     hasilPdf.addPage([
-      originalViewport.width,
-      originalViewport.height
+      originalWidth,
+      originalHeight
     ]);
+
+  if (
+    !halamanBaru ||
+    typeof halamanBaru.drawImage !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Halaman PDF hasil kompresi gagal dibuat."
+    );
+  }
 
   halamanBaru.drawImage(
     jpegImage,
     {
-      x: 0,
-      y: 0,
+      x:
+        0,
+
+      y:
+        0,
+
       width:
-        originalViewport.width,
+        originalWidth,
+
       height:
-        originalViewport.height
+        originalHeight
     }
   );
 
   const hasilBytes =
     await hasilPdf.save({
-      useObjectStreams: true
+      useObjectStreams:
+        true
     });
+
+  if (
+    !hasilBytes ||
+    !Number.isInteger(
+      hasilBytes.byteLength
+    ) ||
+    hasilBytes.byteLength < 1
+  ) {
+
+    throw new Error(
+      "Data PDF hasil kompresi kosong."
+    );
+  }
+
+  const namaHasil =
+    namaFile.replace(
+      /\.pdf$/i,
+      "-compressed.pdf"
+    );
 
   const hasilFile =
     new File(
-      [hasilBytes],
-      file.name.replace(
-        /\.pdf$/i,
-        "-compressed.pdf"
-      ),
+      [
+        hasilBytes
+      ],
+      namaHasil,
       {
         type:
           "application/pdf",
+
         lastModified:
           Date.now()
       }
     );
 
+  if (
+    !(hasilFile instanceof File) ||
+    hasilFile.type !==
+      "application/pdf" ||
+    !Number.isInteger(
+      Number(
+        hasilFile.size
+      )
+    ) ||
+    hasilFile.size < 1
+  ) {
+
+    throw new Error(
+      "File PDF hasil kompresi tidak valid."
+    );
+  }
+
   return {
-    file: hasilFile,
+    file:
+      hasilFile,
+
     originalSize:
-      file.size,
+      ukuranAsli,
+
     compressedSize:
       hasilFile.size
   };
