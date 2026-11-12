@@ -14818,9 +14818,16 @@ function tutupEditBukuAdmin() {
     ?.focus();
 }
 
-function tutupEditBukuDenganEscape(event) {
+function tutupEditBukuDenganEscape(
+  event
+) {
 
-  if (event.key !== "Escape") {
+  if (
+    !event ||
+    event.key !==
+      "Escape"
+  ) {
+
     return;
   }
 
@@ -14831,15 +14838,37 @@ function tutupEditBukuDenganEscape(event) {
 
   if (
     !editModal ||
-    !editModal.classList.contains("show")
+    !editModal
+      .classList
+      .contains(
+        "show"
+      )
   ) {
+
     return;
   }
 
-  event.preventDefault();
+  if (
+    typeof event.preventDefault ===
+      "function"
+  ) {
+
+    event.preventDefault();
+  }
+
+  if (
+    typeof tutupEditBukuAdmin !==
+      "function"
+  ) {
+
+    console.error(
+      "Function tutupEditBukuAdmin() tidak tersedia."
+    );
+
+    return;
+  }
 
   tutupEditBukuAdmin();
-
 }
 
 function previewCoverPengganti(event) {
