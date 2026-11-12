@@ -17617,13 +17617,23 @@ function tutupAdminPanel() {
     ?.focus();
 }
 
-function tutupAdminDenganEscape(event) {
+function tutupAdminDenganEscape(
+  event
+) {
 
-  if (event.key !== "Escape") {
+  if (
+    !event ||
+    event.key !==
+      "Escape"
+  ) {
+
     return;
   }
 
-  if (event.defaultPrevented) {
+  if (
+    event.defaultPrevented
+  ) {
+
     return;
   }
 
@@ -17632,23 +17642,51 @@ function tutupAdminDenganEscape(event) {
       "adminPanel"
     );
 
+  if (
+    !adminPanel ||
+    !adminPanel
+      .classList
+      .contains(
+        "show"
+      )
+  ) {
+
+    return;
+  }
+
   const modalLainTerbuka =
     document.querySelector(
       ".modal.show:not(#adminPanel)"
     );
 
   if (
-    !adminPanel ||
-    !adminPanel.classList.contains("show") ||
     modalLainTerbuka
   ) {
+
     return;
   }
 
-  event.preventDefault();
+  if (
+    typeof event.preventDefault ===
+      "function"
+  ) {
+
+    event.preventDefault();
+  }
+
+  if (
+    typeof tutupAdminPanel !==
+      "function"
+  ) {
+
+    console.error(
+      "Function tutupAdminPanel tidak tersedia."
+    );
+
+    return;
+  }
 
   tutupAdminPanel();
-
 }
 
 async function logoutAdmin() {
