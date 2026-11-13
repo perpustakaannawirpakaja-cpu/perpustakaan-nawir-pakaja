@@ -8605,21 +8605,54 @@ function cariBukuAdmin() {
 
 function hapusPencarianAdmin() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof cariBukuAdmin !==
+      "function"
+  ) {
+
+    console.error(
+      "Function cariBukuAdmin tidak tersedia."
+    );
+
+    return false;
+  }
+
   const input =
     document.getElementById(
       "admin-book-search"
     );
 
   if (!input) {
-  return;
-}
 
-  input.value = "";
+    return false;
+  }
 
-  cariBukuAdmin();
+  input.value =
+    "";
 
-  input.focus();
+  const hasilCari =
+    cariBukuAdmin();
 
+  if (
+    typeof input.focus ===
+      "function"
+  ) {
+
+    input.focus();
+  }
+
+  return (
+    hasilCari !==
+    false
+  );
 }
 
 function keyboardPencarianAdmin(event) {
