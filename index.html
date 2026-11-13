@@ -13271,8 +13271,16 @@ function aturStatusIntegritasHalaman(
   teks
 ) {
 
-  if (!element) {
-    return;
+  if (
+    !element ||
+    !element.classList ||
+    typeof element.classList.remove !==
+      "function" ||
+    typeof element.classList.add !==
+      "function"
+  ) {
+
+    return false;
   }
 
   element.classList.remove(
@@ -13282,13 +13290,48 @@ function aturStatusIntegritasHalaman(
     "integrity-info"
   );
 
-  if (tipe) {
+  const tipeMentah =
+    typeof tipe ===
+      "string"
+      ? tipe
+          .trim()
+          .toLowerCase()
+      : "";
+
+  const tipeValid =
+    [
+      "ok",
+      "warning",
+      "error",
+      "info"
+    ].includes(
+      tipeMentah
+    )
+      ? tipeMentah
+      : "";
+
+  if (
+    tipeValid
+  ) {
+
     element.classList.add(
-      `integrity-${tipe}`
+      `integrity-${tipeValid}`
     );
   }
 
-  element.textContent = teks;
+  element.textContent =
+    typeof teks ===
+      "string"
+      ? teks
+      : (
+          teks == null
+            ? ""
+            : String(
+                teks
+              )
+        );
+
+  return true;
 }
 
 function arahkanPeriksaHalaman(
