@@ -24856,6 +24856,14 @@ async function tampilkanStatusIngestionKelolaHalaman(
 
 function updateModeUploadBuku() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
   const modeSelect =
     document.getElementById(
       "book-upload-mode"
@@ -24885,43 +24893,76 @@ function updateModeUploadBuku() {
     !modeSelect ||
     !singlePdfGroup ||
     !incrementalGroup ||
-    !bookFile
+    !bookFile ||
+    !totalPages
   ) {
-    return;
+
+    return false;
   }
 
-  const mode =
-    modeSelect.value;
+  let mode =
+    typeof modeSelect.value ===
+      "string"
+      ? modeSelect.value.trim()
+      : "";
 
-  if (mode === "incremental") {
+  const modeValid = [
+    "single_pdf",
+    "incremental"
+  ];
 
-    singlePdfGroup.hidden = true;
+  if (
+    !modeValid.includes(
+      mode
+    )
+  ) {
 
-    incrementalGroup.hidden = false;
+    mode =
+      "single_pdf";
 
-    bookFile.required = false;
+    modeSelect.value =
+      mode;
+  }
 
-    bookFile.value = "";
+  if (
+    mode ===
+      "incremental"
+  ) {
 
-    if (totalPages) {
-      totalPages.required = true;
-    }
+    singlePdfGroup.hidden =
+      true;
+
+    incrementalGroup.hidden =
+      false;
+
+    bookFile.required =
+      false;
+
+    bookFile.value =
+      "";
+
+    totalPages.required =
+      true;
 
   } else {
 
-    singlePdfGroup.hidden = false;
+    singlePdfGroup.hidden =
+      false;
 
-    incrementalGroup.hidden = true;
+    incrementalGroup.hidden =
+      true;
 
-    bookFile.required = true;
+    bookFile.required =
+      true;
 
-    if (totalPages) {
-      totalPages.required = false;
-      totalPages.value = "";
-    }
+    totalPages.required =
+      false;
 
+    totalPages.value =
+      "";
   }
 
+  return true;
 }
 
 document
