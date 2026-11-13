@@ -6084,10 +6084,23 @@ function resetSemuaFilterBuku() {
 
 function updateResetFilterButton() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
   const resetButton =
     document.getElementById(
       "reset-book-filters"
     );
+
+  if (!resetButton) {
+
+    return false;
+  }
 
   const searchInput =
     document.getElementById(
@@ -6099,50 +6112,87 @@ function updateResetFilterButton() {
       "book-sort-select"
     );
 
-  if (!resetButton) return;
+  const nilaiSearch =
+    typeof searchInput?.value ===
+      "string"
+      ? searchInput.value.trim()
+      : "";
+
+  const hurufAktif =
+    typeof filterHurufAktif ===
+      "string"
+      ? filterHurufAktif.trim()
+      : "";
+
+  const kategoriAktif =
+    typeof filterKategoriAktif ===
+      "string"
+      ? filterKategoriAktif.trim()
+      : "";
+
+  const modeUrut =
+    typeof sortSelect?.value ===
+      "string"
+      ? sortSelect.value.trim()
+      : "az";
 
   const adaSearch =
-    searchInput &&
-    searchInput.value.trim() !== "";
+    nilaiSearch !== "";
 
   const adaHuruf =
-    filterHurufAktif !== "";
+    hurufAktif !== "";
 
   const adaKategori =
-    filterKategoriAktif !== "";
+    kategoriAktif !== "";
 
   const adaSort =
-    sortSelect &&
-    sortSelect.value !== "az";
+    modeUrut !== "az";
 
-  const adaFilterAktif =
-  adaSearch ||
-  adaHuruf ||
-  adaKategori ||
-  adaSort;
-
-const jumlahFilterAktif =
-  [
+  const statusFilter = [
     adaSearch,
     adaHuruf,
     adaKategori,
     adaSort
-  ].filter(Boolean).length;
+  ];
+
+  const jumlahFilterAktif =
+    statusFilter.filter(
+      Boolean
+    ).length;
+
+  const adaFilterAktif =
+    jumlahFilterAktif > 0;
 
   resetButton.textContent =
-  adaFilterAktif
-    ? `↺ Reset Semua Filter (${jumlahFilterAktif})`
-    : "↺ Reset Semua Filter";
+    adaFilterAktif
+      ? `↺ Reset Semua Filter (${jumlahFilterAktif})`
+      : "↺ Reset Semua Filter";
 
-resetButton.disabled =
-  !adaFilterAktif;
+  resetButton.disabled =
+    !adaFilterAktif;
 
   resetButton.classList.toggle(
     "active",
     adaFilterAktif
   );
 
-updateActiveFilterChips();
+  if (
+    typeof updateActiveFilterChips ===
+      "function"
+  ) {
+
+    updateActiveFilterChips();
+
+  } else {
+
+    console.error(
+      "Function updateActiveFilterChips tidak tersedia."
+    );
+
+    return false;
+  }
+
+  return true;
 }
 
 /* =========================================
