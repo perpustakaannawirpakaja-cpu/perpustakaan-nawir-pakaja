@@ -10220,16 +10220,50 @@ function updateResetFilterBukuAdmin() {
 
 function updateAdminActiveFilterChips() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof cariBukuAdmin !==
+      "function" ||
+    typeof urutkanBukuAdmin !==
+      "function"
+  ) {
+
+    console.error(
+      "Function pendukung chip filter Admin tidak tersedia."
+    );
+
+    return false;
+  }
+
   const container =
     document.getElementById(
       "admin-active-book-filters"
     );
 
   if (!container) {
-    return;
+
+    return false;
   }
 
-  container.innerHTML = "";
+  if (
+    typeof container.replaceChildren ===
+      "function"
+  ) {
+
+    container.replaceChildren();
+
+  } else {
+
+    container.textContent =
+      "";
+  }
 
   const searchInput =
     document.getElementById(
@@ -10242,9 +10276,9 @@ function updateAdminActiveFilterChips() {
     );
 
   const integritySelect =
-  document.getElementById(
-    "admin-book-integrity"
-  );
+    document.getElementById(
+      "admin-book-integrity"
+    );
 
   const sortSelect =
     document.getElementById(
@@ -10252,69 +10286,217 @@ function updateAdminActiveFilterChips() {
     );
 
   const keyword =
-    searchInput
+    typeof searchInput?.value ===
+      "string"
       ? searchInput.value.trim()
       : "";
 
-const tambahChip =
-  (teks, onClick, fokusKembali) => {
+  const kategori =
+    typeof categorySelect?.value ===
+      "string"
+      ? categorySelect.value.trim()
+      : "";
 
-    const chip =
-      document.createElement("span");
+  const integritasMentah =
+    typeof integritySelect?.value ===
+      "string"
+      ? integritySelect.value
+          .trim()
+          .toLowerCase()
+      : "";
 
-    chip.className =
-      "admin-active-filter-chip";
+  const integritas =
+    [
+      "safe",
+      "problem"
+    ].includes(
+      integritasMentah
+    )
+      ? integritasMentah
+      : "";
 
-    chip.textContent = teks;
+  const sortMentah =
+    typeof sortSelect?.value ===
+      "string"
+      ? sortSelect.value
+          .trim()
+          .toLowerCase()
+      : "title-asc";
 
-    chip.setAttribute(
-      "role",
-      "button"
-    );
+  const sort =
+    [
+      "title-asc",
+      "title-desc",
+      "newest",
+      "oldest"
+    ].includes(
+      sortMentah
+    )
+      ? sortMentah
+      : "title-asc";
 
-    chip.setAttribute(
-      "tabindex",
-      "0"
-    );
+  const hapusStorage =
+    (key) => {
 
-    chip.setAttribute(
-      "aria-label",
-      `Hapus filter ${teks}`
-    );
-
-    chip.setAttribute(
-      "aria-controls",
-      "admin-book-list admin-book-search-status admin-active-book-filters"
-    );
-
-    chip.addEventListener(
-      "click",
-      onClick
-    );
-
-    chip.addEventListener(
-      "keydown",
-      (event) => {
+      try {
 
         if (
-          event.key === "Enter" ||
-          event.key === " "
+          typeof localStorage !==
+            "undefined"
         ) {
 
-          event.preventDefault();
+          localStorage.removeItem(
+            key
+          );
+        }
+
+      } catch (
+        storageError
+      ) {
+
+        console.warn(
+          `Preferensi Admin "${key}" tidak dapat dihapus:`,
+          storageError
+        );
+      }
+    };
+
+  const fokusKembaliKe =
+    (element) => {
+
+      if (
+        !element ||
+        typeof element.focus !==
+          "function"
+      ) {
+
+        return false;
+      }
+
+      const jalankanFokus =
+        () => {
+
+          element.focus();
+        };
+
+      if (
+        typeof requestAnimationFrame ===
+          "function"
+      ) {
+
+        requestAnimationFrame(
+          jalankanFokus
+        );
+
+      } else {
+
+        jalankanFokus();
+      }
+
+      return true;
+    };
+
+  const tambahChip =
+    (
+      teks,
+      onClick,
+      fokusKembali
+    ) => {
+
+      if (
+        typeof teks !==
+          "string" ||
+        !teks.trim() ||
+        typeof onClick !==
+          "function"
+      ) {
+
+        return false;
+      }
+
+      const chip =
+        document.createElement(
+          "span"
+        );
+
+      chip.className =
+        "admin-active-filter-chip";
+
+      chip.textContent =
+        teks;
+
+      chip.setAttribute(
+        "role",
+        "button"
+      );
+
+      chip.setAttribute(
+        "tabindex",
+        "0"
+      );
+
+      chip.setAttribute(
+        "aria-label",
+        `Hapus filter ${teks}`
+      );
+
+      chip.setAttribute(
+        "aria-controls",
+        "admin-book-list admin-book-search-status admin-active-book-filters"
+      );
+
+      chip.addEventListener(
+        "click",
+        () => {
+
+          onClick();
+        }
+      );
+
+      chip.addEventListener(
+        "keydown",
+        (event) => {
+
+          if (
+            !event ||
+            typeof event !==
+              "object"
+          ) {
+
+            return;
+          }
+
+          if (
+            event.key !==
+              "Enter" &&
+            event.key !==
+              " "
+          ) {
+
+            return;
+          }
+
+          if (
+            typeof event.preventDefault ===
+              "function"
+          ) {
+
+            event.preventDefault();
+          }
 
           onClick();
 
-          requestAnimationFrame(() => {
-            fokusKembali?.focus();
-          });
-
+          fokusKembaliKe(
+            fokusKembali
+          );
         }
-      }
-    );
+      );
 
-    container.appendChild(chip);
+      container.appendChild(
+        chip
+      );
 
+      return true;
     };
 
   if (keyword) {
@@ -10323,8 +10505,12 @@ const tambahChip =
       `🔎 Pencarian: ${keyword}`,
       () => {
 
-        if (searchInput) {
-          searchInput.value = "";
+        if (
+          searchInput
+        ) {
+
+          searchInput.value =
+            "";
         }
 
         const clearButton =
@@ -10332,99 +10518,111 @@ const tambahChip =
             "admin-book-search-clear"
           );
 
-        if (clearButton) {
+        if (
+          clearButton
+        ) {
+
           clearButton.style.display =
             "none";
         }
 
-    cariBukuAdmin();
-
-  },
-  searchInput
-);
-
+        cariBukuAdmin();
+      },
+      searchInput
+    );
   }
 
-if (
-  categorySelect &&
-  categorySelect.value !== ""
-) {
+  if (
+    categorySelect &&
+    kategori
+  ) {
 
-  tambahChip(
-    `🏷️ ${categorySelect.value}`,
-    () => {
+    tambahChip(
+      `🏷️ ${kategori}`,
+      () => {
 
-      categorySelect.value = "";
+        categorySelect.value =
+          "";
 
-      localStorage.removeItem(
-        "adminBookCategory"
+        hapusStorage(
+          "adminBookCategory"
+        );
+
+        cariBukuAdmin();
+      },
+      categorySelect
+    );
+  }
+
+  if (
+    integritySelect &&
+    integritas
+  ) {
+
+    const labelIntegritas =
+      integritas ===
+        "safe"
+        ? "Aman"
+        : "Bermasalah";
+
+    tambahChip(
+      `🛡️ Integritas: ${labelIntegritas}`,
+      () => {
+
+        integritySelect.value =
+          "";
+
+        hapusStorage(
+          "adminBookIntegrity"
+        );
+
+        cariBukuAdmin();
+      },
+      integritySelect
+    );
+  }
+
+  if (
+    sortSelect &&
+    sort !==
+      "title-asc"
+  ) {
+
+    const labelUrut = {
+      "title-desc":
+        "Judul Z–A",
+      newest:
+        "Terbaru",
+      oldest:
+        "Terlama"
+    };
+
+    const label =
+      labelUrut[
+        sort
+      ];
+
+    if (label) {
+
+      tambahChip(
+        `↕️ ${label}`,
+        () => {
+
+          sortSelect.value =
+            "title-asc";
+
+          hapusStorage(
+            "adminBookSort"
+          );
+
+          urutkanBukuAdmin();
+        },
+        sortSelect
       );
+    }
+  }
 
-      cariBukuAdmin();
-
-    },
-    categorySelect
-  );
-
-}
-
-if (
-  integritySelect &&
-  integritySelect.value !== ""
-) {
-
-  const labelIntegritas =
-    integritySelect.value === "safe"
-      ? "Aman"
-      : "Bermasalah";
-
-  tambahChip(
-    `🛡️ Integritas: ${labelIntegritas}`,
-    () => {
-
-      integritySelect.value = "";
-
-      localStorage.removeItem(
-        "adminBookIntegrity"
-      );
-
-      cariBukuAdmin();
-
-    },
-    integritySelect
-  );
-
-}
-
-if (
-  sortSelect &&
-  sortSelect.value !== "title-asc"
-) {
-
-  const labelUrut = {
-    "title-desc": "Judul Z–A",
-    newest: "Terbaru",
-    oldest: "Terlama"
-  };
-
-  tambahChip(
-    `↕️ ${labelUrut[sortSelect.value]}`,
-    () => {
-
-      sortSelect.value = "title-asc";
-
-      localStorage.removeItem(
-        "adminBookSort"
-      );
-
-    urutkanBukuAdmin();
-
-  },
-  sortSelect
-);
-
-}
-
+  return true;
 }
 
 function urutkanBukuAdmin() {
