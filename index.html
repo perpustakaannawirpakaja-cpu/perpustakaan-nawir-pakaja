@@ -8716,33 +8716,61 @@ function keyboardPencarianAdmin(
   );
 }
 
-function fokusPencarianAdmin(event) {
+function fokusPencarianAdmin(
+  event
+) {
 
-  if (event.key !== "/") {
-    return;
+  if (
+    !event ||
+    typeof event !==
+      "object"
+  ) {
+
+    return false;
+  }
+
+  if (
+    event.key !==
+      "/"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
   }
 
   const target =
-  event.target;
+    event.target;
 
-if (
-  target &&
-  target.closest &&
-  target.closest(
-  'input, textarea, [contenteditable="true"]'
-)
-) {
-  return;
-}
+  if (
+    target &&
+    typeof target.closest ===
+      "function" &&
+    target.closest(
+      'input, textarea, [contenteditable="true"]'
+    )
+  ) {
 
-const modalLainTerbuka =
-  document.querySelector(
-    ".modal.show:not(#adminPanel)"
-  );
+    return false;
+  }
 
-if (modalLainTerbuka) {
-  return;
-}
+  const modalLainTerbuka =
+    document.querySelector(
+      ".modal.show:not(#adminPanel)"
+    );
+
+  if (
+    modalLainTerbuka
+  ) {
+
+    return false;
+  }
 
   const adminPanel =
     document.getElementById(
@@ -8757,15 +8785,36 @@ if (modalLainTerbuka) {
   if (
     !adminPanel ||
     !searchInput ||
-    !adminPanel.classList.contains("show")
+    !adminPanel.classList ||
+    typeof adminPanel.classList.contains !==
+      "function" ||
+    !adminPanel.classList.contains(
+      "show"
+    )
   ) {
-    return;
+
+    return false;
   }
 
-  event.preventDefault();
+  if (
+    typeof searchInput.focus !==
+      "function"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof event.preventDefault ===
+      "function"
+  ) {
+
+    event.preventDefault();
+  }
 
   searchInput.focus();
 
+  return true;
 }
 
 function tutupLoginAdminDenganEscape(event) {
