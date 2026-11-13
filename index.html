@@ -13338,6 +13338,29 @@ function arahkanPeriksaHalaman(
   pageNumber
 ) {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  const nomorHalaman =
+    Number(
+      pageNumber
+    );
+
+  if (
+    !Number.isInteger(
+      nomorHalaman
+    ) ||
+    nomorHalaman < 1
+  ) {
+
+    return false;
+  }
+
   const list =
     document.getElementById(
       "book-pages-list"
@@ -13348,8 +13371,13 @@ function arahkanPeriksaHalaman(
       "book-pages-message"
     );
 
-  if (!list) {
-    return;
+  if (
+    !list ||
+    typeof list.querySelectorAll !==
+      "function"
+  ) {
+
+    return false;
   }
 
   const cards =
@@ -13360,71 +13388,160 @@ function arahkanPeriksaHalaman(
     );
 
   const cardTarget =
-    cards.find((card) => {
+    cards.find(
+      (card) => {
 
-      const strong =
-        card.querySelector(
-          "strong"
+        if (
+          !card ||
+          typeof card.querySelector !==
+            "function"
+        ) {
+
+          return false;
+        }
+
+        const strong =
+          card.querySelector(
+            "strong"
+          );
+
+        const teks =
+          typeof strong?.textContent ===
+            "string"
+            ? strong.textContent
+            : "";
+
+        const cocok =
+          teks.match(
+            /Halaman\s+(\d+)/i
+          );
+
+        if (
+          !cocok
+        ) {
+
+          return false;
+        }
+
+        const nomorCard =
+          Number(
+            cocok[1]
+          );
+
+        return (
+          Number.isInteger(
+            nomorCard
+          ) &&
+          nomorCard ===
+            nomorHalaman
         );
-
-      if (!strong) {
-        return false;
       }
-
-      const cocok =
-        strong.textContent.match(
-          /Halaman\s+(\d+)/
-        );
-
-      return (
-        cocok &&
-          Number(cocok[1]) ===
-          Number(pageNumber)
-      );
-    });
-
-  if (!cardTarget) {
-
-    if (message) {
-      message.textContent =
-        `⚠️ Halaman ${pageNumber} tidak ditemukan pada daftar.`;
-    }
-
-    return;
-  }
-
-  list
-    .querySelectorAll(
-      ".book-page-integrity-problem"
-    )
-    .forEach((card) => {
-      card.classList.remove(
-        "book-page-integrity-problem"
-      );
-    });
-
-  cardTarget.classList.add(
-    "book-page-integrity-problem"
-  );
-
-  if (message) {
-    message.textContent =
-      `🔎 Periksa Halaman ${pageNumber}. Nomor halaman ini berada di luar rentang buku.`;
-  }
-
-  cardTarget.scrollIntoView({
-    behavior: "smooth",
-    block: "center"
-  });
-
-  const tombolPertama =
-    cardTarget.querySelector(
-      "button"
     );
 
-  requestAnimationFrame(() => {
-    tombolPertama?.focus();
-  });
+  if (
+    !cardTarget
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        `⚠️ Halaman ${nomorHalaman} tidak ditemukan pada daftar.`;
+    }
+
+    return false;
+  }
+
+  const problemCards =
+    list.querySelectorAll(
+      ".book-page-integrity-problem"
+    );
+
+  problemCards.forEach(
+    (card) => {
+
+      if (
+        card?.classList &&
+        typeof card.classList.remove ===
+          "function"
+      ) {
+
+        card.classList.remove(
+          "book-page-integrity-problem"
+        );
+      }
+    }
+  );
+
+  if (
+    cardTarget.classList &&
+    typeof cardTarget.classList.add ===
+      "function"
+  ) {
+
+    cardTarget.classList.add(
+      "book-page-integrity-problem"
+    );
+  }
+
+  if (
+    message
+  ) {
+
+    message.textContent =
+      `🔎 Periksa Halaman ${nomorHalaman}. Nomor halaman ini berada di luar rentang buku.`;
+  }
+
+  if (
+    typeof cardTarget.scrollIntoView ===
+      "function"
+  ) {
+
+    cardTarget.scrollIntoView({
+      behavior:
+        "smooth",
+      block:
+        "center"
+    });
+  }
+
+  const tombolPertama =
+    typeof cardTarget.querySelector ===
+      "function"
+      ? cardTarget.querySelector(
+          "button"
+        )
+      : null;
+
+  const fokusTombol =
+    () => {
+
+      if (
+        tombolPertama &&
+        typeof tombolPertama.focus ===
+          "function"
+      ) {
+
+        tombolPertama.focus();
+      }
+    };
+
+  if (
+    typeof requestAnimationFrame ===
+      "function"
+  ) {
+
+    requestAnimationFrame(
+      fokusTombol
+    );
+
+  } else {
+
+    fokusTombol();
+  }
+
+  return true;
 }
 
 async function arahkanUploadHalaman(
