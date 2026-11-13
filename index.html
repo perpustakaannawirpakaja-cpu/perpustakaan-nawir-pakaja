@@ -10873,784 +10873,1578 @@ function urutkanBukuAdmin() {
 
 async function muatDaftarBukuAdmin() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    console.error(
+      "Supabase client tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof updateRingkasanIntegritasAdmin !==
+      "function" ||
+    typeof getIngestionStatusInfo !==
+      "function" ||
+    typeof urutkanBukuAdmin !==
+      "function"
+  ) {
+
+    console.error(
+      "Function pendukung daftar buku Admin tidak tersedia."
+    );
+
+    return false;
+  }
+
   const adminBookList =
     document.getElementById(
       "admin-book-list"
     );
 
   if (!adminBookList) {
-    return;
+
+    return false;
   }
+
+  const status =
+    document.getElementById(
+      "admin-book-search-status"
+    );
 
   const sortSelect =
     document.getElementById(
       "admin-book-sort"
     );
 
-  const savedSort =
-    localStorage.getItem(
-      "adminBookSort"
-    );
-
-  if (
-    sortSelect &&
-    savedSort &&
-    [
-      "title-asc",
-      "title-desc",
-      "newest",
-      "oldest"
-    ].includes(savedSort)
-  ) {
-
-    sortSelect.value =
-      savedSort;
-
-  }
-
   const searchInput =
     document.getElementById(
       "admin-book-search"
     );
 
-  const savedSearch =
-    localStorage.getItem(
-      "adminBookSearch"
-    ) || "";
-
-  if (searchInput) {
-    searchInput.value =
-      savedSearch;
-  }
-
   const integritySelect =
-  document.getElementById(
-    "admin-book-integrity"
-  );
-
-  const savedIntegrity =
-    localStorage.getItem(
-      "adminBookIntegrity"
-    ) || "";
-
-if (
-  integritySelect &&
-  [
-    "",
-    "safe",
-    "problem"
-  ].includes(savedIntegrity)
-) {
-
-  integritySelect.value =
-    savedIntegrity;
-
-} else {
-
-  localStorage.removeItem(
-    "adminBookIntegrity"
-  );
-
-}
-
-  const status =
     document.getElementById(
-      "admin-book-search-status"
+      "admin-book-integrity"
     );
-
-  if (status) {
-    status.textContent =
-      "Memuat jumlah buku...";
-  }
-
-    adminBookList.innerHTML = `
-      <p class="admin-book-loading">
-        Memuat koleksi...
-      </p>
-    `;
-
-  const {
-    data: books,
-    error
-  } = await db
-    .from("books")
-    .select(`
-      id,
-      title,
-      author,
-      category,
-      cover_url,
-      file_url,
-      upload_mode,
-      upload_status,
-      total_pages,
-      created_at
-    `)
-    .order("title", {
-      ascending: true
-    });
-
-  if (error) {
-
-    console.error(
-      "Gagal memuat koleksi Admin:",
-      error
-    );
-
-    adminBookList.innerHTML = `
-      <p class="admin-book-loading">
-        Gagal memuat koleksi.
-      </p>
-    `;
-
-  const status =
-    document.getElementById(
-      "admin-book-search-status"
-    );
-
-  if (status) {
-    status.textContent =
-      "Gagal memuat jumlah buku";
-  }
-    return;
-  }
-
-  if (!books || books.length === 0) {
-
-    adminBookList.innerHTML = `
-      <p class="admin-book-loading">
-        Belum ada buku.
-      </p>
-    `;
-
-  const status =
-    document.getElementById(
-      "admin-book-search-status"
-    );
-
-  if (status) {
-    status.textContent =
-      "0 buku";
-  }
-
-  updateRingkasanIntegritasAdmin(
-    0,
-    0
-  );
-    
-    return;
-  }
-
-  const incrementalBookIds =
-  books
-    .filter(
-      (book) =>
-        book.upload_mode ===
-        "incremental"
-    )
-    .map(
-      (book) =>
-        Number(book.id)
-    );
-
-const ingestionAdminByBook =
-  new Map();
-
-let ingestionAdminGagal =
-  false;
-
-if (incrementalBookIds.length > 0) {
-
-  const {
-    data: ingestionSessions,
-    error: ingestionSessionsError
-  } = await db
-    .from("book_ingestion_sessions")
-    .select(`
-      book_id,
-      source_type,
-      status,
-      total_pages,
-      processed_pages,
-      last_error
-    `)
-    .in(
-      "book_id",
-      incrementalBookIds
-    );
-
-  if (ingestionSessionsError) {
-
-    ingestionAdminGagal =
-      true;
-
-    console.error(
-      "Gagal memuat status ingestion Admin:",
-      ingestionSessionsError
-    );
-
-  } else {
-
-    for (
-      const session of
-      ingestionSessions || []
-    ) {
-
-      ingestionAdminByBook.set(
-        Number(session.book_id),
-        session
-      );
-    }
-  }
-}
-
-const integritasAdminByBook =
-  new Map();
-
-let integritasAdminGagal =
-  false;
-
-if (incrementalBookIds.length > 0) {
-
-  const {
-    data: adminPages,
-    error: adminPagesError
-  } = await db
-    .from("book_pages")
-    .select(`
-      book_id,
-      page_number
-    `)
-    .in(
-      "book_id",
-      incrementalBookIds
-    );
-
-if (adminPagesError) {
-
-  integritasAdminGagal = true;
-
-  console.error(
-    "Gagal memeriksa integritas buku Admin:",
-    adminPagesError
-  );
-
-} else {
-
-    for (const book of books) {
-
-      if (
-        book.upload_mode !==
-        "incremental"
-      ) {
-        continue;
-      }
-
-      const totalHalaman =
-        Number(
-          book.total_pages || 0
-        );
-
-      const halamanBuku =
-        (adminPages || [])
-          .filter(
-            (page) =>
-              Number(page.book_id) ===
-              Number(book.id)
-          )
-          .map(
-            (page) =>
-              Number(page.page_number)
-          );
-
-      const nomorValid =
-        new Set(
-          halamanBuku.filter(
-            (nomor) =>
-              Number.isInteger(nomor) &&
-              nomor >= 1 &&
-              nomor <= totalHalaman
-          )
-        );
-
-      const nomorDiLuarRentang =
-        halamanBuku.filter(
-          (nomor) =>
-            !Number.isInteger(nomor) ||
-            nomor < 1 ||
-            nomor > totalHalaman
-        );
-
-      const halamanHilang = [];
-
-      for (
-        let nomor = 1;
-        nomor <= totalHalaman;
-        nomor++
-      ) {
-
-        if (
-          !nomorValid.has(nomor)
-        ) {
-          halamanHilang.push(
-            nomor
-          );
-        }
-      }
-
-      const valid =
-        totalHalaman > 0 &&
-        halamanBuku.length ===
-          totalHalaman &&
-        nomorDiLuarRentang.length ===
-          0 &&
-        halamanHilang.length ===
-          0;
-
-      integritasAdminByBook.set(
-        Number(book.id),
-        {
-          valid,
-          halamanHilang,
-          nomorDiLuarRentang
-        }
-      );
-    }
-  }
-}
-
-  const safeCountElement =
-  document.getElementById(
-    "admin-integrity-safe-count"
-  );
-
-  const problemCountElement =
-    document.getElementById(
-      "admin-integrity-problem-count"
-  );
-
-const safeBarElement =
-  document.getElementById(
-    "admin-integrity-health-safe"
-  );
-
-const problemBarElement =
-  document.getElementById(
-    "admin-integrity-health-problem"
-  );
-
-const healthStatusElement =
-  document.getElementById(
-    "admin-integrity-health-status"
-  );
-
-if (integritasAdminGagal) {
-
-  if (safeCountElement) {
-    safeCountElement.textContent =
-      "Gagal memuat";
-  }
-
-  if (problemCountElement) {
-    problemCountElement.textContent =
-      "Gagal memuat";
-  }
-
-  if (safeBarElement) {
-    safeBarElement.style.width =
-      "0%";
-
-    safeBarElement.textContent =
-      "";
-  }
-
-  if (problemBarElement) {
-    problemBarElement.style.width =
-      "0%";
-
-    problemBarElement.textContent =
-      "";
-  }
-
-  if (healthStatusElement) {
-
-  healthStatusElement.classList.remove(
-    "is-excellent",
-    "is-good",
-    "is-warning",
-    "is-problem",
-    "is-empty",
-    "is-unchecked"
-  );
-
-  healthStatusElement.textContent =
-    "🔵 Belum Diperiksa";
-
-  healthStatusElement.classList.add(
-    "is-unchecked"
-  );
-
-  const healthDescriptionElement =
-    document.getElementById(
-      "admin-integrity-health-description"
-    );
-
-  const healthRecommendationElement =
-    document.getElementById(
-      "admin-integrity-health-recommendation"
-    );
-
-  if (healthDescriptionElement) {
-    healthDescriptionElement.textContent =
-      "Pemeriksaan integritas belum berhasil dilakukan.";
-  }
-
-  if (healthRecommendationElement) {
-
-    healthRecommendationElement.classList.remove(
-      "is-excellent",
-      "is-good",
-      "is-warning",
-      "is-problem",
-      "is-empty",
-      "is-unchecked"
-    );
-
-    healthRecommendationElement.textContent =
-      "Coba periksa kembali integritas koleksi.";
-
-    healthRecommendationElement.classList.add(
-      "is-unchecked"
-    );
-
-  }
-
-}
-
-const healthActionElement =
-  document.getElementById(
-    "admin-integrity-health-action"
-  );
-
-if (healthActionElement) {
-  healthActionElement.hidden = true;
-}
-
-} else {
-
-  const dataIntegritas =
-    Array.from(
-      integritasAdminByBook.values()
-    );
-
-  const jumlahAman =
-    dataIntegritas.filter(
-      item => item.valid
-    ).length;
-
-  const jumlahBermasalah =
-    dataIntegritas.filter(
-      item => !item.valid
-    ).length;
-
-  updateRingkasanIntegritasAdmin(
-    jumlahAman,
-    jumlahBermasalah
-  );
-
-}
 
   const categorySelect =
     document.getElementById(
       "admin-book-category"
     );
 
-  if (categorySelect) {
+  const bacaStorage =
+    (
+      key,
+      fallback = ""
+    ) => {
 
-    const savedCategory =
-      localStorage.getItem(
-        "adminBookCategory"
-    ) || "";
+      try {
 
-    const currentCategory =
-      categorySelect.value ||
-      savedCategory;
+        if (
+          typeof localStorage ===
+            "undefined"
+        ) {
 
-    const categories =
-      [
-        ...new Set([
-        ...books
-          .map((book) =>
-            (book.category || "").trim()
-          )
-          .filter(Boolean),
+          return fallback;
+        }
 
-        ...(currentCategory
-          ? [currentCategory]
-          : [])
-      ])
-    ]
-      .sort((a, b) =>
-        a.localeCompare(
-          b,
-          "id",
-          { sensitivity: "base" }
-        )
+        const nilai =
+          localStorage.getItem(
+            key
+          );
+
+        return typeof nilai ===
+          "string"
+          ? nilai
+          : fallback;
+
+      } catch (
+        storageError
+      ) {
+
+        console.warn(
+          `Preferensi Admin "${key}" tidak dapat dibaca:`,
+          storageError
+        );
+
+        return fallback;
+      }
+    };
+
+  const hapusStorage =
+    (key) => {
+
+      try {
+
+        if (
+          typeof localStorage !==
+            "undefined"
+        ) {
+
+          localStorage.removeItem(
+            key
+          );
+        }
+
+      } catch (
+        storageError
+      ) {
+
+        console.warn(
+          `Preferensi Admin "${key}" tidak dapat dihapus:`,
+          storageError
+        );
+      }
+    };
+
+  const buatPesanDaftar =
+    (teks) => {
+
+      const p =
+        document.createElement(
+          "p"
+        );
+
+      p.className =
+        "admin-book-loading";
+
+      p.textContent =
+        teks;
+
+      adminBookList.replaceChildren(
+        p
       );
+    };
 
-  categorySelect.innerHTML = `
-    <option value="">
-      Semua kategori
-    </option>
+  const angkaBulatNonNegatif =
+    (nilai) => {
 
-    ${categories
-      .map((category) => `
-        <option value="${category}">
-          ${category}
-        </option>
-      `)
-      .join("")}
-  `;
+      const angka =
+        Number(
+          nilai
+        );
+
+      return (
+        Number.isInteger(
+          angka
+        ) &&
+        angka >= 0
+      )
+        ? angka
+        : 0;
+    };
+
+  const teksAman =
+    (
+      nilai,
+      fallback = ""
+    ) => {
+
+      if (
+        typeof nilai !==
+          "string"
+      ) {
+
+        return fallback;
+      }
+
+      const hasil =
+        nilai.trim();
+
+      return hasil ||
+        fallback;
+    };
+
+  const savedSortMentah =
+    bacaStorage(
+      "adminBookSort"
+    )
+      .trim()
+      .toLowerCase();
+
+  const savedSort =
+    [
+      "title-desc",
+      "newest",
+      "oldest"
+    ].includes(
+      savedSortMentah
+    )
+      ? savedSortMentah
+      : "title-asc";
 
   if (
-    currentCategory &&
-    categories.includes(currentCategory)
+    savedSortMentah &&
+    savedSort ===
+      "title-asc"
   ) {
 
-    categorySelect.value =
-      currentCategory;
+    hapusStorage(
+      "adminBookSort"
+    );
+  }
 
-  } else {
+  if (
+    sortSelect
+  ) {
 
-    categorySelect.value = "";
+    sortSelect.value =
+      savedSort;
+  }
 
-    localStorage.removeItem(
+  const savedSearch =
+    bacaStorage(
+      "adminBookSearch"
+    );
+
+  if (
+    searchInput
+  ) {
+
+    searchInput.value =
+      savedSearch;
+  }
+
+  const savedIntegrityMentah =
+    bacaStorage(
+      "adminBookIntegrity"
+    )
+      .trim()
+      .toLowerCase();
+
+  const savedIntegrity =
+    [
+      "safe",
+      "problem"
+    ].includes(
+      savedIntegrityMentah
+    )
+      ? savedIntegrityMentah
+      : "";
+
+  if (
+    savedIntegrityMentah &&
+    !savedIntegrity
+  ) {
+
+    hapusStorage(
+      "adminBookIntegrity"
+    );
+  }
+
+  if (
+    integritySelect
+  ) {
+
+    integritySelect.value =
+      savedIntegrity;
+  }
+
+  if (
+    status
+  ) {
+
+    status.textContent =
+      "Memuat jumlah buku...";
+  }
+
+  buatPesanDaftar(
+    "Memuat koleksi..."
+  );
+
+  let books =
+    [];
+
+  try {
+
+    const {
+      data,
+      error
+    } = await db
+      .from(
+        "books"
+      )
+      .select(`
+        id,
+        title,
+        author,
+        category,
+        cover_url,
+        file_url,
+        upload_mode,
+        upload_status,
+        total_pages,
+        created_at
+      `)
+      .order(
+        "title",
+        {
+          ascending:
+            true
+        }
+      );
+
+    if (error) {
+
+      throw error;
+    }
+
+    books =
+      Array.isArray(
+        data
+      )
+        ? data
+        : [];
+
+  } catch (
+    booksError
+  ) {
+
+    console.error(
+      "Gagal memuat koleksi Admin:",
+      booksError
+    );
+
+    buatPesanDaftar(
+      "Gagal memuat koleksi."
+    );
+
+    if (
+      status
+    ) {
+
+      status.textContent =
+        "Gagal memuat jumlah buku";
+    }
+
+    return false;
+  }
+
+  if (
+    books.length === 0
+  ) {
+
+    buatPesanDaftar(
+      "Belum ada buku."
+    );
+
+    if (
+      status
+    ) {
+
+      status.textContent =
+        "0 buku";
+    }
+
+    if (
+      categorySelect
+    ) {
+
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        "";
+
+      option.textContent =
+        "Semua kategori";
+
+      categorySelect.replaceChildren(
+        option
+      );
+    }
+
+    hapusStorage(
       "adminBookCategory"
     );
 
+    updateRingkasanIntegritasAdmin(
+      0,
+      0
+    );
+
+    return true;
   }
 
-}
-
-    adminBookList.innerHTML =
-      books.map((book) => {
-
-    const integritas =
-      integritasAdminByBook.get(
-        Number(book.id)
+  const incrementalBookIds =
+    books
+      .filter(
+        (book) =>
+          book?.upload_mode ===
+            "incremental"
+      )
+      .map(
+        (book) =>
+          Number(
+            book?.id
+          )
+      )
+      .filter(
+        (id) =>
+          Number.isInteger(
+            id
+          ) &&
+          id > 0
       );
 
-    const detailIntegritas =
-      !integritas ||
-      integritas.valid
-        ? ""
-        : [
-            integritas.halamanHilang.length > 0
-              ? `${integritas.halamanHilang.length} halaman hilang`
-              : "",
-            integritas.nomorDiLuarRentang.length > 0
-              ? `${integritas.nomorDiLuarRentang.length} nomor di luar rentang`
-              : ""
-          ]
-            .filter(Boolean)
-            .join(" · ");
-    
-    const detailNomorIntegritas =
-      !integritas ||
-      integritas.valid
-        ? ""
-        : [
-            integritas.halamanHilang.length > 0
-              ? `Halaman hilang: ${integritas.halamanHilang.join(", ")}`
-              : "",
-            integritas.nomorDiLuarRentang.length > 0
-              ? `Nomor di luar rentang: ${integritas.nomorDiLuarRentang.join(", ")}`
-              : ""
-          ]
-            .filter(Boolean)
-            .join(" • ");
+  const ingestionAdminByBook =
+    new Map();
 
-    const badgeIntegritas =
-      book.upload_mode !== "incremental"
-        ? ""
-        : !integritas
-          ? `
-            <span class="admin-integrity-badge admin-integrity-unknown">
-              ℹ️ Integritas: Belum diperiksa
-            </span>
-          `
-          : integritas.valid
-            ? `
-              <span class="admin-integrity-badge admin-integrity-ok">
-                ✅ Integritas Aman
-              </span>
-            `
-            : `
-              <button
-                type="button"
-                class="admin-integrity-badge admin-integrity-warning admin-integrity-action"
-                onclick="bukaKelolaHalaman(${book.id})"
-                aria-label="Buka Kelola Halaman untuk memperbaiki integritas ${book.title || "buku ini"}"
-                data-integrity-detail="${detailNomorIntegritas}"
-              >
-                ⚠️ Integritas Bermasalah
-                ${
-                  detailIntegritas
-                    ? ` · ${detailIntegritas}`
-                    : ""
-                }
-              </button>
-            `;
-    const ingestion =
-  ingestionAdminByBook.get(
-    Number(book.id)
-  );
+  let ingestionAdminGagal =
+    false;
 
-const ingestionInfo =
-  ingestion
-    ? getIngestionStatusInfo(
-        ingestion.status
+  if (
+    incrementalBookIds.length >
+      0
+  ) {
+
+    try {
+
+      const {
+        data:
+          ingestionSessions,
+        error:
+          ingestionSessionsError
+      } = await db
+        .from(
+          "book_ingestion_sessions"
+        )
+        .select(`
+          book_id,
+          source_type,
+          status,
+          total_pages,
+          processed_pages,
+          last_error
+        `)
+        .in(
+          "book_id",
+          incrementalBookIds
+        );
+
+      if (
+        ingestionSessionsError
+      ) {
+
+        throw ingestionSessionsError;
+      }
+
+      for (
+        const session of
+        Array.isArray(
+          ingestionSessions
+        )
+          ? ingestionSessions
+          : []
+      ) {
+
+        const bookId =
+          Number(
+            session?.book_id
+          );
+
+        if (
+          Number.isInteger(
+            bookId
+          ) &&
+          bookId > 0
+        ) {
+
+          ingestionAdminByBook.set(
+            bookId,
+            session
+          );
+        }
+      }
+
+    } catch (
+      ingestionError
+    ) {
+
+      ingestionAdminGagal =
+        true;
+
+      console.error(
+        "Gagal memuat status ingestion Admin:",
+        ingestionError
+      );
+    }
+  }
+
+  const integritasAdminByBook =
+    new Map();
+
+  let integritasAdminGagal =
+    false;
+
+  if (
+    incrementalBookIds.length >
+      0
+  ) {
+
+    let adminPages =
+      [];
+
+    try {
+
+      const {
+        data,
+        error
+      } = await db
+        .from(
+          "book_pages"
+        )
+        .select(`
+          book_id,
+          page_number
+        `)
+        .in(
+          "book_id",
+          incrementalBookIds
+        );
+
+      if (error) {
+
+        throw error;
+      }
+
+      adminPages =
+        Array.isArray(
+          data
+        )
+          ? data
+          : [];
+
+    } catch (
+      pagesError
+    ) {
+
+      integritasAdminGagal =
+        true;
+
+      console.error(
+        "Gagal memeriksa integritas buku Admin:",
+        pagesError
+      );
+    }
+
+    if (
+      !integritasAdminGagal
+    ) {
+
+      const pagesByBook =
+        new Map();
+
+      for (
+        const page of
+        adminPages
+      ) {
+
+        const bookId =
+          Number(
+            page?.book_id
+          );
+
+        const pageNumber =
+          Number(
+            page?.page_number
+          );
+
+        if (
+          !Number.isInteger(
+            bookId
+          ) ||
+          bookId <= 0
+        ) {
+
+          continue;
+        }
+
+        if (
+          !pagesByBook.has(
+            bookId
+          )
+        ) {
+
+          pagesByBook.set(
+            bookId,
+            []
+          );
+        }
+
+        pagesByBook
+          .get(
+            bookId
+          )
+          .push(
+            pageNumber
+          );
+      }
+
+      for (
+        const book of
+        books
+      ) {
+
+        if (
+          book?.upload_mode !==
+            "incremental"
+        ) {
+
+          continue;
+        }
+
+        const bookId =
+          Number(
+            book?.id
+          );
+
+        if (
+          !Number.isInteger(
+            bookId
+          ) ||
+          bookId <= 0
+        ) {
+
+          continue;
+        }
+
+        const totalHalaman =
+          angkaBulatNonNegatif(
+            book?.total_pages
+          );
+
+        const halamanBuku =
+          pagesByBook.get(
+            bookId
+          ) || [];
+
+        const nomorValid =
+          new Set(
+            halamanBuku.filter(
+              (nomor) =>
+                Number.isInteger(
+                  nomor
+                ) &&
+                nomor >= 1 &&
+                nomor <=
+                  totalHalaman
+            )
+          );
+
+        const nomorDiLuarRentang =
+          halamanBuku.filter(
+            (nomor) =>
+              !Number.isInteger(
+                nomor
+              ) ||
+              nomor < 1 ||
+              nomor >
+                totalHalaman
+          );
+
+        const halamanHilang =
+          [];
+
+        for (
+          let nomor = 1;
+          nomor <=
+            totalHalaman;
+          nomor++
+        ) {
+
+          if (
+            !nomorValid.has(
+              nomor
+            )
+          ) {
+
+            halamanHilang.push(
+              nomor
+            );
+          }
+        }
+
+        const valid =
+          totalHalaman > 0 &&
+          halamanBuku.length ===
+            totalHalaman &&
+          nomorValid.size ===
+            totalHalaman &&
+          nomorDiLuarRentang.length ===
+            0 &&
+          halamanHilang.length ===
+            0;
+
+        integritasAdminByBook.set(
+          bookId,
+          {
+            valid,
+            halamanHilang,
+            nomorDiLuarRentang
+          }
+        );
+      }
+    }
+  }
+
+  const statusClasses = [
+    "is-excellent",
+    "is-good",
+    "is-warning",
+    "is-problem",
+    "is-empty",
+    "is-unchecked"
+  ];
+
+  if (
+    integritasAdminGagal
+  ) {
+
+    const safeCountElement =
+      document.getElementById(
+        "admin-integrity-safe-count"
+      );
+
+    const problemCountElement =
+      document.getElementById(
+        "admin-integrity-problem-count"
+      );
+
+    const safeBarElement =
+      document.getElementById(
+        "admin-integrity-health-safe"
+      );
+
+    const problemBarElement =
+      document.getElementById(
+        "admin-integrity-health-problem"
+      );
+
+    const healthStatusElement =
+      document.getElementById(
+        "admin-integrity-health-status"
+      );
+
+    const healthDescriptionElement =
+      document.getElementById(
+        "admin-integrity-health-description"
+      );
+
+    const healthRecommendationElement =
+      document.getElementById(
+        "admin-integrity-health-recommendation"
+      );
+
+    const healthActionElement =
+      document.getElementById(
+        "admin-integrity-health-action"
+      );
+
+    if (
+      safeCountElement
+    ) {
+
+      safeCountElement.textContent =
+        "Gagal memuat";
+    }
+
+    if (
+      problemCountElement
+    ) {
+
+      problemCountElement.textContent =
+        "Gagal memuat";
+    }
+
+    if (
+      safeBarElement
+    ) {
+
+      safeBarElement.style.width =
+        "0%";
+
+      safeBarElement.textContent =
+        "";
+    }
+
+    if (
+      problemBarElement
+    ) {
+
+      problemBarElement.style.width =
+        "0%";
+
+      problemBarElement.textContent =
+        "";
+    }
+
+    if (
+      healthStatusElement
+    ) {
+
+      healthStatusElement
+        .classList
+        .remove(
+          ...statusClasses
+        );
+
+      healthStatusElement.textContent =
+        "🔵 Belum Diperiksa";
+
+      healthStatusElement
+        .classList
+        .add(
+          "is-unchecked"
+        );
+    }
+
+    if (
+      healthDescriptionElement
+    ) {
+
+      healthDescriptionElement.textContent =
+        "Pemeriksaan integritas belum berhasil dilakukan.";
+    }
+
+    if (
+      healthRecommendationElement
+    ) {
+
+      healthRecommendationElement
+        .classList
+        .remove(
+          ...statusClasses
+        );
+
+      healthRecommendationElement.textContent =
+        "Coba periksa kembali integritas koleksi.";
+
+      healthRecommendationElement
+        .classList
+        .add(
+          "is-unchecked"
+        );
+    }
+
+    if (
+      healthActionElement
+    ) {
+
+      healthActionElement.hidden =
+        true;
+    }
+
+  } else {
+
+    const dataIntegritas =
+      Array.from(
+        integritasAdminByBook.values()
+      );
+
+    const jumlahAman =
+      dataIntegritas.filter(
+        (item) =>
+          item?.valid ===
+            true
+      ).length;
+
+    const jumlahBermasalah =
+      dataIntegritas.filter(
+        (item) =>
+          item?.valid !==
+            true
+      ).length;
+
+    updateRingkasanIntegritasAdmin(
+      jumlahAman,
+      jumlahBermasalah
+    );
+  }
+
+  if (
+    categorySelect
+  ) {
+
+    const savedCategory =
+      bacaStorage(
+        "adminBookCategory"
+      ).trim();
+
+    const currentCategory =
+      (
+        typeof categorySelect.value ===
+          "string" &&
+        categorySelect.value.trim()
       )
-    : null;
+        ? categorySelect.value.trim()
+        : savedCategory;
 
-const ingestionProgress =
-  ingestion
-    ? `${Number(
-        ingestion.processed_pages || 0
-      )}/${Number(
-        ingestion.total_pages || 0
-      )}`
-    : "";
+    const categories =
+      Array.from(
+        new Set(
+          [
+            ...books
+              .map(
+                (book) =>
+                  teksAman(
+                    book?.category
+                  )
+              )
+              .filter(
+                Boolean
+              ),
 
-const badgeIngestion =
-  book.upload_mode !== "incremental"
-    ? ""
-    : ingestionAdminGagal
-      ? `
-        <span
-          class="admin-ingestion-badge ingestion-unknown"
-        >
-          ℹ️ Ingestion: Gagal dimuat
-        </span>
-      `
-      : !ingestion || !ingestionInfo
-        ? `
-          <span
-            class="admin-ingestion-badge ingestion-unknown"
-          >
-            ℹ️ Ingestion: Belum tersedia
-          </span>
-        `
-        : `
-          <span
-            class="admin-ingestion-badge ${ingestionInfo.className}"
-          >
-            ${ingestionInfo.icon}
-            Ingestion:
-            ${ingestionInfo.label}
-            · ${ingestionProgress}
-          </span>
-        `;
+            ...(
+              currentCategory
+                ? [
+                    currentCategory
+                  ]
+                : []
+            )
+          ]
+        )
+      )
+        .sort(
+          (a, b) =>
+            a.localeCompare(
+              b,
+              "id",
+              {
+                sensitivity:
+                  "base"
+              }
+            )
+        );
 
-    const detailErrorIngestion =
-      ingestion?.status === "failed" &&
-        ingestion?.last_error
-        ? `
-          <span
-            class="admin-ingestion-error"
-            role="status"
-          >
-            ❌ ${ingestion.last_error}
-          </span>
-        `
+    const categoryFragment =
+      document.createDocumentFragment();
+
+    const defaultOption =
+      document.createElement(
+        "option"
+      );
+
+    defaultOption.value =
+      "";
+
+    defaultOption.textContent =
+      "Semua kategori";
+
+    categoryFragment.appendChild(
+      defaultOption
+    );
+
+    for (
+      const category of
+      categories
+    ) {
+
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        category;
+
+      option.textContent =
+        category;
+
+      categoryFragment.appendChild(
+        option
+      );
+    }
+
+    categorySelect.replaceChildren(
+      categoryFragment
+    );
+
+    if (
+      currentCategory &&
+      categories.includes(
+        currentCategory
+      )
+    ) {
+
+      categorySelect.value =
+        currentCategory;
+
+    } else {
+
+      categorySelect.value =
+        "";
+
+      hapusStorage(
+        "adminBookCategory"
+      );
+    }
+  }
+
+  const fragment =
+    document.createDocumentFragment();
+
+  const buatSpan =
+    (
+      teks,
+      className = ""
+    ) => {
+
+      const span =
+        document.createElement(
+          "span"
+        );
+
+      if (
+        className
+      ) {
+
+        span.className =
+          className;
+      }
+
+      span.textContent =
+        teks;
+
+      return span;
+    };
+
+  const buatTombol =
+    (
+      label,
+      className,
+      bookId,
+      handler
+    ) => {
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+      button.type =
+        "button";
+
+      button.className =
+        className;
+
+      button.dataset.bookId =
+        String(
+          bookId
+        );
+
+      button.textContent =
+        label;
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          if (
+            typeof handler ===
+              "function"
+          ) {
+
+            const hasil =
+              handler(
+                bookId
+              );
+
+            if (
+              hasil &&
+              typeof hasil.catch ===
+                "function"
+            ) {
+
+              hasil.catch(
+                (actionError) => {
+
+                  console.error(
+                    "Aksi buku Admin gagal:",
+                    actionError
+                  );
+                }
+              );
+            }
+
+          } else {
+
+            console.error(
+              `Handler ${className} tidak tersedia.`
+            );
+          }
+        }
+      );
+
+      return button;
+    };
+
+  for (
+    const book of
+    books
+  ) {
+
+    const bookId =
+      Number(
+        book?.id
+      );
+
+    if (
+      !Number.isInteger(
+        bookId
+      ) ||
+      bookId <= 0
+    ) {
+
+      console.warn(
+        "Buku Admin dilewati karena ID tidak valid:",
+        book
+      );
+
+      continue;
+    }
+
+    const title =
+      teksAman(
+        book?.title,
+        "Tanpa Judul"
+      );
+
+    const author =
+      teksAman(
+        book?.author,
+        "Penulis tidak tersedia"
+      );
+
+    const category =
+      teksAman(
+        book?.category,
+        "Tanpa kategori"
+      );
+
+    const item =
+      document.createElement(
+        "div"
+      );
+
+    item.className =
+      "admin-book-item";
+
+    item.dataset.bookId =
+      String(
+        bookId
+      );
+
+    item.dataset.createdAt =
+      typeof book?.created_at ===
+        "string"
+        ? book.created_at
         : "";
 
-    return `
-        <div
-    class="admin-book-item"
-    data-created-at="${book.created_at || ""}"
-    data-category="${book.category || ""}"
-  >
-        <strong>
-          ${book.title || "Tanpa Judul"}
-        </strong>
+    item.dataset.category =
+      teksAman(
+        book?.category
+      );
 
-        ${badgeIntegritas}
+    const strong =
+      document.createElement(
+        "strong"
+      );
 
-        ${badgeIngestion}
+    strong.textContent =
+      title;
 
-        ${detailErrorIngestion}
+    item.appendChild(
+      strong
+    );
 
-        <span>
-          ${book.author || "Penulis tidak tersedia"}
-        </span>
+    if (
+      book?.upload_mode ===
+        "incremental"
+    ) {
 
-        <span>
-          🏷️ ${book.category || "Tanpa kategori"}
-        </span>
+      const integritas =
+        integritasAdminByBook.get(
+          bookId
+        );
 
-        ${
-    book.upload_mode === "incremental"
-      ? `
-        <span>
-          📚 Mode: Upload Bertahap
-        </span>
+      if (
+        integritasAdminGagal ||
+        !integritas
+      ) {
 
-        <span>
-          ${
-            book.upload_status === "complete"
-              ? "✅ Status: Selesai"
-              : "🟡 Status: Belum Lengkap"
+        item.appendChild(
+          buatSpan(
+            "ℹ️ Integritas: Belum diperiksa",
+            "admin-integrity-badge admin-integrity-unknown"
+          )
+        );
+
+      } else if (
+        integritas.valid
+      ) {
+
+        item.appendChild(
+          buatSpan(
+            "✅ Integritas Aman",
+            "admin-integrity-badge admin-integrity-ok"
+          )
+        );
+
+      } else {
+
+        const detailIntegritas =
+          [];
+
+        const detailNomor =
+          [];
+
+        if (
+          integritas
+            .halamanHilang
+            .length > 0
+        ) {
+
+          detailIntegritas.push(
+            `${integritas.halamanHilang.length} halaman hilang`
+          );
+
+          detailNomor.push(
+            `Halaman hilang: ${integritas.halamanHilang.join(", ")}`
+          );
+        }
+
+        if (
+          integritas
+            .nomorDiLuarRentang
+            .length > 0
+        ) {
+
+          detailIntegritas.push(
+            `${integritas.nomorDiLuarRentang.length} nomor di luar rentang`
+          );
+
+          detailNomor.push(
+            `Nomor di luar rentang: ${integritas.nomorDiLuarRentang.join(", ")}`
+          );
+        }
+
+        const integrityButton =
+          buatTombol(
+            detailIntegritas.length >
+              0
+              ? `⚠️ Integritas Bermasalah · ${detailIntegritas.join(" · ")}`
+              : "⚠️ Integritas Bermasalah",
+            "admin-integrity-badge admin-integrity-warning admin-integrity-action",
+            bookId,
+            typeof bukaKelolaHalaman ===
+              "function"
+              ? bukaKelolaHalaman
+              : null
+          );
+
+        integrityButton.setAttribute(
+          "aria-label",
+          `Buka Kelola Halaman untuk memperbaiki integritas ${title}`
+        );
+
+        integrityButton.dataset.integrityDetail =
+          detailNomor.join(
+            " • "
+          );
+
+        item.appendChild(
+          integrityButton
+        );
+      }
+
+      if (
+        ingestionAdminGagal
+      ) {
+
+        item.appendChild(
+          buatSpan(
+            "ℹ️ Ingestion: Gagal dimuat",
+            "admin-ingestion-badge ingestion-unknown"
+          )
+        );
+
+      } else {
+
+        const ingestion =
+          ingestionAdminByBook.get(
+            bookId
+          );
+
+        let ingestionInfo =
+          null;
+
+        if (
+          ingestion
+        ) {
+
+          try {
+
+            ingestionInfo =
+              getIngestionStatusInfo(
+                ingestion.status
+              );
+
+          } catch (
+            infoError
+          ) {
+
+            console.error(
+              "Gagal membaca status ingestion Admin:",
+              infoError
+            );
           }
-        </span>
+        }
 
-        <span>
-          📄 Total Halaman:
-          ${book.total_pages || "-"}
-        </span>
-      `
-      : ""
+        if (
+          !ingestion ||
+          !ingestionInfo
+        ) {
+
+          item.appendChild(
+            buatSpan(
+              "ℹ️ Ingestion: Belum tersedia",
+              "admin-ingestion-badge ingestion-unknown"
+            )
+          );
+
+        } else {
+
+          const processed =
+            angkaBulatNonNegatif(
+              ingestion
+                .processed_pages
+            );
+
+          const total =
+            angkaBulatNonNegatif(
+              ingestion
+                .total_pages
+            );
+
+          const badge =
+            buatSpan(
+              `${teksAman(
+                ingestionInfo.icon
+              )} Ingestion: ${teksAman(
+                ingestionInfo.label,
+                "Tidak diketahui"
+              )} · ${processed}/${total}`,
+              `admin-ingestion-badge ${teksAman(
+                ingestionInfo.className
+              )}`
+            );
+
+          item.appendChild(
+            badge
+          );
+
+          if (
+            ingestion.status ===
+              "failed"
+          ) {
+
+            const errorText =
+              teksAman(
+                ingestion.last_error
+              );
+
+            if (
+              errorText
+            ) {
+
+              const ingestionError =
+                buatSpan(
+                  `❌ ${errorText}`,
+                  "admin-ingestion-error"
+                );
+
+              ingestionError.setAttribute(
+                "role",
+                "status"
+              );
+
+              item.appendChild(
+                ingestionError
+              );
+            }
+          }
+        }
+      }
+    }
+
+    item.appendChild(
+      buatSpan(
+        author
+      )
+    );
+
+    item.appendChild(
+      buatSpan(
+        `🏷️ ${category}`
+      )
+    );
+
+    if (
+      book?.upload_mode ===
+        "incremental"
+    ) {
+
+      item.appendChild(
+        buatSpan(
+          "📚 Mode: Upload Bertahap"
+        )
+      );
+
+      item.appendChild(
+        buatSpan(
+          book?.upload_status ===
+            "complete"
+            ? "✅ Status: Selesai"
+            : "🟡 Status: Belum Lengkap"
+        )
+      );
+
+      const totalPages =
+        angkaBulatNonNegatif(
+          book?.total_pages
+        );
+
+      item.appendChild(
+        buatSpan(
+          `📄 Total Halaman: ${
+            totalPages > 0
+              ? totalPages
+              : "-"
+          }`
+        )
+      );
+    }
+
+    const actions =
+      document.createElement(
+        "div"
+      );
+
+    actions.className =
+      "admin-book-actions";
+
+    if (
+      book?.upload_mode ===
+        "incremental"
+    ) {
+
+      actions.appendChild(
+        buatTombol(
+          "📄 Kelola Halaman",
+          "admin-book-pages",
+          bookId,
+          typeof bukaKelolaHalaman ===
+            "function"
+            ? bukaKelolaHalaman
+            : null
+        )
+      );
+    }
+
+    actions.appendChild(
+      buatTombol(
+        "✏️ Edit",
+        "admin-book-edit",
+        bookId,
+        typeof bukaEditBukuAdmin ===
+          "function"
+          ? bukaEditBukuAdmin
+          : null
+      )
+    );
+
+    actions.appendChild(
+      buatTombol(
+        "🗑️ Hapus",
+        "admin-book-delete",
+        bookId,
+        typeof hapusBukuAdmin ===
+          "function"
+          ? hapusBukuAdmin
+          : null
+      )
+    );
+
+    item.appendChild(
+      actions
+    );
+
+    fragment.appendChild(
+      item
+    );
   }
 
-        <div class="admin-book-actions">
+  adminBookList.replaceChildren(
+    fragment
+  );
 
-  ${
-    book.upload_mode === "incremental"
-      ? `
-    <button
-      type="button"
-      class="admin-book-pages"
-      data-book-id="${book.id}"
-      onclick="bukaKelolaHalaman(${book.id})">
-      📄 Kelola Halaman
-    </button>
-      `
-    : ""
+  if (
+    adminBookList.querySelectorAll(
+      ".admin-book-item"
+    ).length === 0
+  ) {
+
+    buatPesanDaftar(
+      "Belum ada buku yang dapat ditampilkan."
+    );
+
+    if (
+      status
+    ) {
+
+      status.textContent =
+        "0 buku";
+    }
+
+    return true;
   }
 
-    <button
-      type="button"
-      class="admin-book-edit"
-      data-book-id="${book.id}"
-      onclick="bukaEditBukuAdmin(${book.id})">
-      ✏️ Edit
-    </button>
+  try {
 
-    <button
-      type="button"
-      class="admin-book-delete"
-      data-book-id="${book.id}"
-      onclick="hapusBukuAdmin(${book.id})">
-      🗑️ Hapus
-    </button>
+    return (
+      urutkanBukuAdmin() !==
+      false
+    );
 
-  </div>
-      </div>
-    `;
-}).join("");
+  } catch (
+    sortError
+  ) {
 
-  urutkanBukuAdmin();
+    console.error(
+      "Gagal menyelesaikan tampilan daftar buku Admin:",
+      sortError
+    );
 
+    return false;
+  }
 }
 
 let pdfJsKompresi = null;
