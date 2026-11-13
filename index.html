@@ -8655,26 +8655,65 @@ function hapusPencarianAdmin() {
   );
 }
 
-function keyboardPencarianAdmin(event) {
+function keyboardPencarianAdmin(
+  event
+) {
 
-  if (event.key !== "Escape") {
-    return;
+  if (
+    !event ||
+    typeof event !==
+      "object"
+  ) {
+
+    return false;
+  }
+
+  if (
+    event.key !==
+      "Escape"
+  ) {
+
+    return false;
   }
 
   const input =
     event.currentTarget;
 
+  const nilaiInput =
+    typeof input?.value ===
+      "string"
+      ? input.value.trim()
+      : "";
+
+  if (!nilaiInput) {
+
+    return false;
+  }
+
   if (
-    input &&
-    input.value.trim() !== ""
+    typeof hapusPencarianAdmin !==
+      "function"
+  ) {
+
+    console.error(
+      "Function hapusPencarianAdmin tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof event.preventDefault ===
+      "function"
   ) {
 
     event.preventDefault();
-
-    hapusPencarianAdmin();
-
   }
 
+  return (
+    hapusPencarianAdmin() ===
+    true
+  );
 }
 
 function fokusPencarianAdmin(event) {
