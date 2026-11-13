@@ -6201,14 +6201,37 @@ function updateResetFilterButton() {
 
 function updateActiveFilterChips() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof filterKategoriBuku !==
+      "function"
+  ) {
+
+    console.error(
+      "Function filterKategoriBuku tidak tersedia."
+    );
+
+    return false;
+  }
+
   const container =
     document.getElementById(
       "active-book-filters"
     );
 
-  if (!container) return;
+  if (!container) {
 
-  container.innerHTML = "";
+    return false;
+  }
+
+  container.replaceChildren();
 
   const searchInput =
     document.getElementById(
@@ -6221,159 +6244,327 @@ function updateActiveFilterChips() {
     );
 
   const categorySelect =
-  document.getElementById(
-    "book-category-select"
-  );
+    document.getElementById(
+      "book-category-select"
+    );
 
   const keyword =
-    searchInput
+    typeof searchInput?.value ===
+      "string"
       ? searchInput.value.trim()
       : "";
 
-  const tambahChip =
-    (teks, onClick, fokusKembali) => {
+  const hurufAktif =
+    typeof filterHurufAktif ===
+      "string"
+      ? filterHurufAktif
+          .trim()
+          .toUpperCase()
+      : "";
 
-    const chip =
-      document.createElement("span");
+  const kategoriAktif =
+    typeof filterKategoriAktif ===
+      "string"
+      ? filterKategoriAktif.trim()
+      : "";
 
-  chip.className =
-      "active-filter-chip";
+  const simpanPreferensi =
+    (
+      key,
+      value
+    ) => {
 
-  chip.textContent = teks;
+      try {
 
-  chip.setAttribute(
-      "aria-label",
-      `Hapus filter ${teks}`
-  );
+        if (
+          typeof localStorage ===
+            "undefined"
+        ) {
 
-  chip.setAttribute(
-      "role",
-      "button"
-  );
+          return;
+        }
 
-  chip.setAttribute(
-      "tabindex",
-      "0"
-  );
+        if (
+          value === null
+        ) {
 
-  chip.setAttribute(
-  "aria-controls",
-  "bookList book-result-status active-book-filters"
-);
+          localStorage.removeItem(
+            key
+          );
 
-  chip.addEventListener(
-  "click",
-  onClick
-);
+        } else {
 
-chip.addEventListener(
-  "keydown",
-  (event) => {
-    if (
-      event.key === "Enter" ||
-      event.key === " "
-    ) {
-      event.preventDefault();
-      onClick();
+          localStorage.setItem(
+            key,
+            value
+          );
+        }
 
-      requestAnimationFrame(() => {
-  fokusKembali?.focus();
-});
-    }
-  }
-);
-    container.appendChild(chip);
-  };
+      } catch (
+        storageError
+      ) {
 
-if (keyword) {
-  tambahChip(
-    `🔎 Pencarian: ${keyword}`,
-    () => {
+        console.warn(
+          "Preferensi filter buku tidak dapat diperbarui:",
+          storageError
+        );
+      }
+    };
 
-      const clearButton =
-        document.getElementById(
-          "clear-search"
+  const fokusDenganAman =
+    (elemen) => {
+
+      const jalankanFokus =
+        () => {
+
+          if (
+            elemen &&
+            typeof elemen.focus ===
+              "function"
+          ) {
+
+            elemen.focus();
+          }
+        };
+
+      if (
+        typeof requestAnimationFrame ===
+          "function"
+      ) {
+
+        requestAnimationFrame(
+          jalankanFokus
         );
 
-      if (searchInput) {
-        searchInput.value = "";
+      } else {
+
+        jalankanFokus();
+      }
+    };
+
+  const tambahChip =
+    (
+      teks,
+      onClick,
+      fokusKembali
+    ) => {
+
+      if (
+        typeof teks !==
+          "string" ||
+        !teks.trim() ||
+        typeof onClick !==
+          "function"
+      ) {
+
+        return false;
       }
 
-      localStorage.removeItem(
-  "bookSearch"
-);
+      const chip =
+        document.createElement(
+          "span"
+        );
 
-      if (clearButton) {
-        clearButton.style.display =
-          "none";
-      }
+      chip.className =
+        "active-filter-chip";
 
-      filterKategoriBuku();
-    },
-    searchInput
-  );
-}
+      chip.textContent =
+        teks;
 
-if (filterHurufAktif) {
-  tambahChip(
-    `🔤 Huruf: ${filterHurufAktif}`,
-    () => {
-
-      filterHurufAktif = "";
-
-      localStorage.removeItem(
-        "bookLetterFilter"
-);
-
-      document
-  .querySelectorAll(".letter")
-  .forEach((card) => {
-
-    card.classList.remove(
-      "active-letter"
-    );
-
-    card.setAttribute(
-      "aria-pressed",
-      "false"
-    );
-
-  });
-
-            filterKategoriBuku();
-    },
-    document.querySelector(
-      `.letter[data-letter="${filterHurufAktif}"]`
-    )
-  );
-}
-
-if (filterKategoriAktif) {
-  tambahChip(
-    `🏷️ ${filterKategoriAktif}`,
-    () => {
-
-      filterKategoriAktif = "";
-
-      if (categorySelect) {
-        categorySelect.value = "";
-      }
-
-      localStorage.setItem(
-        "bookCategoryFilter",
-        ""
+      chip.setAttribute(
+        "aria-label",
+        `Hapus filter ${teks}`
       );
 
-      filterKategoriBuku();
-    },
-    categorySelect
-  );
-}
-  
-if (
-  sortSelect &&
-  sortSelect.value !== "az"
-) {
+      chip.setAttribute(
+        "role",
+        "button"
+      );
+
+      chip.setAttribute(
+        "tabindex",
+        "0"
+      );
+
+      chip.setAttribute(
+        "aria-controls",
+        "bookList book-result-status active-book-filters"
+      );
+
+      chip.addEventListener(
+        "click",
+        () => {
+
+          onClick();
+        }
+      );
+
+      chip.addEventListener(
+        "keydown",
+        (event) => {
+
+          if (
+            !event ||
+            (
+              event.key !==
+                "Enter" &&
+              event.key !==
+                " "
+            )
+          ) {
+
+            return;
+          }
+
+          if (
+            typeof event.preventDefault ===
+              "function"
+          ) {
+
+            event.preventDefault();
+          }
+
+          onClick();
+
+          fokusDenganAman(
+            fokusKembali
+          );
+        }
+      );
+
+      container.appendChild(
+        chip
+      );
+
+      return true;
+    };
+
+  if (keyword) {
+
+    tambahChip(
+      `🔎 Pencarian: ${keyword}`,
+      () => {
+
+        const clearButton =
+          document.getElementById(
+            "clear-search"
+          );
+
+        if (searchInput) {
+
+          searchInput.value =
+            "";
+        }
+
+        simpanPreferensi(
+          "bookSearch",
+          null
+        );
+
+        if (clearButton) {
+
+          clearButton.style.display =
+            "none";
+        }
+
+        filterKategoriBuku();
+      },
+      searchInput
+    );
+  }
+
+  if (hurufAktif) {
+
+    const letterCards =
+      Array.from(
+        document.querySelectorAll(
+          ".letter[data-letter]"
+        )
+      );
+
+    const cardHurufAktif =
+      letterCards.find(
+        (card) =>
+          typeof card.dataset
+            ?.letter ===
+            "string" &&
+          card.dataset
+            .letter
+            .trim()
+            .toUpperCase() ===
+            hurufAktif
+      ) ||
+      null;
+
+    tambahChip(
+      `🔤 Huruf: ${hurufAktif}`,
+      () => {
+
+        if (
+          typeof filterHurufAktif !==
+            "undefined"
+        ) {
+
+          filterHurufAktif =
+            "";
+        }
+
+        simpanPreferensi(
+          "bookLetterFilter",
+          null
+        );
+
+        letterCards.forEach(
+          (card) => {
+
+            card.classList.remove(
+              "active-letter"
+            );
+
+            card.setAttribute(
+              "aria-pressed",
+              "false"
+            );
+          }
+        );
+
+        filterKategoriBuku();
+      },
+      cardHurufAktif
+    );
+  }
+
+  if (kategoriAktif) {
+
+    tambahChip(
+      `🏷️ ${kategoriAktif}`,
+      () => {
+
+        if (
+          typeof filterKategoriAktif !==
+            "undefined"
+        ) {
+
+          filterKategoriAktif =
+            "";
+        }
+
+        if (categorySelect) {
+
+          categorySelect.value =
+            "";
+        }
+
+        simpanPreferensi(
+          "bookCategoryFilter",
+          null
+        );
+
+        filterKategoriBuku();
+      },
+      categorySelect
+    );
+  }
 
   const labelUrut = {
     za: "Judul Z–A",
@@ -6381,22 +6572,39 @@ if (
     oldest: "Terlama"
   };
 
-  tambahChip(
-  `↕️ ${labelUrut[sortSelect.value]}`,
-  () => {
+  const modeUrut =
+    typeof sortSelect?.value ===
+      "string"
+      ? sortSelect.value.trim()
+      : "az";
 
-    sortSelect.value = "az";
+  if (
+    sortSelect &&
+    Object.prototype.hasOwnProperty.call(
+      labelUrut,
+      modeUrut
+    )
+  ) {
 
-    localStorage.setItem(
-      "bookSortMode",
-      "az"
+    tambahChip(
+      `↕️ ${labelUrut[modeUrut]}`,
+      () => {
+
+        sortSelect.value =
+          "az";
+
+        simpanPreferensi(
+          "bookSortMode",
+          "az"
+        );
+
+        filterKategoriBuku();
+      },
+      sortSelect
     );
+  }
 
-    filterKategoriBuku();
-  },
-  sortSelect
-);
-}
+  return true;
 }
 
 /* =========================================
