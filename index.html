@@ -13778,79 +13778,224 @@ function aktifkanModalDraggable(
   modalId
 ) {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  const id =
+    typeof modalId ===
+      "string"
+      ? modalId.trim()
+      : "";
+
+  if (!id) {
+
+    return false;
+  }
+
   const modal =
     document.getElementById(
-      modalId
-    );
-
-  const modalBox =
-    modal?.querySelector(
-      ".modal-box"
-    );
-
-  const dragHandle =
-    modalBox?.querySelector(
-      ".modal-drag-handle"
+      id
     );
 
   if (
     !modal ||
-    !modalBox ||
-    !dragHandle
+    typeof modal.querySelector !==
+      "function"
   ) {
+
     return false;
   }
 
-  let sedangDrag = false;
+  const modalBox =
+    modal.querySelector(
+      ".modal-box"
+    );
 
-  let pointerAwalX = 0;
-  let pointerAwalY = 0;
+  const dragHandle =
+    modalBox &&
+    typeof modalBox.querySelector ===
+      "function"
+      ? modalBox.querySelector(
+          ".modal-drag-handle"
+        )
+      : null;
 
-  let posisiAwalX = 0;
-  let posisiAwalY = 0;
+  if (
+    !modalBox ||
+    !dragHandle ||
+    typeof dragHandle.addEventListener !==
+      "function" ||
+    typeof modalBox.getBoundingClientRect !==
+      "function"
+  ) {
+
+    return false;
+  }
+
+  if (
+    dragHandle.dataset?.draggableReady ===
+      "true"
+  ) {
+
+    return true;
+  }
+
+  if (
+    dragHandle.dataset
+  ) {
+
+    dragHandle.dataset.draggableReady =
+      "true";
+  }
+
+  let sedangDrag =
+    false;
+
+  let pointerAwalX =
+    0;
+
+  let pointerAwalY =
+    0;
+
+  let posisiAwalX =
+    0;
+
+  let posisiAwalY =
+    0;
+
+  const angkaAman =
+    (
+      nilai,
+      fallback = 0
+    ) => {
+
+      const angka =
+        Number(
+          nilai
+        );
+
+      return Number.isFinite(
+        angka
+      )
+        ? angka
+        : fallback;
+    };
 
   dragHandle.addEventListener(
     "pointerdown",
     (event) => {
 
-      if (event.button !== 0) {
+      if (
+        !event ||
+        typeof event !==
+          "object"
+      ) {
+
+        return;
+      }
+
+      if (
+        event.button !==
+          0
+      ) {
+
         return;
       }
 
       const rect =
         modalBox.getBoundingClientRect();
 
-      sedangDrag = true;
+      if (!rect) {
+
+        return;
+      }
+
+      const clientX =
+        angkaAman(
+          event.clientX
+        );
+
+      const clientY =
+        angkaAman(
+          event.clientY
+        );
+
+      const rectLeft =
+        angkaAman(
+          rect.left
+        );
+
+      const rectTop =
+        angkaAman(
+          rect.top
+        );
+
+      sedangDrag =
+        true;
 
       pointerAwalX =
-        event.clientX;
+        clientX;
 
       pointerAwalY =
-        event.clientY;
+        clientY;
 
       posisiAwalX =
-        rect.left;
+        rectLeft;
 
       posisiAwalY =
-        rect.top;
+        rectTop;
 
       modalBox.style.position =
         "fixed";
 
       modalBox.style.left =
-        `${rect.left}px`;
+        `${rectLeft}px`;
 
       modalBox.style.top =
-        `${rect.top}px`;
+        `${rectTop}px`;
 
       modalBox.style.margin =
         "0";
 
-      dragHandle.setPointerCapture(
-        event.pointerId
-      );
+      if (
+        typeof dragHandle.setPointerCapture ===
+          "function" &&
+        Number.isInteger(
+          Number(
+            event.pointerId
+          )
+        )
+      ) {
 
-      event.preventDefault();
+        try {
+
+          dragHandle.setPointerCapture(
+            event.pointerId
+          );
+
+        } catch (
+          captureError
+        ) {
+
+          console.warn(
+            "Pointer capture modal tidak tersedia:",
+            captureError
+          );
+        }
+      }
+
+      if (
+        typeof event.preventDefault ===
+          "function"
+      ) {
+
+        event.preventDefault();
+      }
     }
   );
 
@@ -13858,26 +14003,64 @@ function aktifkanModalDraggable(
     "pointermove",
     (event) => {
 
-      if (!sedangDrag) {
+      if (
+        !sedangDrag ||
+        !event ||
+        typeof event !==
+          "object"
+      ) {
+
         return;
       }
 
       const deltaX =
-        event.clientX -
+        angkaAman(
+          event.clientX
+        ) -
         pointerAwalX;
 
       const deltaY =
-        event.clientY -
+        angkaAman(
+          event.clientY
+        ) -
         pointerAwalY;
 
       const lebarModal =
-        modalBox.offsetWidth;
+        Math.max(
+          0,
+          angkaAman(
+            modalBox.offsetWidth
+          )
+        );
 
       const tinggiModal =
-        modalBox.offsetHeight;
+        Math.max(
+          0,
+          angkaAman(
+            modalBox.offsetHeight
+          )
+        );
 
       const batasTerlihat =
         80;
+
+      const lebarLayar =
+        typeof window !==
+          "undefined"
+          ? angkaAman(
+              window.innerWidth,
+              lebarModal
+            )
+          : lebarModal;
+
+      const tinggiLayar =
+        typeof window !==
+          "undefined"
+          ? angkaAman(
+              window.innerHeight,
+              tinggiModal
+            )
+          : tinggiModal;
 
       let posisiX =
         posisiAwalX +
@@ -13889,7 +14072,7 @@ function aktifkanModalDraggable(
 
       posisiX =
         Math.min(
-          window.innerWidth -
+          lebarLayar -
             batasTerlihat,
           Math.max(
             batasTerlihat -
@@ -13900,7 +14083,7 @@ function aktifkanModalDraggable(
 
       posisiY =
         Math.min(
-          window.innerHeight -
+          tinggiLayar -
             batasTerlihat,
           Math.max(
             batasTerlihat -
@@ -13920,22 +14103,47 @@ function aktifkanModalDraggable(
   const akhiriDrag =
     (event) => {
 
-      if (!sedangDrag) {
-        return;
+      if (
+        !sedangDrag
+      ) {
+
+        return false;
       }
 
-      sedangDrag = false;
+      sedangDrag =
+        false;
 
-      try {
+      if (
+        event &&
+        typeof event ===
+          "object" &&
+        typeof dragHandle.releasePointerCapture ===
+          "function" &&
+        Number.isInteger(
+          Number(
+            event.pointerId
+          )
+        )
+      ) {
 
-        dragHandle.releasePointerCapture(
-          event.pointerId
-        );
+        try {
 
-      } catch (error) {
+          dragHandle.releasePointerCapture(
+            event.pointerId
+          );
 
-        // Aman diabaikan.
+        } catch (
+          releaseError
+        ) {
+
+          console.warn(
+            "Pointer capture modal sudah dilepas:",
+            releaseError
+          );
+        }
       }
+
+      return true;
     };
 
   dragHandle.addEventListener(
