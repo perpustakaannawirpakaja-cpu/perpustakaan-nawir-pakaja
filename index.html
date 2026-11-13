@@ -16316,60 +16316,99 @@ async function pilihHapusHalaman(
         book.file_url
     };
 
-    try {
-
-      await resetMetadataOutputEpub(
-        bookId
-      );
-
-    } catch (
-      resetOutputError
-    ) {
-
-      console.warn(
-        "Penghapusan halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
-        resetOutputError
-      );
-    }
+    let epubDeleteResetWarning =
+      null;
 
     let ingestionDeleteSyncWarning =
       null;
 
-    try {
+try {
 
-      await sinkronkanProgressIngestionBuku(
-        bookId
+  await resetMetadataOutputEpub(
+    bookId
+  );
+
+} catch (
+  resetOutputError
+) {
+
+  console.warn(
+    "Penghapusan halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
+    resetOutputError
+  );
+
+  epubDeleteResetWarning =
+    resetOutputError;
+}
+
+try {
+
+  await sinkronkanProgressIngestionBuku(
+    bookId
+  );
+
+} catch (
+  syncError
+) {
+
+  console.error(
+    "Sinkronisasi progress ingestion setelah hapus gagal:",
+    syncError
+  );
+
+  ingestionDeleteSyncWarning =
+    syncError;
+}
+
+if (
+  epubDeleteResetWarning ||
+  ingestionDeleteSyncWarning
+) {
+
+  const detailError =
+    [
+      epubDeleteResetWarning
+        ? "Reset metadata EPUB gagal: " +
+          (
+            epubDeleteResetWarning?.message ||
+            "Error reset EPUB tidak diketahui."
+          )
+        : "",
+
+      ingestionDeleteSyncWarning
+        ? "Sinkronisasi ingestion gagal: " +
+          (
+            ingestionDeleteSyncWarning?.message ||
+            "Error sinkronisasi tidak diketahui."
+          )
+        : ""
+    ]
+      .filter(
+        Boolean
+      )
+      .join(
+        " | "
       );
 
-    } catch (
-      syncError
-    ) {
+  try {
 
-      console.error(
-        "Sinkronisasi progress ingestion setelah hapus gagal:",
-        syncError
-      );
+    await catatErrorIngestionBuku(
+      bookId,
+      new Error(
+        detailError
+      )
+    );
 
-      ingestionDeleteSyncWarning =
-        syncError;
+  } catch (
+    trackingError
+  ) {
 
-      try {
-
-        await catatErrorIngestionBuku(
-          bookId,
-          syncError
-        );
-
-      } catch (
-        trackingError
-      ) {
-
-        console.error(
-          "Pencatatan error ingestion gagal:",
-          trackingError
-        );
-      }
-    }
+    console.error(
+      "Pencatatan error ingestion setelah hapus gagal:",
+      trackingError
+    );
+  }
+}
 
     try {
 
@@ -16429,6 +16468,14 @@ async function pilihHapusHalaman(
       pesanBaru.textContent =
         `✅ Halaman ${nomorHalaman} dihapus. ` +
         "Anda masih dapat menggunakan Batal Hapus Halaman.";
+
+      if (
+        epubDeleteResetWarning
+      ) {
+
+        pesanBaru.textContent +=
+          " ⚠️ Metadata EPUB belum berhasil direset.";
+      }
 
       if (
         ingestionDeleteSyncWarning
@@ -17176,6 +17223,9 @@ async function batalUploadHalaman() {
   let cleanupStorageWarning =
     null;
 
+  let epubUndoResetWarning =
+    null;
+
   try {
 
     let statusIngestionAktif =
@@ -17768,25 +17818,12 @@ async function batalUploadHalaman() {
 
         cleanupStorageWarning =
           removeError;
-
-        try {
-
-          await catatErrorIngestionBuku(
-            bookId,
-            removeError
-          );
-
-        } catch (
-          trackingError
-        ) {
-
-          console.error(
-            "Pencatatan error cleanup Storage setelah Undo gagal:",
-            trackingError
-          );
-        }
       }
     }
+
+    /* =========================
+       RESET OUTPUT EPUB
+       ========================= */
 
     try {
 
@@ -17802,7 +17839,14 @@ async function batalUploadHalaman() {
         "Undo halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
         resetOutputError
       );
+
+      epubUndoResetWarning =
+        resetOutputError;
     }
+
+    /* =========================
+       SINKRONISASI INGESTION
+       ========================= */
 
     try {
 
@@ -17821,23 +17865,6 @@ async function batalUploadHalaman() {
 
       ingestionUndoSyncWarning =
         syncError;
-
-      try {
-
-        await catatErrorIngestionBuku(
-          bookId,
-          syncError
-        );
-
-      } catch (
-        trackingError
-      ) {
-
-        console.error(
-          "Pencatatan error ingestion gagal:",
-          trackingError
-        );
-      }
     }
 
     /*
@@ -17845,21 +17872,58 @@ async function batalUploadHalaman() {
       dapat membersihkan last_error
       ketika sinkronisasi berhasil.
 
-      Jika cleanup Storage sebelumnya gagal,
-      catat kembali error tersebut setelah
-      sinkronisasi agar orphan Storage tetap
-      tercatat sebagai failure aktif.
+      Karena itu seluruh warning yang masih
+      aktif dicatat SEKALI LAGI setelah
+      sinkronisasi selesai agar tidak ada
+      error yang hilang atau saling menimpa.
     */
 
     if (
-      cleanupStorageWarning
+      cleanupStorageWarning ||
+      epubUndoResetWarning ||
+      ingestionUndoSyncWarning
     ) {
+
+      const detailError =
+        [
+          cleanupStorageWarning
+            ? "Cleanup Storage setelah Undo gagal: " +
+              (
+                cleanupStorageWarning?.message ||
+                "Error cleanup Storage tidak diketahui."
+              )
+            : "",
+
+          epubUndoResetWarning
+            ? "Reset metadata EPUB gagal: " +
+              (
+                epubUndoResetWarning?.message ||
+                "Error reset EPUB tidak diketahui."
+              )
+            : "",
+
+          ingestionUndoSyncWarning
+            ? "Sinkronisasi ingestion setelah Undo gagal: " +
+              (
+                ingestionUndoSyncWarning?.message ||
+                "Error sinkronisasi tidak diketahui."
+              )
+            : ""
+        ]
+          .filter(
+            Boolean
+          )
+          .join(
+            " | "
+          );
 
       try {
 
         await catatErrorIngestionBuku(
           bookId,
-          cleanupStorageWarning
+          new Error(
+            detailError
+          )
         );
 
       } catch (
@@ -17867,7 +17931,7 @@ async function batalUploadHalaman() {
       ) {
 
         console.error(
-          "Pencatatan ulang error cleanup Storage setelah sinkronisasi gagal:",
+          "Pencatatan error gabungan setelah Undo gagal:",
           trackingError
         );
       }
@@ -17967,6 +18031,14 @@ async function batalUploadHalaman() {
 
         pesanBaru.textContent +=
           " ⚠️ Progress ingestion belum tersinkron.";
+      }
+
+      if (
+        epubUndoResetWarning
+      ) {
+
+        pesanBaru.textContent +=
+          " ⚠️ Metadata EPUB belum berhasil direset.";
       }
 
       if (
@@ -19213,6 +19285,12 @@ async function pindahkanHalamanBuku() {
         "";
     }
 
+    let epubMoveResetWarning =
+      null;
+
+    let ingestionMoveSyncWarning =
+      null;
+
     try {
 
       await resetMetadataOutputEpub(
@@ -19227,10 +19305,10 @@ async function pindahkanHalamanBuku() {
         "Pemindahan halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
         resetOutputError
       );
-    }
 
-    let ingestionMoveSyncWarning =
-      null;
+      epubMoveResetWarning =
+        resetOutputError;
+    }
 
     try {
 
@@ -19249,12 +19327,45 @@ async function pindahkanHalamanBuku() {
 
       ingestionMoveSyncWarning =
         syncError;
+    }
+
+    if (
+      epubMoveResetWarning ||
+      ingestionMoveSyncWarning
+    ) {
+
+      const detailError =
+        [
+          epubMoveResetWarning
+            ? "Reset metadata EPUB gagal: " +
+              (
+                epubMoveResetWarning?.message ||
+                "Error reset EPUB tidak diketahui."
+              )
+            : "",
+
+          ingestionMoveSyncWarning
+            ? "Sinkronisasi ingestion gagal: " +
+              (
+                ingestionMoveSyncWarning?.message ||
+                "Error sinkronisasi tidak diketahui."
+              )
+            : ""
+        ]
+          .filter(
+            Boolean
+          )
+          .join(
+            " | "
+          );
 
       try {
 
         await catatErrorIngestionBuku(
           bookId,
-          syncError
+          new Error(
+            detailError
+          )
         );
 
       } catch (
@@ -19262,7 +19373,7 @@ async function pindahkanHalamanBuku() {
       ) {
 
         console.error(
-          "Pencatatan error ingestion gagal:",
+          "Pencatatan error ingestion setelah pindah gagal:",
           trackingError
         );
       }
@@ -19323,6 +19434,14 @@ async function pindahkanHalamanBuku() {
 
       pesanBaru.textContent =
         `✅ Halaman ${halamanAsal} berhasil dipindahkan ke posisi ${halamanTujuan}.`;
+
+      if (
+        epubMoveResetWarning
+      ) {
+
+        pesanBaru.textContent +=
+          " ⚠️ Metadata EPUB belum berhasil direset.";
+      }
 
       if (
         ingestionMoveSyncWarning
@@ -24852,156 +24971,118 @@ async function simpanEditBuku(
   }
 
   if (
-    metadataBaruAktif &&
-    currentBook
+  metadataBaruAktif &&
+  currentBook
+) {
+
+  if (
+    newBookFile &&
+    typeof currentBook.file_url ===
+      "string" &&
+    currentBook.file_url.trim()
   ) {
 
-    if (
-      newBookFile &&
-      typeof currentBook.file_url ===
-        "string" &&
-      currentBook.file_url.trim()
-    ) {
+    try {
 
-      try {
+      const oldBookPath =
+        ambilStoragePathPublik(
+          currentBook.file_url,
+          "book-files"
+        );
 
-        const publicUrl =
-          currentBook.file_url.trim();
+      if (
+        oldBookPath &&
+        oldBookPath !==
+          uploadedNewBookPath
+      ) {
 
-        const marker =
-          "/storage/v1/object/public/book-files/";
-
-        const posisi =
-          publicUrl.indexOf(
-            marker
-          );
+        const {
+          error: oldBookDeleteError
+        } = await db
+          .storage
+          .from(
+            "book-files"
+          )
+          .remove([
+            oldBookPath
+          ]);
 
         if (
-          posisi !== -1
+          oldBookDeleteError
         ) {
 
-          const encodedPath =
-            publicUrl.substring(
-              posisi +
-              marker.length
-            );
-
-          const oldBookPath =
-            decodeURIComponent(
-              encodedPath
-            );
-
-          if (
-            oldBookPath &&
-            oldBookPath !==
-              uploadedNewBookPath
-          ) {
-
-            const {
-              error: oldBookDeleteError
-            } = await db
-              .storage
-              .from(
-                "book-files"
-              )
-              .remove([
-                oldBookPath
-              ]);
-
-            if (
-              oldBookDeleteError
-            ) {
-
-              console.error(
-                "PDF baru sudah aktif, tetapi PDF lama gagal dibersihkan:",
-                oldBookDeleteError
-              );
-            }
-          }
+          console.error(
+            "PDF baru sudah aktif, tetapi PDF lama gagal dibersihkan:",
+            oldBookDeleteError
+          );
         }
-
-      } catch (cleanupOldBookError) {
-
-        console.error(
-          "Pembersihan PDF lama gagal:",
-          cleanupOldBookError
-        );
       }
-    }
 
-    if (
-      newCoverFile &&
-      typeof currentBook.cover_url ===
-        "string" &&
-      currentBook.cover_url.trim()
+    } catch (
+      cleanupOldBookError
     ) {
 
-      try {
-
-        const publicUrl =
-          currentBook.cover_url.trim();
-
-        const marker =
-          "/storage/v1/object/public/book-covers/";
-
-        const posisi =
-          publicUrl.indexOf(
-            marker
-          );
-
-        if (
-          posisi !== -1
-        ) {
-
-          const encodedPath =
-            publicUrl.substring(
-              posisi +
-              marker.length
-            );
-
-          const oldCoverPath =
-            decodeURIComponent(
-              encodedPath
-            );
-
-          if (
-            oldCoverPath &&
-            oldCoverPath !==
-              uploadedNewCoverPath
-          ) {
-
-            const {
-              error: oldCoverDeleteError
-            } = await db
-              .storage
-              .from(
-                "book-covers"
-              )
-              .remove([
-                oldCoverPath
-              ]);
-
-            if (
-              oldCoverDeleteError
-            ) {
-
-              console.error(
-                "Cover baru sudah aktif, tetapi cover lama gagal dibersihkan:",
-                oldCoverDeleteError
-              );
-            }
-          }
-        }
-
-      } catch (cleanupOldCoverError) {
-
-        console.error(
-          "Pembersihan cover lama gagal:",
-          cleanupOldCoverError
-        );
-      }
+      console.error(
+        "Pembersihan PDF lama gagal:",
+        cleanupOldBookError
+      );
     }
   }
+
+  if (
+    newCoverFile &&
+    typeof currentBook.cover_url ===
+      "string" &&
+    currentBook.cover_url.trim()
+  ) {
+
+    try {
+
+      const oldCoverPath =
+        ambilStoragePathPublik(
+          currentBook.cover_url,
+          "book-covers"
+        );
+
+      if (
+        oldCoverPath &&
+        oldCoverPath !==
+          uploadedNewCoverPath
+      ) {
+
+        const {
+          error: oldCoverDeleteError
+        } = await db
+          .storage
+          .from(
+            "book-covers"
+          )
+          .remove([
+            oldCoverPath
+          ]);
+
+        if (
+          oldCoverDeleteError
+        ) {
+
+          console.error(
+            "Cover baru sudah aktif, tetapi cover lama gagal dibersihkan:",
+            oldCoverDeleteError
+          );
+        }
+      }
+
+    } catch (
+      cleanupOldCoverError
+    ) {
+
+      console.error(
+        "Pembersihan cover lama gagal:",
+        cleanupOldCoverError
+      );
+    }
+  }
+}
 
   let refreshWarning =
     null;
@@ -25043,7 +25124,7 @@ async function simpanEditBuku(
   );
 }
 
-function ambilPathFileLama(
+function ambilStoragePathPublik(
   publicUrl,
   bucketName
 ) {
@@ -25147,7 +25228,7 @@ function ambilPathFileLama(
   ) {
 
     console.warn(
-      "Storage path lama gagal didecode:",
+      "Storage path publik gagal didecode:",
       decodeError
     );
 
@@ -25486,110 +25567,46 @@ async function hapusBukuAdmin(
   }
 
   let pdfPath =
-    null;
+  null;
 
-  let coverPath =
-    null;
+let coverPath =
+  null;
 
-  if (
-    typeof book.file_url ===
-      "string" &&
-    book.file_url.trim()
-  ) {
+try {
 
-    try {
+  pdfPath =
+    ambilStoragePathPublik(
+      book.file_url,
+      "book-files"
+    );
 
-      const publicUrl =
-        book.file_url.trim();
+} catch (
+  error
+) {
 
-      const marker =
-        "/storage/v1/object/public/book-files/";
+  console.error(
+    "Path PDF final lama tidak dapat dibaca:",
+    error
+  );
+}
 
-      const posisi =
-        publicUrl.indexOf(
-          marker
-        );
+try {
 
-      if (
-        posisi !== -1
-      ) {
+  coverPath =
+    ambilStoragePathPublik(
+      book.cover_url,
+      "book-covers"
+    );
 
-        const encodedPath =
-          publicUrl.substring(
-            posisi +
-            marker.length
-          );
+} catch (
+  error
+) {
 
-        const hasilPath =
-          decodeURIComponent(
-            encodedPath
-          );
-
-        if (hasilPath) {
-
-          pdfPath =
-            hasilPath;
-        }
-      }
-
-    } catch (error) {
-
-      console.error(
-        "Path PDF final lama tidak dapat dibaca:",
-        error
-      );
-    }
-  }
-
-  if (
-    typeof book.cover_url ===
-      "string" &&
-    book.cover_url.trim()
-  ) {
-
-    try {
-
-      const publicUrl =
-        book.cover_url.trim();
-
-      const marker =
-        "/storage/v1/object/public/book-covers/";
-
-      const posisi =
-        publicUrl.indexOf(
-          marker
-        );
-
-      if (
-        posisi !== -1
-      ) {
-
-        const encodedPath =
-          publicUrl.substring(
-            posisi +
-            marker.length
-          );
-
-        const hasilPath =
-          decodeURIComponent(
-            encodedPath
-          );
-
-        if (hasilPath) {
-
-          coverPath =
-            hasilPath;
-        }
-      }
-
-    } catch (error) {
-
-      console.error(
-        "Path cover lama tidak dapat dibaca:",
-        error
-      );
-    }
-  }
+  console.error(
+    "Path cover lama tidak dapat dibaca:",
+    error
+  );
+}
 
   const {
     data: deletedBook,
@@ -31189,10 +31206,14 @@ async function resetMetadataOutputEpub(
 ) {
 
   const idBuku =
-    Number(bookId);
+    Number(
+      bookId
+    );
 
   if (
-    !Number.isInteger(idBuku) ||
+    !Number.isInteger(
+      idBuku
+    ) ||
     idBuku < 1
   ) {
 
@@ -31201,137 +31222,121 @@ async function resetMetadataOutputEpub(
     );
   }
 
-  /*
-    Baca metadata lama terlebih dahulu.
-
-    URL, storage path, dan ukuran lama
-    sengaja dipertahankan pada session
-    agar file lama masih dapat ditemukan
-    dan dibersihkan setelah EPUB baru
-    berhasil dibuat.
-  */
-  const {
-    data: sessionSebelum,
-    error: sessionReadError
-  } = await db
-    .from(
-      "book_ingestion_sessions"
-    )
-    .select(`
-      book_id,
-      output_format,
-      output_url,
-      output_storage_path,
-      output_size,
-      output_created_at
-    `)
-    .eq(
-      "book_id",
-      idBuku
-    )
-    .maybeSingle();
-
-  if (sessionReadError) {
-
-    throw new Error(
-      "Gagal membaca metadata output EPUB sebelum reset: " +
-      sessionReadError.message
-    );
-  }
-
-  if (!sessionSebelum) {
-
-    throw new Error(
-      "Session ingestion untuk reset output EPUB tidak ditemukan."
-    );
-  }
-
   if (
-    Number(
-      sessionSebelum.book_id
-    ) !== idBuku
+    typeof db ===
+      "undefined" ||
+    !db ||
+    typeof db.rpc !==
+      "function"
   ) {
 
     throw new Error(
-      "Book ID session reset output EPUB tidak sesuai."
+      "Supabase RPC tidak tersedia untuk reset output EPUB."
     );
   }
 
-  const outputUrlSebelum =
-    sessionSebelum.output_url;
-
-  const storagePathSebelum =
-    sessionSebelum.output_storage_path;
-
-  const outputSizeSebelum =
-    sessionSebelum.output_size;
-
-  /*
-    Reset session lebih dahulu.
-
-    output_format = null
-    menandakan output lama sudah stale
-    dan tidak boleh dipakai ulang sebagai
-    EPUB aktif.
-
-    URL, path, dan size lama tidak dihapus.
-  */
   const {
-    data: sessionSesudah,
-    error: resetError
-  } = await db
-    .from(
-      "book_ingestion_sessions"
-    )
-    .update({
-      output_format:
-        null,
-
-      output_created_at:
-        null
-    })
-    .eq(
-      "book_id",
-      idBuku
-    )
-    .select(`
-      book_id,
-      output_format,
-      output_url,
-      output_storage_path,
-      output_size,
-      output_created_at
-    `)
-    .maybeSingle();
-
-  if (resetError) {
-
-    throw new Error(
-      "Metadata output EPUB gagal direset: " +
-      resetError.message
-    );
-  }
-
-  if (!sessionSesudah) {
-
-    throw new Error(
-      "Session ingestion tidak ditemukan setelah reset output EPUB."
-    );
-  }
+    data,
+    error
+  } = await db.rpc(
+    "reset_epub_metadata_atomic",
+    {
+      p_book_id:
+        idBuku
+    }
+  );
 
   if (
-    Number(
-      sessionSesudah.book_id
-    ) !== idBuku
+    error
   ) {
 
     throw new Error(
-      "Book ID hasil reset output EPUB tidak sesuai."
+      "Reset metadata output EPUB gagal: " +
+      (
+        error.message ||
+        "Error RPC tidak diketahui."
+      )
     );
   }
 
   if (
-    sessionSesudah.output_format !==
+    !data ||
+    typeof data !==
+      "object" ||
+    Array.isArray(
+      data
+    )
+  ) {
+
+    throw new Error(
+      "Hasil reset metadata output EPUB tidak valid."
+    );
+  }
+
+  if (
+    data.success !==
+      true
+  ) {
+
+    throw new Error(
+      "RPC reset metadata output EPUB tidak mengembalikan status berhasil."
+    );
+  }
+
+  const bookIdHasil =
+    Number(
+      data.book_id
+    );
+
+  if (
+    !Number.isInteger(
+      bookIdHasil
+    ) ||
+    bookIdHasil !==
+      idBuku
+  ) {
+
+    throw new Error(
+      "Book ID hasil reset metadata output EPUB tidak sesuai."
+    );
+  }
+
+  const session =
+    data.session;
+
+  const book =
+    data.book;
+
+  if (
+    !session ||
+    typeof session !==
+      "object" ||
+    Array.isArray(
+      session
+    )
+  ) {
+
+    throw new Error(
+      "Metadata session hasil reset EPUB tidak valid."
+    );
+  }
+
+  if (
+    !book ||
+    typeof book !==
+      "object" ||
+    Array.isArray(
+      book
+    )
+  ) {
+
+    throw new Error(
+      "Metadata buku hasil reset EPUB tidak valid."
+    );
+  }
+
+  if (
+    session.output_format !==
       null
   ) {
 
@@ -31341,7 +31346,7 @@ async function resetMetadataOutputEpub(
   }
 
   if (
-    sessionSesudah.output_created_at !==
+    session.output_created_at !==
       null
   ) {
 
@@ -31351,106 +31356,13 @@ async function resetMetadataOutputEpub(
   }
 
   if (
-    sessionSesudah.output_url !==
-      outputUrlSebelum
-  ) {
-
-    throw new Error(
-      "URL output EPUB lama berubah saat reset."
-    );
-  }
-
-  if (
-    sessionSesudah.output_storage_path !==
-      storagePathSebelum
-  ) {
-
-    throw new Error(
-      "Storage path EPUB lama berubah saat reset."
-    );
-  }
-
-  if (
-    sessionSesudah.output_size !==
-      outputSizeSebelum
-  ) {
-
-    throw new Error(
-      "Ukuran EPUB lama berubah saat reset."
-    );
-  }
-
-  /*
-    Setelah source metadata session
-    sudah dinonaktifkan, hapus metadata
-    EPUB aktif dari tabel books agar
-    reader tidak lagi memakai EPUB lama.
-  */
-  const {
-    data: bookSesudah,
-    error: resetBookError
-  } = await db
-    .from("books")
-    .update({
-      epub_url:
-        null,
-
-      epub_storage_path:
-        null,
-
-      epub_size:
-        null,
-
-      epub_created_at:
-        null
-    })
-    .eq(
-      "id",
-      idBuku
-    )
-    .select(`
-      id,
-      epub_url,
-      epub_storage_path,
-      epub_size,
-      epub_created_at
-    `)
-    .maybeSingle();
-
-  if (resetBookError) {
-
-    throw new Error(
-      "Metadata EPUB pada buku gagal direset: " +
-      resetBookError.message
-    );
-  }
-
-  if (!bookSesudah) {
-
-    throw new Error(
-      "Data buku tidak ditemukan setelah reset metadata EPUB."
-    );
-  }
-
-  if (
-    Number(
-      bookSesudah.id
-    ) !== idBuku
-  ) {
-
-    throw new Error(
-      "Book ID hasil reset metadata EPUB tidak sesuai."
-    );
-  }
-
-  if (
-    bookSesudah.epub_url !==
+    book.epub_url !==
       null ||
-    bookSesudah.epub_storage_path !==
+    book.epub_storage_path !==
       null ||
-    bookSesudah.epub_size !==
+    book.epub_size !==
       null ||
-    bookSesudah.epub_created_at !==
+    book.epub_created_at !==
       null
   ) {
 
