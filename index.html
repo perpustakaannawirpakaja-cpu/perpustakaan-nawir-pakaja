@@ -26890,7 +26890,17 @@ async function tampilkanLanjutMembaca(
        SMART BOOK RECOMMENDATIONS
        ========================================= */
 
-async function tampilkanRekomendasiBuku(books) {
+async function tampilkanRekomendasiBuku(
+  books
+) {
+
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
 
   const section =
     document.getElementById(
@@ -26902,224 +26912,504 @@ async function tampilkanRekomendasiBuku(books) {
       "book-recommendation-list"
     );
 
-  section.style.display = "none";
-  list.innerHTML = "";
+  if (
+    !section ||
+    !list
+  ) {
 
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
+    console.warn(
+      "Elemen rekomendasi buku tidak tersedia."
+    );
 
-  if (userError || !user) {
-    return;
+    return false;
   }
 
-  const {
-    data: progressData,
-    error: progressError
-  } = await db
-    .from("reader_progress")
-    .select(
-      "book_key, reader_type, updated_at"
-    )
-    .eq("user_id", user.id)
-    .in(
-      "reader_type",
-      [
-        "pdf",
-        "epub"
-      ]
-    )
-    .order(
-      "updated_at",
-      { ascending: false }
+  section.style.display =
+    "none";
+
+  list.replaceChildren();
+
+  if (
+    typeof buatUrlReaderBuku !==
+      "function"
+  ) {
+
+    console.error(
+      "Function buatUrlReaderBuku tidak tersedia."
     );
 
-  if (progressError) {
+    return false;
+  }
+
+  const daftarBuku =
+    Array.isArray(
+      books
+    )
+      ? books.filter(
+          (buku) =>
+            buku &&
+            typeof buku ===
+              "object"
+        )
+      : [];
+
+  if (
+    daftarBuku.length < 1
+  ) {
+
+    return true;
+  }
+
+  let user = null;
+
+  try {
+
+    const {
+      data,
+      error: userError
+    } =
+      await db.auth.getUser();
+
+    if (
+      userError ||
+      !data?.user
+    ) {
+
+      return true;
+    }
+
+    user =
+      data.user;
+
+  } catch (authError) {
+
+    console.error(
+      "Gagal memeriksa user rekomendasi buku:",
+      authError
+    );
+
+    return false;
+  }
+
+  const userId =
+    typeof user.id ===
+      "string"
+      ? user.id.trim()
+      : "";
+
+  if (!userId) {
+
+    return true;
+  }
+
+  let progressData = [];
+
+  try {
+
+    const {
+      data,
+      error: progressError
+    } =
+      await db
+        .from(
+          "reader_progress"
+        )
+        .select(
+          "book_key, reader_type, updated_at"
+        )
+        .eq(
+          "user_id",
+          userId
+        )
+        .in(
+          "reader_type",
+          [
+            "pdf",
+            "epub"
+          ]
+        )
+        .order(
+          "updated_at",
+          {
+            ascending:
+              false
+          }
+        );
+
+    if (progressError) {
+
+      console.error(
+        "Gagal mengambil data rekomendasi:",
+        progressError
+      );
+
+      return false;
+    }
+
+    progressData =
+      Array.isArray(
+        data
+      )
+        ? data
+        : [];
+
+  } catch (
+    progressException
+  ) {
+
     console.error(
       "Gagal mengambil data rekomendasi:",
-      progressError
+      progressException
     );
 
-    return;
+    return false;
   }
 
   if (
-    !progressData ||
-    progressData.length === 0
+    progressData.length < 1
   ) {
-    return;
+
+    return true;
   }
 
-  const bukuDibaca =
-  progressData
-    .map((progress) => {
+  const progressAman =
+    progressData.filter(
+      (progress) => {
 
-      return books.find((item) => {
+        if (
+          !progress ||
+          typeof progress !==
+            "object"
+        ) {
 
-        const key =
-          progress.reader_type === "epub"
-            ? (
-                "lastEpub:" +
-                encodeURIComponent(
-                  item.epub_url || ""
-                )
-              )
-            : (
-                "lastPage:" +
-                encodeURIComponent(
-                  item.file_url || ""
-                )
-              );
+          return false;
+        }
+
+        const readerType =
+          typeof progress.reader_type ===
+            "string"
+            ? progress.reader_type.trim()
+            : "";
+
+        const bookKey =
+          typeof progress.book_key ===
+            "string"
+            ? progress.book_key.trim()
+            : "";
 
         return (
-          key ===
-          progress.book_key
-        );
-      });
-
-    })
-    .filter(Boolean);
-
-  if (bukuDibaca.length === 0) {
-    return;
-  }
-
-  const kategoriDibaca =
-    [
-      ...new Set(
-        bukuDibaca
-          .map((buku) =>
-            (buku.category || "").trim()
+          (
+            readerType ===
+              "pdf" ||
+            readerType ===
+              "epub"
+          ) &&
+          Boolean(
+            bookKey
           )
-          .filter(Boolean)
-      )
-    ];
+        );
+      }
+    );
 
-  if (kategoriDibaca.length === 0) {
-    return;
+  if (
+    progressAman.length < 1
+  ) {
+
+    return true;
   }
 
   const bookKeysDibaca =
     new Set(
-      progressData.map(
+      progressAman.map(
         (progress) =>
-          progress.book_key
+          progress.book_key.trim()
       )
     );
 
-  const belumPernahDibaca =
-  (buku) => {
+  const daftarBukuAman =
+    daftarBuku.map(
+      (buku) => {
 
-    const pdfKey =
-      "lastPage:" +
-      encodeURIComponent(
-        buku.file_url || ""
-      );
+        const pdfUrl =
+          typeof buku.file_url ===
+            "string"
+            ? buku.file_url.trim()
+            : "";
 
-    const epubKey =
-      "lastEpub:" +
-      encodeURIComponent(
-        buku.epub_url || ""
-      );
+        const epubUrl =
+          typeof buku.epub_url ===
+            "string"
+            ? buku.epub_url.trim()
+            : "";
 
-    return (
-      !bookKeysDibaca.has(pdfKey) &&
-      !bookKeysDibaca.has(epubKey)
+        const pdfKey =
+          pdfUrl
+            ? (
+                "lastPage:" +
+                encodeURIComponent(
+                  pdfUrl
+                )
+              )
+            : "";
+
+        const epubKey =
+          epubUrl
+            ? (
+                "lastEpub:" +
+                encodeURIComponent(
+                  epubUrl
+                )
+              )
+            : "";
+
+        const sudahDibaca =
+          (
+            pdfKey &&
+            bookKeysDibaca.has(
+              pdfKey
+            )
+          ) ||
+          (
+            epubKey &&
+            bookKeysDibaca.has(
+              epubKey
+            )
+          );
+
+        const kategori =
+          typeof buku.category ===
+            "string"
+            ? buku.category.trim()
+            : "";
+
+        const readerUrl =
+          buatUrlReaderBuku(
+            buku
+          );
+
+        return {
+          buku,
+          pdfKey,
+          epubKey,
+          kategori,
+          sudahDibaca:
+            Boolean(
+              sudahDibaca
+            ),
+          readerUrl:
+            typeof readerUrl ===
+              "string"
+              ? readerUrl.trim()
+              : ""
+        };
+      }
     );
-  };
 
-let rekomendasi =
-  books
-    .filter((buku) => {
+  const kategoriDibaca =
+    new Set(
+      daftarBukuAman
+        .filter(
+          (item) =>
+            item.sudahDibaca &&
+            item.kategori
+        )
+        .map(
+          (item) =>
+            item.kategori
+        )
+    );
 
-      const kategori =
-        (buku.category || "").trim();
+  let rekomendasi =
+    [];
 
-      return (
-        kategoriDibaca.includes(kategori) &&
-        belumPernahDibaca(buku)
-      );
-    })
-    .slice(0, 4);
+  if (
+    kategoriDibaca.size > 0
+  ) {
 
-/* Fallback:
-   jika kategori favorit habis,
-   tampilkan buku lain yang belum dibaca */
-if (rekomendasi.length === 0) {
+    rekomendasi =
+      daftarBukuAman
+        .filter(
+          (item) =>
+            !item.sudahDibaca &&
+            item.kategori &&
+            kategoriDibaca.has(
+              item.kategori
+            ) &&
+            item.readerUrl
+        )
+        .slice(
+          0,
+          4
+        );
+  }
 
-  rekomendasi =
-    books
-      .filter(
-        belumPernahDibaca
-      )
-      .slice(0, 4);
-}
+  if (
+    rekomendasi.length === 0
+  ) {
 
-if (rekomendasi.length === 0) {
-  return;
-}
+    rekomendasi =
+      daftarBukuAman
+        .filter(
+          (item) =>
+            !item.sudahDibaca &&
+            item.readerUrl
+        )
+        .slice(
+          0,
+          4
+        );
+  }
 
-  rekomendasi.forEach((buku) => {
+  if (
+    rekomendasi.length < 1
+  ) {
 
-    const card =
-      document.createElement("div");
+    return true;
+  }
 
-    card.className = "book-card";
+  const fragment =
+    document.createDocumentFragment();
 
-    card.innerHTML = `
-      ${
-        buku.cover_url
-          ? `
-            <img
-              class="book-cover"
-              src="${buku.cover_url}"
-              alt="Cover ${buku.title || "Buku"}"
-            >
-          `
-          : ""
+  rekomendasi.forEach(
+    ({
+      buku,
+      kategori,
+      readerUrl
+    }) => {
+
+      const title =
+        typeof buku.title ===
+          "string" &&
+        buku.title.trim()
+          ? buku.title.trim()
+          : "Tanpa Judul";
+
+      const author =
+        typeof buku.author ===
+          "string" &&
+        buku.author.trim()
+          ? buku.author.trim()
+          : "-";
+
+      const kategoriTampil =
+        kategori ||
+        "-";
+
+      const coverUrl =
+        typeof buku.cover_url ===
+          "string"
+          ? buku.cover_url.trim()
+          : "";
+
+      const card =
+        document.createElement(
+          "div"
+        );
+
+      card.className =
+        "book-card";
+
+      if (coverUrl) {
+
+        const cover =
+          document.createElement(
+            "img"
+          );
+
+        cover.className =
+          "book-cover";
+
+        cover.src =
+          coverUrl;
+
+        cover.alt =
+          `Cover ${title}`;
+
+        card.appendChild(
+          cover
+        );
       }
 
-      <div class="book-info">
+      const info =
+        document.createElement(
+          "div"
+        );
 
-        <h3>
-          ${buku.title || "Tanpa Judul"}
-        </h3>
+      info.className =
+        "book-info";
 
-        <p>
-          Penulis:
-          ${buku.author || "-"}
-        </p>
+      const heading =
+        document.createElement(
+          "h3"
+        );
 
-        <p>
-          Kategori:
-          ${buku.category || "-"}
-        </p>
+      heading.textContent =
+        title;
 
-        ${
-          buatUrlReaderBuku(buku)
-            ? `
-              <a
-                class="read-button"
-                href="${
-                  buatUrlReaderBuku(
-                    buku
-                  )
-                }"
-              >
-                📖 Baca Buku
-              </a>
-            `
-            : ""
-        }
+      info.appendChild(
+        heading
+      );
 
-      </div>
-    `;
+      const authorP =
+        document.createElement(
+          "p"
+        );
 
-    list.appendChild(card);
-  });
+      authorP.textContent =
+        `Penulis: ${author}`;
 
-  section.style.display = "block";
+      info.appendChild(
+        authorP
+      );
+
+      const categoryP =
+        document.createElement(
+          "p"
+        );
+
+      categoryP.textContent =
+        `Kategori: ${kategoriTampil}`;
+
+      info.appendChild(
+        categoryP
+      );
+
+      const link =
+        document.createElement(
+          "a"
+        );
+
+      link.className =
+        "read-button";
+
+      link.href =
+        readerUrl;
+
+      link.textContent =
+        "📖 Baca Buku";
+
+      info.appendChild(
+        link
+      );
+
+      card.appendChild(
+        info
+      );
+
+      fragment.appendChild(
+        card
+      );
+    }
+  );
+
+  list.appendChild(
+    fragment
+  );
+
+  section.style.display =
+    "block";
+
+  return true;
 }
     
 async function tampilkanBuku() {
