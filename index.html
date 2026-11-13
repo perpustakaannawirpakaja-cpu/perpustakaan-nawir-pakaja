@@ -8817,14 +8817,40 @@ function fokusPencarianAdmin(
   return true;
 }
 
-function tutupLoginAdminDenganEscape(event) {
+function tutupLoginAdminDenganEscape(
+  event
+) {
 
-  if (event.key !== "Escape") {
-    return;
+  if (
+    !event ||
+    typeof event !==
+      "object"
+  ) {
+
+    return false;
   }
 
-  if (event.defaultPrevented) {
-    return;
+  if (
+    event.key !==
+      "Escape"
+  ) {
+
+    return false;
+  }
+
+  if (
+    event.defaultPrevented
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
   }
 
   const adminModal =
@@ -8834,15 +8860,41 @@ function tutupLoginAdminDenganEscape(event) {
 
   if (
     !adminModal ||
-    !adminModal.classList.contains("show")
+    !adminModal.classList ||
+    typeof adminModal.classList.contains !==
+      "function" ||
+    !adminModal.classList.contains(
+      "show"
+    )
   ) {
-    return;
+
+    return false;
   }
 
-  event.preventDefault();
+  if (
+    typeof tutupAdmin !==
+      "function"
+  ) {
 
-  tutupAdmin();
+    console.error(
+      "Function tutupAdmin tidak tersedia."
+    );
 
+    return false;
+  }
+
+  if (
+    typeof event.preventDefault ===
+      "function"
+  ) {
+
+    event.preventDefault();
+  }
+
+  return (
+    tutupAdmin() ===
+    true
+  );
 }
 
 function jagaFokusLoginAdmin(event) {
