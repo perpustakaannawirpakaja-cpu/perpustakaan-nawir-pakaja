@@ -24547,6 +24547,12 @@ function getIngestionStatusInfo(
   status
 ) {
 
+  const statusBersih =
+    typeof status ===
+      "string"
+      ? status.trim()
+      : "";
+
   const statusMap = {
 
     draft: {
@@ -24599,14 +24605,38 @@ function getIngestionStatusInfo(
     }
   };
 
-  return (
-    statusMap[status] || {
+  if (
+    !statusBersih ||
+    !Object.prototype
+      .hasOwnProperty.call(
+        statusMap,
+        statusBersih
+      )
+  ) {
+
+    return {
       icon: "ℹ️",
       label: "Tidak diketahui",
       className:
         "ingestion-unknown"
-    }
-  );
+    };
+  }
+
+  const info =
+    statusMap[
+      statusBersih
+    ];
+
+  return {
+    icon:
+      info.icon,
+
+    label:
+      info.label,
+
+    className:
+      info.className
+  };
 }
 
 function scrollKelolaHalamanKeAtas() {
