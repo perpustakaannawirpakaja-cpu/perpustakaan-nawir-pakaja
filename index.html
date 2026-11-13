@@ -23027,26 +23027,75 @@ function getBookIngestionConfig(
   uploadMode
 ) {
 
+  const mode =
+    typeof uploadMode ===
+      "string"
+      ? uploadMode.trim()
+      : "";
+
+  if (!mode) {
+
+    return null;
+  }
+
   const configs = {
 
     single_pdf: {
-      sourceType: "pdf_import",
-      sourceFormat: "pdf",
-      targetFormat: "epub",
-      epubLayout: "fixed"
+      sourceType:
+        "pdf_import",
+
+      sourceFormat:
+        "pdf",
+
+      targetFormat:
+        "epub",
+
+      epubLayout:
+        "fixed"
     },
 
     incremental: {
-      sourceType: "incremental_upload",
-      sourceFormat: "pdf",
-      targetFormat: "epub",
-      epubLayout: "fixed"
-    }
+      sourceType:
+        "incremental_upload",
 
+      sourceFormat:
+        "pdf",
+
+      targetFormat:
+        "epub",
+
+      epubLayout:
+        "fixed"
+    }
   };
 
-    return configs[uploadMode] || null;
+  if (
+    !Object.prototype
+      .hasOwnProperty.call(
+        configs,
+        mode
+      )
+  ) {
 
+    return null;
+  }
+
+  const config =
+    configs[mode];
+
+  return {
+    sourceType:
+      config.sourceType,
+
+    sourceFormat:
+      config.sourceFormat,
+
+    targetFormat:
+      config.targetFormat,
+
+    epubLayout:
+      config.epubLayout
+  };
 }
 
 async function buatBookIngestionSession(
