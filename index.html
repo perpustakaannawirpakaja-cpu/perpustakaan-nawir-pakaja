@@ -9893,6 +9893,28 @@ function filterIntegritasDariRingkasan(
 
 function resetFilterBukuAdmin() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof urutkanBukuAdmin !==
+      "function" ||
+    typeof muatDaftarBukuAdmin !==
+      "function"
+  ) {
+
+    console.error(
+      "Function pendukung reset filter Admin tidak tersedia."
+    );
+
+    return false;
+  }
+
   const searchInput =
     document.getElementById(
       "admin-book-search"
@@ -9909,55 +9931,128 @@ function resetFilterBukuAdmin() {
     );
 
   const integritySelect =
-  document.getElementById(
-    "admin-book-integrity"
-  );
+    document.getElementById(
+      "admin-book-integrity"
+    );
 
   const sortSelect =
     document.getElementById(
       "admin-book-sort"
     );
 
-  if (searchInput) {
-    searchInput.value = "";
+  if (
+    searchInput
+  ) {
+
+    searchInput.value =
+      "";
   }
 
-  if (clearButton) {
-    clearButton.style.display = "none";
+  if (
+    clearButton
+  ) {
+
+    clearButton.style.display =
+      "none";
   }
 
-  if (categorySelect) {
-    categorySelect.value = "";
+  if (
+    categorySelect
+  ) {
+
+    categorySelect.value =
+      "";
   }
 
-  if (integritySelect) {
-    integritySelect.value = "";
+  if (
+    integritySelect
+  ) {
+
+    integritySelect.value =
+      "";
   }
 
-  if (sortSelect) {
-    sortSelect.value = "title-asc";
+  if (
+    sortSelect
+  ) {
+
+    sortSelect.value =
+      "title-asc";
   }
 
-  localStorage.removeItem(
-    "adminBookCategory"
+  try {
+
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
+
+      [
+        "adminBookCategory",
+        "adminBookIntegrity",
+        "adminBookSearch",
+        "adminBookSort"
+      ].forEach(
+        (key) => {
+
+          localStorage.removeItem(
+            key
+          );
+        }
+      );
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi filter Admin tidak dapat direset:",
+      storageError
+    );
+  }
+
+  const hasilUrut =
+    urutkanBukuAdmin();
+
+  try {
+
+    const hasilMuat =
+      muatDaftarBukuAdmin();
+
+    if (
+      hasilMuat &&
+      typeof hasilMuat.catch ===
+        "function"
+    ) {
+
+      hasilMuat.catch(
+        (loadError) => {
+
+          console.error(
+            "Gagal memuat ulang daftar buku Admin setelah reset filter:",
+            loadError
+          );
+        }
+      );
+    }
+
+  } catch (
+    loadException
+  ) {
+
+    console.error(
+      "Gagal memulai pemuatan ulang daftar buku Admin setelah reset filter:",
+      loadException
+    );
+
+    return false;
+  }
+
+  return (
+    hasilUrut !==
+    false
   );
-
-  localStorage.removeItem(
-    "adminBookIntegrity"
-  );
-
-  localStorage.removeItem(
-    "adminBookSearch"
-  );
-
-  localStorage.removeItem(
-    "adminBookSort"
-  );
-
-  urutkanBukuAdmin();
-
-  muatDaftarBukuAdmin();
-
 }
 
 function updateResetFilterBukuAdmin() {
