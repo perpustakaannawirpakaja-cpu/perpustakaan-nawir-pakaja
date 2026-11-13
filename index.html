@@ -26218,7 +26218,17 @@ document
    CONTINUE READING
    ========================================= */
 
-async function tampilkanLanjutMembaca(books) {
+async function tampilkanLanjutMembaca(
+  books
+) {
+
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
 
   const section =
     document.getElementById(
@@ -26230,185 +26240,406 @@ async function tampilkanLanjutMembaca(books) {
       "continue-reading-list"
     );
 
-  section.style.display = "none";
-  list.innerHTML = "";
+  if (
+    !section ||
+    !list
+  ) {
 
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
-
-  if (userError || !user) {
-    return;
-  }
-
-  const {
-    data: progressData,
-    error: progressError
-  } = await db
-    .from("reader_progress")
-    .select(
-      "book_key, page_number, updated_at"
-    )
-    .eq("user_id", user.id)
-    .eq(
-      "reader_type",
-      "pdf"
-    )
-    .order(
-      "updated_at",
-      { ascending: false }
-    )
-    .limit(3);
-
-  const {
-  data: epubProgressData,
-  error: epubProgressError
-} = await db
-  .from("reader_progress")
-  .select(
-    "book_key, page_number, updated_at"
-  )
-  .eq("user_id", user.id)
-  .eq(
-    "reader_type",
-    "epub"
-  )
-  .order(
-    "updated_at",
-    { ascending: false }
-  )
-  .limit(3);
-
-  if (progressError) {
-    console.error(
-      "Gagal mengambil progress baca:",
-      progressError
+    console.warn(
+      "Elemen Continue Reading tidak tersedia."
     );
 
-    return;
+    return false;
   }
 
-  if (epubProgressError) {
+  section.style.display =
+    "none";
+
+  list.replaceChildren();
+
+  const daftarBuku =
+    Array.isArray(
+      books
+    )
+      ? books.filter(
+          (book) =>
+            book &&
+            typeof book ===
+              "object"
+        )
+      : [];
+
+  if (
+    daftarBuku.length < 1
+  ) {
+
+    return true;
+  }
+
+  let user = null;
+
+  try {
+
+    const {
+      data,
+      error: userError
+    } =
+      await db.auth.getUser();
+
+    if (
+      userError ||
+      !data?.user
+    ) {
+
+      return true;
+    }
+
+    user =
+      data.user;
+
+  } catch (authError) {
+
+    console.error(
+      "Gagal memeriksa user Continue Reading:",
+      authError
+    );
+
+    return false;
+  }
+
+  const userId =
+    typeof user.id ===
+      "string"
+      ? user.id.trim()
+      : "";
+
+  if (!userId) {
+
+    return true;
+  }
+
+  let progressData = [];
+
+  let epubProgressData = [];
+
+  try {
+
+    const {
+      data,
+      error: progressError
+    } =
+      await db
+        .from(
+          "reader_progress"
+        )
+        .select(
+          "book_key, page_number, updated_at"
+        )
+        .eq(
+          "user_id",
+          userId
+        )
+        .eq(
+          "reader_type",
+          "pdf"
+        )
+        .order(
+          "updated_at",
+          {
+            ascending:
+              false
+          }
+        )
+        .limit(
+          3
+        );
+
+    if (progressError) {
+
+      console.error(
+        "Gagal mengambil progress baca PDF:",
+        progressError
+      );
+
+    } else if (
+      Array.isArray(
+        data
+      )
+    ) {
+
+      progressData =
+        data;
+    }
+
+  } catch (
+    progressException
+  ) {
+
+    console.error(
+      "Gagal mengambil progress baca PDF:",
+      progressException
+    );
+  }
+
+  try {
+
+    const {
+      data,
+      error: epubProgressError
+    } =
+      await db
+        .from(
+          "reader_progress"
+        )
+        .select(
+          "book_key, page_number, updated_at"
+        )
+        .eq(
+          "user_id",
+          userId
+        )
+        .eq(
+          "reader_type",
+          "epub"
+        )
+        .order(
+          "updated_at",
+          {
+            ascending:
+              false
+          }
+        )
+        .limit(
+          3
+        );
+
+    if (epubProgressError) {
+
+      console.error(
+        "Gagal mengambil progress EPUB:",
+        epubProgressError
+      );
+
+    } else if (
+      Array.isArray(
+        data
+      )
+    ) {
+
+      epubProgressData =
+        data;
+    }
+
+  } catch (
+    epubProgressException
+  ) {
+
     console.error(
       "Gagal mengambil progress EPUB:",
-      epubProgressError
+      epubProgressException
     );
   }
 
-  const tidakAdaProgressPdf =
-    !progressData ||
-    progressData.length === 0;
-
-  const tidakAdaProgressEpub =
-    !epubProgressData ||
-    epubProgressData.length === 0;
-
   if (
-    tidakAdaProgressPdf &&
-    tidakAdaProgressEpub
+    progressData.length === 0 &&
+    epubProgressData.length === 0
   ) {
-    return;
+
+    return true;
   }
 
-  const progressPdfAman =
-    Array.isArray(progressData)
-      ? progressData
-      : [];
+  const cariBukuDariProgress =
+    (
+      progress,
+      readerType
+    ) => {
 
-  const progressEpubAman =
-    Array.isArray(epubProgressData)
-      ? epubProgressData
-      : [];
+      if (
+        !progress ||
+        typeof progress !==
+          "object"
+      ) {
 
-  const items = progressPdfAman
-    .map((progress) => {
-
-      const buku = books.find((item) => {
-
-        const key =
-          "lastPage:" +
-          encodeURIComponent(
-            item.file_url || ""
-          );
-
-        return key === progress.book_key;
-      });
-
-      if (!buku) {
         return null;
       }
 
-      return {
-        buku,
-        progress
-      };
-    })
-    .filter(Boolean);
+      const bookKey =
+        typeof progress.book_key ===
+          "string"
+          ? progress.book_key.trim()
+          : "";
 
-  const epubItems =
-  progressEpubAman
-    .map((progress) => {
+      if (!bookKey) {
 
-      const buku =
-        books.find((item) => {
+        return null;
+      }
 
-          const key =
-            "lastEpub:" +
-            encodeURIComponent(
-              item.epub_url || ""
+      return (
+        daftarBuku.find(
+          (item) => {
+
+            const sourceUrl =
+              readerType ===
+                "epub"
+                ? (
+                    typeof item.epub_url ===
+                      "string"
+                      ? item.epub_url.trim()
+                      : ""
+                  )
+                : (
+                    typeof item.file_url ===
+                      "string"
+                      ? item.file_url.trim()
+                      : ""
+                  );
+
+            if (!sourceUrl) {
+
+              return false;
+            }
+
+            const key =
+              readerType ===
+                "epub"
+                ? (
+                    "lastEpub:" +
+                    encodeURIComponent(
+                      sourceUrl
+                    )
+                  )
+                : (
+                    "lastPage:" +
+                    encodeURIComponent(
+                      sourceUrl
+                    )
+                  );
+
+            return (
+              key ===
+              bookKey
+            );
+          }
+        ) ||
+        null
+      );
+    };
+
+  const itemsPdf =
+    progressData
+      .map(
+        (progress) => {
+
+          const buku =
+            cariBukuDariProgress(
+              progress,
+              "pdf"
             );
 
-          return (
-            key ===
-            progress.book_key
-          );
-        });
+          if (!buku) {
 
-      if (!buku) {
-        return null;
-      }
+            return null;
+          }
 
-      return {
-        buku,
-        progress
-      };
-    })
-    .filter(Boolean);
+          return {
+            buku,
+            progress,
+            readerType:
+              "pdf"
+          };
+        }
+      )
+      .filter(
+        Boolean
+      );
 
-  if (
-    items.length === 0 &&
-    epubItems.length === 0
-  ) {
-    return;
-  }
+  const itemsEpub =
+    epubProgressData
+      .map(
+        (progress) => {
+
+          const buku =
+            cariBukuDariProgress(
+              progress,
+              "epub"
+            );
+
+          if (!buku) {
+
+            return null;
+          }
+
+          return {
+            buku,
+            progress,
+            readerType:
+              "epub"
+          };
+        }
+      )
+      .filter(
+        Boolean
+      );
 
   const semuaItems =
-  [
-    ...items.map(
-      (item) => ({
-        ...item,
-        readerType: "pdf"
-      })
-    ),
+    [
+      ...itemsPdf,
+      ...itemsEpub
+    ]
+      .sort(
+        (
+          a,
+          b
+        ) => {
 
-    ...epubItems.map(
-      (item) => ({
-        ...item,
-        readerType: "epub"
-      })
-    )
-  ]
-    .sort(
-      (a, b) =>
-        new Date(
-          b.progress.updated_at || 0
-        ) -
-        new Date(
-          a.progress.updated_at || 0
-        )
-    )
-    .slice(0, 3);
+          const waktuA =
+            Date.parse(
+              a.progress
+                ?.updated_at ||
+              ""
+            );
+
+          const waktuB =
+            Date.parse(
+              b.progress
+                ?.updated_at ||
+              ""
+            );
+
+          const nilaiA =
+            Number.isFinite(
+              waktuA
+            )
+              ? waktuA
+              : 0;
+
+          const nilaiB =
+            Number.isFinite(
+              waktuB
+            )
+              ? waktuB
+              : 0;
+
+          return (
+            nilaiB -
+            nilaiA
+          );
+        }
+      )
+      .slice(
+        0,
+        3
+      );
+
+  if (
+    semuaItems.length < 1
+  ) {
+
+    return true;
+  }
+
+  const fragment =
+    document.createDocumentFragment();
 
   semuaItems.forEach(
     ({
@@ -26417,99 +26648,242 @@ async function tampilkanLanjutMembaca(books) {
       readerType
     }) => {
 
-    const lanjutkanUrl =
-      readerType === "epub"
-        ? (
-            buku.epub_url
-              ? "epub-reader.html?file=" +
-                encodeURIComponent(
-                  buku.epub_url
-                )
-              : ""
-          )
-        : (
-            buku.file_url
-              ? "reader.html?file=" +
-                encodeURIComponent(
-                  buku.file_url
-                )
-              : ""
+      const sourceUrl =
+        readerType ===
+          "epub"
+          ? (
+              typeof buku.epub_url ===
+                "string"
+                ? buku.epub_url.trim()
+                : ""
+            )
+          : (
+              typeof buku.file_url ===
+                "string"
+                ? buku.file_url.trim()
+                : ""
+            );
+
+      const lanjutkanUrl =
+        sourceUrl
+          ? (
+              readerType ===
+                "epub"
+                ? (
+                    "epub-reader.html?file=" +
+                    encodeURIComponent(
+                      sourceUrl
+                    )
+                  )
+                : (
+                    "reader.html?file=" +
+                    encodeURIComponent(
+                      sourceUrl
+                    )
+                  )
+            )
+          : "";
+
+      const title =
+        typeof buku.title ===
+          "string" &&
+        buku.title.trim()
+          ? buku.title.trim()
+          : "Tanpa Judul";
+
+      const coverUrl =
+        typeof buku.cover_url ===
+          "string"
+          ? buku.cover_url.trim()
+          : "";
+
+      const pageNumberRaw =
+        Number(
+          progress
+            ?.page_number
+        );
+
+      const pageNumber =
+        Number.isInteger(
+          pageNumberRaw
+        ) &&
+        pageNumberRaw > 0
+          ? pageNumberRaw
+          : 1;
+
+      const timestamp =
+        Date.parse(
+          progress
+            ?.updated_at ||
+          ""
+        );
+
+      const waktu =
+        Number.isFinite(
+          timestamp
+        )
+          ? new Date(
+              timestamp
+            ).toLocaleString(
+              "id-ID"
+            )
+          : "-";
+
+      const card =
+        document.createElement(
+          "div"
+        );
+
+      card.className =
+        "book-card";
+
+      if (coverUrl) {
+
+        const cover =
+          document.createElement(
+            "img"
           );
 
-    const card =
-      document.createElement("div");
+        cover.className =
+          "book-cover";
 
-    card.className = "book-card";
+        cover.src =
+          coverUrl;
 
-    const waktu =
-      progress.updated_at
-        ? new Date(
-            progress.updated_at
-          ).toLocaleString("id-ID")
-        : "-";
+        cover.alt =
+          `Cover ${title}`;
 
-    card.innerHTML = `
-      ${
-        buku.cover_url
-          ? `
-            <img
-              class="book-cover"
-              src="${buku.cover_url}"
-              alt="Cover ${buku.title || "Buku"}"
-            >
-          `
-          : ""
+        card.appendChild(
+          cover
+        );
       }
 
-      <div class="book-info">
+      const info =
+        document.createElement(
+          "div"
+        );
 
-        <h3>
-          ${buku.title || "Tanpa Judul"}
-        </h3>
+      info.className =
+        "book-info";
 
-        <p>
-          Format:
-          <strong>
-            ${
-              readerType === "epub"
-                ? "EPUB"
-                : "PDF"
-            }
-          </strong>
-        </p>
+      const heading =
+        document.createElement(
+          "h3"
+        );
 
-        <p>
-          📖 Halaman terakhir:
-          <strong>
-            ${progress.page_number || 1}
-          </strong>
-        </p>
+      heading.textContent =
+        title;
 
-        <p>
-          🕘 Terakhir dibaca:
-          ${waktu}
-        </p>
+      info.appendChild(
+        heading
+      );
 
-        ${
-          lanjutkanUrl
-            ? `
-              <a
-                class="read-button"
-                href="${lanjutkanUrl}"
-              >
-                ▶ Lanjutkan Membaca
-              </a>
-            `
-            : ""
-        }
+      const formatP =
+        document.createElement(
+          "p"
+        );
 
-      </div>
-    `;
+      formatP.append(
+        "Format: "
+      );
 
-    list.appendChild(card);
-  });
+      const formatStrong =
+        document.createElement(
+          "strong"
+        );
 
-  section.style.display = "block";
+      formatStrong.textContent =
+        readerType ===
+          "epub"
+          ? "EPUB"
+          : "PDF";
+
+      formatP.appendChild(
+        formatStrong
+      );
+
+      info.appendChild(
+        formatP
+      );
+
+      const pageP =
+        document.createElement(
+          "p"
+        );
+
+      pageP.append(
+        "📖 Halaman terakhir: "
+      );
+
+      const pageStrong =
+        document.createElement(
+          "strong"
+        );
+
+      pageStrong.textContent =
+        String(
+          pageNumber
+        );
+
+      pageP.appendChild(
+        pageStrong
+      );
+
+      info.appendChild(
+        pageP
+      );
+
+      const timeP =
+        document.createElement(
+          "p"
+        );
+
+      timeP.textContent =
+        `🕘 Terakhir dibaca: ${waktu}`;
+
+      info.appendChild(
+        timeP
+      );
+
+      if (lanjutkanUrl) {
+
+        const link =
+          document.createElement(
+            "a"
+          );
+
+        link.className =
+          "read-button";
+
+        link.href =
+          lanjutkanUrl;
+
+        link.textContent =
+          "▶ Lanjutkan Membaca";
+
+        info.appendChild(
+          link
+        );
+      }
+
+      card.appendChild(
+        info
+      );
+
+      fragment.appendChild(
+        card
+      );
+    }
+  );
+
+  list.appendChild(
+    fragment
+  );
+
+  section.style.display =
+    "block";
+
+  return true;
 }
 
     /* =========================================
