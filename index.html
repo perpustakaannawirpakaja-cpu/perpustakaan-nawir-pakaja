@@ -16841,20 +16841,103 @@ async function selesaikanAksiUploadTerakhir(
 
 async function aksiTombolUploadHalaman() {
 
-  if (aksiUploadHalamanTerakhir) {
-
-    await batalUploadHalaman();
-
-  } else if (
-    modePindahHalamanAktif
+  if (
+    typeof aksiUploadHalamanTerakhir ===
+      "undefined" ||
+    typeof modePindahHalamanAktif ===
+      "undefined"
   ) {
 
-    await pindahkanHalamanBuku();
+    console.error(
+      "State aksi tombol upload halaman tidak tersedia."
+    );
 
-  } else {
+    return false;
+  }
 
-    await uploadHalamanBuku();
+  try {
 
+    if (
+      aksiUploadHalamanTerakhir
+    ) {
+
+      if (
+        typeof batalUploadHalaman !==
+          "function"
+      ) {
+
+        console.error(
+          "Function batalUploadHalaman tidak tersedia."
+        );
+
+        return false;
+      }
+
+      const hasilBatal =
+        await batalUploadHalaman();
+
+      return (
+        hasilBatal !==
+        false
+      );
+    }
+
+    if (
+      modePindahHalamanAktif ===
+        true
+    ) {
+
+      if (
+        typeof pindahkanHalamanBuku !==
+          "function"
+      ) {
+
+        console.error(
+          "Function pindahkanHalamanBuku tidak tersedia."
+        );
+
+        return false;
+      }
+
+      const hasilPindah =
+        await pindahkanHalamanBuku();
+
+      return (
+        hasilPindah !==
+        false
+      );
+    }
+
+    if (
+      typeof uploadHalamanBuku !==
+        "function"
+    ) {
+
+      console.error(
+        "Function uploadHalamanBuku tidak tersedia."
+      );
+
+      return false;
+    }
+
+    const hasilUpload =
+      await uploadHalamanBuku();
+
+    return (
+      hasilUpload !==
+      false
+    );
+
+  } catch (
+    actionError
+  ) {
+
+    console.error(
+      "Aksi tombol upload halaman gagal:",
+      actionError
+    );
+
+    return false;
   }
 }
 
