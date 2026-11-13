@@ -5666,46 +5666,114 @@ function cariKoleksi() {
 
 function hapusPencarian() {
 
-  const searchInput =
-    document.getElementById("searchInput");
+  if (
+    typeof document ===
+      "undefined"
+  ) {
 
-  const clearButton =
-    document.getElementById("clear-search");
-
-  searchInput.value = "";
-
-  localStorage.removeItem(
-  "bookSearch"
-);
-
-  if (clearButton) {
-    clearButton.style.display = "none";
+    return false;
   }
 
-  filterHurufAktif = "";
+  if (
+    typeof filterKategoriBuku !==
+      "function"
+  ) {
 
-  localStorage.removeItem(
-  "bookLetterFilter"
-);
+    console.error(
+      "Function filterKategoriBuku tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const searchInput =
+    document.getElementById(
+      "searchInput"
+    );
+
+  if (!searchInput) {
+
+    return false;
+  }
+
+  const clearButton =
+    document.getElementById(
+      "clear-search"
+    );
+
+  searchInput.value =
+    "";
+
+  try {
+
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
+
+      localStorage.removeItem(
+        "bookSearch"
+      );
+
+      localStorage.removeItem(
+        "bookLetterFilter"
+      );
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi pencarian buku tidak dapat dihapus:",
+      storageError
+    );
+  }
+
+  if (clearButton) {
+
+    clearButton.style.display =
+      "none";
+  }
+
+  if (
+    typeof filterHurufAktif !==
+      "undefined"
+  ) {
+
+    filterHurufAktif =
+      "";
+  }
 
   document
-  .querySelectorAll(".letter")
-  .forEach((card) => {
+    .querySelectorAll(
+      ".letter[data-letter]"
+    )
+    .forEach(
+      (card) => {
 
-    card.classList.remove(
-      "active-letter"
+        card.classList.remove(
+          "active-letter"
+        );
+
+        card.setAttribute(
+          "aria-pressed",
+          "false"
+        );
+      }
     );
-
-    card.setAttribute(
-      "aria-pressed",
-      "false"
-    );
-
-  });
 
   filterKategoriBuku();
 
-  searchInput.focus();
+  if (
+    typeof searchInput.focus ===
+      "function"
+  ) {
+
+    searchInput.focus();
+  }
+
+  return true;
 }
 
 function keyboardPencarian(event) {
