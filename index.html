@@ -6914,32 +6914,91 @@ function filterKategoriBuku() {
 
   function urutkanKoleksi() {
 
-  const bookSortSelect =
-    document.getElementById("book-sort-select");
+  if (
+    typeof document ===
+      "undefined"
+  ) {
 
-if (bookSortSelect) {
-  localStorage.setItem(
-    "bookSortMode",
-    bookSortSelect.value
-  );
-}
+    return false;
+  }
+
+  if (
+    typeof filterKategoriBuku !==
+      "function"
+  ) {
+
+    console.error(
+      "Function filterKategoriBuku tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const bookSortSelect =
+    document.getElementById(
+      "book-sort-select"
+    );
+
+  if (!bookSortSelect) {
+
+    return false;
+  }
+
+  const modeMentah =
+    typeof bookSortSelect.value ===
+      "string"
+      ? bookSortSelect.value.trim()
+      : "";
+
+  const modeValid = [
+    "az",
+    "za",
+    "newest",
+    "oldest"
+  ];
+
+  const modeUrut =
+    modeValid.includes(
+      modeMentah
+    )
+      ? modeMentah
+      : "az";
+
+  if (
+    bookSortSelect.value !==
+      modeUrut
+  ) {
+
+    bookSortSelect.value =
+      modeUrut;
+  }
+
+  try {
+
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
+
+      localStorage.setItem(
+        "bookSortMode",
+        modeUrut
+      );
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi urutan buku tidak dapat disimpan:",
+      storageError
+    );
+  }
 
   filterKategoriBuku();
-}
-  
-  const tombolTema =
-document.querySelector(".theme-btn");
-const savedUiStyle =
-  localStorage.getItem("uiStyle") || "glass";
 
-document.body.dataset.uiStyle =
-  savedUiStyle;
-
-const uiStyleSelect =
-  document.getElementById("ui-style-select");
-
-if (uiStyleSelect) {
-  uiStyleSelect.value = savedUiStyle;
+  return true;
 }
 
 
