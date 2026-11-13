@@ -13548,6 +13548,61 @@ async function arahkanUploadHalaman(
   pageNumber
 ) {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  const nomorHalaman =
+    Number(
+      pageNumber
+    );
+
+  if (
+    !Number.isInteger(
+      nomorHalaman
+    ) ||
+    nomorHalaman < 1
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof updateTombolUploadHalaman !==
+      "function"
+  ) {
+
+    console.error(
+      "Function updateTombolUploadHalaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof aksiUploadHalamanTerakhir ===
+      "undefined" ||
+    typeof nomorHalamanPengganti ===
+      "undefined" ||
+    typeof modeSisipHalamanAktif ===
+      "undefined" ||
+    typeof modePindahHalamanAktif ===
+      "undefined" ||
+    typeof halamanAsalPindah ===
+      "undefined"
+  ) {
+
+    console.error(
+      "State upload halaman tidak tersedia."
+    );
+
+    return false;
+  }
+
   const pageNumberInput =
     document.getElementById(
       "book-page-number"
@@ -13563,51 +13618,160 @@ async function arahkanUploadHalaman(
       "book-pages-message"
     );
 
-  if (!pageNumberInput) {
-    return;
+  if (
+    !pageNumberInput
+  ) {
+
+    return false;
   }
 
-  if (aksiUploadHalamanTerakhir) {
+  if (
+    aksiUploadHalamanTerakhir
+  ) {
 
-    const bolehLanjut =
-      await selesaikanAksiUploadTerakhir(
-        `melanjutkan ke Upload Halaman ${pageNumber}`
+    if (
+      typeof selesaikanAksiUploadTerakhir !==
+        "function"
+    ) {
+
+      console.error(
+        "Function selesaikanAksiUploadTerakhir tidak tersedia."
       );
 
-    if (!bolehLanjut) {
-      return;
+      return false;
+    }
+
+    let bolehLanjut =
+      false;
+
+    try {
+
+      bolehLanjut =
+        await selesaikanAksiUploadTerakhir(
+          `melanjutkan ke Upload Halaman ${nomorHalaman}`
+        );
+
+    } catch (
+      actionError
+    ) {
+
+      console.error(
+        "Gagal menyelesaikan aksi upload sebelumnya:",
+        actionError
+      );
+
+      return false;
+    }
+
+    if (
+      !bolehLanjut
+    ) {
+
+      return false;
     }
   }
 
-  nomorHalamanPengganti = null;
-  modeSisipHalamanAktif = false;
-  modePindahHalamanAktif = false;
-  halamanAsalPindah = null;
+  nomorHalamanPengganti =
+    null;
 
-  delete pageNumberInput.dataset.mode;
+  modeSisipHalamanAktif =
+    false;
+
+  modePindahHalamanAktif =
+    false;
+
+  halamanAsalPindah =
+    null;
+
+  if (
+    pageNumberInput.dataset
+  ) {
+
+    delete pageNumberInput.dataset.mode;
+  }
 
   pageNumberInput.value =
-    Number(pageNumber);
+    String(
+      nomorHalaman
+    );
 
-  if (pageFileInput) {
-    pageFileInput.value = "";
+  if (
+    pageFileInput
+  ) {
+
+    pageFileInput.value =
+      "";
   }
 
-  if (message) {
+  if (
+    message
+  ) {
+
     message.textContent =
-      `📤 Siapkan file PDF untuk Halaman ${pageNumber}.`;
+      `📤 Siapkan file PDF untuk Halaman ${nomorHalaman}.`;
   }
 
-  pageNumberInput.scrollIntoView({
-    behavior: "smooth",
-    block: "center"
-  });
+  if (
+    typeof pageNumberInput.scrollIntoView ===
+      "function"
+  ) {
 
-  requestAnimationFrame(() => {
-    pageFileInput?.focus();
-  });
+    pageNumberInput.scrollIntoView({
+      behavior:
+        "smooth",
+      block:
+        "center"
+    });
+  }
 
-  updateTombolUploadHalaman();
+  const fokusFile =
+    () => {
+
+      if (
+        pageFileInput &&
+        typeof pageFileInput.focus ===
+          "function"
+      ) {
+
+        pageFileInput.focus();
+      }
+    };
+
+  if (
+    typeof requestAnimationFrame ===
+      "function"
+  ) {
+
+    requestAnimationFrame(
+      fokusFile
+    );
+
+  } else {
+
+    fokusFile();
+  }
+
+  try {
+
+    const hasilUpdate =
+      updateTombolUploadHalaman();
+
+    return (
+      hasilUpdate !==
+      false
+    );
+
+  } catch (
+    updateError
+  ) {
+
+    console.error(
+      "Gagal memperbarui tombol upload halaman:",
+      updateError
+    );
+
+    return false;
+  }
 }
 
 function aktifkanModalDraggable(
