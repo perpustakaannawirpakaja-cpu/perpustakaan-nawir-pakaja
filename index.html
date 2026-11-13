@@ -7135,38 +7135,132 @@ function ubahTema() {
   return true;
 }
 
-async function bukaAdmin(){
+async function bukaAdmin() {
 
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
+  if (
+    typeof document ===
+      "undefined"
+  ) {
 
-  /* Jika ada sesi login,
-     cek apakah user adalah Admin */
-  if (!userError && user) {
-
-    const {
-      data: adminData,
-      error: adminError
-    } = await db
-      .from("admin_users")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (
-      !adminError &&
-      adminData
-    ) {
-
-      bukaAdminPanel();
-      return;
-    }
+    return false;
   }
 
-  /* Belum login Admin:
-     tampilkan form login */
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    !db.auth ||
+    typeof db.auth.getUser !==
+      "function" ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    console.error(
+      "Supabase client tidak tersedia."
+    );
+
+    return false;
+  }
+
+  let user =
+    null;
+
+  let userError =
+    null;
+
+  try {
+
+    const authResult =
+      await db.auth.getUser();
+
+    user =
+      authResult?.data?.user ||
+      null;
+
+    userError =
+      authResult?.error ||
+      null;
+
+  } catch (
+    authException
+  ) {
+
+    console.error(
+      "Gagal memeriksa sesi Admin:",
+      authException
+    );
+
+    userError =
+      authException;
+  }
+
+  if (
+    !userError &&
+    user &&
+    typeof user.id ===
+      "string" &&
+    user.id.trim()
+  ) {
+
+    try {
+
+      const {
+        data: adminData,
+        error: adminError
+      } = await db
+        .from(
+          "admin_users"
+        )
+        .select(
+          "user_id"
+        )
+        .eq(
+          "user_id",
+          user.id
+        )
+        .maybeSingle();
+
+      if (adminError) {
+
+        console.error(
+          "Gagal memverifikasi Admin:",
+          adminError
+        );
+
+      } else if (
+        adminData &&
+        adminData.user_id ===
+          user.id
+      ) {
+
+        if (
+          typeof bukaAdminPanel !==
+            "function"
+        ) {
+
+          console.error(
+            "Function bukaAdminPanel tidak tersedia."
+          );
+
+          return false;
+        }
+
+        return (
+          await bukaAdminPanel()
+        ) !== false;
+      }
+
+    } catch (
+      adminException
+    ) {
+
+      console.error(
+        "Gagal memverifikasi Admin:",
+        adminException
+      );
+    }
+  }
 
   const loginMessage =
     document.getElementById(
@@ -7174,43 +7268,91 @@ async function bukaAdmin(){
     );
 
   if (loginMessage) {
-    loginMessage.textContent = "";
+
+    loginMessage.textContent =
+      "";
   }
 
-  document
-    .getElementById("adminModal")
-    .classList
-    .add("show");
-
-  document
-    .querySelector("header")
-    ?.setAttribute("inert", "");
-
-  document
-    .querySelector("main")
-    ?.setAttribute("inert", "");
-
-  document
-    .querySelector("footer")
-    ?.setAttribute("inert", "");
-
-  requestAnimationFrame(() => {
-
-  const password =
+  const adminModal =
     document.getElementById(
-      "admin-password"
+      "adminModal"
     );
 
-  if (password) {
-    password.value = "";
+  if (!adminModal) {
+
+    console.error(
+      "Modal login Admin tidak tersedia."
+    );
+
+    return false;
   }
 
-  document
-    .getElementById("admin-email")
-    ?.focus();
+  adminModal.classList.add(
+    "show"
+  );
 
-});
+  [
+    "header",
+    "main",
+    "footer"
+  ].forEach(
+    (selector) => {
 
+      document
+        .querySelector(
+          selector
+        )
+        ?.setAttribute(
+          "inert",
+          ""
+        );
+    }
+  );
+
+  const fokusLogin =
+    () => {
+
+      const password =
+        document.getElementById(
+          "admin-password"
+        );
+
+      if (password) {
+
+        password.value =
+          "";
+      }
+
+      const email =
+        document.getElementById(
+          "admin-email"
+        );
+
+      if (
+        email &&
+        typeof email.focus ===
+          "function"
+      ) {
+
+        email.focus();
+      }
+    };
+
+  if (
+    typeof requestAnimationFrame ===
+      "function"
+  ) {
+
+    requestAnimationFrame(
+      fokusLogin
+    );
+
+  } else {
+
+    fokusLogin();
+  }
+
+  return true;
 }
 
 function tutupAdmin(){
