@@ -19510,21 +19510,118 @@ function tambahkanHalamanKeEpub({
 }) {
 
   const nomorHalaman =
-    Number(pageNumber);
+    Number(
+      pageNumber
+    );
+
+  const lebar =
+    Number(
+      width
+    );
+
+  const tinggi =
+    Number(
+      height
+    );
 
   if (
     !zip ||
-    !Number.isInteger(nomorHalaman) ||
-    nomorHalaman < 1 ||
+    typeof zip.file !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Objek ZIP EPUB tidak valid."
+    );
+  }
+
+  if (
+    !Number.isInteger(
+      nomorHalaman
+    ) ||
+    nomorHalaman < 1
+  ) {
+
+    throw new Error(
+      "Nomor halaman paket EPUB tidak valid."
+    );
+  }
+
+  if (
+    !Number.isInteger(
+      lebar
+    ) ||
+    lebar < 1 ||
+    !Number.isInteger(
+      tinggi
+    ) ||
+    tinggi < 1
+  ) {
+
+    throw new Error(
+      "Dimensi halaman paket EPUB tidak valid."
+    );
+  }
+
+  if (
     !(imageBlob instanceof Blob)
   ) {
+
     throw new Error(
-      "Data halaman untuk paket EPUB tidak valid."
+      "Blob gambar halaman EPUB tidak valid."
+    );
+  }
+
+  const ukuranGambar =
+    Number(
+      imageBlob.size
+    );
+
+  if (
+    !Number.isInteger(
+      ukuranGambar
+    ) ||
+    ukuranGambar < 1
+  ) {
+
+    throw new Error(
+      "Ukuran gambar halaman EPUB tidak valid."
+    );
+  }
+
+  const tipeGambar =
+    typeof imageBlob.type ===
+      "string"
+      ? imageBlob.type
+        .trim()
+        .toLowerCase()
+      : "";
+
+  if (
+    tipeGambar &&
+    tipeGambar !==
+      "image/jpeg"
+  ) {
+
+    throw new Error(
+      "MIME type gambar halaman EPUB harus JPEG."
+    );
+  }
+
+  if (
+    typeof buatXhtmlHalamanEpub !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Function buatXhtmlHalamanEpub tidak tersedia."
     );
   }
 
   const nomorFile =
-    String(nomorHalaman)
+    String(
+      nomorHalaman
+    )
       .padStart(
         4,
         "0"
@@ -19536,25 +19633,76 @@ function tambahkanHalamanKeEpub({
   const xhtmlFileName =
     `page-${nomorFile}.xhtml`;
 
+  const imagePath =
+    `EPUB/Images/${imageFileName}`;
+
+  const xhtmlPath =
+    `EPUB/Text/${xhtmlFileName}`;
+
+  if (
+    zip.file(
+      imagePath
+    ) ||
+    zip.file(
+      xhtmlPath
+    )
+  ) {
+
+    throw new Error(
+      `Halaman EPUB ${nomorHalaman} sudah ada di paket.`
+    );
+  }
+
   const xhtml =
     buatXhtmlHalamanEpub({
       pageNumber:
         nomorHalaman,
+
       imageFileName,
-      width,
-      height,
+
+      width:
+        lebar,
+
+      height:
+        tinggi,
+
       title
     });
 
+  if (
+    typeof xhtml !==
+      "string" ||
+    !xhtml.trim()
+  ) {
+
+    throw new Error(
+      "XHTML halaman EPUB gagal dibuat."
+    );
+  }
+
   zip.file(
-    `EPUB/Images/${imageFileName}`,
+    imagePath,
     imageBlob
   );
 
   zip.file(
-    `EPUB/Text/${xhtmlFileName}`,
+    xhtmlPath,
     xhtml
   );
+
+  if (
+    !zip.file(
+      imagePath
+    ) ||
+    !zip.file(
+      xhtmlPath
+    )
+  ) {
+
+    throw new Error(
+      `Halaman EPUB ${nomorHalaman} gagal dimasukkan ke paket.`
+    );
+  }
 
   return {
     pageNumber:
@@ -19577,10 +19725,10 @@ function tambahkanHalamanKeEpub({
       `page-${nomorFile}`,
 
     width:
-      Number(width),
+      lebar,
 
     height:
-      Number(height)
+      tinggi
   };
 }
 
