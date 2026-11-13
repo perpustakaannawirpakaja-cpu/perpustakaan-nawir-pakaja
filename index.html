@@ -16943,185 +16943,507 @@ async function aksiTombolUploadHalaman() {
 
 async function batalUploadHalaman() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof aksiUploadHalamanTerakhir ===
+      "undefined"
+  ) {
+
+    console.error(
+      "State aksi upload halaman terakhir tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof updateTombolUploadHalaman !==
+      "function" ||
+    typeof setStatusIngestionBuku !==
+      "function" ||
+    typeof tampilkanStatusIngestionKelolaHalaman !==
+      "function" ||
+    typeof resetMetadataOutputEpub !==
+      "function" ||
+    typeof sinkronkanProgressIngestionBuku !==
+      "function" ||
+    typeof catatErrorIngestionBuku !==
+      "function" ||
+    typeof tampilkanBuku !==
+      "function" ||
+    typeof muatDaftarBukuAdmin !==
+      "function" ||
+    typeof bukaKelolaHalaman !==
+      "function"
+  ) {
+
+    console.error(
+      "Function pendukung Undo halaman tidak tersedia."
+    );
+
+    return false;
+  }
+
   const aksi =
     aksiUploadHalamanTerakhir;
-
-  const message =
-    document.getElementById(
-      "book-pages-message"
-    );
 
   const tombol =
     document.getElementById(
       "book-page-upload-btn"
     );
 
-  if (!aksi) {
-    updateTombolUploadHalaman();
-    return;
-  }
-
-  const teksKonfirmasi =
-  aksi.tipe === "delete"
-    ? `Batalkan penghapusan Halaman ${aksi.pageNumber}?`
-    : aksi.tipe === "insert"
-      ? `Batalkan penyisipan Halaman ${aksi.pageNumber}?`
-      : aksi.tipe === "move"
-        ? `Batalkan pemindahan Halaman ${aksi.fromPage} ke posisi ${aksi.toPage}?`
-        : `Batalkan upload terakhir untuk Halaman ${aksi.pageNumber}?`;
-
-  const yakin =
-    confirm(
-      teksKonfirmasi
+  const message =
+    document.getElementById(
+      "book-pages-message"
     );
 
-  if (!yakin) {
-    return;
+  if (
+    !aksi
+  ) {
+
+    try {
+
+      updateTombolUploadHalaman();
+
+    } catch (
+      buttonError
+    ) {
+
+      console.warn(
+        "Gagal memperbarui tombol Undo kosong:",
+        buttonError
+      );
+    }
+
+    return true;
   }
 
-  tombol.disabled = true;
+  if (
+    typeof aksi !==
+      "object"
+  ) {
 
-  tombol.textContent =
-    "⏳ Membatalkan...";
+    return false;
+  }
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    console.error(
+      "Supabase client tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const tipeAksi =
+    typeof aksi.tipe ===
+      "string"
+      ? aksi.tipe
+          .trim()
+          .toLowerCase()
+      : "";
+
+  const tipeValid =
+    [
+      "upload",
+      "insert",
+      "move",
+      "replace",
+      "delete"
+    ].includes(
+      tipeAksi
+    );
+
+  if (
+    !tipeValid
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ Jenis aksi Undo halaman tidak dikenali.";
+    }
+
+    return false;
+  }
+
+  const bookId =
+    Number(
+      aksi.bookId
+    );
+
+  if (
+    !Number.isInteger(
+      bookId
+    ) ||
+    bookId < 1
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ ID buku pada data Undo tidak valid.";
+    }
+
+    return false;
+  }
+
+  const pageNumber =
+    Number(
+      aksi.pageNumber
+    );
+
+  const fromPage =
+    Number(
+      aksi.fromPage
+    );
+
+  const toPage =
+    Number(
+      aksi.toPage
+    );
+
+  const teksKonfirmasi =
+    tipeAksi ===
+      "delete"
+      ? `Batalkan penghapusan Halaman ${pageNumber}?`
+      : tipeAksi ===
+          "insert"
+        ? `Batalkan penyisipan Halaman ${pageNumber}?`
+        : tipeAksi ===
+            "move"
+          ? `Batalkan pemindahan Halaman ${fromPage} ke posisi ${toPage}?`
+          : tipeAksi ===
+              "replace"
+            ? `Batalkan penggantian Halaman ${pageNumber}?`
+            : `Batalkan upload terakhir untuk Halaman ${pageNumber}?`;
+
+  let yakin =
+    true;
+
+  if (
+    typeof confirm ===
+      "function"
+  ) {
+
+    yakin =
+      confirm(
+        teksKonfirmasi
+      );
+  }
+
+  if (
+    !yakin
+  ) {
+
+    return false;
+  }
+
+  if (
+    tombol
+  ) {
+
+    tombol.disabled =
+      true;
+
+    tombol.textContent =
+      "⏳ Membatalkan...";
+  }
+
+  let undoBerhasil =
+    false;
+
+  let ingestionUndoSyncWarning =
+    null;
+
+  let cleanupStorageWarning =
+    null;
 
   try {
 
-  const statusIngestionAktif =
-    await setStatusIngestionBuku(
-      aksi.bookId,
-      "ingesting"
-    );
+    let statusIngestionAktif =
+      false;
 
-  if (!statusIngestionAktif) {
+    try {
 
-    console.warn(
-      "Status ingestion belum berhasil diubah ke ingesting."
-    );
+      statusIngestionAktif =
+        await setStatusIngestionBuku(
+          bookId,
+          "ingesting"
+        );
 
-  } else {
+    } catch (
+      statusError
+    ) {
 
-  await tampilkanStatusIngestionKelolaHalaman(
-    aksi.bookId
-  );
-}
+      console.warn(
+        "Gagal mengubah status ingestion menjadi ingesting saat Undo:",
+        statusError
+      );
+    }
 
-  /* =========================
-     BATAL UPLOAD HALAMAN BARU
-     ========================= */
+    if (
+      statusIngestionAktif
+    ) {
 
-    if (aksi.tipe === "upload") {
+      try {
+
+        await tampilkanStatusIngestionKelolaHalaman(
+          bookId
+        );
+
+      } catch (
+        statusUiError
+      ) {
+
+        console.warn(
+          "Status ingestion berhasil diubah tetapi UI status gagal diperbarui:",
+          statusUiError
+        );
+      }
+    }
+
+    /* =========================
+       BATAL UPLOAD BARU
+       ========================= */
+
+    if (
+      tipeAksi ===
+        "upload"
+    ) {
+
+      const storagePath =
+        typeof aksi.newStoragePath ===
+          "string"
+          ? aksi.newStoragePath.trim()
+          : "";
+
+      if (
+        !Number.isInteger(
+          pageNumber
+        ) ||
+        pageNumber < 1 ||
+        !storagePath
+      ) {
+
+        throw new Error(
+          "Data Undo upload halaman tidak lengkap."
+        );
+      }
 
       const {
         error: deletePageError
       } = await db
-        .from("book_pages")
+        .from(
+          "book_pages"
+        )
         .delete()
         .eq(
           "book_id",
-          aksi.bookId
+          bookId
         )
         .eq(
           "page_number",
-          aksi.pageNumber
+          pageNumber
         )
         .eq(
           "storage_path",
-          aksi.newStoragePath
+          storagePath
         );
 
-      if (deletePageError) {
+      if (
+        deletePageError
+      ) {
+
         throw new Error(
           "Gagal membatalkan data halaman: " +
-          deletePageError.message
+          (
+            deletePageError.message ||
+            "Error tidak diketahui."
+          )
         );
       }
 
-/* =========================
-   BATAL SISIP HALAMAN
-   ========================= */
+    /* =========================
+       BATAL SISIP HALAMAN
+       ========================= */
 
-} else if (
-  aksi.tipe === "insert"
-) {
+    } else if (
+      tipeAksi ===
+        "insert"
+    ) {
 
-  const {
-    error: undoInsertError
-  } = await db.rpc(
-    "undo_insert_incremental_book_page",
-    {
-      p_book_id:
-        aksi.bookId,
+      if (
+        typeof db.rpc !==
+          "function"
+      ) {
 
-      p_page_number:
-        aksi.pageNumber,
+        throw new Error(
+          "Supabase RPC tidak tersedia."
+        );
+      }
 
-      p_storage_path:
-        aksi.newStoragePath,
+      if (
+        !Number.isInteger(
+          pageNumber
+        ) ||
+        pageNumber < 1
+      ) {
 
-      p_previous_status:
-        aksi.statusSebelumnya,
+        throw new Error(
+          "Nomor halaman Undo sisip tidak valid."
+        );
+      }
 
-      p_previous_file_url:
-        aksi.fileUrlFinalSebelumnya
-    }
-  );
+      const {
+        error: undoInsertError
+      } = await db.rpc(
+        "undo_insert_incremental_book_page",
+        {
+          p_book_id:
+            bookId,
 
-  if (undoInsertError) {
-    throw new Error(
-      "Gagal membatalkan penyisipan halaman: " +
-      undoInsertError.message
-    );
-  }
+          p_page_number:
+            pageNumber,
 
-  /* =========================
-   BATAL PINDAH HALAMAN
-   ========================= */
+          p_storage_path:
+            aksi.newStoragePath,
 
-} else if (
-  aksi.tipe === "move"
-) {
+          p_previous_status:
+            aksi.statusSebelumnya,
 
-  const {
-    error: undoMoveError
-  } = await db.rpc(
-    "undo_move_incremental_book_page",
-    {
-      p_book_id:
-        aksi.bookId,
+          p_previous_file_url:
+            aksi.fileUrlFinalSebelumnya
+        }
+      );
 
-      p_original_from_page:
-        aksi.fromPage,
+      if (
+        undoInsertError
+      ) {
 
-      p_original_to_page:
-        aksi.toPage,
+        throw new Error(
+          "Gagal membatalkan penyisipan halaman: " +
+          (
+            undoInsertError.message ||
+            "Error tidak diketahui."
+          )
+        );
+      }
 
-      p_previous_status:
-        aksi.statusSebelumnya,
+    /* =========================
+       BATAL PINDAH HALAMAN
+       ========================= */
 
-      p_previous_file_url:
-        aksi.fileUrlFinalSebelumnya
-    }
-  );
+    } else if (
+      tipeAksi ===
+        "move"
+    ) {
 
-  if (undoMoveError) {
-    throw new Error(
-      "Gagal membatalkan pemindahan halaman: " +
-      undoMoveError.message
-    );
-  }
+      if (
+        typeof db.rpc !==
+          "function"
+      ) {
+
+        throw new Error(
+          "Supabase RPC tidak tersedia."
+        );
+      }
+
+      if (
+        !Number.isInteger(
+          fromPage
+        ) ||
+        fromPage < 1 ||
+        !Number.isInteger(
+          toPage
+        ) ||
+        toPage < 1
+      ) {
+
+        throw new Error(
+          "Data Undo pindah halaman tidak valid."
+        );
+      }
+
+      const {
+        error: undoMoveError
+      } = await db.rpc(
+        "undo_move_incremental_book_page",
+        {
+          p_book_id:
+            bookId,
+
+          p_original_from_page:
+            fromPage,
+
+          p_original_to_page:
+            toPage,
+
+          p_previous_status:
+            aksi.statusSebelumnya,
+
+          p_previous_file_url:
+            aksi.fileUrlFinalSebelumnya
+        }
+      );
+
+      if (
+        undoMoveError
+      ) {
+
+        throw new Error(
+          "Gagal membatalkan pemindahan halaman: " +
+          (
+            undoMoveError.message ||
+            "Error tidak diketahui."
+          )
+        );
+      }
 
     /* =========================
        BATAL GANTI HALAMAN
        ========================= */
 
     } else if (
-      aksi.tipe === "replace"
+      tipeAksi ===
+        "replace"
     ) {
+
+      if (
+        !Number.isInteger(
+          pageNumber
+        ) ||
+        pageNumber < 1
+      ) {
+
+        throw new Error(
+          "Nomor halaman Undo ganti tidak valid."
+        );
+      }
 
       const {
         error: restorePageError
       } = await db
-        .from("book_pages")
+        .from(
+          "book_pages"
+        )
         .update({
           file_url:
             aksi.oldFileUrl,
@@ -17143,24 +17465,32 @@ async function batalUploadHalaman() {
         })
         .eq(
           "book_id",
-          aksi.bookId
+          bookId
         )
         .eq(
           "page_number",
-          aksi.pageNumber
+          pageNumber
         );
 
-      if (restorePageError) {
+      if (
+        restorePageError
+      ) {
+
         throw new Error(
           "Gagal mengembalikan halaman lama: " +
-          restorePageError.message
+          (
+            restorePageError.message ||
+            "Error tidak diketahui."
+          )
         );
       }
 
       const {
         error: restoreBookError
       } = await db
-        .from("books")
+        .from(
+          "books"
+        )
         .update({
           upload_status:
             aksi.statusSebelumnya,
@@ -17170,16 +17500,19 @@ async function batalUploadHalaman() {
         })
         .eq(
           "id",
-          aksi.bookId
+          bookId
         );
 
-      if (restoreBookError) {
+      if (
+        restoreBookError
+      ) {
 
-        /* Rollback lagi ke kondisi
-           setelah penggantian */
-
-        await db
-          .from("book_pages")
+        const {
+          error: rollbackPageError
+        } = await db
+          .from(
+            "book_pages"
+          )
           .update({
             file_url:
               aksi.newFileUrl,
@@ -17201,34 +17534,64 @@ async function batalUploadHalaman() {
           })
           .eq(
             "book_id",
-            aksi.bookId
+            bookId
           )
           .eq(
             "page_number",
-            aksi.pageNumber
+            pageNumber
           );
+
+        if (
+          rollbackPageError
+        ) {
+
+          throw new Error(
+            "Status buku gagal dikembalikan dan rollback halaman pengganti juga gagal: " +
+            (
+              rollbackPageError.message ||
+              "Error rollback tidak diketahui."
+            )
+          );
+        }
 
         throw new Error(
           "Gagal mengembalikan status buku: " +
-          restoreBookError.message
+          (
+            restoreBookError.message ||
+            "Error tidak diketahui."
+          )
         );
       }
 
-        /* =========================
-           BATAL HAPUS HALAMAN
-           ========================= */
+    /* =========================
+       BATAL HAPUS HALAMAN
+       ========================= */
 
     } else if (
-      aksi.tipe === "delete"
+      tipeAksi ===
+        "delete"
     ) {
 
       const page =
         aksi.deletedPage;
 
+      if (
+        !page ||
+        typeof page !==
+          "object"
+      ) {
+
+        throw new Error(
+          "Data halaman yang dihapus tidak tersedia untuk Undo."
+        );
+      }
+
       const {
         error: restoreDeletedPageError
       } = await db
-        .from("book_pages")
+        .from(
+          "book_pages"
+        )
         .insert({
           book_id:
             page.book_id,
@@ -17258,17 +17621,25 @@ async function batalUploadHalaman() {
             page.created_at
         });
 
-      if (restoreDeletedPageError) {
+      if (
+        restoreDeletedPageError
+      ) {
+
         throw new Error(
           "Gagal mengembalikan halaman yang dihapus: " +
-          restoreDeletedPageError.message
+          (
+            restoreDeletedPageError.message ||
+            "Error tidak diketahui."
+          )
         );
       }
 
       const {
         error: restoreBookError
       } = await db
-        .from("books")
+        .from(
+          "books"
+        )
         .update({
           upload_status:
             aksi.statusSebelumnya,
@@ -17278,66 +17649,144 @@ async function batalUploadHalaman() {
         })
         .eq(
           "id",
-          aksi.bookId
+          bookId
         );
 
-      if (restoreBookError) {
+      if (
+        restoreBookError
+      ) {
 
-        // Kalau status buku gagal
-        // dikembalikan, hapus lagi
-        // halaman yang baru direstore.
-        await db
-          .from("book_pages")
+        const {
+          error: rollbackDeleteError
+        } = await db
+          .from(
+            "book_pages"
+          )
           .delete()
           .eq(
             "book_id",
-            aksi.bookId
+            bookId
           )
           .eq(
             "page_number",
-            aksi.pageNumber
+            page.page_number
+          )
+          .eq(
+            "storage_path",
+            page.storage_path
           );
+
+        if (
+          rollbackDeleteError
+        ) {
+
+          throw new Error(
+            "Status buku gagal dikembalikan dan rollback halaman hasil restore juga gagal: " +
+            (
+              rollbackDeleteError.message ||
+              "Error rollback tidak diketahui."
+            )
+          );
+        }
 
         throw new Error(
           "Gagal mengembalikan status buku: " +
-          restoreBookError.message
+          (
+            restoreBookError.message ||
+            "Error tidak diketahui."
+          )
         );
       }
-
-    } else {
-
-      throw new Error(
-        "Jenis aksi upload tidak dikenali."
-      );
     }
 
     /* =========================
-       HAPUS FILE BARU
+       BERSIHKAN FILE BARU
        ========================= */
 
-    if (aksi.newStoragePath) {
+    const newStoragePath =
+      typeof aksi.newStoragePath ===
+        "string"
+        ? aksi.newStoragePath.trim()
+        : "";
 
-      const {
-        error: removeNewError
-      } = await db.storage
-        .from("book-files")
-        .remove([
-          aksi.newStoragePath
-        ]);
+    if (
+      newStoragePath
+    ) {
 
-      if (removeNewError) {
-        console.warn(
-          "File baru gagal dibersihkan:",
-          removeNewError
+      try {
+
+        if (
+          !db.storage ||
+          typeof db.storage.from !==
+            "function"
+        ) {
+
+          throw new Error(
+            "Supabase Storage tidak tersedia."
+          );
+        }
+
+        const bucket =
+          db.storage.from(
+            "book-files"
+          );
+
+        if (
+          !bucket ||
+          typeof bucket.remove !==
+            "function"
+        ) {
+
+          throw new Error(
+            "Operasi remove Storage tidak tersedia."
+          );
+        }
+
+        const {
+          error: removeNewError
+        } = await bucket.remove(
+          [
+            newStoragePath
+          ]
         );
+
+        if (
+          removeNewError
+        ) {
+
+          throw removeNewError;
+        }
+
+      } catch (
+        removeError
+      ) {
+
+        console.warn(
+          "Undo database berhasil, tetapi file baru gagal dibersihkan dari Storage:",
+          removeError
+        );
+
+        cleanupStorageWarning =
+          removeError;
+
+        try {
+
+          await catatErrorIngestionBuku(
+            bookId,
+            removeError
+          );
+
+        } catch (
+          trackingError
+        ) {
+
+          console.error(
+            "Pencatatan error cleanup Storage setelah Undo gagal:",
+            trackingError
+          );
+        }
       }
     }
-
-    const nomorHalaman =
-      aksi.pageNumber;
-
-    const bookId =
-      aksi.bookId;
 
     try {
 
@@ -17345,7 +17794,9 @@ async function batalUploadHalaman() {
         bookId
       );
 
-    } catch (resetOutputError) {
+    } catch (
+      resetOutputError
+    ) {
 
       console.warn(
         "Undo halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
@@ -17353,108 +17804,270 @@ async function batalUploadHalaman() {
       );
     }
 
-    let ingestionUndoSyncWarning = null;
+    try {
 
-try {
+      await sinkronkanProgressIngestionBuku(
+        bookId
+      );
 
-  await sinkronkanProgressIngestionBuku(
-    bookId
-  );
-
-} catch (syncError) {
-
-  console.error(
-    "Sinkronisasi progress ingestion setelah Undo gagal:",
-    syncError
-  );
-
-  try {
-
-    await catatErrorIngestionBuku(
-      bookId,
+    } catch (
       syncError
-    );
+    ) {
 
-  } catch (trackingError) {
+      console.error(
+        "Sinkronisasi progress ingestion setelah Undo gagal:",
+        syncError
+      );
 
-    console.error(
-      "Pencatatan error ingestion gagal:",
-      trackingError
-    );
-  }
+      ingestionUndoSyncWarning =
+        syncError;
 
-  ingestionUndoSyncWarning =
-    syncError;
-}
+      try {
+
+        await catatErrorIngestionBuku(
+          bookId,
+          syncError
+        );
+
+      } catch (
+        trackingError
+      ) {
+
+        console.error(
+          "Pencatatan error ingestion gagal:",
+          trackingError
+        );
+      }
+    }
+
+    /*
+      sinkronkanProgressIngestionBuku()
+      dapat membersihkan last_error
+      ketika sinkronisasi berhasil.
+
+      Jika cleanup Storage sebelumnya gagal,
+      catat kembali error tersebut setelah
+      sinkronisasi agar orphan Storage tetap
+      tercatat sebagai failure aktif.
+    */
+
+    if (
+      cleanupStorageWarning
+    ) {
+
+      try {
+
+        await catatErrorIngestionBuku(
+          bookId,
+          cleanupStorageWarning
+        );
+
+      } catch (
+        trackingError
+      ) {
+
+        console.error(
+          "Pencatatan ulang error cleanup Storage setelah sinkronisasi gagal:",
+          trackingError
+        );
+      }
+    }
 
     aksiUploadHalamanTerakhir =
       null;
 
-    await tampilkanBuku();
+    undoBerhasil =
+      true;
 
-    await muatDaftarBukuAdmin();
+    try {
 
-    await bukaKelolaHalaman(
-      bookId
-    );
+      await tampilkanBuku();
 
-    updateTombolUploadHalaman();
+    } catch (
+      publicRefreshError
+    ) {
 
-    message.textContent =
-      aksi.tipe === "delete"
-        ? `✅ Penghapusan Halaman ${nomorHalaman} berhasil dibatalkan.`
-        : aksi.tipe === "insert"
-          ? `✅ Penyisipan Halaman ${nomorHalaman} berhasil dibatalkan.`
-          : aksi.tipe === "move"
-            ? `✅ Pemindahan Halaman ${aksi.fromPage} ke posisi ${aksi.toPage} berhasil dibatalkan.`
-            : `✅ Upload Halaman ${nomorHalaman} berhasil dibatalkan.`;
-
-    if (ingestionUndoSyncWarning) {
-      message.textContent +=
-        " ⚠️ Progress ingestion belum tersinkron.";
+      console.warn(
+        "Undo berhasil tetapi halaman publik gagal diperbarui:",
+        publicRefreshError
+      );
     }
 
-  } catch (error) {
+    try {
 
-  console.error(
-    "Batal perubahan halaman gagal:",
+      await muatDaftarBukuAdmin();
+
+    } catch (
+      adminRefreshError
+    ) {
+
+      console.warn(
+        "Undo berhasil tetapi daftar Admin gagal diperbarui:",
+        adminRefreshError
+      );
+    }
+
+    try {
+
+      await bukaKelolaHalaman(
+        bookId
+      );
+
+    } catch (
+      modalRefreshError
+    ) {
+
+      console.warn(
+        "Undo berhasil tetapi Kelola Halaman gagal dimuat ulang:",
+        modalRefreshError
+      );
+    }
+
+    try {
+
+      updateTombolUploadHalaman();
+
+    } catch (
+      buttonError
+    ) {
+
+      console.warn(
+        "Undo berhasil tetapi tombol upload gagal diperbarui:",
+        buttonError
+      );
+    }
+
+    const pesanBaru =
+      document.getElementById(
+        "book-pages-message"
+      );
+
+    if (
+      pesanBaru
+    ) {
+
+      pesanBaru.textContent =
+        tipeAksi ===
+          "delete"
+          ? `✅ Penghapusan Halaman ${pageNumber} berhasil dibatalkan.`
+          : tipeAksi ===
+              "insert"
+            ? `✅ Penyisipan Halaman ${pageNumber} berhasil dibatalkan.`
+            : tipeAksi ===
+                "move"
+              ? `✅ Pemindahan Halaman ${fromPage} ke posisi ${toPage} berhasil dibatalkan.`
+              : tipeAksi ===
+                  "replace"
+                ? `✅ Penggantian Halaman ${pageNumber} berhasil dibatalkan.`
+                : `✅ Upload Halaman ${pageNumber} berhasil dibatalkan.`;
+
+      if (
+        ingestionUndoSyncWarning
+      ) {
+
+        pesanBaru.textContent +=
+          " ⚠️ Progress ingestion belum tersinkron.";
+      }
+
+      if (
+        cleanupStorageWarning
+      ) {
+
+        pesanBaru.textContent +=
+          " ⚠️ File baru belum berhasil dibersihkan dari Storage.";
+      }
+    }
+
+    return true;
+
+  } catch (
     error
-  );
+  ) {
 
-  try {
-
-    await catatErrorIngestionBuku(
-      aksi.bookId,
+    console.error(
+      "Batal perubahan halaman gagal:",
       error
     );
 
-  } catch (trackingError) {
+    try {
 
-    console.error(
-      "Pencatatan error ingestion gagal:",
-      trackingError
-    );
-  }
-
-  await tampilkanStatusIngestionKelolaHalaman(
-    aksi.bookId
-  );
-
-    message.textContent =
-      "❌ " +
-      (
-        error?.message ||
-        "Batal upload halaman gagal."
+      await catatErrorIngestionBuku(
+        bookId,
+        error
       );
+
+    } catch (
+      trackingError
+    ) {
+
+      console.error(
+        "Pencatatan error ingestion gagal:",
+        trackingError
+      );
+    }
+
+    try {
+
+      await tampilkanStatusIngestionKelolaHalaman(
+        bookId
+      );
+
+    } catch (
+      statusUiError
+    ) {
+
+      console.error(
+        "Gagal memperbarui status ingestion setelah Undo gagal:",
+        statusUiError
+      );
+    }
+
+    const pesanError =
+      document.getElementById(
+        "book-pages-message"
+      ) ||
+      message;
+
+    if (
+      pesanError
+    ) {
+
+      pesanError.textContent =
+        "❌ " +
+        (
+          error?.message ||
+          "Batal upload halaman gagal."
+        );
+    }
+
+    return false;
 
   } finally {
 
-    tombol.disabled = false;
+    if (
+      tombol
+    ) {
 
-    updateTombolUploadHalaman();
+      tombol.disabled =
+        false;
+    }
 
+    try {
+
+      updateTombolUploadHalaman();
+
+    } catch (
+      buttonError
+    ) {
+
+      console.warn(
+        undoBerhasil
+          ? "Gagal mengembalikan label tombol setelah Undo:"
+          : "Gagal mengembalikan tombol setelah Undo gagal:",
+        buttonError
+      );
+    }
   }
-
 }
 
 let nomorHalamanPengganti = null;
