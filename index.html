@@ -15422,23 +15422,88 @@ async function bukaKelolaHalaman(
 
 async function tutupKelolaHalaman() {
 
-  const bolehTutup =
-    await selesaikanAksiUploadTerakhir(
-      "menutup Kelola Halaman"
-    );
+  if (
+    typeof document ===
+      "undefined"
+  ) {
 
-  if (!bolehTutup) {
-    return;
+    return false;
   }
 
-  document
-    .getElementById("bookPagesModal")
-    ?.classList
-    .remove("show");
+  if (
+    typeof selesaikanAksiUploadTerakhir !==
+      "function" ||
+    typeof muatDaftarBukuAdmin !==
+      "function" ||
+    typeof aturStatusIntegritasHalaman !==
+      "function"
+  ) {
 
-  document
-    .getElementById("adminPanel")
-    ?.removeAttribute("inert");
+    console.error(
+      "Function pendukung penutupan Kelola Halaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof idFokusKelolaHalaman ===
+      "undefined" ||
+    typeof nomorHalamanPengganti ===
+      "undefined" ||
+    typeof modeSisipHalamanAktif ===
+      "undefined" ||
+    typeof modePindahHalamanAktif ===
+      "undefined" ||
+    typeof halamanAsalPindah ===
+      "undefined"
+  ) {
+
+    console.error(
+      "State Kelola Halaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  let bolehTutup =
+    false;
+
+  try {
+
+    bolehTutup =
+      await selesaikanAksiUploadTerakhir(
+        "menutup Kelola Halaman"
+      );
+
+  } catch (
+    actionError
+  ) {
+
+    console.error(
+      "Gagal menyelesaikan aksi sebelum menutup Kelola Halaman:",
+      actionError
+    );
+
+    return false;
+  }
+
+  if (
+    !bolehTutup
+  ) {
+
+    return false;
+  }
+
+  const modal =
+    document.getElementById(
+      "bookPagesModal"
+    );
+
+  const adminPanel =
+    document.getElementById(
+      "adminPanel"
+    );
 
   const hiddenId =
     document.getElementById(
@@ -15466,8 +15531,8 @@ async function tutupKelolaHalaman() {
     );
 
   const integrityAction =
-  document.getElementById(
-    "book-pages-integrity-action"
+    document.getElementById(
+      "book-pages-integrity-action"
     );
 
   const list =
@@ -15485,83 +15550,223 @@ async function tutupKelolaHalaman() {
       "book-page-file"
     );
 
-  if (hiddenId) {
-    hiddenId.value = "";
+  if (
+    modal?.classList &&
+    typeof modal.classList.remove ===
+      "function"
+  ) {
+
+    modal.classList.remove(
+      "show"
+    );
   }
 
-  if (title) {
-    title.textContent = "-";
+  if (
+    adminPanel &&
+    typeof adminPanel.removeAttribute ===
+      "function"
+  ) {
+
+    adminPanel.removeAttribute(
+      "inert"
+    );
   }
 
-  if (progress) {
+  if (
+    hiddenId
+  ) {
+
+    hiddenId.value =
+      "";
+  }
+
+  if (
+    title
+  ) {
+
+    title.textContent =
+      "-";
+  }
+
+  if (
+    progress
+  ) {
+
     progress.textContent =
       "0 / 0 halaman";
   }
 
-  if (message) {
-  message.textContent = "";
-}
-
-aturStatusIntegritasHalaman(
-  integrityStatus,
-  null,
-  ""
-);
-
-if (integrityAction) {
-  integrityAction.innerHTML = "";
-}
-
-if (list) {
-  list.innerHTML = "";
-}
-
-  if (pageNumberInput) {
-    pageNumberInput.value = "";
-  }
-
-  if (pageFileInput) {
-    pageFileInput.value = "";
-  }
-
-  await muatDaftarBukuAdmin();
-
   if (
-    idFokusKelolaHalaman !== null
+    message
   ) {
 
-    const tombolKelola =
-      document.querySelector(
-        `.admin-book-pages[data-book-id="${idFokusKelolaHalaman}"]`
-      );
+    message.textContent =
+      "";
+  }
 
-    const searchAdmin =
-      document.getElementById(
-        "admin-book-search"
-      );
+  aturStatusIntegritasHalaman(
+    integrityStatus,
+    null,
+    ""
+  );
+
+  if (
+    integrityAction
+  ) {
 
     if (
-      tombolKelola &&
-      tombolKelola.getClientRects().length > 0
+      typeof integrityAction.replaceChildren ===
+        "function"
     ) {
-      tombolKelola.focus();
+
+      integrityAction.replaceChildren();
+
     } else {
-      searchAdmin?.focus();
+
+      integrityAction.textContent =
+        "";
     }
-
-    idFokusKelolaHalaman = null;
   }
 
-  nomorHalamanPengganti = null;
-  modeSisipHalamanAktif = false;
+  if (
+    list
+  ) {
 
-  modePindahHalamanAktif = false;
-  halamanAsalPindah = null;
+    if (
+      typeof list.replaceChildren ===
+        "function"
+    ) {
 
-  if (pageNumberInput) {
-    delete pageNumberInput.dataset.mode;
+      list.replaceChildren();
+
+    } else {
+
+      list.textContent =
+        "";
+    }
   }
 
+  if (
+    pageNumberInput
+  ) {
+
+    pageNumberInput.value =
+      "";
+
+    if (
+      pageNumberInput.dataset
+    ) {
+
+      delete pageNumberInput.dataset.mode;
+    }
+  }
+
+  if (
+    pageFileInput
+  ) {
+
+    pageFileInput.value =
+      "";
+  }
+
+  const fokusBookId =
+    Number(
+      idFokusKelolaHalaman
+    );
+
+  nomorHalamanPengganti =
+    null;
+
+  modeSisipHalamanAktif =
+    false;
+
+  modePindahHalamanAktif =
+    false;
+
+  halamanAsalPindah =
+    null;
+
+  idFokusKelolaHalaman =
+    null;
+
+  let hasilMuat =
+    false;
+
+  try {
+
+    hasilMuat =
+      await muatDaftarBukuAdmin();
+
+  } catch (
+    loadError
+  ) {
+
+    console.error(
+      "Gagal memuat ulang daftar buku Admin setelah menutup Kelola Halaman:",
+      loadError
+    );
+  }
+
+  let tombolKelola =
+    null;
+
+  if (
+    Number.isInteger(
+      fokusBookId
+    ) &&
+    fokusBookId > 0
+  ) {
+
+    const tombolKelolaSemua =
+      Array.from(
+        document.querySelectorAll(
+          ".admin-book-pages[data-book-id]"
+        )
+      );
+
+    tombolKelola =
+      tombolKelolaSemua.find(
+        (button) =>
+          Number(
+            button?.dataset?.bookId
+          ) ===
+          fokusBookId
+      ) || null;
+  }
+
+  const searchAdmin =
+    document.getElementById(
+      "admin-book-search"
+    );
+
+  const tombolKelolaTerlihat =
+    tombolKelola &&
+    typeof tombolKelola.getClientRects ===
+      "function" &&
+    tombolKelola.getClientRects()
+      .length > 0;
+
+  if (
+    tombolKelolaTerlihat &&
+    typeof tombolKelola.focus ===
+      "function"
+  ) {
+
+    tombolKelola.focus();
+
+  } else if (
+    searchAdmin &&
+    typeof searchAdmin.focus ===
+      "function"
+  ) {
+
+    searchAdmin.focus();
+  }
+
+  return (
+    hasilMuat !==
+    false
+  );
 }
 
 let aksiUploadHalamanTerakhir = null;
