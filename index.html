@@ -5823,10 +5823,33 @@ function keyboardPencarian(
   );
 }
 
-function fokusPencarianUtama(event) {
+function fokusPencarianUtama(
+  event
+) {
 
-  if (event.key !== "/") {
-    return;
+  if (
+    !event ||
+    typeof event !==
+      "object"
+  ) {
+
+    return false;
+  }
+
+  if (
+    event.key !==
+      "/"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
   }
 
   const target =
@@ -5834,12 +5857,14 @@ function fokusPencarianUtama(event) {
 
   if (
     target &&
-    target.closest &&
+    typeof target.closest ===
+      "function" &&
     target.closest(
-  'input, textarea, [contenteditable="true"]'
-)
+      'input, textarea, [contenteditable="true"]'
+    )
   ) {
-    return;
+
+    return false;
   }
 
   const modalTerbuka =
@@ -5848,7 +5873,8 @@ function fokusPencarianUtama(event) {
     );
 
   if (modalTerbuka) {
-    return;
+
+    return false;
   }
 
   const searchInput =
@@ -5857,13 +5883,29 @@ function fokusPencarianUtama(event) {
     );
 
   if (!searchInput) {
-    return;
+
+    return false;
   }
 
-  event.preventDefault();
+  if (
+    typeof event.preventDefault ===
+      "function"
+  ) {
+
+    event.preventDefault();
+  }
+
+  if (
+    typeof searchInput.focus !==
+      "function"
+  ) {
+
+    return false;
+  }
 
   searchInput.focus();
 
+  return true;
 }
 
 /* =========================================
