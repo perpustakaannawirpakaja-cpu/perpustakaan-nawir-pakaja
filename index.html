@@ -5776,16 +5776,51 @@ function hapusPencarian() {
   return true;
 }
 
-function keyboardPencarian(event) {
+function keyboardPencarian(
+  event
+) {
 
-  if (event.key !== "Escape") {
-    return;
+  if (
+    !event ||
+    typeof event !==
+      "object"
+  ) {
+
+    return false;
   }
 
-  event.preventDefault();
+  if (
+    event.key !==
+      "Escape"
+  ) {
 
-  hapusPencarian();
+    return false;
+  }
 
+  if (
+    typeof hapusPencarian !==
+      "function"
+  ) {
+
+    console.error(
+      "Function hapusPencarian tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof event.preventDefault ===
+      "function"
+  ) {
+
+    event.preventDefault();
+  }
+
+  return (
+    hapusPencarian() ===
+    true
+  );
 }
 
 function fokusPencarianUtama(event) {
