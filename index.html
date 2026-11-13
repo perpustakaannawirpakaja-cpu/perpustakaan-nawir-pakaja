@@ -5914,11 +5914,35 @@ function fokusPencarianUtama(
 
 function resetSemuaFilterBuku() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof filterKategoriBuku !==
+      "function"
+  ) {
+
+    console.error(
+      "Function filterKategoriBuku tidak tersedia."
+    );
+
+    return false;
+  }
+
   const searchInput =
-    document.getElementById("searchInput");
+    document.getElementById(
+      "searchInput"
+    );
 
   const clearButton =
-    document.getElementById("clear-search");
+    document.getElementById(
+      "clear-search"
+    );
 
   const categorySelect =
     document.getElementById(
@@ -5931,61 +5955,127 @@ function resetSemuaFilterBuku() {
     );
 
   if (searchInput) {
-    searchInput.value = "";
-  }
 
-  localStorage.removeItem(
-  "bookSearch"
-);
+    searchInput.value =
+      "";
+  }
 
   if (clearButton) {
-    clearButton.style.display = "none";
+
+    clearButton.style.display =
+      "none";
   }
 
-  filterHurufAktif = "";
+  if (
+    typeof filterHurufAktif !==
+      "undefined"
+  ) {
 
-localStorage.removeItem(
-  "bookLetterFilter"
-);
+    filterHurufAktif =
+      "";
+  }
 
-filterKategoriAktif = "";
+  if (
+    typeof filterKategoriAktif !==
+      "undefined"
+  ) {
+
+    filterKategoriAktif =
+      "";
+  }
 
   document
-  .querySelectorAll(".letter")
-  .forEach((card) => {
+    .querySelectorAll(
+      ".letter[data-letter]"
+    )
+    .forEach(
+      (card) => {
 
-    card.classList.remove(
-      "active-letter"
+        card.classList.remove(
+          "active-letter"
+        );
+
+        card.setAttribute(
+          "aria-pressed",
+          "false"
+        );
+      }
     );
-
-    card.setAttribute(
-      "aria-pressed",
-      "false"
-    );
-
-  });
 
   if (categorySelect) {
-    categorySelect.value = "";
+
+    categorySelect.value =
+      "";
   }
 
   if (sortSelect) {
-    sortSelect.value = "az";
+
+    sortSelect.value =
+      "az";
   }
 
-  localStorage.removeItem(
-    "bookCategoryFilter"
-  );
+  try {
 
-  localStorage.removeItem(
-    "bookSortMode"
-  );
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
 
-filterKategoriBuku();
+      [
+        "bookSearch",
+        "bookLetterFilter",
+        "bookCategoryFilter",
+        "bookSortMode"
+      ].forEach(
+        (key) => {
 
-requestAnimationFrame(() => {
-  searchInput?.focus();
-});
+          localStorage.removeItem(
+            key
+          );
+        }
+      );
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi filter buku tidak dapat direset:",
+      storageError
+    );
+  }
+
+  filterKategoriBuku();
+
+  const fokusSearch =
+    () => {
+
+      if (
+        searchInput &&
+        typeof searchInput.focus ===
+          "function"
+      ) {
+
+        searchInput.focus();
+      }
+    };
+
+  if (
+    typeof requestAnimationFrame ===
+      "function"
+  ) {
+
+    requestAnimationFrame(
+      fokusSearch
+    );
+
+  } else {
+
+    fokusSearch();
+  }
+
+  return true;
 }
 
 /* =========================================
