@@ -18386,13 +18386,78 @@ async function bukaSisipkanHalaman() {
   return true;
 }
 
-async function pilihPindahHalaman(pageNumber) {
+async function pilihPindahHalaman(
+  pageNumber
+) {
+
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    console.error(
+      "Supabase client tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof aksiUploadHalamanTerakhir ===
+      "undefined" ||
+    typeof halamanAsalPindah ===
+      "undefined" ||
+    typeof modePindahHalamanAktif ===
+      "undefined" ||
+    typeof nomorHalamanPengganti ===
+      "undefined" ||
+    typeof modeSisipHalamanAktif ===
+      "undefined"
+  ) {
+
+    console.error(
+      "State Pindah Halaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof updateTombolUploadHalaman !==
+      "function"
+  ) {
+
+    console.error(
+      "Function updateTombolUploadHalaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const hiddenId =
+    document.getElementById(
+      "book-pages-book-id"
+    );
 
   const bookId =
     Number(
-      document.getElementById(
-        "book-pages-book-id"
-      )?.value
+      hiddenId?.value
+    );
+
+  const halamanAsal =
+    Number(
+      pageNumber
     );
 
   const pageNumberInput =
@@ -18410,92 +18475,261 @@ async function pilihPindahHalaman(pageNumber) {
       "book-pages-message"
     );
 
-  if (!bookId) {
-    return;
+  if (
+    !Number.isInteger(
+      bookId
+    ) ||
+    bookId < 1
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ ID buku tidak valid.";
+    }
+
+    return false;
   }
 
-  if (aksiUploadHalamanTerakhir) {
+  if (
+    !Number.isInteger(
+      halamanAsal
+    ) ||
+    halamanAsal < 1
+  ) {
 
-    alert(
-      "Masih ada perubahan halaman yang dapat dibatalkan.\n\n" +
-      "Selesaikan atau batalkan perubahan tersebut terlebih dahulu."
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ Nomor halaman asal tidak valid.";
+    }
+
+    return false;
+  }
+
+  if (
+    aksiUploadHalamanTerakhir
+  ) {
+
+    if (
+      typeof alert ===
+        "function"
+    ) {
+
+      alert(
+        "Masih ada perubahan halaman yang dapat dibatalkan.\n\n" +
+        "Selesaikan atau batalkan perubahan tersebut terlebih dahulu."
+      );
+    }
+
+    return false;
+  }
+
+  let book =
+    null;
+
+  try {
+
+    const {
+      data,
+      error
+    } = await db
+      .from(
+        "books"
+      )
+      .select(`
+        total_pages,
+        upload_mode
+      `)
+      .eq(
+        "id",
+        bookId
+      )
+      .single();
+
+    if (
+      error
+    ) {
+
+      throw error;
+    }
+
+    book =
+      data;
+
+  } catch (
+    bookError
+  ) {
+
+    console.error(
+      "Gagal membaca data buku untuk Pindah Halaman:",
+      bookError
     );
 
-    return;
-  }
+    if (
+      message
+    ) {
 
-  const {
-    data: book,
-    error
-  } = await db
-    .from("books")
-    .select(`
-      total_pages,
-      upload_mode
-    `)
-    .eq("id", bookId)
-    .single();
-
-  if (error || !book) {
-
-    if (message) {
       message.textContent =
         "❌ Data buku tidak dapat dibaca.";
     }
 
-    return;
+    return false;
+  }
+
+  if (
+    !book
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ Data buku tidak ditemukan.";
+    }
+
+    return false;
   }
 
   if (
     book.upload_mode !==
-    "incremental"
+      "incremental"
   ) {
 
-    if (message) {
+    if (
+      message
+    ) {
+
       message.textContent =
         "❌ Pindahkan halaman hanya tersedia untuk buku mode bertahap.";
     }
 
-    return;
+    return false;
+  }
+
+  const totalHalaman =
+    Number(
+      book.total_pages
+    );
+
+  if (
+    !Number.isInteger(
+      totalHalaman
+    ) ||
+    totalHalaman < 1
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ Total halaman buku tidak valid.";
+    }
+
+    return false;
+  }
+
+  if (
+    halamanAsal >
+      totalHalaman
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        `❌ Halaman ${halamanAsal} berada di luar total ${totalHalaman} halaman.`;
+    }
+
+    return false;
   }
 
   halamanAsalPindah =
-    Number(pageNumber);
+    halamanAsal;
 
-  modePindahHalamanAktif = true;
+  modePindahHalamanAktif =
+    true;
 
-  nomorHalamanPengganti = null;
-  modeSisipHalamanAktif = false;
+  nomorHalamanPengganti =
+    null;
 
-  if (pageNumberInput) {
+  modeSisipHalamanAktif =
+    false;
 
-    delete pageNumberInput.dataset.mode;
+  if (
+    pageNumberInput
+  ) {
 
-    pageNumberInput.value = "";
+    if (
+      pageNumberInput.dataset
+    ) {
 
-    pageNumberInput.min = 1;
+      delete pageNumberInput.dataset.mode;
+    }
+
+    pageNumberInput.value =
+      "";
+
+    pageNumberInput.min =
+      "1";
 
     pageNumberInput.max =
-      Number(book.total_pages);
+      String(
+        totalHalaman
+      );
 
     pageNumberInput.placeholder =
-      `Tujuan 1 - ${book.total_pages}`;
+      `Tujuan 1 - ${totalHalaman}`;
   }
 
-  if (pageFileInput) {
-    pageFileInput.value = "";
+  if (
+    pageFileInput
+  ) {
+
+    pageFileInput.value =
+      "";
   }
 
-  if (message) {
+  if (
+    message
+  ) {
 
     message.textContent =
-      `↕️ Halaman ${pageNumber} dipilih untuk dipindahkan. ` +
-      `Masukkan posisi tujuan 1 sampai ${book.total_pages}.`;
+      `↕️ Halaman ${halamanAsal} dipilih untuk dipindahkan. ` +
+      `Masukkan posisi tujuan 1 sampai ${totalHalaman}.`;
   }
 
-  updateTombolUploadHalaman();
+  try {
 
-  pageNumberInput?.focus();
+    updateTombolUploadHalaman();
+
+  } catch (
+    buttonError
+  ) {
+
+    console.warn(
+      "Mode Pindah Halaman aktif tetapi tombol upload gagal diperbarui:",
+      buttonError
+    );
+  }
+
+  if (
+    pageNumberInput &&
+    typeof pageNumberInput.focus ===
+      "function"
+  ) {
+
+    pageNumberInput.focus();
+  }
+
+  return true;
 }
 
 async function pindahkanHalamanBuku() {
