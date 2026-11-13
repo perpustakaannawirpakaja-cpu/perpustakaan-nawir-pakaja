@@ -7666,6 +7666,44 @@ function updateRingkasanIntegritasAdmin(
   jumlahBermasalah
 ) {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  const amanMentah =
+    Number(
+      jumlahAman
+    );
+
+  const bermasalahMentah =
+    Number(
+      jumlahBermasalah
+    );
+
+  const aman =
+    Number.isFinite(
+      amanMentah
+    ) &&
+    amanMentah >= 0
+      ? Math.floor(
+          amanMentah
+        )
+      : 0;
+
+  const bermasalah =
+    Number.isFinite(
+      bermasalahMentah
+    ) &&
+    bermasalahMentah >= 0
+      ? Math.floor(
+          bermasalahMentah
+        )
+      : 0;
+
   const safeCountElement =
     document.getElementById(
       "admin-integrity-safe-count"
@@ -7706,16 +7744,7 @@ function updateRingkasanIntegritasAdmin(
       "admin-integrity-health-action"
     );
 
-  const healthStatusClasses = [
-    "is-excellent",
-    "is-good",
-    "is-warning",
-    "is-problem",
-    "is-empty",
-    "is-unchecked"
-  ];
-
-  const healthRecommendationClasses = [
+  const statusClasses = [
     "is-excellent",
     "is-good",
     "is-warning",
@@ -7725,14 +7754,14 @@ function updateRingkasanIntegritasAdmin(
   ];
 
   const totalIntegritas =
-    jumlahAman +
-    jumlahBermasalah;
+    aman +
+    bermasalah;
 
   const persenAman =
     totalIntegritas > 0
       ? Math.round(
           (
-            jumlahAman /
+            aman /
             totalIntegritas
           ) * 100
         )
@@ -7740,158 +7769,213 @@ function updateRingkasanIntegritasAdmin(
 
   const persenBermasalah =
     totalIntegritas > 0
-      ? 100 - persenAman
+      ? 100 -
+        persenAman
       : 0;
 
-  if (safeCountElement) {
+  if (
+    safeCountElement
+  ) {
+
     safeCountElement.textContent =
-      `${jumlahAman} buku`;
+      `${aman} buku`;
   }
 
-  if (problemCountElement) {
+  if (
+    problemCountElement
+  ) {
+
     problemCountElement.textContent =
-      `${jumlahBermasalah} buku`;
+      `${bermasalah} buku`;
   }
 
-  if (safeBarElement) {
+  if (
+    safeBarElement
+  ) {
+
     safeBarElement.style.width =
       `${persenAman}%`;
-  }
 
-  if (safeBarElement) {
     safeBarElement.textContent =
       persenAman > 0
         ? `${persenAman}%`
         : "";
   }
 
-  if (problemBarElement) {
+  if (
+    problemBarElement
+  ) {
+
     problemBarElement.style.width =
       `${persenBermasalah}%`;
-  }
 
-  if (problemBarElement) {
     problemBarElement.textContent =
       persenBermasalah > 0
         ? `${persenBermasalah}%`
         : "";
   }
 
-if (healthStatusElement) {
+  if (
+    healthStatusElement
+  ) {
 
-  healthStatusElement.classList.remove(
-    ...healthStatusClasses
-  );
+    healthStatusElement.classList.remove(
+      ...statusClasses
+    );
+  }
 
-  if (healthRecommendationElement) {
+  if (
+    healthRecommendationElement
+  ) {
+
     healthRecommendationElement.classList.remove(
-      ...healthRecommendationClasses
+      ...statusClasses
     );
   }
 
-  if (healthActionElement) {
-    healthActionElement.hidden = true;
-  }
+  if (
+    totalIntegritas === 0
+  ) {
 
-  if (totalIntegritas === 0) {
+    if (
+      healthStatusElement
+    ) {
 
-    healthStatusElement.textContent =
-      "⚪ Belum Ada Data";
+      healthStatusElement.textContent =
+        "⚪ Belum Ada Data";
 
-    healthStatusElement.classList.add(
-      "is-empty"
-    );
+      healthStatusElement.classList.add(
+        "is-empty"
+      );
+    }
 
-    if (healthDescriptionElement) {
+    if (
+      healthDescriptionElement
+    ) {
+
       healthDescriptionElement.textContent =
         "Belum ada data integritas pada hasil koleksi ini.";
     }
 
-    if (healthRecommendationElement) {
+    if (
+      healthRecommendationElement
+    ) {
+
       healthRecommendationElement.textContent =
         "Tidak ada tindakan yang tersedia.";
-    }
 
-    if (healthRecommendationElement) {
       healthRecommendationElement.classList.add(
         "is-empty"
       );
     }
 
-  } else if (persenAman >= 90) {
+  } else if (
+    persenAman >= 90
+  ) {
 
-    healthStatusElement.textContent =
-      "🟢 Sangat Baik";
+    if (
+      healthStatusElement
+    ) {
 
-    healthStatusElement.classList.add(
-      "is-excellent"
-    );
+      healthStatusElement.textContent =
+        "🟢 Sangat Baik";
 
-    if (healthDescriptionElement) {
+      healthStatusElement.classList.add(
+        "is-excellent"
+      );
+    }
+
+    if (
+      healthDescriptionElement
+    ) {
+
       healthDescriptionElement.textContent =
         persenAman === 100
-          ? `${jumlahAman} buku incremental, semuanya memiliki susunan halaman yang valid.`
-          : `${jumlahAman} buku aman dan ${jumlahBermasalah} buku bermasalah. Kondisi koleksi sangat baik.`;
+          ? `${aman} buku incremental, semuanya memiliki susunan halaman yang valid.`
+          : `${aman} buku aman dan ${bermasalah} buku bermasalah. Kondisi koleksi sangat baik.`;
     }
 
-    if (healthRecommendationElement) {
+    if (
+      healthRecommendationElement
+    ) {
+
       healthRecommendationElement.textContent =
-        jumlahBermasalah > 0
+        bermasalah > 0
           ? "Periksa buku yang ditandai bermasalah bila diperlukan."
           : "Tidak ada tindakan yang diperlukan.";
-    }
 
-    if (healthRecommendationElement) {
       healthRecommendationElement.classList.add(
         "is-excellent"
       );
     }
 
-  } else if (persenAman >= 75) {
+  } else if (
+    persenAman >= 75
+  ) {
 
-    healthStatusElement.textContent =
-      "🔵 Baik";
+    if (
+      healthStatusElement
+    ) {
 
-    healthStatusElement.classList.add(
-      "is-good"
-    );
+      healthStatusElement.textContent =
+        "🔵 Baik";
 
-    if (healthDescriptionElement) {
-      healthDescriptionElement.textContent =
-        `${jumlahAman} buku aman dan ${jumlahBermasalah} buku bermasalah. Kondisi koleksi baik.`;
+      healthStatusElement.classList.add(
+        "is-good"
+      );
     }
 
-    if (healthRecommendationElement) {
+    if (
+      healthDescriptionElement
+    ) {
+
+      healthDescriptionElement.textContent =
+        `${aman} buku aman dan ${bermasalah} buku bermasalah. Kondisi koleksi baik.`;
+    }
+
+    if (
+      healthRecommendationElement
+    ) {
+
       healthRecommendationElement.textContent =
         "Periksa buku yang ditandai bermasalah bila diperlukan.";
-    }
 
-    if (healthRecommendationElement) {
       healthRecommendationElement.classList.add(
         "is-good"
       );
     }
 
-  } else if (persenAman >= 50) {
+  } else if (
+    persenAman >= 50
+  ) {
 
-    healthStatusElement.textContent =
-      "🟠 Perlu Perhatian";
+    if (
+      healthStatusElement
+    ) {
 
-    healthStatusElement.classList.add(
-      "is-warning"
-    );
+      healthStatusElement.textContent =
+        "🟠 Perlu Perhatian";
 
-    if (healthDescriptionElement) {
-      healthDescriptionElement.textContent =
-        `${jumlahAman} buku aman dan ${jumlahBermasalah} buku bermasalah. Koleksi perlu perhatian.`;
+      healthStatusElement.classList.add(
+        "is-warning"
+      );
     }
 
-    if (healthRecommendationElement) {
+    if (
+      healthDescriptionElement
+    ) {
+
+      healthDescriptionElement.textContent =
+        `${aman} buku aman dan ${bermasalah} buku bermasalah. Koleksi perlu perhatian.`;
+    }
+
+    if (
+      healthRecommendationElement
+    ) {
+
       healthRecommendationElement.textContent =
         "Disarankan memeriksa dan memperbaiki buku bermasalah.";
-    }
 
-    if (healthRecommendationElement) {
       healthRecommendationElement.classList.add(
         "is-warning"
       );
@@ -7899,44 +7983,53 @@ if (healthStatusElement) {
 
   } else {
 
-    healthStatusElement.textContent =
-      "🔴 Bermasalah";
+    if (
+      healthStatusElement
+    ) {
 
-    healthStatusElement.classList.add(
-      "is-problem"
-    );
+      healthStatusElement.textContent =
+        "🔴 Bermasalah";
 
-    if (healthDescriptionElement) {
-      healthDescriptionElement.textContent =
-        `Ada ${jumlahBermasalah} buku yang memiliki masalah integritas halaman.`;
-    }
-
-    if (healthRecommendationElement) {
-      healthRecommendationElement.textContent =
-        "Segera periksa buku bermasalah dan perbaiki susunan halamannya.";
-    }
-
-    if (healthRecommendationElement) {
-      healthRecommendationElement.classList.add(
+      healthStatusElement.classList.add(
         "is-problem"
       );
     }
 
+    if (
+      healthDescriptionElement
+    ) {
+
+      healthDescriptionElement.textContent =
+        `Ada ${bermasalah} buku yang memiliki masalah integritas halaman.`;
+    }
+
+    if (
+      healthRecommendationElement
+    ) {
+
+      healthRecommendationElement.textContent =
+        "Segera periksa buku bermasalah dan perbaiki susunan halamannya.";
+
+      healthRecommendationElement.classList.add(
+        "is-problem"
+      );
+    }
   }
 
-}
+  if (
+    healthActionElement
+  ) {
 
-if (healthActionElement) {
+    healthActionElement.hidden =
+      bermasalah === 0;
 
-  healthActionElement.hidden =
-    jumlahBermasalah === 0;
+    healthActionElement.textContent =
+      bermasalah > 0
+        ? `⚠️ Tampilkan ${bermasalah} Buku Bermasalah`
+        : "⚠️ Tampilkan Buku Bermasalah";
+  }
 
-  healthActionElement.textContent =
-    jumlahBermasalah > 0
-      ? `⚠️ Tampilkan ${jumlahBermasalah} Buku Bermasalah`
-      : "⚠️ Tampilkan Buku Bermasalah";
-}
-
+  return true;
 }
 
 function cariBukuAdmin() {
