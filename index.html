@@ -4840,161 +4840,450 @@ function buatUrlReaderBuku(
    RENDER BOOK LIST
    ========================================= */
 
-function tampilkanDaftarBuku(daftarBuku) {
-
-  const bookList =
-    document.getElementById("bookList");
-
-  const noResult =
-    document.getElementById("noResult");
-
-  const modeUrut =
-  document.getElementById("book-sort-select")
-    ?.value || "az";
-
-daftarBuku =
-  daftarBuku ? [...daftarBuku] : [];
-
-daftarBuku.sort((a, b) => {
-
-  if (modeUrut === "za") {
-    return (b.title || "")
-      .localeCompare(a.title || "");
-  }
-
-  if (modeUrut === "newest") {
-    return (
-      new Date(b.created_at || 0) -
-      new Date(a.created_at || 0)
-    );
-  }
-
-  if (modeUrut === "oldest") {
-    return (
-      new Date(a.created_at || 0) -
-      new Date(b.created_at || 0)
-    );
-  }
-
-  return (a.title || "")
-    .localeCompare(b.title || "");
-});
-
-  bookList.innerHTML = "";
-
-  updateBookResultStatus(daftarBuku);
+function tampilkanDaftarBuku(
+  daftarBuku
+) {
 
   if (
-    !daftarBuku ||
-    daftarBuku.length === 0
+    typeof document ===
+      "undefined"
   ) {
 
-    noResult.style.display = "block";
-    return;
+    return false;
   }
 
-  noResult.style.display = "none";
+  const bookList =
+    document.getElementById(
+      "bookList"
+    );
 
-  daftarBuku.forEach((buku) => {
+  const noResult =
+    document.getElementById(
+      "noResult"
+    );
 
-    const waktuDibuat =
-  buku.created_at
-    ? new Date(buku.created_at)
-    : null;
+  if (
+    !bookList ||
+    !noResult
+  ) {
 
-const batasBukuBaru =
-  30 * 24 * 60 * 60 * 1000;
+    console.error(
+      "Elemen daftar buku publik tidak lengkap."
+    );
 
-const isBukuBaru =
-  waktuDibuat &&
-  (
-    Date.now() -
-    waktuDibuat.getTime()
-  ) <= batasBukuBaru;
-    
-    const card =
-      document.createElement("div");
+    return false;
+  }
 
-    card.className = "book-card";
+  if (
+    typeof updateBookResultStatus !==
+      "function" ||
+    typeof buatUrlReaderBuku !==
+      "function"
+  ) {
 
-    card.innerHTML = `
-      ${
-        buku.cover_url
-          ? `
-            <img
-              class="book-cover"
-              src="${buku.cover_url}"
-              alt="Cover ${buku.title || "Buku"}"
-            >
-          `
-          : ""
+    console.error(
+      "Function pendukung daftar buku tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const sortSelect =
+    document.getElementById(
+      "book-sort-select"
+    );
+
+  const modeUrutMentah =
+    typeof sortSelect?.value ===
+      "string"
+      ? sortSelect.value.trim()
+      : "";
+
+  const modeUrutValid = [
+    "az",
+    "za",
+    "newest",
+    "oldest"
+  ];
+
+  const modeUrut =
+    modeUrutValid.includes(
+      modeUrutMentah
+    )
+      ? modeUrutMentah
+      : "az";
+
+  const daftarAman =
+    Array.isArray(
+      daftarBuku
+    )
+      ? daftarBuku.filter(
+          (buku) =>
+            buku &&
+            typeof buku ===
+              "object"
+        )
+      : [];
+
+  const normalisasiJudul =
+    (buku) =>
+      typeof buku?.title ===
+        "string"
+        ? buku.title.trim()
+        : "";
+
+  const ambilWaktu =
+    (buku) => {
+
+      const waktu =
+        Date.parse(
+          buku?.created_at ||
+          ""
+        );
+
+      return Number.isFinite(
+        waktu
+      )
+        ? waktu
+        : 0;
+    };
+
+  const hasilUrut =
+    [
+      ...daftarAman
+    ];
+
+  hasilUrut.sort(
+    (a, b) => {
+
+      if (
+        modeUrut ===
+          "za"
+      ) {
+
+        return normalisasiJudul(
+          b
+        ).localeCompare(
+          normalisasiJudul(
+            a
+          ),
+          "id",
+          {
+            sensitivity:
+              "base"
+          }
+        );
       }
 
-      <div class="book-info">
+      if (
+        modeUrut ===
+          "newest"
+      ) {
 
-        <h3>
-  ${buku.title || "Tanpa Judul"}
+        return (
+          ambilWaktu(b) -
+          ambilWaktu(a)
+        );
+      }
 
-  ${
-    isBukuBaru
-      ? `<span class="book-new-badge">BARU</span>`
-      : ""
-  }
-</h3>
+      if (
+        modeUrut ===
+          "oldest"
+      ) {
 
-        <p>
-          Penulis:
-          ${buku.author || "-"}
-        </p>
+        return (
+          ambilWaktu(a) -
+          ambilWaktu(b)
+        );
+      }
 
-        <p>
-          Kategori:
-          ${buku.category || "-"}
-        </p>
-
-        <p>
-  Ditambahkan:
-  ${
-    buku.created_at
-      ? new Date(buku.created_at)
-          .toLocaleDateString(
-            "id-ID",
-            {
-              day: "2-digit",
-              month: "long",
-              year: "numeric"
-            }
-          )
-      : "-"
-  }
-</p>
-
-        <p>
-          ${buku.description || ""}
-        </p>
-
-        ${
-          buatUrlReaderBuku(buku)
-            ? `
-              <a
-                class="read-button"
-                href="${
-                  buatUrlReaderBuku(
-                    buku
-                  )
-                }"
-              >
-                📖 Baca Buku
-              </a>
-            `
-            : ""
+      return normalisasiJudul(
+        a
+      ).localeCompare(
+        normalisasiJudul(
+          b
+        ),
+        "id",
+        {
+          sensitivity:
+            "base"
         }
+      );
+    }
+  );
 
-      </div>
-    `;
+  bookList.replaceChildren();
 
-    bookList.appendChild(card);
-  });
+  updateBookResultStatus(
+    hasilUrut
+  );
+
+  if (
+    hasilUrut.length < 1
+  ) {
+
+    noResult.style.display =
+      "block";
+
+    return true;
+  }
+
+  noResult.style.display =
+    "none";
+
+  const fragment =
+    document.createDocumentFragment();
+
+  const batasBukuBaru =
+    30 *
+    24 *
+    60 *
+    60 *
+    1000;
+
+  const sekarang =
+    Date.now();
+
+  hasilUrut.forEach(
+    (buku) => {
+
+      const title =
+        typeof buku.title ===
+          "string" &&
+        buku.title.trim()
+          ? buku.title.trim()
+          : "Tanpa Judul";
+
+      const author =
+        typeof buku.author ===
+          "string" &&
+        buku.author.trim()
+          ? buku.author.trim()
+          : "-";
+
+      const category =
+        typeof buku.category ===
+          "string" &&
+        buku.category.trim()
+          ? buku.category.trim()
+          : "-";
+
+      const description =
+        typeof buku.description ===
+          "string"
+          ? buku.description.trim()
+          : "";
+
+      const coverUrl =
+        typeof buku.cover_url ===
+          "string"
+          ? buku.cover_url.trim()
+          : "";
+
+      const waktuDibuat =
+        Date.parse(
+          buku.created_at ||
+          ""
+        );
+
+      const waktuValid =
+        Number.isFinite(
+          waktuDibuat
+        );
+
+      const umurBuku =
+        waktuValid
+          ? sekarang -
+            waktuDibuat
+          : null;
+
+      const isBukuBaru =
+        umurBuku !== null &&
+        umurBuku >= 0 &&
+        umurBuku <=
+          batasBukuBaru;
+
+      const tanggalTampil =
+        waktuValid
+          ? new Date(
+              waktuDibuat
+            ).toLocaleDateString(
+              "id-ID",
+              {
+                day:
+                  "2-digit",
+                month:
+                  "long",
+                year:
+                  "numeric"
+              }
+            )
+          : "-";
+
+      const readerUrl =
+        buatUrlReaderBuku(
+          buku
+        );
+
+      const card =
+        document.createElement(
+          "div"
+        );
+
+      card.className =
+        "book-card";
+
+      if (coverUrl) {
+
+        const cover =
+          document.createElement(
+            "img"
+          );
+
+        cover.className =
+          "book-cover";
+
+        cover.src =
+          coverUrl;
+
+        cover.alt =
+          `Cover ${title}`;
+
+        card.appendChild(
+          cover
+        );
+      }
+
+      const info =
+        document.createElement(
+          "div"
+        );
+
+      info.className =
+        "book-info";
+
+      const heading =
+        document.createElement(
+          "h3"
+        );
+
+      heading.append(
+        title
+      );
+
+      if (
+        isBukuBaru
+      ) {
+
+        const badge =
+          document.createElement(
+            "span"
+          );
+
+        badge.className =
+          "book-new-badge";
+
+        badge.textContent =
+          "BARU";
+
+        heading.append(
+          " ",
+          badge
+        );
+      }
+
+      info.appendChild(
+        heading
+      );
+
+      const authorP =
+        document.createElement(
+          "p"
+        );
+
+      authorP.textContent =
+        `Penulis: ${author}`;
+
+      info.appendChild(
+        authorP
+      );
+
+      const categoryP =
+        document.createElement(
+          "p"
+        );
+
+      categoryP.textContent =
+        `Kategori: ${category}`;
+
+      info.appendChild(
+        categoryP
+      );
+
+      const dateP =
+        document.createElement(
+          "p"
+        );
+
+      dateP.textContent =
+        `Ditambahkan: ${tanggalTampil}`;
+
+      info.appendChild(
+        dateP
+      );
+
+      const descriptionP =
+        document.createElement(
+          "p"
+        );
+
+      descriptionP.textContent =
+        description;
+
+      info.appendChild(
+        descriptionP
+      );
+
+      if (
+        typeof readerUrl ===
+          "string" &&
+        readerUrl
+      ) {
+
+        const link =
+          document.createElement(
+            "a"
+          );
+
+        link.className =
+          "read-button";
+
+        link.href =
+          readerUrl;
+
+        link.textContent =
+          "📖 Baca Buku";
+
+        info.appendChild(
+          link
+        );
+      }
+
+      card.appendChild(
+        info
+      );
+
+      fragment.appendChild(
+        card
+      );
+    }
+  );
+
+  bookList.appendChild(
+    fragment
+  );
+
+  return true;
 }
 
 function bukaKoleksi(huruf) {
