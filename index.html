@@ -9782,34 +9782,113 @@ function filterIntegritasDariRingkasan(
   nilaiIntegritas
 ) {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof cariBukuAdmin !==
+      "function"
+  ) {
+
+    console.error(
+      "Function cariBukuAdmin tidak tersedia."
+    );
+
+    return false;
+  }
+
   const integritySelect =
     document.getElementById(
       "admin-book-integrity"
     );
 
-  if (!integritySelect) {
-    return;
+  if (
+    !integritySelect
+  ) {
+
+    return false;
+  }
+
+  const nilaiMentah =
+    typeof nilaiIntegritas ===
+      "string"
+      ? nilaiIntegritas
+          .trim()
+          .toLowerCase()
+      : "";
+
+  const nilaiValid =
+    [
+      "safe",
+      "problem"
+    ].includes(
+      nilaiMentah
+    )
+      ? nilaiMentah
+      : "";
+
+  if (
+    !nilaiValid
+  ) {
+
+    return false;
   }
 
   integritySelect.value =
-    nilaiIntegritas;
+    nilaiValid;
 
-  localStorage.setItem(
-    "adminBookIntegrity",
-    nilaiIntegritas
-  );
+  try {
 
-  cariBukuAdmin();
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
 
-  document
-    .getElementById(
+      localStorage.setItem(
+        "adminBookIntegrity",
+        nilaiValid
+      );
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi integritas Admin tidak dapat diperbarui:",
+      storageError
+    );
+  }
+
+  const hasilCari =
+    cariBukuAdmin();
+
+  const adminBookList =
+    document.getElementById(
       "admin-book-list"
-    )
-    ?.scrollIntoView({
+    );
+
+  if (
+    adminBookList &&
+    typeof adminBookList.scrollIntoView ===
+      "function"
+  ) {
+
+    adminBookList.scrollIntoView({
       behavior: "smooth",
       block: "start"
     });
+  }
 
+  return (
+    hasilCari !==
+    false
+  );
 }
 
 function resetFilterBukuAdmin() {
