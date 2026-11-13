@@ -25973,31 +25973,116 @@ async function hapusBukuAdmin(
 }
 
   function ambilStoragePath(
-    publicUrl,
-    bucketName
+  publicUrl,
+  bucketName
+) {
+
+  if (
+    typeof publicUrl !==
+      "string" ||
+    typeof bucketName !==
+      "string"
   ) {
 
-    if (!publicUrl) {
-      return null;
-    }
+    return null;
+  }
 
-    const marker =
-      `/storage/v1/object/public/${bucketName}/`;
+  const urlBersih =
+    publicUrl.trim();
 
-    const posisi =
-      publicUrl.indexOf(marker);
+  const bucketBersih =
+    bucketName.trim();
 
-    if (posisi === -1) {
-      return null;
-    }
+  if (
+    !urlBersih ||
+    !bucketBersih ||
+    bucketBersih.includes(
+      "/"
+    )
+  ) {
 
-    return decodeURIComponent(
-      publicUrl.substring(
-        posisi + marker.length
-      )
+    return null;
+  }
+
+  const marker =
+    `/storage/v1/object/public/${bucketBersih}/`;
+
+  let pathname =
+    "";
+
+  try {
+
+    const parsedUrl =
+      new URL(
+        urlBersih
+      );
+
+    pathname =
+      parsedUrl.pathname;
+
+  } catch (
+    urlError
+  ) {
+
+    const tanpaHash =
+      urlBersih.split(
+        "#"
+      )[0];
+
+    pathname =
+      tanpaHash.split(
+        "?"
+      )[0];
+  }
+
+  const posisi =
+    pathname.indexOf(
+      marker
     );
 
+  if (
+    posisi ===
+      -1
+  ) {
+
+    return null;
   }
+
+  const encodedPath =
+    pathname.substring(
+      posisi +
+      marker.length
+    );
+
+  if (
+    !encodedPath
+  ) {
+
+    return null;
+  }
+
+  try {
+
+    const decodedPath =
+      decodeURIComponent(
+        encodedPath
+      ).trim();
+
+    return decodedPath ||
+      null;
+
+  } catch (
+    decodeError
+  ) {
+
+    console.warn(
+      "Storage path gagal didecode:",
+      decodeError
+    );
+
+    return null;
+  }
+}
 
   const pdfPath =
     ambilStoragePath(
