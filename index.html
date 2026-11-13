@@ -16503,104 +16503,317 @@ async function selesaikanAksiUploadTerakhir(
   tindakan
 ) {
 
-  const aksi =
-    aksiUploadHalamanTerakhir;
+  if (
+    typeof document ===
+      "undefined"
+  ) {
 
-  if (!aksi) {
-    return true;
-  }
-
-  const namaBatal =
-  aksi.tipe === "delete"
-    ? "Batal Hapus"
-    : aksi.tipe === "insert"
-      ? "Batal Sisip"
-      : aksi.tipe === "move"
-        ? "Batal Pindah"
-        : "Batal Upload";
-
-  const yakin =
-    confirm(
-      `Perubahan terakhir pada Halaman ${aksi.pageNumber} masih bisa dibatalkan.\n\n` +
-      `Jika Anda ${tindakan}, perubahan akan dianggap final dan ${namaBatal} tidak dapat digunakan lagi.\n\n` +
-      `Lanjutkan?`
-    );
-
-  if (!yakin) {
     return false;
   }
 
-  /* =========================
-     KUNCI AKSI GANTI HALAMAN
-     ========================= */
-
   if (
-    aksi.tipe === "replace" &&
-    aksi.oldStoragePath
+    typeof aksiUploadHalamanTerakhir ===
+      "undefined"
   ) {
 
-    const {
-      error: removeOldError
-    } = await db.storage
-      .from("book-files")
-      .remove([
-        aksi.oldStoragePath
-      ]);
+    console.error(
+      "State aksi upload halaman terakhir tidak tersedia."
+    );
 
-    if (removeOldError) {
+    return false;
+  }
 
-      console.error(
-        "Gagal membersihkan file lama:",
-        removeOldError
+  if (
+    typeof updateTombolUploadHalaman !==
+      "function"
+  ) {
+
+    console.error(
+      "Function updateTombolUploadHalaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const aksi =
+    aksiUploadHalamanTerakhir;
+
+  if (
+    !aksi
+  ) {
+
+    return true;
+  }
+
+  if (
+    !aksi ||
+    typeof aksi !==
+      "object"
+  ) {
+
+    return false;
+  }
+
+  const tipeAksi =
+    typeof aksi.tipe ===
+      "string"
+      ? aksi.tipe
+          .trim()
+          .toLowerCase()
+      : "";
+
+  const tindakanAman =
+    typeof tindakan ===
+      "string" &&
+    tindakan.trim()
+      ? tindakan.trim()
+      : "melanjutkan";
+
+  const nomorHalaman =
+    Number(
+      aksi.pageNumber
+    );
+
+  const teksHalaman =
+    Number.isInteger(
+      nomorHalaman
+    ) &&
+    nomorHalaman > 0
+      ? `Halaman ${nomorHalaman}`
+      : "perubahan halaman terakhir";
+
+  const namaBatal =
+    tipeAksi ===
+      "delete"
+      ? "Batal Hapus"
+      : tipeAksi ===
+          "insert"
+        ? "Batal Sisip"
+        : tipeAksi ===
+            "move"
+          ? "Batal Pindah"
+          : "Batal Upload";
+
+  let yakin =
+    true;
+
+  if (
+    typeof confirm ===
+      "function"
+  ) {
+
+    yakin =
+      confirm(
+        `Perubahan terakhir pada ${teksHalaman} masih bisa dibatalkan.\n\n` +
+        `Jika Anda ${tindakanAman}, perubahan akan dianggap final dan ${namaBatal} tidak dapat digunakan lagi.\n\n` +
+        "Lanjutkan?"
       );
+  }
 
-      const message =
-        document.getElementById(
-          "book-pages-message"
+  if (
+    !yakin
+  ) {
+
+    return false;
+  }
+
+  const message =
+    document.getElementById(
+      "book-pages-message"
+    );
+
+  const bookId =
+    Number(
+      aksi.bookId
+    );
+
+  const catatError =
+    async (
+      error
+    ) => {
+
+      if (
+        typeof catatErrorIngestionBuku !==
+          "function" ||
+        !Number.isInteger(
+          bookId
+        ) ||
+        bookId < 1
+      ) {
+
+        return false;
+      }
+
+      try {
+
+        await catatErrorIngestionBuku(
+          bookId,
+          error
         );
 
-      if (message) {
-        message.textContent =
-          "❌ Perubahan belum dapat dikunci karena file cadangan lama gagal dibersihkan.";
+        return true;
+
+      } catch (
+        trackingError
+      ) {
+
+        console.error(
+          "Pencatatan error ingestion saat mengunci aksi halaman gagal:",
+          trackingError
+        );
+
+        return false;
       }
+    };
+
+  const hapusFileStorage =
+    async (
+      storagePath,
+      pesanLog,
+      pesanUi
+    ) => {
+
+      const path =
+        typeof storagePath ===
+          "string"
+          ? storagePath.trim()
+          : "";
+
+      if (
+        !path
+      ) {
+
+        return true;
+      }
+
+      if (
+        typeof db ===
+          "undefined" ||
+        !db?.storage ||
+        typeof db.storage.from !==
+          "function"
+      ) {
+
+        const storageError =
+          new Error(
+            "Supabase Storage tidak tersedia."
+          );
+
+        console.error(
+          pesanLog,
+          storageError
+        );
+
+        await catatError(
+          storageError
+        );
+
+        if (
+          message
+        ) {
+
+          message.textContent =
+            pesanUi;
+        }
+
+        return false;
+      }
+
+      try {
+
+        const bucket =
+          db.storage.from(
+            "book-files"
+          );
+
+        if (
+          !bucket ||
+          typeof bucket.remove !==
+            "function"
+        ) {
+
+          throw new Error(
+            "Operasi remove Storage tidak tersedia."
+          );
+        }
+
+        const {
+          error
+        } = await bucket.remove(
+          [
+            path
+          ]
+        );
+
+        if (
+          error
+        ) {
+
+          throw error;
+        }
+
+        return true;
+
+      } catch (
+        storageError
+      ) {
+
+        console.error(
+          pesanLog,
+          storageError
+        );
+
+        await catatError(
+          storageError
+        );
+
+        if (
+          message
+        ) {
+
+          message.textContent =
+            pesanUi;
+        }
+
+        return false;
+      }
+    };
+
+  if (
+    tipeAksi ===
+      "replace"
+  ) {
+
+    const berhasilBersihkan =
+      await hapusFileStorage(
+        aksi.oldStoragePath,
+        "Gagal membersihkan file lama:",
+        "❌ Perubahan belum dapat dikunci karena file cadangan lama gagal dibersihkan."
+      );
+
+    if (
+      !berhasilBersihkan
+    ) {
 
       return false;
     }
   }
 
-  /* =========================
-     KUNCI AKSI HAPUS HALAMAN
-     ========================= */
-
   if (
-    aksi.tipe === "delete" &&
-    aksi.deletedPage?.storage_path
+    tipeAksi ===
+      "delete"
   ) {
 
-    const {
-      error: removeDeletedError
-    } = await db.storage
-      .from("book-files")
-      .remove([
-        aksi.deletedPage.storage_path
-      ]);
-
-    if (removeDeletedError) {
-
-      console.error(
+    const berhasilBersihkan =
+      await hapusFileStorage(
+        aksi.deletedPage?.storage_path,
         "Gagal menghapus file halaman:",
-        removeDeletedError
+        "❌ Penghapusan belum dapat dikunci karena file halaman gagal dibersihkan dari Storage."
       );
 
-      const message =
-        document.getElementById(
-          "book-pages-message"
-        );
-
-      if (message) {
-        message.textContent =
-          "❌ Penghapusan belum dapat dikunci karena file halaman gagal dibersihkan dari Storage.";
-      }
+    if (
+      !berhasilBersihkan
+    ) {
 
       return false;
     }
@@ -16609,7 +16822,19 @@ async function selesaikanAksiUploadTerakhir(
   aksiUploadHalamanTerakhir =
     null;
 
-  updateTombolUploadHalaman();
+  try {
+
+    updateTombolUploadHalaman();
+
+  } catch (
+    buttonError
+  ) {
+
+    console.error(
+      "Gagal memperbarui tombol setelah aksi halaman dikunci:",
+      buttonError
+    );
+  }
 
   return true;
 }
