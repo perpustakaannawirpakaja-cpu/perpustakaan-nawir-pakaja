@@ -9413,10 +9413,33 @@ function jagaFokusUtama(
   return false;
 }
 
-function jagaFokusEditBuku(event) {
+function jagaFokusEditBuku(
+  event
+) {
 
-  if (event.key !== "Tab") {
-    return;
+  if (
+    !event ||
+    typeof event !==
+      "object"
+  ) {
+
+    return false;
+  }
+
+  if (
+    event.key !==
+      "Tab"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
   }
 
   const editModal =
@@ -9426,9 +9449,17 @@ function jagaFokusEditBuku(event) {
 
   if (
     !editModal ||
-    !editModal.classList.contains("show")
+    !editModal.classList ||
+    typeof editModal.classList.contains !==
+      "function" ||
+    !editModal.classList.contains(
+      "show"
+    ) ||
+    typeof editModal.querySelectorAll !==
+      "function"
   ) {
-    return;
+
+    return false;
   }
 
   const fokusable =
@@ -9437,12 +9468,31 @@ function jagaFokusEditBuku(event) {
         'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
       )
     ).filter(
-      (element) =>
-        element.getClientRects().length > 0
+      (element) => {
+
+        if (
+          !element ||
+          typeof element.getClientRects !==
+            "function"
+        ) {
+
+          return false;
+        }
+
+        return (
+          element
+            .getClientRects()
+            .length > 0
+        );
+      }
     );
 
-  if (fokusable.length === 0) {
-    return;
+  if (
+    fokusable.length ===
+      0
+  ) {
+
+    return false;
   }
 
   const pertama =
@@ -9453,42 +9503,93 @@ function jagaFokusEditBuku(event) {
       fokusable.length - 1
     ];
 
+  if (
+    typeof editModal.contains !==
+      "function"
+  ) {
+
+    return false;
+  }
+
+  const fokusAktif =
+    document.activeElement;
+
   const fokusDiModal =
     editModal.contains(
-      document.activeElement
+      fokusAktif
     );
 
-  if (!fokusDiModal) {
+  const cegahDefault =
+    () => {
 
-    event.preventDefault();
+      if (
+        typeof event.preventDefault ===
+          "function"
+      ) {
 
-    if (event.shiftKey) {
-      terakhir.focus();
-    } else {
-      pertama.focus();
-    }
+        event.preventDefault();
+      }
+    };
 
-    return;
+  const fokusElemen =
+    (element) => {
+
+      if (
+        element &&
+        typeof element.focus ===
+          "function"
+      ) {
+
+        element.focus();
+
+        return true;
+      }
+
+      return false;
+    };
+
+  if (
+    !fokusDiModal
+  ) {
+
+    cegahDefault();
+
+    return event.shiftKey
+      ? fokusElemen(
+          terakhir
+        )
+      : fokusElemen(
+          pertama
+        );
   }
 
   if (
     event.shiftKey &&
-    document.activeElement === pertama
+    fokusAktif ===
+      pertama
   ) {
 
-    event.preventDefault();
-    terakhir.focus();
+    cegahDefault();
 
-  } else if (
-    !event.shiftKey &&
-    document.activeElement === terakhir
-  ) {
-
-    event.preventDefault();
-    pertama.focus();
-
+    return fokusElemen(
+      terakhir
+    );
   }
 
+  if (
+    !event.shiftKey &&
+    fokusAktif ===
+      terakhir
+  ) {
+
+    cegahDefault();
+
+    return fokusElemen(
+      pertama
+    );
+  }
+
+  return false;
 }
 
 function filterKategoriBukuAdmin() {
