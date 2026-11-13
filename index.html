@@ -8034,33 +8034,79 @@ function updateRingkasanIntegritasAdmin(
 
 function cariBukuAdmin() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof updateRingkasanIntegritasAdmin !==
+      "function" ||
+    typeof updateResetFilterBukuAdmin !==
+      "function"
+  ) {
+
+    console.error(
+      "Function pendukung pencarian Admin tidak tersedia."
+    );
+
+    return false;
+  }
+
   const input =
     document.getElementById(
       "admin-book-search"
     );
 
   if (!input) {
-    return;
+
+    return false;
   }
 
+  const nilaiPencarian =
+    typeof input.value ===
+      "string"
+      ? input.value
+      : "";
+
   const keyword =
-    input.value
+    nilaiPencarian
       .trim()
       .toLowerCase();
 
-  if (keyword) {
+  try {
 
-    localStorage.setItem(
-      "adminBookSearch",
-      input.value
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
+
+      if (keyword) {
+
+        localStorage.setItem(
+          "adminBookSearch",
+          nilaiPencarian
+        );
+
+      } else {
+
+        localStorage.removeItem(
+          "adminBookSearch"
+        );
+      }
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi pencarian Admin tidak dapat diperbarui:",
+      storageError
     );
-
-  } else {
-
-    localStorage.removeItem(
-      "adminBookSearch"
-    );
-
   }
 
   const categorySelect =
@@ -8068,24 +8114,47 @@ function cariBukuAdmin() {
       "admin-book-category"
     );
 
+  const nilaiKategori =
+    typeof categorySelect?.value ===
+      "string"
+      ? categorySelect.value.trim()
+      : "";
+
   const selectedCategory =
-    (
-      categorySelect?.value || ""
-    )
-      .trim()
-      .toLowerCase();
+    nilaiKategori.toLowerCase();
 
   const integritySelect =
     document.getElementById(
       "admin-book-integrity"
     );
 
+  const integrityMentah =
+    typeof integritySelect?.value ===
+      "string"
+      ? integritySelect.value
+          .trim()
+          .toLowerCase()
+      : "";
+
   const selectedIntegrity =
-    (
-      integritySelect?.value || ""
+    [
+      "safe",
+      "problem"
+    ].includes(
+      integrityMentah
     )
-      .trim()
-      .toLowerCase();
+      ? integrityMentah
+      : "";
+
+  if (
+    integritySelect &&
+    integrityMentah &&
+    !selectedIntegrity
+  ) {
+
+    integritySelect.value =
+      "";
+  }
 
   const clearButton =
     document.getElementById(
@@ -8098,99 +8167,141 @@ function cariBukuAdmin() {
       keyword
         ? "flex"
         : "none";
-
   }
 
   const items =
-    document.querySelectorAll(
-      "#admin-book-list .admin-book-item"
+    Array.from(
+      document.querySelectorAll(
+        "#admin-book-list .admin-book-item"
+      )
     );
 
-  let jumlahTampil = 0;
+  let jumlahTampil =
+    0;
 
-  let jumlahAmanTerfilter = 0;
-  let jumlahBermasalahTerfilter = 0;
+  let jumlahAmanTerfilter =
+    0;
 
-  items.forEach((item) => {
+  let jumlahBermasalahTerfilter =
+    0;
 
-    const text =
-      Array.from(
-        item.querySelectorAll(
-          "strong, span:not(.admin-ingestion-badge):not(.admin-ingestion-error)"
+  items.forEach(
+    (item) => {
+
+      if (
+        !item ||
+        typeof item.querySelectorAll !==
+          "function"
+      ) {
+
+        return;
+      }
+
+      const text =
+        Array.from(
+          item.querySelectorAll(
+            "strong, span:not(.admin-ingestion-badge):not(.admin-ingestion-error)"
+          )
         )
-      )
-        .map((element) =>
-          element.textContent
-        )
-        .join(" ")
-        .toLowerCase();
+          .map(
+            (element) =>
+              typeof element?.textContent ===
+                "string"
+                ? element.textContent
+                : ""
+          )
+          .join(
+            " "
+          )
+          .toLowerCase();
 
-    const itemCategory =
-      (
-        item.dataset.category || ""
-      )
-        .trim()
-        .toLowerCase();
+      const itemCategory =
+        typeof item.dataset
+          ?.category ===
+          "string"
+          ? item.dataset
+              .category
+              .trim()
+              .toLowerCase()
+          : "";
 
-    const badgeAman =
-      item.querySelector(
-        ".admin-integrity-ok"
-      );
+      const badgeAman =
+        item.querySelector(
+          ".admin-integrity-ok"
+        );
 
-    const badgeBermasalah =
-      item.querySelector(
-        ".admin-integrity-warning"
-      );
+      const badgeBermasalah =
+        item.querySelector(
+          ".admin-integrity-warning"
+        );
 
-    const cocokKeyword =
-      text.includes(keyword);
+      const cocokKeyword =
+        !keyword ||
+        text.includes(
+          keyword
+        );
 
-    const cocokKategori =
-      !selectedCategory ||
-      itemCategory === selectedCategory;
+      const cocokKategori =
+        !selectedCategory ||
+        itemCategory ===
+          selectedCategory;
 
-    const cocokFilterDasar =
-      cocokKeyword &&
-      cocokKategori;
+      const cocokFilterDasar =
+        cocokKeyword &&
+        cocokKategori;
 
-if (cocokFilterDasar) {
+      if (
+        cocokFilterDasar
+      ) {
 
-  if (badgeAman) {
-    jumlahAmanTerfilter++;
-  }
+        if (
+          badgeAman
+        ) {
 
-  if (badgeBermasalah) {
-    jumlahBermasalahTerfilter++;
-  }
+          jumlahAmanTerfilter++;
+        }
 
-}
+        if (
+          badgeBermasalah
+        ) {
 
-    const cocokIntegritas =
-      !selectedIntegrity ||
-      (
-        selectedIntegrity === "safe" &&
-        badgeAman
-      ) ||
-      (
-        selectedIntegrity === "problem" &&
-        badgeBermasalah
-      );
+          jumlahBermasalahTerfilter++;
+        }
+      }
 
-    const cocok =
-      cocokKeyword &&
-      cocokKategori &&
-      cocokIntegritas;
+      const cocokIntegritas =
+        !selectedIntegrity ||
+        (
+          selectedIntegrity ===
+            "safe" &&
+          Boolean(
+            badgeAman
+          )
+        ) ||
+        (
+          selectedIntegrity ===
+            "problem" &&
+          Boolean(
+            badgeBermasalah
+          )
+        );
 
-    item.style.display =
-      cocok
-        ? ""
-        : "none";
+      const cocok =
+        cocokKeyword &&
+        cocokKategori &&
+        cocokIntegritas;
 
-    if (cocok) {
-      jumlahTampil++;
+      item.style.display =
+        cocok
+          ? ""
+          : "none";
+
+      if (cocok) {
+
+        jumlahTampil++;
+      }
     }
-
-  });
+  );
 
   const adminBookList =
     document.getElementById(
@@ -8202,19 +8313,27 @@ if (cocokFilterDasar) {
       "admin-book-search-empty"
     );
 
-  if (
-    (
+  const adaFilterAktif =
+    Boolean(
       keyword ||
       selectedCategory ||
       selectedIntegrity
-    ) &&
+    );
+
+  if (
+    adaFilterAktif &&
     jumlahTampil === 0
   ) {
 
-    if (!emptyMessage) {
+    if (
+      !emptyMessage &&
+      adminBookList
+    ) {
 
       emptyMessage =
-        document.createElement("p");
+        document.createElement(
+          "p"
+        );
 
       emptyMessage.id =
         "admin-book-search-empty";
@@ -8225,43 +8344,52 @@ if (cocokFilterDasar) {
       adminBookList.appendChild(
         emptyMessage
       );
-
     }
 
-    if (selectedIntegrity) {
-
-      const labelIntegritas =
-        selectedIntegrity === "safe"
-          ? "Aman"
-          : "Bermasalah";
-
-      emptyMessage.textContent =
-        `Tidak ada buku dengan integritas "${labelIntegritas}" yang cocok dengan filter aktif.`;
-
-    } else if (
-      keyword &&
-      selectedCategory
+    if (
+      emptyMessage
     ) {
 
-      emptyMessage.textContent =
-        `Tidak ada buku yang cocok dengan "${input.value.trim()}" pada kategori "${categorySelect.value}".`;
+      if (
+        selectedIntegrity
+      ) {
 
-    } else if (keyword) {
+        const labelIntegritas =
+          selectedIntegrity ===
+            "safe"
+            ? "Aman"
+            : "Bermasalah";
 
-      emptyMessage.textContent =
-        `Tidak ada buku yang cocok dengan "${input.value.trim()}".`;
+        emptyMessage.textContent =
+          `Tidak ada buku dengan integritas "${labelIntegritas}" yang cocok dengan filter aktif.`;
 
-    } else {
+      } else if (
+        keyword &&
+        selectedCategory
+      ) {
 
-      emptyMessage.textContent =
-        `Tidak ada buku pada kategori "${categorySelect.value}".`;
+        emptyMessage.textContent =
+          `Tidak ada buku yang cocok dengan "${nilaiPencarian.trim()}" pada kategori "${nilaiKategori}".`;
 
+      } else if (
+        keyword
+      ) {
+
+        emptyMessage.textContent =
+          `Tidak ada buku yang cocok dengan "${nilaiPencarian.trim()}".`;
+
+      } else {
+
+        emptyMessage.textContent =
+          `Tidak ada buku pada kategori "${nilaiKategori}".`;
+      }
     }
 
-  } else if (emptyMessage) {
+  } else if (
+    emptyMessage
+  ) {
 
     emptyMessage.remove();
-
   }
 
   const status =
@@ -8274,10 +8402,13 @@ if (cocokFilterDasar) {
     const totalBuku =
       items.length;
 
-    if (selectedIntegrity) {
+    if (
+      selectedIntegrity
+    ) {
 
       const labelIntegritas =
-        selectedIntegrity === "safe"
+        selectedIntegrity ===
+          "safe"
           ? "Aman"
           : "Bermasalah";
 
@@ -8290,160 +8421,186 @@ if (cocokFilterDasar) {
     ) {
 
       status.textContent =
-        `${jumlahTampil} dari ${totalBuku} buku ditemukan pada kategori "${categorySelect.value}"`;
+        `${jumlahTampil} dari ${totalBuku} buku ditemukan pada kategori "${nilaiKategori}"`;
 
-    } else if (keyword) {
+    } else if (
+      keyword
+    ) {
 
       status.textContent =
         `${jumlahTampil} dari ${totalBuku} buku ditemukan`;
 
-    } else if (selectedCategory) {
+    } else if (
+      selectedCategory
+    ) {
 
       status.textContent =
-        `${jumlahTampil} dari ${totalBuku} buku pada kategori "${categorySelect.value}"`;
+        `${jumlahTampil} dari ${totalBuku} buku pada kategori "${nilaiKategori}"`;
 
     } else {
 
       status.textContent =
         `${totalBuku} buku`;
+    }
+  }
 
+  const adaIntegritasBelumDiperiksa =
+    Boolean(
+      document.querySelector(
+        "#admin-book-list .admin-integrity-unknown"
+      )
+    );
+
+  if (
+    adaIntegritasBelumDiperiksa
+  ) {
+
+    const safeCountElement =
+      document.getElementById(
+        "admin-integrity-safe-count"
+      );
+
+    const problemCountElement =
+      document.getElementById(
+        "admin-integrity-problem-count"
+      );
+
+    const safeBarElement =
+      document.getElementById(
+        "admin-integrity-health-safe"
+      );
+
+    const problemBarElement =
+      document.getElementById(
+        "admin-integrity-health-problem"
+      );
+
+    const healthStatusElement =
+      document.getElementById(
+        "admin-integrity-health-status"
+      );
+
+    const healthDescriptionElement =
+      document.getElementById(
+        "admin-integrity-health-description"
+      );
+
+    const healthRecommendationElement =
+      document.getElementById(
+        "admin-integrity-health-recommendation"
+      );
+
+    const healthActionElement =
+      document.getElementById(
+        "admin-integrity-health-action"
+      );
+
+    const statusClasses = [
+      "is-excellent",
+      "is-good",
+      "is-warning",
+      "is-problem",
+      "is-empty",
+      "is-unchecked"
+    ];
+
+    if (
+      safeCountElement
+    ) {
+
+      safeCountElement.textContent =
+        "Gagal memuat";
     }
 
+    if (
+      problemCountElement
+    ) {
+
+      problemCountElement.textContent =
+        "Gagal memuat";
+    }
+
+    if (
+      safeBarElement
+    ) {
+
+      safeBarElement.style.width =
+        "0%";
+
+      safeBarElement.textContent =
+        "";
+    }
+
+    if (
+      problemBarElement
+    ) {
+
+      problemBarElement.style.width =
+        "0%";
+
+      problemBarElement.textContent =
+        "";
+    }
+
+    if (
+      healthStatusElement
+    ) {
+
+      healthStatusElement.classList.remove(
+        ...statusClasses
+      );
+
+      healthStatusElement.textContent =
+        "🔵 Belum Diperiksa";
+
+      healthStatusElement.classList.add(
+        "is-unchecked"
+      );
+    }
+
+    if (
+      healthDescriptionElement
+    ) {
+
+      healthDescriptionElement.textContent =
+        "Pemeriksaan integritas belum berhasil dilakukan.";
+    }
+
+    if (
+      healthRecommendationElement
+    ) {
+
+      healthRecommendationElement.classList.remove(
+        ...statusClasses
+      );
+
+      healthRecommendationElement.textContent =
+        "Coba periksa kembali integritas koleksi.";
+
+      healthRecommendationElement.classList.add(
+        "is-unchecked"
+      );
+    }
+
+    if (
+      healthActionElement
+    ) {
+
+      healthActionElement.hidden =
+        true;
+    }
+
+  } else {
+
+    updateRingkasanIntegritasAdmin(
+      jumlahAmanTerfilter,
+      jumlahBermasalahTerfilter
+    );
   }
-
-const adaIntegritasBelumDiperiksa =
-  document.querySelector(
-    "#admin-book-list .admin-integrity-unknown"
-  );
-
-if (adaIntegritasBelumDiperiksa) {
-
-  const safeCountElement =
-    document.getElementById(
-      "admin-integrity-safe-count"
-    );
-
-  const problemCountElement =
-    document.getElementById(
-      "admin-integrity-problem-count"
-    );
-
-  const safeBarElement =
-    document.getElementById(
-      "admin-integrity-health-safe"
-    );
-
-  const problemBarElement =
-    document.getElementById(
-      "admin-integrity-health-problem"
-    );
-
-  const healthStatusElement =
-    document.getElementById(
-      "admin-integrity-health-status"
-    );
-
-  if (safeCountElement) {
-    safeCountElement.textContent =
-      "Gagal memuat";
-  }
-
-  if (problemCountElement) {
-    problemCountElement.textContent =
-      "Gagal memuat";
-  }
-
-  if (safeBarElement) {
-    safeBarElement.style.width =
-      "0%";
-
-    safeBarElement.textContent =
-      "";
-  }
-
-  if (problemBarElement) {
-    problemBarElement.style.width =
-      "0%";
-
-    problemBarElement.textContent =
-      "";
-  }
-
-  if (healthStatusElement) {
-
-  healthStatusElement.classList.remove(
-    "is-excellent",
-    "is-good",
-    "is-warning",
-    "is-problem",
-    "is-empty",
-    "is-unchecked"
-  );
-
-  healthStatusElement.textContent =
-    "🔵 Belum Diperiksa";
-
-  healthStatusElement.classList.add(
-    "is-unchecked"
-  );
-
-  const healthDescriptionElement =
-    document.getElementById(
-      "admin-integrity-health-description"
-    );
-
-  const healthRecommendationElement =
-    document.getElementById(
-      "admin-integrity-health-recommendation"
-    );
-
-  if (healthDescriptionElement) {
-    healthDescriptionElement.textContent =
-      "Pemeriksaan integritas belum berhasil dilakukan.";
-  }
-
-if (healthRecommendationElement) {
-
-  healthRecommendationElement.classList.remove(
-    "is-excellent",
-    "is-good",
-    "is-warning",
-    "is-problem",
-    "is-empty",
-    "is-unchecked"
-  );
-
-  healthRecommendationElement.textContent =
-    "Coba periksa kembali integritas koleksi.";
-
-  healthRecommendationElement.classList.add(
-    "is-unchecked"
-  );
-
-}
-
-const healthActionElement =
-  document.getElementById(
-    "admin-integrity-health-action"
-  );
-
-if (healthActionElement) {
-  healthActionElement.hidden = true;
-}
-
-}
-
-} else {
-
-  updateRingkasanIntegritasAdmin(
-    jumlahAmanTerfilter,
-    jumlahBermasalahTerfilter
-  );
-
-}
 
   updateResetFilterBukuAdmin();
 
+  return true;
 }
 
 function hapusPencarianAdmin() {
