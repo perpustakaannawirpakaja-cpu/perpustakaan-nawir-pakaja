@@ -4662,54 +4662,139 @@ function updateKategoriBuku() {
    BOOK RESULT STATUS
    ========================================= */
 
-function updateBookResultStatus(daftarBuku) {
+function updateBookResultStatus(
+  daftarBuku
+) {
+
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
 
   const status =
-    document.getElementById("book-result-status");
+    document.getElementById(
+      "book-result-status"
+    );
 
-  if (!status) return;
+  if (!status) {
+
+    return false;
+  }
+
+  const daftarTampil =
+    Array.isArray(
+      daftarBuku
+    )
+      ? daftarBuku
+      : [];
+
+  const daftarTotal =
+    typeof semuaBuku !==
+      "undefined" &&
+    Array.isArray(
+      semuaBuku
+    )
+      ? semuaBuku
+      : [];
 
   const jumlahTampil =
-    daftarBuku ? daftarBuku.length : 0;
+    daftarTampil.length;
 
   const jumlahTotal =
-    semuaBuku ? semuaBuku.length : 0;
+    daftarTotal.length;
+
+  const searchInput =
+    document.getElementById(
+      "searchInput"
+    );
 
   const keyword =
-    document.getElementById("searchInput")
-      .value
-      .trim();
+    typeof searchInput?.value ===
+      "string"
+      ? searchInput.value.trim()
+      : "";
+
+  const sortSelect =
+    document.getElementById(
+      "book-sort-select"
+    );
+
+  const modeUrutMentah =
+    typeof sortSelect?.value ===
+      "string"
+      ? sortSelect.value.trim()
+      : "";
+
+  const labelUrut = {
+    az: "Judul A–Z",
+    za: "Judul Z–A",
+    newest: "Terbaru",
+    oldest: "Terlama"
+  };
 
   const modeUrut =
-    document.getElementById("book-sort-select")
-      ?.value || "az";
+    Object.prototype.hasOwnProperty.call(
+      labelUrut,
+      modeUrutMentah
+    )
+      ? modeUrutMentah
+      : "az";
 
-const labelUrut = {
-  az: "Judul A–Z",
-  za: "Judul Z–A",
-  newest: "Terbaru",
-  oldest: "Terlama"
-};
+  const hurufAktif =
+    typeof filterHurufAktif ===
+      "string"
+      ? filterHurufAktif.trim()
+      : "";
 
-  let tambahan = "";
+  const kategoriAktif =
+    typeof filterKategoriAktif ===
+      "string"
+      ? filterKategoriAktif.trim()
+      : "";
 
-if (filterHurufAktif) {
-  tambahan +=
-    ` • Filter: ${filterHurufAktif}`;
-}
+  const tambahan =
+    [];
 
-if (keyword) {
-  tambahan +=
-    ` • Pencarian: "${keyword}"`;
-}
+  if (hurufAktif) {
 
-if (filterKategoriAktif) {
-  tambahan +=
-    ` • Kategori: ${filterKategoriAktif}`;
-}
+    tambahan.push(
+      `Filter: ${hurufAktif}`
+    );
+  }
+
+  if (keyword) {
+
+    tambahan.push(
+      `Pencarian: "${keyword}"`
+    );
+  }
+
+  if (kategoriAktif) {
+
+    tambahan.push(
+      `Kategori: ${kategoriAktif}`
+    );
+  }
+
+  const detailTambahan =
+    tambahan.length > 0
+      ? (
+          " • " +
+          tambahan.join(
+            " • "
+          )
+        )
+      : "";
 
   status.textContent =
-  `Menampilkan ${jumlahTampil} dari ${jumlahTotal} buku${tambahan} • Urut: ${labelUrut[modeUrut]}`;
+    `Menampilkan ${jumlahTampil} dari ${jumlahTotal} buku` +
+    detailTambahan +
+    ` • Urut: ${labelUrut[modeUrut]}`;
+
+  return true;
 }
 
 function buatUrlReaderBuku(
