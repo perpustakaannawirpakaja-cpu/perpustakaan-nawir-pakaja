@@ -9076,10 +9076,33 @@ function jagaFokusLoginAdmin(
   return false;
 }
 
-function jagaFokusAdmin(event) {
+function jagaFokusAdmin(
+  event
+) {
 
-  if (event.key !== "Tab") {
-    return;
+  if (
+    !event ||
+    typeof event !==
+      "object"
+  ) {
+
+    return false;
+  }
+
+  if (
+    event.key !==
+      "Tab"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
   }
 
   const adminPanel =
@@ -9089,19 +9112,30 @@ function jagaFokusAdmin(event) {
 
   if (
     !adminPanel ||
-    !adminPanel.classList.contains("show")
+    !adminPanel.classList ||
+    typeof adminPanel.classList.contains !==
+      "function" ||
+    !adminPanel.classList.contains(
+      "show"
+    ) ||
+    typeof adminPanel.querySelectorAll !==
+      "function"
   ) {
-    return;
+
+    return false;
   }
 
   const modalLainTerbuka =
-  document.querySelector(
-    ".modal.show:not(#adminPanel)"
-  );
+    document.querySelector(
+      ".modal.show:not(#adminPanel)"
+    );
 
-if (modalLainTerbuka) {
-  return;
-}
+  if (
+    modalLainTerbuka
+  ) {
+
+    return false;
+  }
 
   const fokusable =
     Array.from(
@@ -9109,12 +9143,31 @@ if (modalLainTerbuka) {
         'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
       )
     ).filter(
-      (element) =>
-        element.getClientRects().length > 0
+      (element) => {
+
+        if (
+          !element ||
+          typeof element.getClientRects !==
+            "function"
+        ) {
+
+          return false;
+        }
+
+        return (
+          element
+            .getClientRects()
+            .length > 0
+        );
+      }
     );
 
-  if (fokusable.length === 0) {
-    return;
+  if (
+    fokusable.length ===
+      0
+  ) {
+
+    return false;
   }
 
   const pertama =
@@ -9125,24 +9178,65 @@ if (modalLainTerbuka) {
       fokusable.length - 1
     ];
 
+  const cegahDefault =
+    () => {
+
+      if (
+        typeof event.preventDefault ===
+          "function"
+      ) {
+
+        event.preventDefault();
+      }
+    };
+
+  const fokusElemen =
+    (element) => {
+
+      if (
+        element &&
+        typeof element.focus ===
+          "function"
+      ) {
+
+        element.focus();
+
+        return true;
+      }
+
+      return false;
+    };
+
+  const fokusAktif =
+    document.activeElement;
+
   if (
     event.shiftKey &&
-    document.activeElement === pertama
+    fokusAktif ===
+      pertama
   ) {
 
-    event.preventDefault();
-    terakhir.focus();
+    cegahDefault();
 
-  } else if (
-    !event.shiftKey &&
-    document.activeElement === terakhir
-  ) {
-
-    event.preventDefault();
-    pertama.focus();
-
+    return fokusElemen(
+      terakhir
+    );
   }
 
+  if (
+    !event.shiftKey &&
+    fokusAktif ===
+      terakhir
+  ) {
+
+    cegahDefault();
+
+    return fokusElemen(
+      pertama
+    );
+  }
+
+  return false;
 }
 
 function jagaFokusUtama(event) {
