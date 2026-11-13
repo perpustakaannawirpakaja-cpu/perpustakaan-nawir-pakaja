@@ -5524,63 +5524,144 @@ function bukaKoleksi(
 
 function cariKoleksi() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof filterKategoriBuku !==
+      "function"
+  ) {
+
+    console.error(
+      "Function filterKategoriBuku tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const searchInput =
+    document.getElementById(
+      "searchInput"
+    );
+
+  if (!searchInput) {
+
+    return false;
+  }
+
+  const nilaiPencarian =
+    typeof searchInput.value ===
+      "string"
+      ? searchInput.value
+      : "";
+
   const keyword =
-    document
-      .getElementById("searchInput")
-      .value
+    nilaiPencarian
       .trim()
       .toLowerCase();
 
-  if (keyword) {
+  try {
 
-  localStorage.setItem(
-    "bookSearch",
-    document
-      .getElementById("searchInput")
-      .value
-  );
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
 
-} else {
+      if (keyword) {
 
-  localStorage.removeItem(
-    "bookSearch"
-  );
+        localStorage.setItem(
+          "bookSearch",
+          nilaiPencarian
+        );
 
-}
-  
+      } else {
+
+        localStorage.removeItem(
+          "bookSearch"
+        );
+      }
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi pencarian buku tidak dapat diperbarui:",
+      storageError
+    );
+  }
+
   const clearButton =
-    document.getElementById("clear-search");
-
-if (clearButton) {
-  clearButton.style.display =
-    keyword ? "flex" : "none";
-}
-
-  /* Saat mengetik Search,
-     filter huruf A-Z dibatalkan */
-  filterHurufAktif = "";
-
-localStorage.removeItem(
-  "bookLetterFilter"
-);
-
-  /* Hapus highlight A-Z saat Smart Search digunakan */
-document
-  .querySelectorAll(".letter")
-  .forEach((card) => {
-
-    card.classList.remove(
-      "active-letter"
+    document.getElementById(
+      "clear-search"
     );
 
-    card.setAttribute(
-      "aria-pressed",
-      "false"
+  if (clearButton) {
+
+    clearButton.style.display =
+      keyword
+        ? "flex"
+        : "none";
+  }
+
+  if (
+    typeof filterHurufAktif !==
+      "undefined"
+  ) {
+
+    filterHurufAktif =
+      "";
+  }
+
+  try {
+
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
+
+      localStorage.removeItem(
+        "bookLetterFilter"
+      );
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Filter huruf tersimpan tidak dapat dihapus:",
+      storageError
+    );
+  }
+
+  document
+    .querySelectorAll(
+      ".letter[data-letter]"
+    )
+    .forEach(
+      (card) => {
+
+        card.classList.remove(
+          "active-letter"
+        );
+
+        card.setAttribute(
+          "aria-pressed",
+          "false"
+        );
+      }
     );
 
-    });
+  filterKategoriBuku();
 
-filterKategoriBuku();
+  return true;
 }
 
 function hapusPencarian() {
