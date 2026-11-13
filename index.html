@@ -6613,105 +6613,303 @@ function updateActiveFilterChips() {
 
 function filterKategoriBuku() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof updateJumlahBukuPerHuruf !==
+      "function" ||
+    typeof tampilkanDaftarBuku !==
+      "function" ||
+    typeof updateResetFilterButton !==
+      "function"
+  ) {
+
+    console.error(
+      "Function pendukung filter buku tidak tersedia."
+    );
+
+    return false;
+  }
+
   const select =
     document.getElementById(
       "book-category-select"
     );
 
-  filterKategoriAktif =
-    select ? select.value : "";
+  const kategoriDipilih =
+    typeof select?.value ===
+      "string"
+      ? select.value.trim()
+      : "";
 
-  localStorage.setItem(
-  "bookCategoryFilter",
-  filterKategoriAktif
-);
+  if (
+    typeof filterKategoriAktif !==
+      "undefined"
+  ) {
+
+    filterKategoriAktif =
+      kategoriDipilih;
+  }
+
+  try {
+
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
+
+      if (
+        kategoriDipilih
+      ) {
+
+        localStorage.setItem(
+          "bookCategoryFilter",
+          kategoriDipilih
+        );
+
+      } else {
+
+        localStorage.removeItem(
+          "bookCategoryFilter"
+        );
+      }
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi kategori buku tidak dapat diperbarui:",
+      storageError
+    );
+  }
 
   updateJumlahBukuPerHuruf();
 
-  if (filterHurufAktif) {
+  let hurufAktif =
+    typeof filterHurufAktif ===
+      "string"
+      ? filterHurufAktif
+          .trim()
+          .toUpperCase()
+      : "";
 
-  const cardAktif =
-    document.querySelector(
-      `.letter[data-letter="${filterHurufAktif}"]`
+  if (hurufAktif) {
+
+    const letterCards =
+      Array.from(
+        document.querySelectorAll(
+          ".letter[data-letter]"
+        )
+      );
+
+    const cardAktif =
+      letterCards.find(
+        (card) =>
+          typeof card.dataset
+            ?.letter ===
+            "string" &&
+          card.dataset
+            .letter
+            .trim()
+            .toUpperCase() ===
+            hurufAktif
+      ) ||
+      null;
+
+    if (
+      !cardAktif ||
+      cardAktif.classList.contains(
+        "empty"
+      )
+    ) {
+
+      if (cardAktif) {
+
+        cardAktif.classList.remove(
+          "active-letter"
+        );
+
+        cardAktif.setAttribute(
+          "aria-pressed",
+          "false"
+        );
+      }
+
+      hurufAktif =
+        "";
+
+      if (
+        typeof filterHurufAktif !==
+          "undefined"
+      ) {
+
+        filterHurufAktif =
+          "";
+      }
+
+      try {
+
+        if (
+          typeof localStorage !==
+            "undefined"
+        ) {
+
+          localStorage.removeItem(
+            "bookLetterFilter"
+          );
+        }
+
+      } catch (
+        storageError
+      ) {
+
+        console.warn(
+          "Filter huruf tersimpan tidak dapat dihapus:",
+          storageError
+        );
+      }
+    }
+  }
+
+  const searchInput =
+    document.getElementById(
+      "searchInput"
     );
-
-if (
-  cardAktif &&
-  cardAktif.classList.contains("empty")
-) {
-
-  cardAktif.classList.remove(
-    "active-letter"
-  );
-
-  cardAktif.setAttribute(
-    "aria-pressed",
-    "false"
-  );
-
-  filterHurufAktif = "";
-
-}
-}
 
   const keyword =
-    document
-      .getElementById("searchInput")
-      .value
-      .trim()
-      .toLowerCase();
+    typeof searchInput?.value ===
+      "string"
+      ? searchInput.value
+          .trim()
+          .toLowerCase()
+      : "";
 
-  let daftar = [...semuaBuku];
+  const daftarAwal =
+    typeof semuaBuku !==
+      "undefined" &&
+    Array.isArray(
+      semuaBuku
+    )
+      ? semuaBuku.filter(
+          (buku) =>
+            buku &&
+            typeof buku ===
+              "object"
+        )
+      : [];
 
-  /* Pertahankan filter A-Z jika aktif */
-  if (filterHurufAktif) {
+  let daftar =
+    [
+      ...daftarAwal
+    ];
 
-    daftar = daftar.filter((buku) =>
-      (buku.title || "")
-        .trim()
-        .toUpperCase()
-        .startsWith(filterHurufAktif)
-    );
+  if (hurufAktif) {
+
+    daftar =
+      daftar.filter(
+        (buku) => {
+
+          const judul =
+            typeof buku.title ===
+              "string"
+              ? buku.title
+                  .trim()
+                  .toUpperCase()
+              : "";
+
+          return (
+            judul &&
+            judul.startsWith(
+              hurufAktif
+            )
+          );
+        }
+      );
   }
 
-  /* Pertahankan Smart Search jika aktif */
   if (keyword) {
 
-    daftar = daftar.filter((buku) => {
+    daftar =
+      daftar.filter(
+        (buku) => {
 
-      const judul =
-        (buku.title || "").toLowerCase();
+          const judul =
+            typeof buku.title ===
+              "string"
+              ? buku.title.toLowerCase()
+              : "";
 
-      const penulis =
-        (buku.author || "").toLowerCase();
+          const penulis =
+            typeof buku.author ===
+              "string"
+              ? buku.author.toLowerCase()
+              : "";
 
-      const kategori =
-        (buku.category || "").toLowerCase();
+          const kategori =
+            typeof buku.category ===
+              "string"
+              ? buku.category.toLowerCase()
+              : "";
 
-      const deskripsi =
-        (buku.description || "").toLowerCase();
+          const deskripsi =
+            typeof buku.description ===
+              "string"
+              ? buku.description.toLowerCase()
+              : "";
 
-      return (
-        judul.includes(keyword) ||
-        penulis.includes(keyword) ||
-        kategori.includes(keyword) ||
-        deskripsi.includes(keyword)
+          return (
+            judul.includes(
+              keyword
+            ) ||
+            penulis.includes(
+              keyword
+            ) ||
+            kategori.includes(
+              keyword
+            ) ||
+            deskripsi.includes(
+              keyword
+            )
+          );
+        }
       );
-    });
   }
 
-  /* Terapkan kategori */
-  if (filterKategoriAktif) {
+  if (kategoriDipilih) {
 
-    daftar = daftar.filter((buku) =>
-      (buku.category || "").trim() ===
-      filterKategoriAktif
-    );
+    daftar =
+      daftar.filter(
+        (buku) => {
+
+          const kategori =
+            typeof buku.category ===
+              "string"
+              ? buku.category.trim()
+              : "";
+
+          return (
+            kategori ===
+            kategoriDipilih
+          );
+        }
+      );
   }
 
-  tampilkanDaftarBuku(daftar);
+  tampilkanDaftarBuku(
+    daftar
+  );
 
   updateResetFilterButton();
+
+  return true;
 }
 
   function urutkanKoleksi() {
