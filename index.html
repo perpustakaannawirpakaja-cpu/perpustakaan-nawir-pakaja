@@ -9594,22 +9594,89 @@ function jagaFokusEditBuku(
 
 function filterKategoriBukuAdmin() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof cariBukuAdmin !==
+      "function"
+  ) {
+
+    console.error(
+      "Function cariBukuAdmin tidak tersedia."
+    );
+
+    return false;
+  }
+
   const select =
     document.getElementById(
       "admin-book-category"
     );
 
   if (!select) {
-    return;
+
+    return false;
   }
 
-  localStorage.setItem(
-    "adminBookCategory",
-    select.value
+  const kategori =
+    typeof select.value ===
+      "string"
+      ? select.value.trim()
+      : "";
+
+  if (
+    typeof select.value ===
+      "string" &&
+    select.value !==
+      kategori
+  ) {
+
+    select.value =
+      kategori;
+  }
+
+  try {
+
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
+
+      if (kategori) {
+
+        localStorage.setItem(
+          "adminBookCategory",
+          kategori
+        );
+
+      } else {
+
+        localStorage.removeItem(
+          "adminBookCategory"
+        );
+      }
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi kategori Admin tidak dapat diperbarui:",
+      storageError
+    );
+  }
+
+  return (
+    cariBukuAdmin() !==
+    false
   );
-
-  cariBukuAdmin();
-
 }
 
 function filterIntegritasBukuAdmin() {
