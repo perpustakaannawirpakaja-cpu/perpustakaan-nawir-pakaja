@@ -18077,11 +18077,69 @@ let modePindahHalamanAktif = false;
 
 async function bukaSisipkanHalaman() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    console.error(
+      "Supabase client tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof aksiUploadHalamanTerakhir ===
+      "undefined" ||
+    typeof modeSisipHalamanAktif ===
+      "undefined" ||
+    typeof nomorHalamanPengganti ===
+      "undefined" ||
+    typeof modePindahHalamanAktif ===
+      "undefined" ||
+    typeof halamanAsalPindah ===
+      "undefined"
+  ) {
+
+    console.error(
+      "State Sisip Halaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof updateTombolUploadHalaman !==
+      "function"
+  ) {
+
+    console.error(
+      "Function updateTombolUploadHalaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const hiddenId =
+    document.getElementById(
+      "book-pages-book-id"
+    );
+
   const bookId =
     Number(
-      document.getElementById(
-        "book-pages-book-id"
-      )?.value
+      hiddenId?.value
     );
 
   const pageNumberInput =
@@ -18099,94 +18157,233 @@ async function bukaSisipkanHalaman() {
       "book-pages-message"
     );
 
-  if (!bookId) {
-    return;
+  if (
+    !Number.isInteger(
+      bookId
+    ) ||
+    bookId < 1
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ ID buku tidak valid.";
+    }
+
+    return false;
   }
 
-  if (aksiUploadHalamanTerakhir) {
+  if (
+    aksiUploadHalamanTerakhir
+  ) {
 
-    alert(
-      "Masih ada perubahan halaman yang dapat dibatalkan.\n\n" +
-      "Selesaikan atau batalkan perubahan tersebut terlebih dahulu."
+    if (
+      typeof alert ===
+        "function"
+    ) {
+
+      alert(
+        "Masih ada perubahan halaman yang dapat dibatalkan.\n\n" +
+        "Selesaikan atau batalkan perubahan tersebut terlebih dahulu."
+      );
+    }
+
+    return false;
+  }
+
+  let book =
+    null;
+
+  try {
+
+    const {
+      data,
+      error
+    } = await db
+      .from(
+        "books"
+      )
+      .select(`
+        total_pages,
+        upload_mode
+      `)
+      .eq(
+        "id",
+        bookId
+      )
+      .single();
+
+    if (
+      error
+    ) {
+
+      throw error;
+    }
+
+    book =
+      data;
+
+  } catch (
+    bookError
+  ) {
+
+    console.error(
+      "Gagal membaca data buku untuk Sisip Halaman:",
+      bookError
     );
 
-    return;
-  }
+    if (
+      message
+    ) {
 
-  const {
-    data: book,
-    error
-  } = await db
-    .from("books")
-    .select(`
-      total_pages,
-      upload_mode
-    `)
-    .eq("id", bookId)
-    .single();
-
-  if (error || !book) {
-
-    if (message) {
       message.textContent =
         "❌ Data buku tidak dapat dibaca.";
     }
 
-    return;
+    return false;
+  }
+
+  if (
+    !book
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ Data buku tidak ditemukan.";
+    }
+
+    return false;
   }
 
   if (
     book.upload_mode !==
-    "incremental"
+      "incremental"
   ) {
 
-    if (message) {
+    if (
+      message
+    ) {
+
       message.textContent =
         "❌ Sisipkan halaman hanya tersedia untuk buku mode bertahap.";
     }
 
-    return;
+    return false;
   }
 
-  modeSisipHalamanAktif = true;
-  nomorHalamanPengganti = null;
+  const totalHalaman =
+    Number(
+      book.total_pages
+    );
 
-  modePindahHalamanAktif = false;
-  halamanAsalPindah = null;
+  if (
+    !Number.isInteger(
+      totalHalaman
+    ) ||
+    totalHalaman < 0
+  ) {
 
-  if (pageNumberInput) {
-  pageNumberInput.dataset.mode =
-    "insert";
-}
+    if (
+      message
+    ) {
 
-  if (pageNumberInput) {
+      message.textContent =
+        "❌ Total halaman buku tidak valid.";
+    }
 
-    pageNumberInput.value = "";
+    return false;
+  }
 
-    pageNumberInput.min = 1;
+  const posisiMaksimal =
+    totalHalaman +
+    1;
+
+  modeSisipHalamanAktif =
+    true;
+
+  nomorHalamanPengganti =
+    null;
+
+  modePindahHalamanAktif =
+    false;
+
+  halamanAsalPindah =
+    null;
+
+  if (
+    pageNumberInput
+  ) {
+
+    if (
+      pageNumberInput.dataset
+    ) {
+
+      pageNumberInput.dataset.mode =
+        "insert";
+    }
+
+    pageNumberInput.value =
+      "";
+
+    pageNumberInput.min =
+      "1";
 
     pageNumberInput.max =
-      Number(book.total_pages) + 1;
+      String(
+        posisiMaksimal
+      );
 
     pageNumberInput.placeholder =
-      `1 - ${Number(book.total_pages) + 1}`;
+      `1 - ${posisiMaksimal}`;
   }
 
-  if (pageFileInput) {
-    pageFileInput.value = "";
+  if (
+    pageFileInput
+  ) {
+
+    pageFileInput.value =
+      "";
   }
 
-  if (message) {
+  if (
+    message
+  ) {
 
-  message.textContent =
-    `➕ Mode Sisipkan Halaman aktif. ` +
-    `Pilih posisi 1 sampai ${Number(book.total_pages) + 1}, ` +
-    `lalu pilih PDF satu halaman.`;
-}
+    message.textContent =
+      "➕ Mode Sisipkan Halaman aktif. " +
+      `Pilih posisi 1 sampai ${posisiMaksimal}, ` +
+      "lalu pilih PDF satu halaman.";
+  }
 
-updateTombolUploadHalaman();
+  try {
 
-pageNumberInput?.focus();
+    updateTombolUploadHalaman();
+
+  } catch (
+    buttonError
+  ) {
+
+    console.warn(
+      "Mode Sisip Halaman aktif tetapi tombol upload gagal diperbarui:",
+      buttonError
+    );
+  }
+
+  if (
+    pageNumberInput &&
+    typeof pageNumberInput.focus ===
+      "function"
+  ) {
+
+    pageNumberInput.focus();
+  }
+
+  return true;
 }
 
 async function pilihPindahHalaman(pageNumber) {
