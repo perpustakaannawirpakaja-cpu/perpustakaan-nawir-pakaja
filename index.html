@@ -24641,23 +24641,56 @@ function getIngestionStatusInfo(
 
 function scrollKelolaHalamanKeAtas() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
   const modalBox =
     document.querySelector(
       "#bookPagesModal .modal-box"
     );
 
   if (!modalBox) {
+
     return false;
   }
 
-  requestAnimationFrame(() => {
+  const lakukanScroll =
+    () => {
 
-    modalBox.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
+      if (
+        typeof modalBox.scrollTo ===
+          "function"
+      ) {
 
-  });
+        modalBox.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
+
+        return;
+      }
+
+      modalBox.scrollTop = 0;
+    };
+
+  if (
+    typeof requestAnimationFrame ===
+      "function"
+  ) {
+
+    requestAnimationFrame(
+      lakukanScroll
+    );
+
+  } else {
+
+    lakukanScroll();
+  }
 
   return true;
 }
