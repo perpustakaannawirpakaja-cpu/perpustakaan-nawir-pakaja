@@ -27413,151 +27413,490 @@ async function tampilkanRekomendasiBuku(
 }
     
 async function tampilkanBuku() {
-  const { data, error } = await db
-    .from("books")
-    .select("*")
-    .eq(
-      "upload_status",
-      "complete"
-    )
-    .order("title", { ascending: true });
 
-  const bookList = document.getElementById("bookList");
+  if (
+    typeof document ===
+      "undefined"
+  ) {
 
-  if (error) {
-    console.error("Gagal mengambil buku:", error);
-    bookList.innerHTML = "<p>Gagal memuat koleksi buku.</p>";
-    return;
+    return false;
   }
 
-  if (!data || data.length === 0) {
-  bookList.innerHTML = "<p>Belum ada buku.</p>";
-  return;
-}
-
-/* Simpan seluruh data buku untuk Smart Search */
-semuaBuku = data;
-
-/* Update jumlah buku pada kartu A-Z */
-updateJumlahBukuPerHuruf();
-
-/* Update pilihan kategori */
-updateKategoriBuku();
-
-const savedBookSearch =
-  localStorage.getItem(
-    "bookSearch"
-  ) || "";
-
-const savedBookSearchInput =
-  document.getElementById(
-    "searchInput"
-  );
-
-if (savedBookSearchInput) {
-
-  savedBookSearchInput.value =
-    savedBookSearch;
-
-  const savedBookSearchClear =
+  const bookList =
     document.getElementById(
-      "clear-search"
+      "bookList"
     );
 
-  if (savedBookSearchClear) {
+  if (!bookList) {
 
-    savedBookSearchClear.style.display =
-      savedBookSearch
-        ? "flex"
-        : "none";
+    console.error(
+      "Elemen daftar buku tidak tersedia."
+    );
 
+    return false;
   }
 
-}
+  if (
+    typeof updateJumlahBukuPerHuruf !==
+      "function" ||
+    typeof updateKategoriBuku !==
+      "function" ||
+    typeof filterKategoriBuku !==
+      "function"
+  ) {
 
-const savedBookCategory =
-  localStorage.getItem(
-    "bookCategoryFilter"
-  );
+    console.error(
+      "Function pendukung koleksi buku belum lengkap."
+    );
 
-const savedBookCategorySelect =
-  document.getElementById(
-    "book-category-select"
-  );
+    return false;
+  }
 
-if (
-  savedBookCategorySelect &&
-  savedBookCategory
-) {
-  savedBookCategorySelect.value =
-    savedBookCategory;
+  let data = [];
 
-  filterKategoriAktif =
-    savedBookCategorySelect.value;
-}
+  try {
 
-const savedBookLetter =
-  localStorage.getItem(
-    "bookLetterFilter"
-  );
+    const {
+      data: hasilBuku,
+      error
+    } =
+      await db
+        .from(
+          "books"
+        )
+        .select(
+          "*"
+        )
+        .eq(
+          "upload_status",
+          "complete"
+        )
+        .order(
+          "title",
+          {
+            ascending:
+              true
+          }
+        );
 
-if (savedBookLetter) {
-  filterHurufAktif =
-    savedBookLetter;
+    if (error) {
 
-  const savedLetterCard =
-    document.querySelector(
-      `.letter[data-letter="${savedBookLetter}"]`
+      console.error(
+        "Gagal mengambil buku:",
+        error
+      );
+
+      bookList.replaceChildren();
+
+      const pesanError =
+        document.createElement(
+          "p"
+        );
+
+      pesanError.textContent =
+        "Gagal memuat koleksi buku.";
+
+      bookList.appendChild(
+        pesanError
+      );
+
+      return false;
+    }
+
+    data =
+      Array.isArray(
+        hasilBuku
+      )
+        ? hasilBuku.filter(
+            (buku) =>
+              buku &&
+              typeof buku ===
+                "object"
+          )
+        : [];
+
+  } catch (
+    queryError
+  ) {
+
+    console.error(
+      "Gagal mengambil buku:",
+      queryError
+    );
+
+    bookList.replaceChildren();
+
+    const pesanError =
+      document.createElement(
+        "p"
+      );
+
+    pesanError.textContent =
+      "Gagal memuat koleksi buku.";
+
+    bookList.appendChild(
+      pesanError
+    );
+
+    return false;
+  }
+
+  semuaBuku =
+    data;
+
+  try {
+
+    updateJumlahBukuPerHuruf();
+
+  } catch (
+    jumlahHurufError
+  ) {
+
+    console.error(
+      "Gagal memperbarui jumlah buku per huruf:",
+      jumlahHurufError
+    );
+  }
+
+  try {
+
+    updateKategoriBuku();
+
+  } catch (
+    kategoriError
+  ) {
+
+    console.error(
+      "Gagal memperbarui kategori buku:",
+      kategoriError
+    );
+  }
+
+  if (
+    data.length < 1
+  ) {
+
+    bookList.replaceChildren();
+
+    const pesanKosong =
+      document.createElement(
+        "p"
+      );
+
+    pesanKosong.textContent =
+      "Belum ada buku.";
+
+    bookList.appendChild(
+      pesanKosong
+    );
+
+    const continueSection =
+      document.getElementById(
+        "continue-reading-section"
+      );
+
+    const continueList =
+      document.getElementById(
+        "continue-reading-list"
+      );
+
+    if (continueList) {
+
+      continueList.replaceChildren();
+    }
+
+    if (continueSection) {
+
+      continueSection.style.display =
+        "none";
+    }
+
+    const recommendationSection =
+      document.getElementById(
+        "book-recommendation-section"
+      );
+
+    const recommendationList =
+      document.getElementById(
+        "book-recommendation-list"
+      );
+
+    if (recommendationList) {
+
+      recommendationList.replaceChildren();
+    }
+
+    if (recommendationSection) {
+
+      recommendationSection.style.display =
+        "none";
+    }
+
+    return true;
+  }
+
+  let savedBookSearch =
+    "";
+
+  let savedBookCategory =
+    "";
+
+  let savedBookLetter =
+    "";
+
+  try {
+
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
+
+      const searchTersimpan =
+        localStorage.getItem(
+          "bookSearch"
+        );
+
+      const categoryTersimpan =
+        localStorage.getItem(
+          "bookCategoryFilter"
+        );
+
+      const letterTersimpan =
+        localStorage.getItem(
+          "bookLetterFilter"
+        );
+
+      savedBookSearch =
+        typeof searchTersimpan ===
+          "string"
+          ? searchTersimpan
+          : "";
+
+      savedBookCategory =
+        typeof categoryTersimpan ===
+          "string"
+          ? categoryTersimpan.trim()
+          : "";
+
+      savedBookLetter =
+        typeof letterTersimpan ===
+          "string"
+          ? letterTersimpan.trim()
+          : "";
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi koleksi buku tidak dapat dibaca:",
+      storageError
+    );
+  }
+
+  const savedBookSearchInput =
+    document.getElementById(
+      "searchInput"
     );
 
   if (
-  savedLetterCard &&
-  !savedLetterCard.classList.contains("empty")
-) {
+    savedBookSearchInput
+  ) {
 
-  savedLetterCard.classList.add(
-    "active-letter"
-  );
+    savedBookSearchInput.value =
+      savedBookSearch;
 
-  savedLetterCard.setAttribute(
-    "aria-pressed",
-    "true"
-  );
+    const savedBookSearchClear =
+      document.getElementById(
+        "clear-search"
+      );
 
-}
-}
+    if (
+      savedBookSearchClear
+    ) {
 
-/* Tampilkan koleksi utama lebih dulu */
-filterKategoriBuku();
+      savedBookSearchClear.style.display =
+        savedBookSearch
+          ? "flex"
+          : "none";
+    }
+  }
 
-/* Muat Continue Reading dan Rekomendasi
-   tanpa menahan render koleksi utama */
-Promise.allSettled([
-  tampilkanLanjutMembaca(
-    semuaBuku
-  ),
+  const savedBookCategorySelect =
+    document.getElementById(
+      "book-category-select"
+    );
 
-  tampilkanRekomendasiBuku(
-    semuaBuku
-  )
-]).then((hasil) => {
+  if (
+    savedBookCategorySelect &&
+    savedBookCategory
+  ) {
 
-  hasil.forEach(
-    (item) => {
+    const kategoriTersedia =
+      Array.from(
+        savedBookCategorySelect.options ||
+        []
+      )
+        .some(
+          (option) =>
+            option.value ===
+              savedBookCategory
+        );
+
+    if (
+      kategoriTersedia
+    ) {
+
+      savedBookCategorySelect.value =
+        savedBookCategory;
 
       if (
-        item.status ===
-        "rejected"
+        typeof filterKategoriAktif !==
+          "undefined"
       ) {
 
-        console.error(
-          "Gagal memuat fitur tambahan:",
-          item.reason
-        );
+        filterKategoriAktif =
+          savedBookCategorySelect.value;
       }
     }
-  );
-});
+  }
+
+  if (
+    savedBookLetter
+  ) {
+
+    const letterCards =
+      Array.from(
+        document.querySelectorAll(
+          ".letter[data-letter]"
+        )
+      );
+
+    const savedLetterCard =
+      letterCards.find(
+        (card) =>
+          card.dataset
+            ?.letter ===
+          savedBookLetter
+      ) ||
+      null;
+
+    if (
+      savedLetterCard &&
+      !savedLetterCard
+        .classList
+        .contains(
+          "empty"
+        )
+    ) {
+
+      if (
+        typeof filterHurufAktif !==
+          "undefined"
+      ) {
+
+        filterHurufAktif =
+          savedBookLetter;
+      }
+
+      savedLetterCard
+        .classList
+        .add(
+          "active-letter"
+        );
+
+      savedLetterCard
+        .setAttribute(
+          "aria-pressed",
+          "true"
+        );
+    }
+  }
+
+  try {
+
+    filterKategoriBuku();
+
+  } catch (
+    filterError
+  ) {
+
+    console.error(
+      "Gagal menampilkan koleksi utama:",
+      filterError
+    );
+
+    return false;
+  }
+
+  const tugasTambahan =
+    [];
+
+  if (
+    typeof tampilkanLanjutMembaca ===
+      "function"
+  ) {
+
+    tugasTambahan.push(
+      tampilkanLanjutMembaca(
+        semuaBuku
+      )
+    );
+  }
+
+  if (
+    typeof tampilkanRekomendasiBuku ===
+      "function"
+  ) {
+
+    tugasTambahan.push(
+      tampilkanRekomendasiBuku(
+        semuaBuku
+      )
+    );
+  }
+
+  if (
+    tugasTambahan.length > 0
+  ) {
+
+    Promise
+      .allSettled(
+        tugasTambahan
+      )
+      .then(
+        (hasil) => {
+
+          hasil.forEach(
+            (item) => {
+
+              if (
+                item.status ===
+                  "rejected"
+              ) {
+
+                console.error(
+                  "Gagal memuat fitur tambahan:",
+                  item.reason
+                );
+              }
+            }
+          );
+        }
+      )
+      .catch(
+        (fiturTambahanError) => {
+
+          console.error(
+            "Gagal menjalankan fitur tambahan:",
+            fiturTambahanError
+          );
+        }
+      );
+  }
+
+  return true;
 }
 
     const savedBookSortMode =
