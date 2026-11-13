@@ -4342,67 +4342,153 @@ card.setAttribute(
 
 function updateJumlahBukuPerHuruf() {
 
-  const cards =
-    document.querySelectorAll(".letter");
+  if (
+    typeof document ===
+      "undefined"
+  ) {
 
-    cards.forEach((card) => {
-
-  const huruf =
-    card.dataset.letter;
-
-  const sumberBuku =
-    filterKategoriAktif
-      ? semuaBuku.filter((buku) =>
-        (buku.category || "").trim() ===
-        filterKategoriAktif
-      )
-    : semuaBuku;
-
-  const jumlah =
-    sumberBuku.filter((buku) => {
-
-  const judul =
-    (buku.title || "")
-      .trim()
-      .toUpperCase();
-
-      return judul.startsWith(huruf);
-    }).length;
-
-  const countElement =
-    card.querySelector(".letter-count");
-
-  if (countElement) {
-    countElement.textContent =
-      `${jumlah} buku`;
+    return false;
   }
 
-  card.setAttribute(
-  "aria-label",
-  `Huruf ${huruf}, ${jumlah} buku`
-);
+  const cards =
+    document.querySelectorAll(
+      ".letter"
+    );
 
-    /* Tandai huruf yang tidak memiliki buku */
-card.classList.toggle(
-  "empty",
-  jumlah === 0
-);
+  const daftarBuku =
+    typeof semuaBuku !==
+      "undefined" &&
+    Array.isArray(
+      semuaBuku
+    )
+      ? semuaBuku.filter(
+          (buku) =>
+            buku &&
+            typeof buku ===
+              "object"
+        )
+      : [];
 
-card.setAttribute(
-  "aria-disabled",
-  jumlah === 0
-    ? "true"
-    : "false"
-);
+  const kategoriAktif =
+    typeof filterKategoriAktif ===
+      "string"
+      ? filterKategoriAktif.trim()
+      : "";
 
-card.setAttribute(
-  "tabindex",
-  jumlah === 0
-    ? "-1"
-    : "0"
-);
+  cards.forEach(
+    (card) => {
 
-  });
+      const huruf =
+        typeof card.dataset
+          ?.letter ===
+          "string"
+          ? card.dataset
+              .letter
+              .trim()
+              .toUpperCase()
+          : "";
+
+      let jumlah =
+        0;
+
+      if (huruf) {
+
+        const sumberBuku =
+          kategoriAktif
+            ? daftarBuku.filter(
+                (buku) => {
+
+                  const kategori =
+                    typeof buku.category ===
+                      "string"
+                      ? buku.category.trim()
+                      : "";
+
+                  return (
+                    kategori ===
+                    kategoriAktif
+                  );
+                }
+              )
+            : daftarBuku;
+
+        jumlah =
+          sumberBuku.filter(
+            (buku) => {
+
+              const judul =
+                typeof buku.title ===
+                  "string"
+                  ? buku.title
+                      .trim()
+                      .toUpperCase()
+                  : "";
+
+              return (
+                judul &&
+                judul.startsWith(
+                  huruf
+                )
+              );
+            }
+          ).length;
+      }
+
+      const countElement =
+        card.querySelector(
+          ".letter-count"
+        );
+
+      if (countElement) {
+
+        countElement.textContent =
+          `${jumlah} buku`;
+      }
+
+      card.setAttribute(
+        "aria-label",
+        huruf
+          ? `Huruf ${huruf}, ${jumlah} buku`
+          : `${jumlah} buku`
+      );
+
+      const kosong =
+        jumlah === 0;
+
+      card.classList.toggle(
+        "empty",
+        kosong
+      );
+
+      card.setAttribute(
+        "aria-disabled",
+        kosong
+          ? "true"
+          : "false"
+      );
+
+      card.setAttribute(
+        "tabindex",
+        kosong
+          ? "-1"
+          : "0"
+      );
+
+      if (kosong) {
+
+        card.classList.remove(
+          "active-letter"
+        );
+
+        card.setAttribute(
+          "aria-pressed",
+          "false"
+        );
+      }
+    }
+  );
+
+  return true;
 }
 
 /* =========================================
