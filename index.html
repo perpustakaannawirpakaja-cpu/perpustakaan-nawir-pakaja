@@ -7355,29 +7355,62 @@ async function bukaAdmin() {
   return true;
 }
 
-function tutupAdmin(){
+function tutupAdmin() {
 
-  document
-    .getElementById("adminModal")
-    .classList
-    .remove("show");
+  if (
+    typeof document ===
+      "undefined"
+  ) {
 
-  document
-    .querySelector("header")
-    ?.removeAttribute("inert");
+    return false;
+  }
 
-  document
-    .querySelector("main")
-    ?.removeAttribute("inert");
+  const adminModal =
+    document.getElementById(
+      "adminModal"
+    );
 
-  document
-    .querySelector("footer")
-    ?.removeAttribute("inert");
+  if (!adminModal) {
 
-  document
-    .getElementById("admin-open-btn")
-    ?.focus();
+    return false;
+  }
 
+  adminModal.classList.remove(
+    "show"
+  );
+
+  [
+    "header",
+    "main",
+    "footer"
+  ].forEach(
+    (selector) => {
+
+      document
+        .querySelector(
+          selector
+        )
+        ?.removeAttribute(
+          "inert"
+        );
+    }
+  );
+
+  const adminOpenButton =
+    document.getElementById(
+      "admin-open-btn"
+    );
+
+  if (
+    adminOpenButton &&
+    typeof adminOpenButton.focus ===
+      "function"
+  ) {
+
+    adminOpenButton.focus();
+  }
+
+  return true;
 }
 
 async function bukaAdminPanel() {
