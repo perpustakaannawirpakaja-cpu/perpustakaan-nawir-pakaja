@@ -7415,34 +7415,125 @@ function tutupAdmin() {
 
 async function bukaAdminPanel() {
 
-  resetPosisiModalDraggable(
-    "adminPanel"
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    !db.auth ||
+    typeof db.auth.getUser !==
+      "function" ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    console.error(
+      "Supabase client tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof resetPosisiModalDraggable ===
+      "function"
+  ) {
+
+    resetPosisiModalDraggable(
+      "adminPanel"
+    );
+  }
+
+  const adminPanel =
+    document.getElementById(
+      "adminPanel"
+    );
+
+  if (!adminPanel) {
+
+    console.error(
+      "Admin Panel tidak tersedia."
+    );
+
+    return false;
+  }
+
+  adminPanel.classList.add(
+    "show"
   );
 
-  document
-    .getElementById("adminPanel")
-    .classList
-    .add("show");
+  [
+    "header",
+    "main",
+    "footer"
+  ].forEach(
+    (selector) => {
 
-  document
-    .querySelector("header")
-    ?.setAttribute("inert", "");
+      document
+        .querySelector(
+          selector
+        )
+        ?.setAttribute(
+          "inert",
+          ""
+        );
+    }
+  );
 
-  document
-    .querySelector("main")
-    ?.setAttribute("inert", "");
+  const adminSearch =
+    document.getElementById(
+      "admin-book-search"
+    );
 
-  document
-    .querySelector("footer")
-    ?.setAttribute("inert", "");
+  if (
+    adminSearch &&
+    typeof adminSearch.focus ===
+      "function"
+  ) {
 
-  document
-    .getElementById("admin-book-search")
-    ?.focus();
+    adminSearch.focus();
+  }
 
-  const {
-    data: { user }
-  } = await db.auth.getUser();
+  let user =
+    null;
+
+  try {
+
+    const authResult =
+      await db.auth.getUser();
+
+    if (
+      authResult?.error
+    ) {
+
+      console.error(
+        "Gagal membaca sesi Admin:",
+        authResult.error
+      );
+
+    } else {
+
+      user =
+        authResult?.data?.user ||
+        null;
+    }
+
+  } catch (
+    authException
+  ) {
+
+    console.error(
+      "Gagal membaca sesi Admin:",
+      authException
+    );
+  }
 
   const adminEmail =
     document.getElementById(
@@ -7450,48 +7541,124 @@ async function bukaAdminPanel() {
     );
 
   if (adminEmail) {
+
+    const email =
+      typeof user?.email ===
+        "string" &&
+      user.email.trim()
+        ? user.email.trim()
+        : "-";
+
     adminEmail.textContent =
-      user?.email || "-";
-}
+      email;
+  }
 
   const adminTotalBooks =
     document.getElementById(
       "admin-total-books"
     );
 
-  const {
-    count: totalBooks,
-    error: countError
-  } = await db
-    .from("books")
-    .select("*", {
-      count: "exact",
-      head: true
-    });
+  try {
 
-  if (adminTotalBooks) {
+    const {
+      count: totalBooks,
+      error: countError
+    } = await db
+      .from(
+        "books"
+      )
+      .select(
+        "*",
+        {
+          count: "exact",
+          head: true
+        }
+      );
 
-    if (countError) {
+    if (
+      countError
+    ) {
 
-      adminTotalBooks.textContent =
-        "Gagal memuat";
+      if (
+        adminTotalBooks
+      ) {
+
+        adminTotalBooks.textContent =
+          "Gagal memuat";
+      }
 
       console.error(
         "Gagal menghitung koleksi:",
         countError
       );
 
-    } else {
+    } else if (
+      adminTotalBooks
+    ) {
+
+      const jumlahBuku =
+        Number.isInteger(
+          totalBooks
+        ) &&
+        totalBooks >= 0
+          ? totalBooks
+          : 0;
 
       adminTotalBooks.textContent =
-        `${totalBooks || 0} buku`;
-
+        `${jumlahBuku} buku`;
     }
 
+  } catch (
+    countException
+  ) {
+
+    if (
+      adminTotalBooks
+    ) {
+
+      adminTotalBooks.textContent =
+        "Gagal memuat";
+    }
+
+    console.error(
+      "Gagal menghitung koleksi:",
+      countException
+    );
   }
 
-await muatDaftarBukuAdmin();
+  if (
+    typeof muatDaftarBukuAdmin !==
+      "function"
+  ) {
 
+    console.error(
+      "Function muatDaftarBukuAdmin tidak tersedia."
+    );
+
+    return false;
+  }
+
+  try {
+
+    const hasilMuat =
+      await muatDaftarBukuAdmin();
+
+    return (
+      hasilMuat !==
+      false
+    );
+
+  } catch (
+    loadException
+  ) {
+
+    console.error(
+      "Gagal memuat daftar buku Admin:",
+      loadException
+    );
+
+    return false;
+  }
 }
 
 function updateRingkasanIntegritasAdmin(
