@@ -9239,10 +9239,33 @@ function jagaFokusAdmin(
   return false;
 }
 
-function jagaFokusUtama(event) {
+function jagaFokusUtama(
+  event
+) {
 
-  if (event.key !== "Tab") {
-    return;
+  if (
+    !event ||
+    typeof event !==
+      "object"
+  ) {
+
+    return false;
+  }
+
+  if (
+    event.key !==
+      "Tab"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
   }
 
   const modalTerbuka =
@@ -9250,8 +9273,11 @@ function jagaFokusUtama(event) {
       ".modal.show"
     );
 
-  if (modalTerbuka) {
-    return;
+  if (
+    modalTerbuka
+  ) {
+
+    return false;
   }
 
   const searchInput =
@@ -9261,9 +9287,14 @@ function jagaFokusUtama(event) {
 
   if (
     !searchInput ||
-    searchInput.getClientRects().length === 0
+    typeof searchInput.getClientRects !==
+      "function" ||
+    searchInput
+      .getClientRects()
+      .length === 0
   ) {
-    return;
+
+    return false;
   }
 
   const fokusable =
@@ -9272,14 +9303,48 @@ function jagaFokusUtama(event) {
         'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
       )
     ).filter(
-      (element) =>
-        element.getClientRects().length > 0 &&
-        !element.closest("#adminPanel") &&
-        !element.closest(".modal")
+      (element) => {
+
+        if (
+          !element ||
+          typeof element.getClientRects !==
+            "function" ||
+          element
+            .getClientRects()
+            .length === 0
+        ) {
+
+          return false;
+        }
+
+        if (
+          typeof element.closest ===
+            "function"
+        ) {
+
+          if (
+            element.closest(
+              "#adminPanel"
+            ) ||
+            element.closest(
+              ".modal"
+            )
+          ) {
+
+            return false;
+          }
+        }
+
+        return true;
+      }
     );
 
-  if (fokusable.length === 0) {
-    return;
+  if (
+    fokusable.length ===
+      0
+  ) {
+
+    return false;
   }
 
   const terakhir =
@@ -9287,24 +9352,65 @@ function jagaFokusUtama(event) {
       fokusable.length - 1
     ];
 
+  const fokusAktif =
+    document.activeElement;
+
+  const cegahDefault =
+    () => {
+
+      if (
+        typeof event.preventDefault ===
+          "function"
+      ) {
+
+        event.preventDefault();
+      }
+    };
+
+  const fokusElemen =
+    (element) => {
+
+      if (
+        element &&
+        typeof element.focus ===
+          "function"
+      ) {
+
+        element.focus();
+
+        return true;
+      }
+
+      return false;
+    };
+
   if (
     event.shiftKey &&
-    document.activeElement === searchInput
+    fokusAktif ===
+      searchInput
   ) {
 
-    event.preventDefault();
-    terakhir.focus();
+    cegahDefault();
 
-  } else if (
-    !event.shiftKey &&
-    document.activeElement === terakhir
-  ) {
-
-    event.preventDefault();
-    searchInput.focus();
-
+    return fokusElemen(
+      terakhir
+    );
   }
 
+  if (
+    !event.shiftKey &&
+    fokusAktif ===
+      terakhir
+  ) {
+
+    cegahDefault();
+
+    return fokusElemen(
+      searchInput
+    );
+  }
+
+  return false;
 }
 
 function jagaFokusEditBuku(event) {
