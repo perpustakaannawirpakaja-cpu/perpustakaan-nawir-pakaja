@@ -34608,41 +34608,68 @@ async function uploadBuku(event) {
 
 
 document
-.getElementById("adminModal")
-.addEventListener(
-  "click",
-  function(e){
-
-    if(e.target === this){
-      tutupAdmin();
-    }
-
-  }
-);
-
-document
-  .getElementById("adminPanel")
-  .addEventListener(
+  .getElementById(
+    "adminModal"
+  )
+  ?.addEventListener(
     "click",
-    function(e){
+    function (
+      event
+    ) {
 
-      if(e.target === this){
-        tutupAdminPanel();
+      if (
+        event.target ===
+          this &&
+        typeof tutupAdmin ===
+          "function"
+      ) {
+
+        tutupAdmin();
       }
-
     }
   );
 
 document
-  .getElementById("editBookModal")
-  .addEventListener(
+  .getElementById(
+    "adminPanel"
+  )
+  ?.addEventListener(
     "click",
-    function(e){
+    function (
+      event
+    ) {
 
-      if(e.target === this){
+      if (
+        event.target ===
+          this &&
+        typeof tutupAdminPanel ===
+          "function"
+      ) {
+
+        tutupAdminPanel();
+      }
+    }
+  );
+
+document
+  .getElementById(
+    "editBookModal"
+  )
+  ?.addEventListener(
+    "click",
+    function (
+      event
+    ) {
+
+      if (
+        event.target ===
+          this &&
+        typeof tutupEditBukuAdmin ===
+          "function"
+      ) {
+
         tutupEditBukuAdmin();
       }
-
     }
   );
 
