@@ -7066,34 +7066,73 @@ function ubahGayaTampilan(
 }
 
 
-function ubahTema(){
+function ubahTema() {
 
-  document.body
-  .classList
-  .toggle("dark");
+  if (
+    typeof document ===
+      "undefined" ||
+    !document.body
+  ) {
 
-  if(
-    document.body
-    .classList
-    .contains("dark")
-  ){
-
-    localStorage
-    .setItem("tema","dark");
-
-    tombolTema.innerHTML =
-    "☀️ Light";
-
-  }else{
-
-    localStorage
-    .setItem("tema","light");
-
-    tombolTema.innerHTML =
-    "🌙 Dark";
-
+    return false;
   }
 
+  const tombol =
+    typeof tombolTema !==
+      "undefined" &&
+    tombolTema
+      ? tombolTema
+      : document.querySelector(
+          ".theme-btn"
+        );
+
+  document.body
+    .classList
+    .toggle(
+      "dark"
+    );
+
+  const temaGelap =
+    document.body
+      .classList
+      .contains(
+        "dark"
+      );
+
+  try {
+
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
+
+      localStorage.setItem(
+        "tema",
+        temaGelap
+          ? "dark"
+          : "light"
+      );
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi tema tidak dapat disimpan:",
+      storageError
+    );
+  }
+
+  if (tombol) {
+
+    tombol.textContent =
+      temaGelap
+        ? "☀️ Light"
+        : "🌙 Dark";
+  }
+
+  return true;
 }
 
 async function bukaAdmin(){
