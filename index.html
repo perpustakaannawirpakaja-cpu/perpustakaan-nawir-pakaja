@@ -10057,10 +10057,35 @@ function resetFilterBukuAdmin() {
 
 function updateResetFilterBukuAdmin() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof updateAdminActiveFilterChips !==
+      "function"
+  ) {
+
+    console.error(
+      "Function updateAdminActiveFilterChips tidak tersedia."
+    );
+
+    return false;
+  }
+
   const resetButton =
     document.getElementById(
       "admin-book-filter-reset"
     );
+
+  if (!resetButton) {
+
+    return false;
+  }
 
   const searchInput =
     document.getElementById(
@@ -10082,25 +10107,71 @@ function updateResetFilterBukuAdmin() {
       "admin-book-sort"
     );
 
-  if (!resetButton) {
-    return;
-  }
+  const keyword =
+    typeof searchInput?.value ===
+      "string"
+      ? searchInput.value.trim()
+      : "";
+
+  const kategori =
+    typeof categorySelect?.value ===
+      "string"
+      ? categorySelect.value.trim()
+      : "";
+
+  const integritasMentah =
+    typeof integritySelect?.value ===
+      "string"
+      ? integritySelect.value
+          .trim()
+          .toLowerCase()
+      : "";
+
+  const integritas =
+    [
+      "safe",
+      "problem"
+    ].includes(
+      integritasMentah
+    )
+      ? integritasMentah
+      : "";
+
+  const sortMentah =
+    typeof sortSelect?.value ===
+      "string"
+      ? sortSelect.value
+          .trim()
+          .toLowerCase()
+      : "title-asc";
+
+  const sort =
+    [
+      "title-asc",
+      "title-desc",
+      "newest",
+      "oldest"
+    ].includes(
+      sortMentah
+    )
+      ? sortMentah
+      : "title-asc";
 
   const adaSearch =
-    searchInput &&
-    searchInput.value.trim() !== "";
+    keyword !==
+      "";
 
   const adaKategori =
-    categorySelect &&
-    categorySelect.value !== "";
+    kategori !==
+      "";
 
   const adaIntegritas =
-    integritySelect &&
-    integritySelect.value !== "";
+    integritas !==
+      "";
 
   const adaSort =
-    sortSelect &&
-    sortSelect.value !== "title-asc";
+    sort !==
+      "title-asc";
 
   const jumlahFilterAktif =
     [
@@ -10108,13 +10179,12 @@ function updateResetFilterBukuAdmin() {
       adaKategori,
       adaIntegritas,
       adaSort
-    ].filter(Boolean).length;
+    ].filter(
+      Boolean
+    ).length;
 
   resetButton.style.display =
-    adaSearch ||
-    adaKategori ||
-    adaIntegritas ||
-    adaSort
+    jumlahFilterAktif > 0
       ? "inline-flex"
       : "none";
 
@@ -10123,13 +10193,25 @@ function updateResetFilterBukuAdmin() {
       ? `↺ Reset Filter (${jumlahFilterAktif})`
       : "↺ Reset Filter";
 
-  resetButton.classList.toggle(
-    "active",
-    jumlahFilterAktif > 0
+  if (
+    resetButton.classList &&
+    typeof resetButton.classList.toggle ===
+      "function"
+  ) {
+
+    resetButton.classList.toggle(
+      "active",
+      jumlahFilterAktif > 0
+    );
+  }
+
+  const hasilChips =
+    updateAdminActiveFilterChips();
+
+  return (
+    hasilChips !==
+    false
   );
-
-  updateAdminActiveFilterChips();
-
 }
 
 /* =========================================
