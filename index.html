@@ -19417,24 +19417,57 @@ async function pindahkanHalamanBuku() {
   }
 }
 
-function pilihGantiHalaman(pageNumber) {
+function pilihGantiHalaman(
+  pageNumber
+) {
 
-  nomorHalamanPengganti =
-    Number(pageNumber);
+  if (
+    typeof document ===
+      "undefined"
+  ) {
 
-  modeSisipHalamanAktif = false;
+    return false;
+  }
 
-  modePindahHalamanAktif = false;
-  halamanAsalPindah = null;
+  if (
+    typeof nomorHalamanPengganti ===
+      "undefined" ||
+    typeof modeSisipHalamanAktif ===
+      "undefined" ||
+    typeof modePindahHalamanAktif ===
+      "undefined" ||
+    typeof halamanAsalPindah ===
+      "undefined"
+  ) {
+
+    console.error(
+      "State Ganti Halaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof updateTombolUploadHalaman !==
+      "function"
+  ) {
+
+    console.error(
+      "Function updateTombolUploadHalaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const nomorHalaman =
+    Number(
+      pageNumber
+    );
 
   const pageNumberInput =
     document.getElementById(
       "book-page-number"
     );
-
-  if (pageNumberInput) {
-    delete pageNumberInput.dataset.mode;
-  }
 
   const pageFileInput =
     document.getElementById(
@@ -19446,23 +19479,104 @@ function pilihGantiHalaman(pageNumber) {
       "book-pages-message"
     );
 
-  if (!pageNumberInput) {
-    return;
+  if (
+    !Number.isInteger(
+      nomorHalaman
+    ) ||
+    nomorHalaman < 1
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ Nomor halaman pengganti tidak valid.";
+    }
+
+    return false;
+  }
+
+  if (
+    !pageNumberInput
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ Input nomor halaman tidak tersedia.";
+    }
+
+    return false;
+  }
+
+  nomorHalamanPengganti =
+    nomorHalaman;
+
+  modeSisipHalamanAktif =
+    false;
+
+  modePindahHalamanAktif =
+    false;
+
+  halamanAsalPindah =
+    null;
+
+  if (
+    pageNumberInput.dataset
+  ) {
+
+    delete pageNumberInput.dataset.mode;
   }
 
   pageNumberInput.value =
-    pageNumber;
+    String(
+      nomorHalaman
+    );
 
-  if (pageFileInput) {
-    pageFileInput.value = "";
+  if (
+    pageFileInput
+  ) {
+
+    pageFileInput.value =
+      "";
   }
 
-  message.textContent =
-  `✏️ Halaman ${pageNumber} dipilih. Pilih PDF pengganti lalu klik Upload Halaman.`;
+  if (
+    message
+  ) {
 
-updateTombolUploadHalaman();
+    message.textContent =
+      `✏️ Halaman ${nomorHalaman} dipilih. ` +
+      "Pilih PDF pengganti lalu klik Upload Halaman.";
+  }
 
-pageFileInput?.focus();
+  try {
+
+    updateTombolUploadHalaman();
+
+  } catch (
+    buttonError
+  ) {
+
+    console.warn(
+      "Mode Ganti Halaman aktif tetapi tombol upload gagal diperbarui:",
+      buttonError
+    );
+  }
+
+  if (
+    pageFileInput &&
+    typeof pageFileInput.focus ===
+      "function"
+  ) {
+
+    pageFileInput.focus();
+  }
+
+  return true;
 }
 
 async function uploadHalamanBuku() {
