@@ -14163,23 +14163,63 @@ function resetPosisiModalDraggable(
   modalId
 ) {
 
-  const modalBox =
-    document
-      .getElementById(
-        modalId
-      )
-      ?.querySelector(
-        ".modal-box"
-      );
+  if (
+    typeof document ===
+      "undefined"
+  ) {
 
-  if (!modalBox) {
     return false;
   }
 
-  modalBox.style.position = "";
-  modalBox.style.left = "";
-  modalBox.style.top = "";
-  modalBox.style.margin = "";
+  const id =
+    typeof modalId ===
+      "string"
+      ? modalId.trim()
+      : "";
+
+  if (!id) {
+
+    return false;
+  }
+
+  const modal =
+    document.getElementById(
+      id
+    );
+
+  if (
+    !modal ||
+    typeof modal.querySelector !==
+      "function"
+  ) {
+
+    return false;
+  }
+
+  const modalBox =
+    modal.querySelector(
+      ".modal-box"
+    );
+
+  if (
+    !modalBox ||
+    !modalBox.style
+  ) {
+
+    return false;
+  }
+
+  modalBox.style.position =
+    "";
+
+  modalBox.style.left =
+    "";
+
+  modalBox.style.top =
+    "";
+
+  modalBox.style.margin =
+    "";
 
   return true;
 }
