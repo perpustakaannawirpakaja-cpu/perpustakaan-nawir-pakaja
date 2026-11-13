@@ -15773,59 +15773,94 @@ let aksiUploadHalamanTerakhir = null;
 
 function updateTombolUploadHalaman() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof aksiUploadHalamanTerakhir ===
+      "undefined" ||
+    typeof modePindahHalamanAktif ===
+      "undefined"
+  ) {
+
+    console.error(
+      "State tombol upload halaman tidak tersedia."
+    );
+
+    return false;
+  }
+
   const tombol =
     document.getElementById(
       "book-page-upload-btn"
     );
 
-  if (!tombol) {
-    return;
+  if (
+    !tombol
+  ) {
+
+    return false;
   }
+
+  const tipeAksi =
+    typeof aksiUploadHalamanTerakhir?.tipe ===
+      "string"
+      ? aksiUploadHalamanTerakhir.tipe
+          .trim()
+          .toLowerCase()
+      : "";
 
   if (
-  aksiUploadHalamanTerakhir?.tipe ===
-  "delete"
-) {
+    tipeAksi ===
+      "delete"
+  ) {
 
-  tombol.textContent =
-    "↩️ Batal Hapus Halaman";
+    tombol.textContent =
+      "↩️ Batal Hapus Halaman";
 
-} else if (
-  aksiUploadHalamanTerakhir?.tipe ===
-  "insert"
-) {
+  } else if (
+    tipeAksi ===
+      "insert"
+  ) {
 
-  tombol.textContent =
-    "↩️ Batal Sisip Halaman";
+    tombol.textContent =
+      "↩️ Batal Sisip Halaman";
 
-} else if (
-  aksiUploadHalamanTerakhir?.tipe ===
-  "move"
-) {
+  } else if (
+    tipeAksi ===
+      "move"
+  ) {
 
-  tombol.textContent =
-    "↩️ Batal Pindah Halaman";
+    tombol.textContent =
+      "↩️ Batal Pindah Halaman";
 
-} else if (
-  aksiUploadHalamanTerakhir
-) {
+  } else if (
+    aksiUploadHalamanTerakhir
+  ) {
 
-  tombol.textContent =
-    "↩️ Batal Upload Halaman";
+    tombol.textContent =
+      "↩️ Batal Upload Halaman";
 
-} else if (
-  modePindahHalamanAktif
-) {
+  } else if (
+    modePindahHalamanAktif ===
+      true
+  ) {
 
-  tombol.textContent =
-    "↕️ Pindahkan Halaman";
+    tombol.textContent =
+      "↕️ Pindahkan Halaman";
 
-} else {
+  } else {
 
-  tombol.textContent =
-    "📤 Upload Halaman";
-
+    tombol.textContent =
+      "📤 Upload Halaman";
   }
+
+  return true;
 }
 
 async function pilihHapusHalaman(pageNumber) {
