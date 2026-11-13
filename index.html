@@ -25048,105 +25048,111 @@ function ambilPathFileLama(
   bucketName
 ) {
 
-  if (!publicUrl) {
+  if (
+    typeof publicUrl !==
+      "string" ||
+    typeof bucketName !==
+      "string"
+  ) {
+
+    return null;
+  }
+
+  const urlBersih =
+    publicUrl.trim();
+
+  const bucketBersih =
+    bucketName.trim();
+
+  if (
+    !urlBersih ||
+    !bucketBersih ||
+    bucketBersih.includes(
+      "/"
+    )
+  ) {
+
     return null;
   }
 
   const marker =
-    `/storage/v1/object/public/${bucketName}/`;
+    `/storage/v1/object/public/${bucketBersih}/`;
+
+  let pathname =
+    "";
+
+  try {
+
+    const parsedUrl =
+      new URL(
+        urlBersih
+      );
+
+    pathname =
+      parsedUrl.pathname;
+
+  } catch (
+    urlError
+  ) {
+
+    const tanpaHash =
+      urlBersih.split(
+        "#"
+      )[0];
+
+    pathname =
+      tanpaHash.split(
+        "?"
+      )[0];
+  }
 
   const posisi =
-    publicUrl.indexOf(marker);
+    pathname.indexOf(
+      marker
+    );
 
-  if (posisi === -1) {
+  if (
+    posisi ===
+      -1
+  ) {
+
     return null;
   }
 
-  return decodeURIComponent(
-    publicUrl.substring(
-      posisi + marker.length
-    )
-  );
-
-}
-
-/* Hapus PDF lama jika diganti */
-if (newBookFile) {
-
-  const oldBookPath =
-    ambilPathFileLama(
-      currentBook.file_url,
-      "book-files"
+  const encodedPath =
+    pathname.substring(
+      posisi +
+      marker.length
     );
 
-  if (oldBookPath) {
+  if (
+    !encodedPath
+  ) {
 
-    const {
-      error: oldBookDeleteError
-    } = await db
-      .storage
-      .from("book-files")
-      .remove([
-        oldBookPath
-      ]);
-
-    if (oldBookDeleteError) {
-      console.error(
-        "PDF baru sudah aktif, tetapi PDF lama gagal dibersihkan:",
-        oldBookDeleteError
-      );
-    }
-
+    return null;
   }
 
-}
+  try {
 
-/* Hapus cover lama jika diganti */
-if (newCoverFile) {
+    const decodedPath =
+      decodeURIComponent(
+        encodedPath
+      ).trim();
 
-  const oldCoverPath =
-    ambilPathFileLama(
-      currentBook.cover_url,
-      "book-covers"
+    return decodedPath ||
+      null;
+
+  } catch (
+    decodeError
+  ) {
+
+    console.warn(
+      "Storage path lama gagal didecode:",
+      decodeError
     );
 
-  if (oldCoverPath) {
-
-    const {
-      error: oldCoverDeleteError
-    } = await db
-      .storage
-      .from("book-covers")
-      .remove([
-        oldCoverPath
-      ]);
-
-    if (oldCoverDeleteError) {
-      console.error(
-        "Cover baru sudah aktif, tetapi cover lama gagal dibersihkan:",
-        oldCoverDeleteError
-      );
-    }
-
+    return null;
   }
-
-}
-
-  editMessage.textContent =
-  "✅ Perubahan berhasil disimpan.";
-
-await tampilkanBuku();
-
-await muatDaftarBukuAdmin();
-
-saveButton.disabled = false;
-saveButton.textContent =
-  "💾 Simpan Perubahan";
-
-setTimeout(() => {
-  tutupEditBukuAdmin();
-}, 700);
-
 }
 
 async function hapusBukuAdmin(
