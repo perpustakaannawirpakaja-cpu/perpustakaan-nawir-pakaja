@@ -20082,19 +20082,176 @@ function buatNavXhtmlEpubFixed({
 }) {
 
   if (
-    !Array.isArray(pages) ||
+    !Array.isArray(
+      pages
+    ) ||
     pages.length < 1
   ) {
+
     throw new Error(
       "Daftar halaman EPUB tidak tersedia."
     );
   }
 
+  if (
+    typeof escapeXmlEpub !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Function escapeXmlEpub tidak tersedia."
+    );
+  }
+
+  const judulBersih =
+    typeof title ===
+      "string"
+      ? title.trim()
+      : "";
+
+  const bahasaBersih =
+    typeof language ===
+      "string"
+      ? language.trim()
+      : "";
+
+  const judulFinal =
+    judulBersih ||
+    "Buku";
+
+  const bahasaFinal =
+    bahasaBersih ||
+    "id";
+
   const safeTitle =
-    escapeXmlEpub(title);
+    escapeXmlEpub(
+      judulFinal
+    );
+
+  const safeLanguage =
+    escapeXmlEpub(
+      bahasaFinal
+    );
+
+  if (
+    !safeTitle ||
+    !safeLanguage
+  ) {
+
+    throw new Error(
+      "Metadata navigasi EPUB tidak valid."
+    );
+  }
+
+  const hrefTerpakai =
+    new Set();
+
+  const halamanTervalidasi =
+    pages.map(
+      (
+        page,
+        index
+      ) => {
+
+        if (
+          !page ||
+          typeof page !==
+            "object"
+        ) {
+
+          throw new Error(
+            `Metadata navigasi halaman EPUB ke-${index + 1} tidak valid.`
+          );
+        }
+
+        const pageNumber =
+          Number(
+            page.pageNumber
+          );
+
+        const nomorYangDiharapkan =
+          index + 1;
+
+        if (
+          !Number.isInteger(
+            pageNumber
+          ) ||
+          pageNumber !==
+            nomorYangDiharapkan
+        ) {
+
+          throw new Error(
+            `Urutan navigasi EPUB tidak valid pada halaman ${nomorYangDiharapkan}.`
+          );
+        }
+
+        const nomorFile =
+          String(
+            pageNumber
+          )
+            .padStart(
+              4,
+              "0"
+            );
+
+        const xhtmlHref =
+          typeof page.xhtmlHref ===
+            "string"
+            ? page.xhtmlHref.trim()
+            : "";
+
+        const expectedXhtmlHref =
+          `Text/page-${nomorFile}.xhtml`;
+
+        if (
+          xhtmlHref !==
+            expectedXhtmlHref
+        ) {
+
+          throw new Error(
+            `Href navigasi EPUB halaman ${pageNumber} tidak konsisten.`
+          );
+        }
+
+        if (
+          hrefTerpakai.has(
+            xhtmlHref
+          )
+        ) {
+
+          throw new Error(
+            `Href navigasi EPUB duplikat pada halaman ${pageNumber}.`
+          );
+        }
+
+        hrefTerpakai.add(
+          xhtmlHref
+        );
+
+        const safeXhtmlHref =
+          escapeXmlEpub(
+            xhtmlHref
+          );
+
+        if (
+          !safeXhtmlHref
+        ) {
+
+          throw new Error(
+            `Href navigasi EPUB halaman ${pageNumber} tidak valid.`
+          );
+        }
+
+        return {
+          pageNumber,
+          xhtmlHref:
+            safeXhtmlHref
+        };
+      }
+    );
 
   const daftarHalaman =
-    pages
+    halamanTervalidasi
       .map(
         (page) => `
       <li>
@@ -20103,14 +20260,25 @@ function buatNavXhtmlEpubFixed({
         </a>
       </li>`
       )
-      .join("");
+      .join(
+        ""
+      );
+
+  if (
+    !daftarHalaman.trim()
+  ) {
+
+    throw new Error(
+      "Daftar isi EPUB gagal dibuat."
+    );
+  }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html
   xmlns="http://www.w3.org/1999/xhtml"
   xmlns:epub="http://www.idpf.org/2007/ops"
-  lang="${language}"
+  lang="${safeLanguage}"
 >
 <head>
   <meta charset="UTF-8"/>
