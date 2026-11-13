@@ -9681,22 +9681,101 @@ function filterKategoriBukuAdmin() {
 
 function filterIntegritasBukuAdmin() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof cariBukuAdmin !==
+      "function"
+  ) {
+
+    console.error(
+      "Function cariBukuAdmin tidak tersedia."
+    );
+
+    return false;
+  }
+
   const select =
     document.getElementById(
       "admin-book-integrity"
     );
 
   if (!select) {
-    return;
+
+    return false;
   }
 
-  localStorage.setItem(
-    "adminBookIntegrity",
-    select.value
+  const nilaiMentah =
+    typeof select.value ===
+      "string"
+      ? select.value
+          .trim()
+          .toLowerCase()
+      : "";
+
+  const nilaiIntegritas =
+    [
+      "safe",
+      "problem"
+    ].includes(
+      nilaiMentah
+    )
+      ? nilaiMentah
+      : "";
+
+  if (
+    select.value !==
+      nilaiIntegritas
+  ) {
+
+    select.value =
+      nilaiIntegritas;
+  }
+
+  try {
+
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
+
+      if (
+        nilaiIntegritas
+      ) {
+
+        localStorage.setItem(
+          "adminBookIntegrity",
+          nilaiIntegritas
+        );
+
+      } else {
+
+        localStorage.removeItem(
+          "adminBookIntegrity"
+        );
+      }
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi integritas Admin tidak dapat diperbarui:",
+      storageError
+    );
+  }
+
+  return (
+    cariBukuAdmin() !==
+    false
   );
-
-  cariBukuAdmin();
-
 }
 
 function filterIntegritasDariRingkasan(
