@@ -18734,11 +18734,83 @@ async function pilihPindahHalaman(
 
 async function pindahkanHalamanBuku() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    typeof db.from !==
+      "function" ||
+    typeof db.rpc !==
+      "function"
+  ) {
+
+    console.error(
+      "Supabase client atau RPC tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof halamanAsalPindah ===
+      "undefined" ||
+    typeof modePindahHalamanAktif ===
+      "undefined" ||
+    typeof aksiUploadHalamanTerakhir ===
+      "undefined"
+  ) {
+
+    console.error(
+      "State Pindah Halaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof setStatusIngestionBuku !==
+      "function" ||
+    typeof tampilkanStatusIngestionKelolaHalaman !==
+      "function" ||
+    typeof resetMetadataOutputEpub !==
+      "function" ||
+    typeof sinkronkanProgressIngestionBuku !==
+      "function" ||
+    typeof catatErrorIngestionBuku !==
+      "function" ||
+    typeof tampilkanBuku !==
+      "function" ||
+    typeof muatDaftarBukuAdmin !==
+      "function" ||
+    typeof bukaKelolaHalaman !==
+      "function" ||
+    typeof updateTombolUploadHalaman !==
+      "function"
+  ) {
+
+    console.error(
+      "Function pendukung Pindah Halaman tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const hiddenId =
+    document.getElementById(
+      "book-pages-book-id"
+    );
+
   const bookId =
     Number(
-      document.getElementById(
-        "book-pages-book-id"
-      )?.value
+      hiddenId?.value
     );
 
   const pageNumberInput =
@@ -18758,111 +18830,275 @@ async function pindahkanHalamanBuku() {
 
   const halamanTujuan =
     Number(
-      pageNumberInput?.value || 0
+      pageNumberInput?.value
     );
 
   const halamanAsal =
     Number(
-      halamanAsalPindah || 0
+      halamanAsalPindah
     );
 
   if (
-    !bookId ||
-    !modePindahHalamanAktif ||
-    !halamanAsal
+    !Number.isInteger(
+      bookId
+    ) ||
+    bookId < 1
   ) {
 
-    if (message) {
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ ID buku tidak valid.";
+    }
+
+    return false;
+  }
+
+  if (
+    modePindahHalamanAktif !==
+      true ||
+    !Number.isInteger(
+      halamanAsal
+    ) ||
+    halamanAsal < 1
+  ) {
+
+    if (
+      message
+    ) {
+
       message.textContent =
         "❌ Mode Pindah Halaman tidak aktif.";
     }
 
-    return;
+    return false;
   }
 
   if (
-    !Number.isInteger(halamanTujuan) ||
+    aksiUploadHalamanTerakhir
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "⚠️ Masih ada perubahan halaman yang dapat dibatalkan.";
+    }
+
+    return false;
+  }
+
+  if (
+    !Number.isInteger(
+      halamanTujuan
+    ) ||
     halamanTujuan < 1
   ) {
 
-    if (message) {
+    if (
+      message
+    ) {
+
       message.textContent =
         "⚠️ Posisi tujuan harus berupa angka minimal 1.";
     }
 
-    pageNumberInput?.focus();
-    return;
+    if (
+      pageNumberInput &&
+      typeof pageNumberInput.focus ===
+        "function"
+    ) {
+
+      pageNumberInput.focus();
+    }
+
+    return false;
   }
 
-  const {
-    data: book,
-    error: bookError
-  } = await db
-    .from("books")
-    .select(`
-      id,
-      total_pages,
-      upload_mode,
-      upload_status,
-      file_url
-    `)
-    .eq("id", bookId)
-    .single();
+  let book =
+    null;
 
-  if (bookError || !book) {
+  try {
 
-    if (message) {
+    const {
+      data,
+      error
+    } = await db
+      .from(
+        "books"
+      )
+      .select(`
+        id,
+        total_pages,
+        upload_mode,
+        upload_status,
+        file_url
+      `)
+      .eq(
+        "id",
+        bookId
+      )
+      .single();
+
+    if (
+      error
+    ) {
+
+      throw error;
+    }
+
+    book =
+      data;
+
+  } catch (
+    bookError
+  ) {
+
+    console.error(
+      "Gagal membaca data buku untuk Pindah Halaman:",
+      bookError
+    );
+
+    if (
+      message
+    ) {
+
       message.textContent =
         "❌ Data buku tidak ditemukan.";
     }
 
-    return;
+    return false;
+  }
+
+  if (
+    !book
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ Data buku tidak ditemukan.";
+    }
+
+    return false;
   }
 
   if (
     book.upload_mode !==
-    "incremental"
+      "incremental"
   ) {
 
-    if (message) {
+    if (
+      message
+    ) {
+
       message.textContent =
         "❌ Pindahkan halaman hanya tersedia untuk buku mode bertahap.";
     }
 
-    return;
+    return false;
+  }
+
+  const totalHalaman =
+    Number(
+      book.total_pages
+    );
+
+  if (
+    !Number.isInteger(
+      totalHalaman
+    ) ||
+    totalHalaman < 1
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        "❌ Total halaman buku tidak valid.";
+    }
+
+    return false;
+  }
+
+  if (
+    halamanAsal >
+      totalHalaman
+  ) {
+
+    if (
+      message
+    ) {
+
+      message.textContent =
+        `❌ Halaman asal ${halamanAsal} berada di luar total ${totalHalaman} halaman.`;
+    }
+
+    return false;
   }
 
   if (
     halamanTujuan >
-    Number(book.total_pages)
+      totalHalaman
   ) {
 
-    if (message) {
+    if (
+      message
+    ) {
+
       message.textContent =
-        `⚠️ Posisi tujuan maksimal ${book.total_pages}.`;
+        `⚠️ Posisi tujuan maksimal ${totalHalaman}.`;
     }
 
-    pageNumberInput?.focus();
-    return;
+    if (
+      pageNumberInput &&
+      typeof pageNumberInput.focus ===
+        "function"
+    ) {
+
+      pageNumberInput.focus();
+    }
+
+    return false;
   }
 
   if (
     halamanTujuan ===
-    halamanAsal
+      halamanAsal
   ) {
 
-    if (message) {
+    if (
+      message
+    ) {
+
       message.textContent =
         `⚠️ Halaman ${halamanAsal} sudah berada di posisi ${halamanTujuan}.`;
     }
 
-    pageNumberInput?.focus();
-    return;
+    if (
+      pageNumberInput &&
+      typeof pageNumberInput.focus ===
+        "function"
+    ) {
+
+      pageNumberInput.focus();
+    }
+
+    return false;
   }
 
-  if (tombol) {
+  if (
+    tombol
+  ) {
 
-    tombol.disabled = true;
+    tombol.disabled =
+      true;
 
     tombol.textContent =
       "⏳ Memindahkan...";
@@ -18870,28 +19106,51 @@ async function pindahkanHalamanBuku() {
 
   try {
 
-  const statusIngestionAktif =
-  await setStatusIngestionBuku(
-    bookId,
-    "ingesting"
-  );
+    let statusIngestionAktif =
+      false;
 
-if (!statusIngestionAktif) {
+    try {
 
-  console.warn(
-    "Status ingestion belum berhasil diubah ke ingesting."
-  );
+      statusIngestionAktif =
+        await setStatusIngestionBuku(
+          bookId,
+          "ingesting"
+        );
 
-} else {
+    } catch (
+      statusError
+    ) {
 
-  await tampilkanStatusIngestionKelolaHalaman(
-    bookId
-  );
-}
+      console.warn(
+        "Gagal mengubah status ingestion menjadi ingesting saat pindah halaman:",
+        statusError
+      );
+    }
 
-  const {
-    error: moveError
-  } = await db.rpc(
+    if (
+      statusIngestionAktif
+    ) {
+
+      try {
+
+        await tampilkanStatusIngestionKelolaHalaman(
+          bookId
+        );
+
+      } catch (
+        statusUiError
+      ) {
+
+        console.warn(
+          "Status ingestion berubah tetapi UI status gagal diperbarui:",
+          statusUiError
+        );
+      }
+    }
+
+    const {
+      error: moveError
+    } = await db.rpc(
       "move_incremental_book_page",
       {
         p_book_id:
@@ -18905,18 +19164,24 @@ if (!statusIngestionAktif) {
       }
     );
 
-    if (moveError) {
+    if (
+      moveError
+    ) {
+
       throw new Error(
         "Pemindahan halaman gagal: " +
-        moveError.message
+        (
+          moveError.message ||
+          "Error tidak diketahui."
+        )
       );
     }
 
     aksiUploadHalamanTerakhir = {
-      tipe: "move",
+      tipe:
+        "move",
 
-      bookId:
-        bookId,
+      bookId,
 
       fromPage:
         halamanAsal,
@@ -18934,11 +19199,18 @@ if (!statusIngestionAktif) {
         book.file_url
     };
 
-    modePindahHalamanAktif = false;
-    halamanAsalPindah = null;
+    modePindahHalamanAktif =
+      false;
 
-    if (pageNumberInput) {
-      pageNumberInput.value = "";
+    halamanAsalPindah =
+      null;
+
+    if (
+      pageNumberInput
+    ) {
+
+      pageNumberInput.value =
+        "";
     }
 
     try {
@@ -18947,7 +19219,9 @@ if (!statusIngestionAktif) {
         bookId
       );
 
-    } catch (resetOutputError) {
+    } catch (
+      resetOutputError
+    ) {
 
       console.warn(
         "Pemindahan halaman berhasil, tetapi metadata EPUB belum berhasil direset:",
@@ -18955,65 +19229,115 @@ if (!statusIngestionAktif) {
       );
     }
 
-    let ingestionMoveSyncWarning = null;
+    let ingestionMoveSyncWarning =
+      null;
 
-try {
+    try {
 
-  await sinkronkanProgressIngestionBuku(
-    bookId
-  );
+      await sinkronkanProgressIngestionBuku(
+        bookId
+      );
 
-} catch (syncError) {
-
-  console.error(
-    "Sinkronisasi progress ingestion setelah pindah gagal:",
-    syncError
-  );
-
-  try {
-
-    await catatErrorIngestionBuku(
-      bookId,
+    } catch (
       syncError
-    );
+    ) {
 
-  } catch (trackingError) {
+      console.error(
+        "Sinkronisasi progress ingestion setelah pindah gagal:",
+        syncError
+      );
 
-    console.error(
-      "Pencatatan error ingestion gagal:",
-      trackingError
-    );
-  }
+      ingestionMoveSyncWarning =
+        syncError;
 
-  ingestionMoveSyncWarning =
-    syncError;
-}
+      try {
 
-    await tampilkanBuku();
+        await catatErrorIngestionBuku(
+          bookId,
+          syncError
+        );
 
-    await muatDaftarBukuAdmin();
+      } catch (
+        trackingError
+      ) {
 
-    await bukaKelolaHalaman(
-      bookId
-    );
+        console.error(
+          "Pencatatan error ingestion gagal:",
+          trackingError
+        );
+      }
+    }
+
+    try {
+
+      await tampilkanBuku();
+
+    } catch (
+      publicRefreshError
+    ) {
+
+      console.warn(
+        "Pemindahan berhasil tetapi halaman publik gagal diperbarui:",
+        publicRefreshError
+      );
+    }
+
+    try {
+
+      await muatDaftarBukuAdmin();
+
+    } catch (
+      adminRefreshError
+    ) {
+
+      console.warn(
+        "Pemindahan berhasil tetapi daftar Admin gagal diperbarui:",
+        adminRefreshError
+      );
+    }
+
+    try {
+
+      await bukaKelolaHalaman(
+        bookId
+      );
+
+    } catch (
+      modalRefreshError
+    ) {
+
+      console.warn(
+        "Pemindahan berhasil tetapi Kelola Halaman gagal dimuat ulang:",
+        modalRefreshError
+      );
+    }
 
     const pesanBaru =
       document.getElementById(
         "book-pages-message"
       );
 
-    if (pesanBaru) {
+    if (
+      pesanBaru
+    ) {
 
       pesanBaru.textContent =
         `✅ Halaman ${halamanAsal} berhasil dipindahkan ke posisi ${halamanTujuan}.`;
 
-      if (ingestionMoveSyncWarning) {
+      if (
+        ingestionMoveSyncWarning
+      ) {
+
         pesanBaru.textContent +=
           " ⚠️ Progress ingestion belum tersinkron.";
       }
     }
 
-  } catch (error) {
+    return true;
+
+  } catch (
+    error
+  ) {
 
     console.error(
       "Pindahkan halaman gagal:",
@@ -19027,7 +19351,9 @@ try {
         error
       );
 
-    } catch (trackingError) {
+    } catch (
+      trackingError
+    ) {
 
       console.error(
         "Pencatatan error ingestion gagal:",
@@ -19035,11 +19361,26 @@ try {
       );
     }
 
-    await tampilkanStatusIngestionKelolaHalaman(
-      bookId
-    );
+    try {
 
-    if (message) {
+      await tampilkanStatusIngestionKelolaHalaman(
+        bookId
+      );
+
+    } catch (
+      statusUiError
+    ) {
+
+      console.error(
+        "Gagal memperbarui status ingestion setelah pindah gagal:",
+        statusUiError
+      );
+    }
+
+    if (
+      message
+    ) {
+
       message.textContent =
         "❌ " +
         (
@@ -19048,13 +19389,31 @@ try {
         );
     }
 
+    return false;
+
   } finally {
 
-    if (tombol) {
-      tombol.disabled = false;
+    if (
+      tombol
+    ) {
+
+      tombol.disabled =
+        false;
     }
 
-    updateTombolUploadHalaman();
+    try {
+
+      updateTombolUploadHalaman();
+
+    } catch (
+      buttonError
+    ) {
+
+      console.warn(
+        "Gagal memperbarui tombol setelah aksi pindah halaman:",
+        buttonError
+      );
+    }
   }
 }
 
