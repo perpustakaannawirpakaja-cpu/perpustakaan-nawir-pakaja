@@ -13182,23 +13182,43 @@ async function kompresPdfSatuHalaman(
 
 function formatUkuranFile(bytes) {
 
+  const jumlahBytes =
+    Number(
+      bytes
+    );
+
   if (
-    !Number.isFinite(bytes) ||
-    bytes <= 0
+    !Number.isFinite(
+      jumlahBytes
+    ) ||
+    jumlahBytes <= 0
   ) {
+
     return "0 KB";
   }
 
-  if (bytes < 1024 * 1024) {
+  if (
+    jumlahBytes <
+      1024 * 1024
+  ) {
+
     return (
-      bytes / 1024
-    ).toFixed(1) + " KB";
+      jumlahBytes /
+      1024
+    ).toFixed(
+      1
+    ) + " KB";
   }
 
   return (
-    bytes /
-    (1024 * 1024)
-  ).toFixed(2) + " MB";
+    jumlahBytes /
+    (
+      1024 *
+      1024
+    )
+  ).toFixed(
+    2
+  ) + " MB";
 }
 
 document
