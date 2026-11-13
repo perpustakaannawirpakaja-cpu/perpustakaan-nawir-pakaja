@@ -4497,52 +4497,165 @@ function updateJumlahBukuPerHuruf() {
 
 function updateKategoriBuku() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
   const select =
     document.getElementById(
       "book-category-select"
     );
 
-  if (!select) return;
+  if (!select) {
+
+    return false;
+  }
+
+  const daftarBuku =
+    typeof semuaBuku !==
+      "undefined" &&
+    Array.isArray(
+      semuaBuku
+    )
+      ? semuaBuku.filter(
+          (buku) =>
+            buku &&
+            typeof buku ===
+              "object"
+        )
+      : [];
+
+  const pilihanSebelumnya =
+    typeof select.value ===
+      "string"
+      ? select.value.trim()
+      : "";
+
+  const jumlahPerKategori =
+    new Map();
+
+  daftarBuku.forEach(
+    (buku) => {
+
+      const namaKategori =
+        typeof buku.category ===
+          "string"
+          ? buku.category.trim()
+          : "";
+
+      if (!namaKategori) {
+
+        return;
+      }
+
+      jumlahPerKategori.set(
+        namaKategori,
+        (
+          jumlahPerKategori.get(
+            namaKategori
+          ) || 0
+        ) + 1
+      );
+    }
+  );
 
   const kategori =
-    [
-      ...new Set(
-        semuaBuku
-          .map((buku) =>
-            (buku.category || "").trim()
+    Array.from(
+      jumlahPerKategori.keys()
+    )
+      .sort(
+        (a, b) =>
+          a.localeCompare(
+            b,
+            "id",
+            {
+              sensitivity:
+                "base"
+            }
           )
-          .filter(Boolean)
-      )
-    ]
-      .sort((a, b) =>
-        a.localeCompare(b)
       );
 
-  select.innerHTML = `
-    <option value="">
-      Semua Kategori
-    </option>
-  `;
+  select.replaceChildren();
 
-  kategori.forEach((namaKategori) => {
+  const optionSemua =
+    document.createElement(
+      "option"
+    );
 
-  const option =
-    document.createElement("option");
+  optionSemua.value =
+    "";
 
-  const jumlahBukuKategori =
-    semuaBuku.filter((buku) =>
-      (buku.category || "").trim() ===
-      namaKategori
-    ).length;
+  optionSemua.textContent =
+    "Semua Kategori";
 
-  option.value = namaKategori;
+  select.appendChild(
+    optionSemua
+  );
 
-  option.textContent =
-    `${namaKategori} (${jumlahBukuKategori} buku)`;
+  kategori.forEach(
+    (namaKategori) => {
 
-  select.appendChild(option);
-});
+      const option =
+        document.createElement(
+          "option"
+        );
 
+      const jumlahBukuKategori =
+        jumlahPerKategori.get(
+          namaKategori
+        ) || 0;
+
+      option.value =
+        namaKategori;
+
+      option.textContent =
+        `${namaKategori} (${jumlahBukuKategori} buku)`;
+
+      select.appendChild(
+        option
+      );
+    }
+  );
+
+  const pilihanMasihAda =
+    pilihanSebelumnya &&
+    kategori.includes(
+      pilihanSebelumnya
+    );
+
+  if (
+    pilihanMasihAda
+  ) {
+
+    select.value =
+      pilihanSebelumnya;
+
+  } else {
+
+    select.value =
+      "";
+
+    if (
+      typeof filterKategoriAktif !==
+        "undefined" &&
+      typeof filterKategoriAktif ===
+        "string" &&
+      filterKategoriAktif.trim() &&
+      !kategori.includes(
+        filterKategoriAktif.trim()
+      )
+    ) {
+
+      filterKategoriAktif =
+        "";
+    }
+  }
+
+  return true;
 }
 
 /* =========================================
