@@ -12549,26 +12549,90 @@ function canvasKeBlob(
   return new Promise(
     (resolve, reject) => {
 
-      canvas.toBlob(
-        (blob) => {
+      if (
+        !canvas ||
+        typeof canvas.toBlob !==
+          "function"
+      ) {
 
-          if (!blob) {
-            reject(
-              new Error(
-                "Gagal membuat gambar hasil kompresi."
+        reject(
+          new Error(
+            "Canvas tidak valid atau toBlob() tidak tersedia."
+          )
+        );
+
+        return;
+      }
+
+      const mimeType =
+        typeof type ===
+          "string" &&
+        type.trim()
+          ? type.trim()
+          : "image/jpeg";
+
+      const qualityNumber =
+        Number(
+          quality
+        );
+
+      const kualitas =
+        Number.isFinite(
+          qualityNumber
+        )
+          ? Math.min(
+              1,
+              Math.max(
+                0,
+                qualityNumber
               )
+            )
+          : undefined;
+
+      try {
+
+        canvas.toBlob(
+          (blob) => {
+
+            if (
+              !blob ||
+              !(
+                blob instanceof
+                  Blob
+              )
+            ) {
+
+              reject(
+                new Error(
+                  "Gagal membuat gambar hasil kompresi."
+                )
+              );
+
+              return;
+            }
+
+            resolve(
+              blob
             );
+          },
+          mimeType,
+          kualitas
+        );
 
-            return;
-          }
+      } catch (
+        blobError
+      ) {
 
-          resolve(blob);
-
-        },
-        type,
-        quality
-      );
-
+        reject(
+          new Error(
+            "Gagal mengonversi canvas menjadi Blob: " +
+            (
+              blobError?.message ||
+              "Kesalahan tidak diketahui."
+            )
+          )
+        );
+      }
     }
   );
 }
