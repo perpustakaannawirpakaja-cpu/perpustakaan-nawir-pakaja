@@ -19740,52 +19740,278 @@ function buatPackageOpfEpubFixed({
 }) {
 
   const idBuku =
-    Number(bookId);
+    Number(
+      bookId
+    );
 
   if (
-    !Number.isInteger(idBuku) ||
-    idBuku < 1 ||
-    !Array.isArray(pages) ||
-    pages.length < 1
+    !Number.isInteger(
+      idBuku
+    ) ||
+    idBuku < 1
   ) {
+
     throw new Error(
-      "Metadata package EPUB tidak valid."
+      "ID buku untuk package EPUB tidak valid."
     );
   }
 
+  if (
+    !Array.isArray(
+      pages
+    ) ||
+    pages.length < 1
+  ) {
+
+    throw new Error(
+      "Metadata halaman package EPUB tidak tersedia."
+    );
+  }
+
+  if (
+    typeof escapeXmlEpub !==
+      "function"
+  ) {
+
+    throw new Error(
+      "Function escapeXmlEpub tidak tersedia."
+    );
+  }
+
+  const judulBersih =
+    typeof title ===
+      "string"
+      ? title.trim()
+      : "";
+
+  const bahasaBersih =
+    typeof language ===
+      "string"
+      ? language.trim()
+      : "";
+
+  const judulFinal =
+    judulBersih ||
+    "Buku";
+
+  const bahasaFinal =
+    bahasaBersih ||
+    "id";
+
   const safeTitle =
-    escapeXmlEpub(title);
+    escapeXmlEpub(
+      judulFinal
+    );
+
+  const safeLanguage =
+    escapeXmlEpub(
+      bahasaFinal
+    );
+
+  if (
+    !safeTitle ||
+    !safeLanguage
+  ) {
+
+    throw new Error(
+      "Metadata utama package EPUB tidak valid."
+    );
+  }
+
+  const idTerpakai =
+    new Set();
+
+  const hrefTerpakai =
+    new Set();
+
+  const halamanTervalidasi =
+    pages.map(
+      (
+        page,
+        index
+      ) => {
+
+        if (
+          !page ||
+          typeof page !==
+            "object"
+        ) {
+
+          throw new Error(
+            `Metadata halaman EPUB ke-${index + 1} tidak valid.`
+          );
+        }
+
+        const pageNumber =
+          Number(
+            page.pageNumber
+          );
+
+        const nomorYangDiharapkan =
+          index + 1;
+
+        if (
+          !Number.isInteger(
+            pageNumber
+          ) ||
+          pageNumber !==
+            nomorYangDiharapkan
+        ) {
+
+          throw new Error(
+            `Urutan halaman EPUB tidak valid pada halaman ${nomorYangDiharapkan}.`
+          );
+        }
+
+        const nomorFile =
+          String(
+            pageNumber
+          )
+            .padStart(
+              4,
+              "0"
+            );
+
+        const imageId =
+          typeof page.imageId ===
+            "string"
+            ? page.imageId.trim()
+            : "";
+
+        const xhtmlId =
+          typeof page.xhtmlId ===
+            "string"
+            ? page.xhtmlId.trim()
+            : "";
+
+        const imageHref =
+          typeof page.imageHref ===
+            "string"
+            ? page.imageHref.trim()
+            : "";
+
+        const xhtmlHref =
+          typeof page.xhtmlHref ===
+            "string"
+            ? page.xhtmlHref.trim()
+            : "";
+
+        const expectedImageId =
+          `image-${nomorFile}`;
+
+        const expectedXhtmlId =
+          `page-${nomorFile}`;
+
+        const expectedImageHref =
+          `Images/page-${nomorFile}.jpg`;
+
+        const expectedXhtmlHref =
+          `Text/page-${nomorFile}.xhtml`;
+
+        if (
+          imageId !==
+            expectedImageId ||
+          xhtmlId !==
+            expectedXhtmlId ||
+          imageHref !==
+            expectedImageHref ||
+          xhtmlHref !==
+            expectedXhtmlHref
+        ) {
+
+          throw new Error(
+            `Metadata file EPUB halaman ${pageNumber} tidak konsisten.`
+          );
+        }
+
+        if (
+          idTerpakai.has(
+            imageId
+          ) ||
+          idTerpakai.has(
+            xhtmlId
+          )
+        ) {
+
+          throw new Error(
+            `ID manifest EPUB duplikat pada halaman ${pageNumber}.`
+          );
+        }
+
+        if (
+          hrefTerpakai.has(
+            imageHref
+          ) ||
+          hrefTerpakai.has(
+            xhtmlHref
+          )
+        ) {
+
+          throw new Error(
+            `Href manifest EPUB duplikat pada halaman ${pageNumber}.`
+          );
+        }
+
+        idTerpakai.add(
+          imageId
+        );
+
+        idTerpakai.add(
+          xhtmlId
+        );
+
+        hrefTerpakai.add(
+          imageHref
+        );
+
+        hrefTerpakai.add(
+          xhtmlHref
+        );
+
+        return {
+          pageNumber,
+          imageId,
+          xhtmlId,
+          imageHref,
+          xhtmlHref
+        };
+      }
+    );
 
   const identifier =
     `urn:perpustakaan-nawir-pakaja:${idBuku}`;
 
   const manifestPages =
-    pages
+    halamanTervalidasi
       .map(
         (page) => `
     <item
-      id="${page.imageId}"
-      href="${page.imageHref}"
+      id="${escapeXmlEpub(page.imageId)}"
+      href="${escapeXmlEpub(page.imageHref)}"
       media-type="image/jpeg"
     />
 
     <item
-      id="${page.xhtmlId}"
-      href="${page.xhtmlHref}"
+      id="${escapeXmlEpub(page.xhtmlId)}"
+      href="${escapeXmlEpub(page.xhtmlHref)}"
       media-type="application/xhtml+xml"
     />`
       )
-      .join("");
+      .join(
+        ""
+      );
 
   const spinePages =
-    pages
+    halamanTervalidasi
       .map(
         (page) => `
     <itemref
-      idref="${page.xhtmlId}"
+      idref="${escapeXmlEpub(page.xhtmlId)}"
     />`
       )
-      .join("");
+      .join(
+        ""
+      );
 
   const modified =
     new Date()
@@ -19813,7 +20039,7 @@ function buatPackageOpfEpubFixed({
     </dc:title>
 
     <dc:language>
-      ${language}
+      ${safeLanguage}
     </dc:language>
 
     <meta
