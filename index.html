@@ -10627,6 +10627,26 @@ function updateAdminActiveFilterChips() {
 
 function urutkanBukuAdmin() {
 
+  if (
+    typeof document ===
+      "undefined"
+  ) {
+
+    return false;
+  }
+
+  if (
+    typeof cariBukuAdmin !==
+      "function"
+  ) {
+
+    console.error(
+      "Function cariBukuAdmin tidak tersedia."
+    );
+
+    return false;
+  }
+
   const select =
     document.getElementById(
       "admin-book-sort"
@@ -10637,8 +10657,80 @@ function urutkanBukuAdmin() {
       "admin-book-list"
     );
 
-  if (!select || !adminBookList) {
-    return;
+  if (
+    !select ||
+    !adminBookList ||
+    typeof adminBookList.querySelectorAll !==
+      "function" ||
+    typeof adminBookList.appendChild !==
+      "function"
+  ) {
+
+    return false;
+  }
+
+  const modeMentah =
+    typeof select.value ===
+      "string"
+      ? select.value
+          .trim()
+          .toLowerCase()
+      : "";
+
+  const mode =
+    [
+      "title-asc",
+      "title-desc",
+      "newest",
+      "oldest"
+    ].includes(
+      modeMentah
+    )
+      ? modeMentah
+      : "title-asc";
+
+  if (
+    select.value !==
+      mode
+  ) {
+
+    select.value =
+      mode;
+  }
+
+  try {
+
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
+
+      if (
+        mode ===
+          "title-asc"
+      ) {
+
+        localStorage.removeItem(
+          "adminBookSort"
+        );
+
+      } else {
+
+        localStorage.setItem(
+          "adminBookSort",
+          mode
+        );
+      }
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    console.warn(
+      "Preferensi sorting Admin tidak dapat diperbarui:",
+      storageError
+    );
   }
 
   const items =
@@ -10648,72 +10740,135 @@ function urutkanBukuAdmin() {
       )
     );
 
-  const mode =
-    select.value;
+  const ambilJudul =
+    (item) => {
 
-  localStorage.setItem(
-  "adminBookSort",
-  mode
-);
+      if (
+        !item ||
+        typeof item.querySelector !==
+          "function"
+      ) {
 
-  items.sort((a, b) => {
+        return "";
+      }
 
-    const titleA =
-      (
-        a.querySelector("strong")
-          ?.textContent || ""
+      const text =
+        item.querySelector(
+          "strong"
+        )?.textContent;
+
+      return typeof text ===
+        "string"
+        ? text.trim()
+        : "";
+    };
+
+  const ambilTanggal =
+    (item) => {
+
+      const nilaiTanggal =
+        typeof item?.dataset?.createdAt ===
+          "string"
+          ? item.dataset.createdAt
+          : "";
+
+      const waktu =
+        Date.parse(
+          nilaiTanggal
+        );
+
+      return Number.isFinite(
+        waktu
       )
-        .trim();
+        ? waktu
+        : 0;
+    };
 
-    const titleB =
-      (
-        b.querySelector("strong")
-          ?.textContent || ""
-      )
-        .trim();
+  items.sort(
+    (a, b) => {
 
-    const dateA =
-      Date.parse(
-        a.dataset.createdAt || ""
-      ) || 0;
+      const titleA =
+        ambilJudul(
+          a
+        );
 
-    const dateB =
-      Date.parse(
-        b.dataset.createdAt || ""
-      ) || 0;
+      const titleB =
+        ambilJudul(
+          b
+        );
 
-    if (mode === "title-desc") {
-      return titleB.localeCompare(
-        titleA,
+      if (
+        mode ===
+          "title-desc"
+      ) {
+
+        return titleB.localeCompare(
+          titleA,
+          "id",
+          {
+            sensitivity:
+              "base"
+          }
+        );
+      }
+
+      if (
+        mode ===
+          "newest"
+      ) {
+
+        return (
+          ambilTanggal(
+            b
+          ) -
+          ambilTanggal(
+            a
+          )
+        );
+      }
+
+      if (
+        mode ===
+          "oldest"
+      ) {
+
+        return (
+          ambilTanggal(
+            a
+          ) -
+          ambilTanggal(
+            b
+          )
+        );
+      }
+
+      return titleA.localeCompare(
+        titleB,
         "id",
-        { sensitivity: "base" }
+        {
+          sensitivity:
+            "base"
+        }
       );
     }
+  );
 
-    if (mode === "newest") {
-      return dateB - dateA;
+  items.forEach(
+    (item) => {
+
+      if (item) {
+
+        adminBookList.appendChild(
+          item
+        );
+      }
     }
+  );
 
-    if (mode === "oldest") {
-      return dateA - dateB;
-    }
-
-    return titleA.localeCompare(
-      titleB,
-      "id",
-      { sensitivity: "base" }
-    );
-
-  });
-
-  items.forEach((item) => {
-    adminBookList.appendChild(item);
-  });
-
-  cariBukuAdmin();
-
-  updateResetFilterBukuAdmin();
-
+  return (
+    cariBukuAdmin() !==
+    false
+  );
 }
 
 async function muatDaftarBukuAdmin() {
