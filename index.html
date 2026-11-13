@@ -7002,7 +7002,18 @@ function filterKategoriBuku() {
 }
 
 
-function ubahGayaTampilan(style) {
+function ubahGayaTampilan(
+  style
+) {
+
+  if (
+    typeof document ===
+      "undefined" ||
+    !document.body
+  ) {
+
+    return false;
+  }
 
   const allowedStyles = [
     "glass",
@@ -7012,32 +7023,46 @@ function ubahGayaTampilan(style) {
     "minimal"
   ];
 
-  if (!allowedStyles.includes(style)) {
-    style = "glass";
-  }
+  const styleDipilih =
+    typeof style ===
+      "string"
+      ? style.trim()
+      : "";
+
+  const styleAktif =
+    allowedStyles.includes(
+      styleDipilih
+    )
+      ? styleDipilih
+      : "glass";
 
   document.body.dataset.uiStyle =
-    style;
+    styleAktif;
 
-  localStorage.setItem(
-    "uiStyle",
-    style
-  );
-}
+  try {
 
+    if (
+      typeof localStorage !==
+        "undefined"
+    ) {
 
-if(
-  localStorage.getItem("tema")
-  === "dark"
-){
+      localStorage.setItem(
+        "uiStyle",
+        styleAktif
+      );
+    }
 
-  document.body
-  .classList
-  .add("dark");
+  } catch (
+    storageError
+  ) {
 
-  tombolTema.innerHTML =
-  "☀️ Light";
+    console.warn(
+      "Preferensi gaya tampilan tidak dapat disimpan:",
+      storageError
+    );
+  }
 
+  return true;
 }
 
 
