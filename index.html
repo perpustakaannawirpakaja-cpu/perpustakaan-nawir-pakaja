@@ -30256,13 +30256,33 @@ async function simpanMetadataOutputEpub({
     );
   }
 
-  if (
-    String(
+  const waktuDikirim =
+    Date.parse(
+      outputCreatedAt
+    );
+
+  const waktuTersimpan =
+    Date.parse(
       session.output_created_at
-    ) !==
-      String(
-        outputCreatedAt
-      )
+    );
+
+  if (
+    !Number.isFinite(
+      waktuDikirim
+    ) ||
+    !Number.isFinite(
+      waktuTersimpan
+    )
+  ) {
+
+    throw new Error(
+      "Waktu metadata EPUB hasil simpan tidak valid."
+    );
+  }
+
+  if (
+    waktuTersimpan !==
+      waktuDikirim
   ) {
 
     throw new Error(
