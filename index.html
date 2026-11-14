@@ -12453,10 +12453,23 @@ async function muatPdfJsKompresi() {
 
   if (pdfJsKompresi) {
 
+    const cachedWorkerOptions =
+      pdfJsKompresi
+        .GlobalWorkerOptions;
+
+    const cachedWorkerOptionsType =
+      typeof cachedWorkerOptions;
+
     if (
       typeof pdfJsKompresi.getDocument !==
         "function" ||
-      !pdfJsKompresi.GlobalWorkerOptions
+      !cachedWorkerOptions ||
+      (
+        cachedWorkerOptionsType !==
+          "object" &&
+        cachedWorkerOptionsType !==
+          "function"
+      )
     ) {
 
       pdfJsKompresi =
@@ -12500,10 +12513,21 @@ async function muatPdfJsKompresi() {
     );
   }
 
+  const globalWorkerOptions =
+    pdfjsLib
+      .GlobalWorkerOptions;
+
+  const globalWorkerOptionsType =
+    typeof globalWorkerOptions;
+
   if (
-    !pdfjsLib.GlobalWorkerOptions ||
-    typeof pdfjsLib.GlobalWorkerOptions !==
-      "object"
+    !globalWorkerOptions ||
+    (
+      globalWorkerOptionsType !==
+        "object" &&
+      globalWorkerOptionsType !==
+        "function"
+    )
   ) {
 
     throw new Error(
@@ -12521,11 +12545,24 @@ async function muatPdfJsKompresi() {
     );
   }
 
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    workerSrc;
+  try {
+
+    globalWorkerOptions.workerSrc =
+      workerSrc;
+
+  } catch (workerError) {
+
+    throw new Error(
+      "Worker PDF.js gagal dikonfigurasi: " +
+      (
+        workerError?.message ||
+        "workerSrc tidak dapat diatur."
+      )
+    );
+  }
 
   if (
-    pdfjsLib.GlobalWorkerOptions.workerSrc !==
+    globalWorkerOptions.workerSrc !==
       workerSrc
   ) {
 
