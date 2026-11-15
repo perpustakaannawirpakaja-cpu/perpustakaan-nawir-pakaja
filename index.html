@@ -22808,6 +22808,12 @@ async function buatPdfFinalBuku() {
       error
     );
 
+    let rollbackWarning =
+      null;
+
+    let cleanupWarning =
+      null;
+
     if (
       !finalisasiIntiSelesai &&
       metadataPdfFinalAktif
@@ -22883,6 +22889,15 @@ async function buatPdfFinalBuku() {
           "Rollback metadata PDF final gagal:",
           rollbackError
         );
+
+        rollbackWarning =
+          new Error(
+            "Rollback metadata PDF final gagal: " +
+            (
+              rollbackError?.message ||
+              "Error tidak diketahui."
+            )
+          );
       }
     }
 
@@ -22909,6 +22924,15 @@ async function buatPdfFinalBuku() {
             removeFinalError
           );
 
+          cleanupWarning =
+            new Error(
+              "File PDF final baru belum berhasil dibersihkan dari Storage: " +
+              (
+                removeFinalError?.message ||
+                "Error tidak diketahui."
+              )
+            );
+
         } else {
 
           finalStoragePath =
@@ -22921,14 +22945,51 @@ async function buatPdfFinalBuku() {
           "Cleanup PDF final gagal:",
           cleanupError
         );
+
+        cleanupWarning =
+          new Error(
+            "File PDF final baru belum berhasil dibersihkan dari Storage: " +
+            (
+              cleanupError?.message ||
+              "Error tidak diketahui."
+            )
+          );
       }
     }
+
+    const detailError = [
+      error?.message ||
+        "Pembuatan PDF final gagal."
+    ];
+
+    if (rollbackWarning) {
+
+      detailError.push(
+        "Rollback: " +
+        rollbackWarning.message
+      );
+    }
+
+    if (cleanupWarning) {
+
+      detailError.push(
+        "Cleanup: " +
+        cleanupWarning.message
+      );
+    }
+
+    const errorUntukDicatat =
+      new Error(
+        detailError.join(
+          " | "
+        )
+      );
 
     try {
 
       await catatErrorIngestionBuku(
         bookId,
-        error
+        errorUntukDicatat
       );
 
     } catch (trackingError) {
@@ -22961,6 +23022,18 @@ async function buatPdfFinalBuku() {
           error?.message ||
           "Pembuatan PDF final gagal."
         );
+
+      if (rollbackWarning) {
+
+        message.textContent +=
+          " ⚠️ Rollback metadata PDF final gagal; PDF baru dipertahankan karena database mungkin masih menunjuk file tersebut.";
+      }
+
+      if (cleanupWarning) {
+
+        message.textContent +=
+          " ⚠️ File PDF final baru belum berhasil dibersihkan dari Storage.";
+      }
     }
 
     return;
