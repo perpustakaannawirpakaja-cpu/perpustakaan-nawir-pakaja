@@ -8488,14 +8488,123 @@ async function loadPresetsFromCloud() {
   let zoomLevel = parseFloat(localStorage.getItem(zoomKey)) || 1;
   
   function applyZoom() {
-  const flipElement = document.getElementById("page-flip");
 
-  flipElement.style.transform = `scale(${zoomLevel})`;
-  flipElement.style.transformOrigin = "center top";
+  const logWarn = (
+    ...args
+  ) => {
 
-  document.getElementById("zoom-reset").textContent =
-    Math.round(zoomLevel * 100) + "%";
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk menerapkan zoom Reader."
+    );
+
+    return false;
+  }
+
+  const zoomValue =
+    typeof zoomLevel !==
+      "undefined"
+      ? Number(
+          zoomLevel
+        )
+      : NaN;
+
+  if (
+    !Number.isFinite(
+      zoomValue
+    ) ||
+    zoomValue < 0.6 ||
+    zoomValue > 2
+  ) {
+
+    logWarn(
+      "zoomLevel Reader tidak valid:",
+      zoomLevel
+    );
+
+    return false;
+  }
+
+  const flipElement =
+    document.getElementById(
+      "page-flip"
+    );
+
+  const zoomReset =
+    document.getElementById(
+      "zoom-reset"
+    );
+
+  if (
+    !flipElement ||
+    !flipElement.style
+  ) {
+
+    logWarn(
+      "Elemen page-flip Reader tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    !zoomReset
+  ) {
+
+    logWarn(
+      "Tombol zoom-reset Reader tidak tersedia."
+    );
+
+    return false;
+  }
+
+  try {
+
+    flipElement.style.transform =
+      `scale(${zoomValue})`;
+
+    flipElement.style.transformOrigin =
+      "center top";
+
+    zoomReset.textContent =
+      Math.round(
+        zoomValue * 100
+      ) + "%";
+
+  } catch (
+    applyError
+  ) {
+
+    logWarn(
+      "Zoom Reader gagal diterapkan:",
+      applyError
+    );
+
+    return false;
+  }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
   applyZoom();
 
@@ -9505,18 +9614,142 @@ document.getElementById("contrast-slider").addEventListener("input", (e) => {
 });
 
 function applySavedContrast() {
-  const slider = document.getElementById("contrast-slider");
-  const valueLabel = document.getElementById("contrast-value");
-  const page = document.getElementById("page-flip");
 
-  slider.value = contrastLevel;
-  valueLabel.textContent = contrastLevel + "%";
+  const logWarn = (
+    ...args
+  ) => {
 
-  page.style.setProperty(
-    "--reader-contrast",
-    contrastLevel / 100
-  );
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk menerapkan contrast Reader."
+    );
+
+    return false;
+  }
+
+  const contrastValue =
+    typeof contrastLevel !==
+      "undefined"
+      ? Number(
+          contrastLevel
+        )
+      : NaN;
+
+  if (
+    !Number.isFinite(
+      contrastValue
+    ) ||
+    contrastValue < 70 ||
+    contrastValue > 150
+  ) {
+
+    logWarn(
+      "contrastLevel Reader tidak valid:",
+      contrastLevel
+    );
+
+    return false;
+  }
+
+  const slider =
+    document.getElementById(
+      "contrast-slider"
+    );
+
+  const valueLabel =
+    document.getElementById(
+      "contrast-value"
+    );
+
+  const page =
+    document.getElementById(
+      "page-flip"
+    );
+
+  if (
+    !slider
+  ) {
+
+    logWarn(
+      "Slider contrast Reader tidak ditemukan."
+    );
+
+    return false;
+  }
+
+  if (
+    !valueLabel
+  ) {
+
+    logWarn(
+      "Label contrast Reader tidak ditemukan."
+    );
+
+    return false;
+  }
+
+  if (
+    !page ||
+    !page.style ||
+    typeof page.style.setProperty !==
+      "function"
+  ) {
+
+    logWarn(
+      "Elemen page-flip Reader tidak tersedia untuk menerapkan contrast."
+    );
+
+    return false;
+  }
+
+  try {
+
+    slider.value =
+      contrastValue;
+
+    valueLabel.textContent =
+      contrastValue +
+      "%";
+
+    page.style.setProperty(
+      "--reader-contrast",
+      contrastValue / 100
+    );
+
+  } catch (
+    applyError
+  ) {
+
+    logWarn(
+      "Contrast Reader gagal diterapkan:",
+      applyError
+    );
+
+    return false;
+  }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 applySavedContrast();
 
@@ -10077,40 +10310,300 @@ if (currentActivePreset === name) {
 });
 
 function applySavedBrightness() {
-  const slider = document.getElementById("brightness-slider");
-  const valueLabel = document.getElementById("brightness-value");
-  const page = document.getElementById("page-flip");
 
-  slider.value = brightnessLevel;
-  valueLabel.textContent = brightnessLevel + "%";
+  const logWarn = (
+    ...args
+  ) => {
 
-  page.style.setProperty(
-    "--reader-brightness",
-    brightnessLevel / 100
-  );
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk menerapkan brightness Reader."
+    );
+
+    return false;
+  }
+
+  const brightnessValue =
+    typeof brightnessLevel !==
+      "undefined"
+      ? Number(
+          brightnessLevel
+        )
+      : NaN;
+
+  if (
+    !Number.isFinite(
+      brightnessValue
+    ) ||
+    brightnessValue < 50 ||
+    brightnessValue > 130
+  ) {
+
+    logWarn(
+      "brightnessLevel Reader tidak valid:",
+      brightnessLevel
+    );
+
+    return false;
+  }
+
+  const slider =
+    document.getElementById(
+      "brightness-slider"
+    );
+
+  const valueLabel =
+    document.getElementById(
+      "brightness-value"
+    );
+
+  const page =
+    document.getElementById(
+      "page-flip"
+    );
+
+  if (
+    !slider
+  ) {
+
+    logWarn(
+      "Slider brightness Reader tidak ditemukan."
+    );
+
+    return false;
+  }
+
+  if (
+    !valueLabel
+  ) {
+
+    logWarn(
+      "Label brightness Reader tidak ditemukan."
+    );
+
+    return false;
+  }
+
+  if (
+    !page ||
+    !page.style ||
+    typeof page.style.setProperty !==
+      "function"
+  ) {
+
+    logWarn(
+      "Elemen page-flip Reader tidak tersedia untuk menerapkan brightness."
+    );
+
+    return false;
+  }
+
+  try {
+
+    slider.value =
+      brightnessValue;
+
+    valueLabel.textContent =
+      brightnessValue +
+      "%";
+
+    page.style.setProperty(
+      "--reader-brightness",
+      brightnessValue / 100
+    );
+
+  } catch (
+    applyError
+  ) {
+
+    logWarn(
+      "Brightness Reader gagal diterapkan:",
+      applyError
+    );
+
+    return false;
+  }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 applySavedBrightness();
   
-  function applySavedReadingMode() {
-  const page = document.getElementById("page-flip");
-  const button = document.getElementById("reading-mode");
+function applySavedReadingMode() {
 
-  page.classList.remove("mode-sepia", "mode-night");
+  const logWarn = (
+    ...args
+  ) => {
 
-  if (readingMode === 1) {
-    page.classList.add("mode-sepia");
-    button.textContent = "📜";
-    button.title = "Mode Sepia";
-  } else if (readingMode === 2) {
-    page.classList.add("mode-night");
-    button.textContent = "🌙";
-    button.title = "Mode Malam";
-  } else {
-    button.textContent = "☀️";
-    button.title = "Mode Normal";
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk menerapkan mode baca Reader."
+    );
+
+    return false;
   }
+
+  const readingModeValue =
+    typeof readingMode !==
+      "undefined"
+      ? Number(
+          readingMode
+        )
+      : NaN;
+
+  if (
+    !Number.isInteger(
+      readingModeValue
+    ) ||
+    readingModeValue < 0 ||
+    readingModeValue > 2
+  ) {
+
+    logWarn(
+      "readingMode Reader tidak valid:",
+      readingMode
+    );
+
+    return false;
+  }
+
+  const page =
+    document.getElementById(
+      "page-flip"
+    );
+
+  const button =
+    document.getElementById(
+      "reading-mode"
+    );
+
+  if (
+    !page ||
+    !page.classList ||
+    typeof page.classList.remove !==
+      "function" ||
+    typeof page.classList.add !==
+      "function"
+  ) {
+
+    logWarn(
+      "Elemen page-flip Reader tidak tersedia untuk menerapkan mode baca."
+    );
+
+    return false;
+  }
+
+  if (
+    !button
+  ) {
+
+    logWarn(
+      "Tombol reading-mode Reader tidak tersedia."
+    );
+
+    return false;
+  }
+
+  try {
+
+    page.classList.remove(
+      "mode-sepia",
+      "mode-night"
+    );
+
+    if (
+      readingModeValue ===
+        1
+    ) {
+
+      page.classList.add(
+        "mode-sepia"
+      );
+
+      button.textContent =
+        "📜";
+
+      button.title =
+        "Mode Sepia";
+
+    } else if (
+      readingModeValue ===
+        2
+    ) {
+
+      page.classList.add(
+        "mode-night"
+      );
+
+      button.textContent =
+        "🌙";
+
+      button.title =
+        "Mode Malam";
+
+    } else {
+
+      button.textContent =
+        "☀️";
+
+      button.title =
+        "Mode Normal";
+    }
+
+  } catch (
+    applyError
+  ) {
+
+    logWarn(
+      "Mode baca Reader gagal diterapkan:",
+      applyError
+    );
+
+    return false;
+  }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 /* =========================================
    READER SETTINGS CLOUD SYNC
@@ -10559,78 +11052,618 @@ function scheduleReaderSettingsCloudSave() {
 
 async function loadReaderSettingsFromCloud() {
 
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
+  const logWarn = (
+    ...args
+  ) => {
 
-  if (userError || !user) {
-    return;
-  }
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-  const { data, error } = await db
-    .from("reader_settings")
-    .select(
-      "reading_mode, zoom_level, brightness_level, contrast_level"
-    )
-    .eq("user_id", user.id)
-    .maybeSingle();
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-  if (error) {
+  const logError = (
+    ...args
+  ) => {
 
-    console.error(
-      "Gagal mengambil pengaturan Reader dari cloud:",
-      error
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
+
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    !db.auth ||
+    typeof db.auth.getUser !==
+      "function" ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    logWarn(
+      "Supabase tidak tersedia untuk mengambil pengaturan Reader."
     );
 
-    return;
+    return false;
   }
 
-  if (data) {
+  if (
+    typeof localStorage ===
+      "undefined" ||
+    typeof localStorage.setItem !==
+      "function"
+  ) {
+
+    logWarn(
+      "localStorage tidak tersedia untuk menyimpan pengaturan Reader."
+    );
+
+    return false;
+  }
+
+  let user =
+    null;
+
+  try {
+
+    const userResult =
+      await db.auth.getUser();
+
+    if (
+      userResult &&
+      userResult.error
+    ) {
+
+      logWarn(
+        "User Reader gagal dibaca sebelum mengambil pengaturan:",
+        userResult.error
+      );
+
+      return false;
+    }
+
+    user =
+      userResult &&
+      userResult.data
+        ? userResult.data.user
+        : null;
+
+  } catch (
+    userException
+  ) {
+
+    logError(
+      "Terjadi error saat membaca user Reader:",
+      userException
+    );
+
+    return false;
+  }
+
+  if (
+    !user ||
+    typeof user.id !==
+      "string" ||
+    !user.id.trim()
+  ) {
+
+    logWarn(
+      "User Reader belum login atau ID user tidak valid."
+    );
+
+    return false;
+  }
+
+  let settingsTable =
+    null;
+
+  try {
+
+    settingsTable =
+      db.from(
+        "reader_settings"
+      );
+
+  } catch (
+    tableError
+  ) {
+
+    logError(
+      "Tabel reader_settings gagal diakses:",
+      tableError
+    );
+
+    return false;
+  }
+
+  if (
+    !settingsTable ||
+    typeof settingsTable.select !==
+      "function"
+  ) {
+
+    logWarn(
+      "Operasi select reader_settings tidak tersedia."
+    );
+
+    return false;
+  }
+
+  let query =
+    null;
+
+  try {
+
+    query =
+      settingsTable.select(
+        "reading_mode, zoom_level, brightness_level, contrast_level"
+      );
+
+    if (
+      !query ||
+      typeof query.eq !==
+        "function"
+    ) {
+
+      logWarn(
+        "Operasi filter reader_settings tidak tersedia."
+      );
+
+      return false;
+    }
+
+    query =
+      query.eq(
+        "user_id",
+        user.id.trim()
+      );
+
+    if (
+      !query ||
+      typeof query.maybeSingle !==
+        "function"
+    ) {
+
+      logWarn(
+        "Operasi maybeSingle reader_settings tidak tersedia."
+      );
+
+      return false;
+    }
+
+  } catch (
+    queryError
+  ) {
+
+    logError(
+      "Query reader_settings gagal disiapkan:",
+      queryError
+    );
+
+    return false;
+  }
+
+  let loadResult =
+    null;
+
+  try {
+
+    loadResult =
+      await query.maybeSingle();
+
+  } catch (
+    loadException
+  ) {
+
+    logError(
+      "Terjadi error saat mengambil pengaturan Reader dari cloud:",
+      loadException
+    );
+
+    return false;
+  }
+
+  if (
+    loadResult &&
+    loadResult.error
+  ) {
+
+    logError(
+      "Gagal mengambil pengaturan Reader dari cloud:",
+      loadResult.error
+    );
+
+    return false;
+  }
+
+  const data =
+    loadResult
+      ? loadResult.data
+      : null;
+
+  if (
+    data
+  ) {
+
+    const rawReadingMode =
+      Number(
+        data.reading_mode ??
+          0
+      );
+
+    const rawZoom =
+      Number(
+        data.zoom_level ??
+          1
+      );
+
+    const rawBrightness =
+      Number(
+        data.brightness_level ??
+          100
+      );
+
+    const rawContrast =
+      Number(
+        data.contrast_level ??
+          100
+      );
+
+    const readingModeBaru =
+      Number.isInteger(
+        rawReadingMode
+      ) &&
+      rawReadingMode >= 0 &&
+      rawReadingMode <= 2
+        ? rawReadingMode
+        : 0;
+
+    const zoomBaru =
+      Number.isFinite(
+        rawZoom
+      ) &&
+      rawZoom >= 0.6 &&
+      rawZoom <= 2
+        ? rawZoom
+        : 1;
+
+    const brightnessBaru =
+      Number.isFinite(
+        rawBrightness
+      ) &&
+      rawBrightness >= 50 &&
+      rawBrightness <= 130
+        ? rawBrightness
+        : 100;
+
+    const contrastBaru =
+      Number.isFinite(
+        rawContrast
+      ) &&
+      rawContrast >= 70 &&
+      rawContrast <= 150
+        ? rawContrast
+        : 100;
+
+    const perluMigrasiCloud =
+      readingModeBaru !==
+        data.reading_mode ||
+      zoomBaru !==
+        data.zoom_level ||
+      brightnessBaru !==
+        data.brightness_level ||
+      contrastBaru !==
+        data.contrast_level;
 
     readingMode =
-      Number(data.reading_mode ?? 0);
+      readingModeBaru;
 
     zoomLevel =
-      Number(data.zoom_level ?? 1);
+      zoomBaru;
 
     brightnessLevel =
-      Number(data.brightness_level ?? 100);
+      brightnessBaru;
 
     contrastLevel =
-      Number(data.contrast_level ?? 100);
+      contrastBaru;
 
-    localStorage.setItem(
-      readingModeKey,
-      readingMode
-    );
+    try {
 
-    localStorage.setItem(
-      zoomKey,
-      zoomLevel
-    );
+      localStorage.setItem(
+        readingModeKey,
+        readingMode
+      );
 
-    localStorage.setItem(
-      brightnessKey,
-      brightnessLevel
-    );
+      localStorage.setItem(
+        zoomKey,
+        zoomLevel
+      );
 
-    localStorage.setItem(
-      contrastKey,
-      contrastLevel
-    );
+      localStorage.setItem(
+        brightnessKey,
+        brightnessLevel
+      );
 
-    applySavedReadingMode();
-    applyZoom();
-    applySavedBrightness();
-    applySavedContrast();
+      localStorage.setItem(
+        contrastKey,
+        contrastLevel
+      );
 
-    return;
+    } catch (
+      storageError
+    ) {
+
+      logError(
+        "Pengaturan Reader dari cloud gagal disimpan ke localStorage:",
+        storageError
+      );
+
+      return false;
+    }
+
+    let berhasil =
+      true;
+
+    if (
+      typeof applySavedReadingMode ===
+        "function"
+    ) {
+
+      try {
+
+        if (
+          applySavedReadingMode() ===
+            false
+        ) {
+
+          berhasil =
+            false;
+        }
+
+      } catch (
+        readingModeError
+      ) {
+
+        logError(
+          "Mode baca Reader gagal diterapkan:",
+          readingModeError
+        );
+
+        berhasil =
+          false;
+      }
+
+    } else {
+
+      logWarn(
+        "Function applySavedReadingMode tidak tersedia."
+      );
+
+      berhasil =
+        false;
+    }
+
+    if (
+      typeof applyZoom ===
+        "function"
+    ) {
+
+      try {
+
+        if (
+          applyZoom() ===
+            false
+        ) {
+
+          berhasil =
+            false;
+        }
+
+      } catch (
+        zoomError
+      ) {
+
+        logError(
+          "Zoom Reader gagal diterapkan:",
+          zoomError
+        );
+
+        berhasil =
+          false;
+      }
+
+    } else {
+
+      logWarn(
+        "Function applyZoom tidak tersedia."
+      );
+
+      berhasil =
+        false;
+    }
+
+    if (
+      typeof applySavedBrightness ===
+        "function"
+    ) {
+
+      try {
+
+        if (
+          applySavedBrightness() ===
+            false
+        ) {
+
+          berhasil =
+            false;
+        }
+
+      } catch (
+        brightnessError
+      ) {
+
+        logError(
+          "Brightness Reader gagal diterapkan:",
+          brightnessError
+        );
+
+        berhasil =
+          false;
+      }
+
+    } else {
+
+      logWarn(
+        "Function applySavedBrightness tidak tersedia."
+      );
+
+      berhasil =
+        false;
+    }
+
+    if (
+      typeof applySavedContrast ===
+        "function"
+    ) {
+
+      try {
+
+        if (
+          applySavedContrast() ===
+            false
+        ) {
+
+          berhasil =
+            false;
+        }
+
+      } catch (
+        contrastError
+      ) {
+
+        logError(
+          "Contrast Reader gagal diterapkan:",
+          contrastError
+        );
+
+        berhasil =
+          false;
+      }
+
+    } else {
+
+      logWarn(
+        "Function applySavedContrast tidak tersedia."
+      );
+
+      berhasil =
+        false;
+    }
+
+    if (
+      perluMigrasiCloud
+    ) {
+
+      if (
+        typeof saveReaderSettingsToCloud !==
+          "function"
+      ) {
+
+        logWarn(
+          "Pengaturan Reader perlu dinormalisasi tetapi saveReaderSettingsToCloud tidak tersedia."
+        );
+
+        berhasil =
+          false;
+
+      } else {
+
+        try {
+
+          const hasilMigrasi =
+            await saveReaderSettingsToCloud();
+
+          if (
+            hasilMigrasi ===
+              false
+          ) {
+
+            logWarn(
+              "Normalisasi pengaturan Reader belum berhasil disimpan ke cloud."
+            );
+
+            berhasil =
+              false;
+          }
+
+        } catch (
+          migrationError
+        ) {
+
+          logError(
+            "Normalisasi pengaturan Reader gagal disimpan ke cloud:",
+            migrationError
+          );
+
+          berhasil =
+            false;
+        }
+      }
+    }
+
+    return berhasil;
   }
 
+  if (
+    typeof saveReaderSettingsToCloud !==
+      "function"
+  ) {
 
-  await saveReaderSettingsToCloud();
+    logWarn(
+      "saveReaderSettingsToCloud tidak tersedia untuk membuat pengaturan Reader di cloud."
+    );
+
+    return false;
+  }
+
+  try {
+
+    const hasilSimpan =
+      await saveReaderSettingsToCloud();
+
+    return hasilSimpan !==
+      false;
+
+  } catch (
+    saveException
+  ) {
+
+    logError(
+      "Pengaturan Reader lokal gagal disinkronkan ke cloud:",
+      saveException
+    );
+
+    return false;
+  }
 }
+/*BATAS FUNCTION*/
 
 applySavedReadingMode();
   const defaultPresetName = localStorage.getItem(defaultPresetKey);
