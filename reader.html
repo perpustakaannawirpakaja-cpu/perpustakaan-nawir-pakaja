@@ -6167,86 +6167,632 @@ async function loadReadingProgressFromCloud() {
 );
 
 function refreshPresetList() {
-  const presetList = document.getElementById("preset-list");
-  const defaultPresetName =
-    localStorage.getItem(defaultPresetKey);
+
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function" ||
+    typeof document.createElement !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk memperbarui daftar preset Reader."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof displayPresets ===
+      "undefined" ||
+    !displayPresets ||
+    typeof displayPresets !==
+      "object" ||
+    Array.isArray(
+      displayPresets
+    )
+  ) {
+
+    logWarn(
+      "State displayPresets Reader tidak valid."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof localStorage ===
+      "undefined" ||
+    typeof localStorage.getItem !==
+      "function"
+  ) {
+
+    logWarn(
+      "localStorage tidak tersedia untuk membaca status preset Reader."
+    );
+
+    return false;
+  }
+
+  const presetList =
+    document.getElementById(
+      "preset-list"
+    );
 
   const defaultBadge =
-  document.getElementById("preset-default-badge");
+    document.getElementById(
+      "preset-default-badge"
+    );
+
   const activeBadge =
-  document.getElementById("preset-active-badge");
+    document.getElementById(
+      "preset-active-badge"
+    );
 
-const activePresetName =
-  localStorage.getItem(activePresetKey);
+  const presetCount =
+    document.getElementById(
+      "preset-count"
+    );
 
-defaultBadge.textContent =
-  defaultPresetName && displayPresets[defaultPresetName]
-    ? `⭐ DEFAULT: ${defaultPresetName}`
-    : "☆ Belum ada preset default";
+  if (
+    !presetList ||
+    !defaultBadge ||
+    !activeBadge ||
+    !presetCount
+  ) {
 
-activeBadge.textContent =
-  activePresetName === "__CUSTOM__"
-    ? "🟠 KUSTOM: Tampilan diubah manual"
-    : activePresetName && displayPresets[activePresetName]
-      ? `🟢 AKTIF: ${activePresetName}`
-      : "⚪ Belum ada preset aktif";
-  
+    logWarn(
+      "Elemen UI daftar preset Reader tidak lengkap."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof presetList.appendChild !==
+      "function"
+  ) {
+
+    logWarn(
+      "Elemen daftar preset Reader tidak mendukung appendChild."
+    );
+
+    return false;
+  }
+
+  let defaultPresetName =
+    null;
+
+  let activePresetName =
+    null;
+
+  try {
+
+    defaultPresetName =
+      localStorage.getItem(
+        defaultPresetKey
+      );
+
+    activePresetName =
+      localStorage.getItem(
+        activePresetKey
+      );
+
+  } catch (
+    storageError
+  ) {
+
+    logWarn(
+      "Status preset Reader gagal dibaca dari localStorage:",
+      storageError
+    );
+
+    return false;
+  }
+
+  defaultBadge.textContent =
+    defaultPresetName &&
+    displayPresets[
+      defaultPresetName
+    ]
+      ? `⭐ DEFAULT: ${defaultPresetName}`
+      : "☆ Belum ada preset default";
+
+  activeBadge.textContent =
+    activePresetName ===
+      "__CUSTOM__"
+      ? "🟠 KUSTOM: Tampilan diubah manual"
+      : (
+          activePresetName &&
+          displayPresets[
+            activePresetName
+          ]
+        )
+          ? `🟢 AKTIF: ${activePresetName}`
+          : "⚪ Belum ada preset aktif";
+
   presetList.innerHTML =
     '<option value="">Pilih preset...</option>';
 
-  const presetNames = Object.keys(displayPresets).sort((a, b) => {
-    if (a === defaultPresetName) return -1;
-    if (b === defaultPresetName) return 1;
+  const presetNames =
+    Object.keys(
+      displayPresets
+    ).sort(
+      (a, b) => {
 
-    return a.localeCompare(b, "id", {
-      sensitivity: "base"
-    });
-  });
+        if (
+          a ===
+            defaultPresetName
+        ) {
 
-  document.getElementById("preset-count").textContent =
-  `🎛️ Total Preset: ${presetNames.length}`;
+          return -1;
+        }
 
-  presetNames.forEach((name) => {
-    const option = document.createElement("option");
+        if (
+          b ===
+            defaultPresetName
+        ) {
 
-    option.value = name;
-    let statusIcons = "";
+          return 1;
+        }
 
-if (name === defaultPresetName) {
-  statusIcons += " ⭐";
+        return a.localeCompare(
+          b,
+          "id",
+          {
+            sensitivity:
+              "base"
+          }
+        );
+      }
+    );
+
+  presetCount.textContent =
+    `🎛️ Total Preset: ${presetNames.length}`;
+
+  presetNames.forEach(
+    (name) => {
+
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        name;
+
+      let statusIcons =
+        "";
+
+      if (
+        name ===
+          defaultPresetName
+      ) {
+
+        statusIcons +=
+          " ⭐";
+      }
+
+      if (
+        name ===
+          activePresetName
+      ) {
+
+        statusIcons +=
+          " 🟢";
+      }
+
+      option.textContent =
+        name +
+        statusIcons;
+
+      presetList.appendChild(
+        option
+      );
+    }
+  );
+
+  return true;
 }
-
-if (name === activePresetName) {
-  statusIcons += " 🟢";
-}
-
-option.textContent = name + statusIcons;
-
-    presetList.appendChild(option);
-  });
-}
+/*BATAS FUNCTION*/
 
 function markDisplayAsCustom() {
-  localStorage.setItem(activePresetKey, "__CUSTOM__");
 
-  scheduleReaderSettingsCloudSave();
-  
-  refreshPresetList();
-}
+  const logWarn = (
+    ...args
+  ) => {
 
-function updatePresetSummary() {
-  const presetList = document.getElementById("preset-list");
-  const summary = document.getElementById("preset-summary");
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-  const name = presetList.value;
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-  if (!name || !displayPresets[name]) {
-    summary.textContent =
-      "Pilih preset untuk melihat ringkasan.";
-    return;
+  if (
+    typeof localStorage ===
+      "undefined" ||
+    typeof localStorage.setItem !==
+      "function"
+  ) {
+
+    logWarn(
+      "localStorage tidak tersedia untuk menandai tampilan Reader sebagai kustom."
+    );
+
+    return false;
   }
 
-  const preset = displayPresets[name];
+  if (
+    typeof activePresetKey !==
+      "string" ||
+    !activePresetKey.trim()
+  ) {
+
+    logWarn(
+      "Key preset aktif Reader tidak valid."
+    );
+
+    return false;
+  }
+
+  try {
+
+    localStorage.setItem(
+      activePresetKey,
+      "__CUSTOM__"
+    );
+
+  } catch (
+    storageError
+  ) {
+
+    logWarn(
+      "Status preset kustom gagal disimpan ke localStorage:",
+      storageError
+    );
+
+    return false;
+  }
+
+  let berhasil =
+    true;
+
+  if (
+    typeof schedulePresetCloudSave ===
+      "function"
+  ) {
+
+    try {
+
+      const hasilPresetCloud =
+        schedulePresetCloudSave();
+
+      if (
+        hasilPresetCloud ===
+          false
+      ) {
+
+        logWarn(
+          "Penjadwalan sinkronisasi status preset kustom ke cloud belum berhasil."
+        );
+
+        berhasil =
+          false;
+      }
+
+    } catch (
+      presetCloudError
+    ) {
+
+      logWarn(
+        "Penjadwalan sinkronisasi status preset kustom ke cloud gagal:",
+        presetCloudError
+      );
+
+      berhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "Function schedulePresetCloudSave tidak tersedia."
+    );
+
+    berhasil =
+      false;
+  }
+
+  if (
+    typeof scheduleReaderSettingsCloudSave ===
+      "function"
+  ) {
+
+    try {
+
+      const hasilSettingsCloud =
+        scheduleReaderSettingsCloudSave();
+
+      if (
+        hasilSettingsCloud ===
+          false
+      ) {
+
+        logWarn(
+          "Penjadwalan sinkronisasi pengaturan Reader belum berhasil."
+        );
+
+        berhasil =
+          false;
+      }
+
+    } catch (
+      settingsCloudError
+    ) {
+
+      logWarn(
+        "Penjadwalan sinkronisasi pengaturan Reader gagal:",
+        settingsCloudError
+      );
+
+      berhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "Function scheduleReaderSettingsCloudSave tidak tersedia."
+    );
+
+    berhasil =
+      false;
+  }
+
+  if (
+    typeof refreshPresetList ===
+      "function"
+  ) {
+
+    try {
+
+      const hasilRefresh =
+        refreshPresetList();
+
+      if (
+        hasilRefresh ===
+          false
+      ) {
+
+        logWarn(
+          "Daftar preset Reader gagal diperbarui setelah masuk mode kustom."
+        );
+
+        berhasil =
+          false;
+      }
+
+    } catch (
+      refreshError
+    ) {
+
+      logWarn(
+        "Daftar preset Reader gagal diperbarui setelah masuk mode kustom:",
+        refreshError
+      );
+
+      berhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "Function refreshPresetList tidak tersedia."
+    );
+
+    berhasil =
+      false;
+  }
+
+  if (
+    typeof updatePresetActionState ===
+      "function"
+  ) {
+
+    try {
+
+      const hasilActionState =
+        updatePresetActionState();
+
+      if (
+        hasilActionState ===
+          false
+      ) {
+
+        logWarn(
+          "Status tombol aksi preset gagal diperbarui."
+        );
+
+        berhasil =
+          false;
+      }
+
+    } catch (
+      actionStateError
+    ) {
+
+      logWarn(
+        "Status tombol aksi preset gagal diperbarui:",
+        actionStateError
+      );
+
+      berhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "Function updatePresetActionState tidak tersedia."
+    );
+
+    berhasil =
+      false;
+  }
+
+  return berhasil;
+}
+/*BATAS FUNCTION*/
+
+function updatePresetSummary() {
+
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function" ||
+    typeof document.createElement !==
+      "function" ||
+    typeof document.createTextNode !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk memperbarui ringkasan preset Reader."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof displayPresets ===
+      "undefined" ||
+    !displayPresets ||
+    typeof displayPresets !==
+      "object" ||
+    Array.isArray(
+      displayPresets
+    )
+  ) {
+
+    logWarn(
+      "State displayPresets Reader tidak valid."
+    );
+
+    return false;
+  }
+
+  const presetList =
+    document.getElementById(
+      "preset-list"
+    );
+
+  const summary =
+    document.getElementById(
+      "preset-summary"
+    );
+
+  if (
+    !presetList ||
+    !summary
+  ) {
+
+    logWarn(
+      "Elemen UI ringkasan preset Reader tidak lengkap."
+    );
+
+    return false;
+  }
+
+  const name =
+    typeof presetList.value ===
+      "string"
+      ? presetList.value
+          .trim()
+      : "";
+
+  if (
+    !name ||
+    !Object.prototype.hasOwnProperty.call(
+      displayPresets,
+      name
+    )
+  ) {
+
+    summary.textContent =
+      "Pilih preset untuk melihat ringkasan.";
+
+    return true;
+  }
+
+  const preset =
+    displayPresets[
+      name
+    ];
+
+  if (
+    !preset ||
+    typeof preset !==
+      "object" ||
+    Array.isArray(
+      preset
+    )
+  ) {
+
+    logWarn(
+      "Data preset yang dipilih tidak valid:",
+      name
+    );
+
+    summary.textContent =
+      "Preset tidak valid.";
+
+    return false;
+  }
 
   const modeNames = [
     "Normal",
@@ -6254,40 +6800,333 @@ function updatePresetSummary() {
     "Malam"
   ];
 
-  const modeName =
-    modeNames[preset.readingMode ?? 0] || "Normal";
+  const readingModeRaw =
+    Number(
+      preset.readingMode ??
+        0
+    );
 
-  const zoomPercent =
-    Math.round((preset.zoomLevel ?? 1) * 100);
+  const readingMode =
+    Number.isInteger(
+      readingModeRaw
+    ) &&
+    readingModeRaw >= 0 &&
+    readingModeRaw <
+      modeNames.length
+      ? readingModeRaw
+      : 0;
+
+  const zoomRaw =
+    Number(
+      preset.zoomLevel ??
+        1
+    );
+
+  const brightnessRaw =
+    Number(
+      preset.brightnessLevel ??
+        100
+    );
+
+  const contrastRaw =
+    Number(
+      preset.contrastLevel ??
+        100
+    );
+
+  const zoomLevel =
+    Number.isFinite(
+      zoomRaw
+    ) &&
+    zoomRaw > 0
+      ? zoomRaw
+      : 1;
 
   const brightness =
-    preset.brightnessLevel ?? 100;
+    Number.isFinite(
+      brightnessRaw
+    )
+      ? brightnessRaw
+      : 100;
 
   const contrast =
-    preset.contrastLevel ?? 100;
+    Number.isFinite(
+      contrastRaw
+    )
+      ? contrastRaw
+      : 100;
 
-  summary.innerHTML = `
-  <div><strong>Mode:</strong> ${modeName}</div>
-  <div><strong>Zoom:</strong> ${zoomPercent}%</div>
-  <div><strong>Brightness:</strong> ${brightness}%</div>
-  <div><strong>Contrast:</strong> ${contrast}%</div>
-`;
+  const modeName =
+    modeNames[
+      readingMode
+    ];
+
+  const zoomPercent =
+    Math.round(
+      zoomLevel *
+        100
+    );
+
+  const modeRow =
+    document.createElement(
+      "div"
+    );
+
+  const modeLabel =
+    document.createElement(
+      "strong"
+    );
+
+  modeLabel.textContent =
+    "Mode:";
+
+  modeRow.appendChild(
+    modeLabel
+  );
+
+  modeRow.appendChild(
+    document.createTextNode(
+      " " +
+      modeName
+    )
+  );
+
+  const zoomRow =
+    document.createElement(
+      "div"
+    );
+
+  const zoomLabel =
+    document.createElement(
+      "strong"
+    );
+
+  zoomLabel.textContent =
+    "Zoom:";
+
+  zoomRow.appendChild(
+    zoomLabel
+  );
+
+  zoomRow.appendChild(
+    document.createTextNode(
+      " " +
+      zoomPercent +
+      "%"
+    )
+  );
+
+  const brightnessRow =
+    document.createElement(
+      "div"
+    );
+
+  const brightnessLabel =
+    document.createElement(
+      "strong"
+    );
+
+  brightnessLabel.textContent =
+    "Brightness:";
+
+  brightnessRow.appendChild(
+    brightnessLabel
+  );
+
+  brightnessRow.appendChild(
+    document.createTextNode(
+      " " +
+      brightness +
+      "%"
+    )
+  );
+
+  const contrastRow =
+    document.createElement(
+      "div"
+    );
+
+  const contrastLabel =
+    document.createElement(
+      "strong"
+    );
+
+  contrastLabel.textContent =
+    "Contrast:";
+
+  contrastRow.appendChild(
+    contrastLabel
+  );
+
+  contrastRow.appendChild(
+    document.createTextNode(
+      " " +
+      contrast +
+      "%"
+    )
+  );
+
+  summary.textContent =
+    "";
+
+  summary.appendChild(
+    modeRow
+  );
+
+  summary.appendChild(
+    zoomRow
+  );
+
+  summary.appendChild(
+    brightnessRow
+  );
+
+  summary.appendChild(
+    contrastRow
+  );
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 function updatePresetActionState() {
-  const presetList = document.getElementById("preset-list");
 
-  const selectedName = presetList.value;
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk memperbarui status aksi preset Reader."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof displayPresets ===
+      "undefined" ||
+    !displayPresets ||
+    typeof displayPresets !==
+      "object" ||
+    Array.isArray(
+      displayPresets
+    )
+  ) {
+
+    logWarn(
+      "State displayPresets Reader tidak valid."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof localStorage ===
+      "undefined" ||
+    typeof localStorage.getItem !==
+      "function"
+  ) {
+
+    logWarn(
+      "localStorage tidak tersedia untuk membaca status preset Reader."
+    );
+
+    return false;
+  }
+
+  const presetList =
+    document.getElementById(
+      "preset-list"
+    );
+
+  if (
+    !presetList
+  ) {
+
+    logWarn(
+      "Daftar preset Reader tidak ditemukan."
+    );
+
+    return false;
+  }
+
+  const selectedName =
+    typeof presetList.value ===
+      "string"
+      ? presetList.value
+          .trim()
+      : "";
 
   const hasSelection =
-    selectedName &&
-    displayPresets[selectedName];
+    Boolean(
+      selectedName &&
+      Object.prototype.hasOwnProperty.call(
+        displayPresets,
+        selectedName
+      ) &&
+      displayPresets[
+        selectedName
+      ] &&
+      typeof displayPresets[
+        selectedName
+      ] ===
+        "object" &&
+      !Array.isArray(
+        displayPresets[
+          selectedName
+        ]
+      )
+    );
 
-  const defaultPresetName =
-    localStorage.getItem(defaultPresetKey);
+  let defaultPresetName =
+    null;
 
-  const activePresetName =
-    localStorage.getItem(activePresetKey);
+  let activePresetName =
+    null;
+
+  try {
+
+    defaultPresetName =
+      localStorage.getItem(
+        defaultPresetKey
+      );
+
+    activePresetName =
+      localStorage.getItem(
+        activePresetKey
+      );
+
+  } catch (
+    storageError
+  ) {
+
+    logWarn(
+      "Status preset Reader gagal dibaca dari localStorage:",
+      storageError
+    );
+
+    return false;
+  }
 
   const actionButtons = [
     "preset-load",
@@ -6297,148 +7136,1342 @@ function updatePresetActionState() {
     "preset-delete"
   ];
 
-  actionButtons.forEach((id) => {
-    document.getElementById(id).disabled = !hasSelection;
-  });
+  actionButtons.forEach(
+    (id) => {
 
-  document.getElementById("preset-clear-default").disabled =
-    !defaultPresetName;
+      if (
+        typeof id !==
+          "string" ||
+        !id.trim()
+      ) {
 
-  const hasPresets =
-    Object.keys(displayPresets).length > 0;
+        return;
+      }
 
-  document.getElementById("preset-export").disabled =
-    !hasPresets;
+      const button =
+        document.getElementById(
+          id
+        );
+
+      if (
+        !button
+      ) {
+
+        return;
+      }
+
+      button.disabled =
+        !Boolean(
+          hasSelection
+        );
+    }
+  );
+
+  const clearDefaultButton =
+    document.getElementById(
+      "preset-clear-default"
+    );
+
+  const exportButton =
+    document.getElementById(
+      "preset-export"
+    );
 
   const loadButton =
-    document.getElementById("preset-load");
+    document.getElementById(
+      "preset-load"
+    );
 
   const defaultButton =
-    document.getElementById("preset-default");
+    document.getElementById(
+      "preset-default"
+    );
+
+  if (
+    !clearDefaultButton ||
+    !exportButton ||
+    !loadButton ||
+    !defaultButton
+  ) {
+
+    logWarn(
+      "Elemen tombol aksi preset Reader tidak lengkap."
+    );
+
+    return false;
+  }
+
+  clearDefaultButton.disabled =
+    !Boolean(
+      defaultPresetName
+    );
+
+  const hasPresets =
+    Object.keys(
+      displayPresets
+    ).length > 0;
+
+  exportButton.disabled =
+    !hasPresets;
 
   loadButton.textContent =
-    hasSelection && selectedName === activePresetName
+    hasSelection &&
+    selectedName ===
+      activePresetName
       ? "🟢 Sedang Dipakai"
       : "▶ Pakai Preset";
 
   defaultButton.textContent =
-    hasSelection && selectedName === defaultPresetName
+    hasSelection &&
+    selectedName ===
+      defaultPresetName
       ? "⭐ Sudah Default"
       : "⭐ Set Default";
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 async function savePresetsToCloud() {
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
 
-  if (userError || !user) {
-    return;
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  const logError = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
+
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    !db.auth ||
+    typeof db.auth.getUser !==
+      "function" ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    logWarn(
+      "Supabase tidak tersedia untuk menyimpan preset Reader."
+    );
+
+    return false;
   }
 
-  const { error } = await db
-    .from("reader_presets")
-    .upsert(
-      {
-        user_id: user.id,
-        presets: displayPresets,
-        default_preset:
-          localStorage.getItem(defaultPresetKey),
-        active_preset:
-          localStorage.getItem(activePresetKey),
-        updated_at: new Date().toISOString()
-      },
-      {
-        onConflict: "user_id"
+  if (
+    typeof displayPresets ===
+      "undefined" ||
+    !displayPresets ||
+    typeof displayPresets !==
+      "object" ||
+    Array.isArray(
+      displayPresets
+    )
+  ) {
+
+    logWarn(
+      "State displayPresets Reader tidak valid untuk disimpan ke cloud."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof localStorage ===
+      "undefined" ||
+    typeof localStorage.getItem !==
+      "function"
+  ) {
+
+    logWarn(
+      "localStorage tidak tersedia untuk membaca metadata preset Reader."
+    );
+
+    return false;
+  }
+
+  let user = null;
+
+  try {
+
+    const userResult =
+      await db.auth.getUser();
+
+    if (
+      userResult &&
+      userResult.error
+    ) {
+
+      logWarn(
+        "User Reader gagal dibaca sebelum menyimpan preset:",
+        userResult.error
+      );
+
+      return false;
+    }
+
+    user =
+      userResult &&
+      userResult.data
+        ? userResult.data.user
+        : null;
+
+  } catch (
+    userException
+  ) {
+
+    logError(
+      "Terjadi error saat membaca user Reader:",
+      userException
+    );
+
+    return false;
+  }
+
+  if (
+    !user ||
+    typeof user.id !==
+      "string" ||
+    !user.id.trim()
+  ) {
+
+    logWarn(
+      "User Reader belum login atau ID user tidak valid."
+    );
+
+    return false;
+  }
+
+  let defaultPresetName =
+    null;
+
+  let activePresetName =
+    null;
+
+  try {
+
+    const storedDefault =
+      localStorage.getItem(
+        defaultPresetKey
+      );
+
+    const storedActive =
+      localStorage.getItem(
+        activePresetKey
+      );
+
+    if (
+      typeof storedDefault ===
+        "string" &&
+      storedDefault.trim() &&
+      Object.prototype.hasOwnProperty.call(
+        displayPresets,
+        storedDefault.trim()
+      )
+    ) {
+
+      defaultPresetName =
+        storedDefault.trim();
+    }
+
+    if (
+      typeof storedActive ===
+        "string" &&
+      storedActive.trim()
+    ) {
+
+      const activeName =
+        storedActive.trim();
+
+      if (
+        activeName ===
+          "__CUSTOM__" ||
+        Object.prototype.hasOwnProperty.call(
+          displayPresets,
+          activeName
+        )
+      ) {
+
+        activePresetName =
+          activeName;
       }
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    logError(
+      "Metadata preset Reader gagal dibaca dari localStorage:",
+      storageError
     );
 
-  if (error) {
-    console.error(
-      "Gagal menyimpan preset ke cloud:",
-      error
-    );
+    return false;
   }
+
+  let presetTable = null;
+
+  try {
+
+    presetTable =
+      db.from(
+        "reader_presets"
+      );
+
+  } catch (
+    tableError
+  ) {
+
+    logError(
+      "Tabel reader_presets gagal diakses:",
+      tableError
+    );
+
+    return false;
+  }
+
+  if (
+    !presetTable ||
+    typeof presetTable.upsert !==
+      "function"
+  ) {
+
+    logWarn(
+      "Operasi upsert reader_presets tidak tersedia."
+    );
+
+    return false;
+  }
+
+  let saveResult = null;
+
+  try {
+
+    saveResult =
+      await presetTable.upsert(
+        {
+          user_id:
+            user.id.trim(),
+
+          presets:
+            displayPresets,
+
+          default_preset:
+            defaultPresetName,
+
+          active_preset:
+            activePresetName,
+
+          updated_at:
+            new Date()
+              .toISOString()
+        },
+        {
+          onConflict:
+            "user_id"
+        }
+      );
+
+  } catch (
+    saveException
+  ) {
+
+    logError(
+      "Terjadi error saat menyimpan preset Reader ke cloud:",
+      saveException
+    );
+
+    return false;
+  }
+
+  if (
+    saveResult &&
+    saveResult.error
+  ) {
+
+    logError(
+      "Gagal menyimpan preset ke cloud:",
+      saveResult.error
+    );
+
+    return false;
+  }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 let presetCloudSaveTimer = null;
 
 function schedulePresetCloudSave() {
-  clearTimeout(presetCloudSaveTimer);
 
-  presetCloudSaveTimer = setTimeout(() => {
-    savePresetsToCloud();
-  }, 800);
-}  
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  const logError = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
+
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof presetCloudSaveTimer ===
+      "undefined"
+  ) {
+
+    logWarn(
+      "State timer preset cloud tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof clearTimeout !==
+      "function" ||
+    typeof setTimeout !==
+      "function"
+  ) {
+
+    logWarn(
+      "Timer browser tidak tersedia untuk menjadwalkan penyimpanan preset cloud."
+    );
+
+    return false;
+  }
+
+  try {
+
+    if (
+      presetCloudSaveTimer !==
+        null
+    ) {
+
+      clearTimeout(
+        presetCloudSaveTimer
+      );
+
+      presetCloudSaveTimer =
+        null;
+    }
+
+    presetCloudSaveTimer =
+      setTimeout(
+        async () => {
+
+          try {
+
+            if (
+              typeof savePresetsToCloud !==
+                "function"
+            ) {
+
+              return false;
+            }
+
+            const berhasil =
+              await savePresetsToCloud();
+
+            return berhasil !==
+              false;
+
+          } catch (
+            error
+          ) {
+
+            if (
+              typeof console !==
+                "undefined" &&
+              typeof console.error ===
+                "function"
+            ) {
+
+              console.error(
+                "Scheduled preset cloud save gagal:",
+                error
+              );
+            }
+
+            return false;
+          }
+        },
+        800
+      );
+
+  } catch (
+    scheduleError
+  ) {
+
+    presetCloudSaveTimer =
+      null;
+
+    logError(
+      "Gagal menjadwalkan penyimpanan preset Reader ke cloud:",
+      scheduleError
+    );
+
+    return false;
+  }
+
+  return true;
+}
+/*BATAS FUNCTION*/  
 
 async function loadPresetsFromCloud() {
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
 
-  if (userError || !user) {
-    return;
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  const logError = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
+
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    !db.auth ||
+    typeof db.auth.getUser !==
+      "function" ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    logWarn(
+      "Supabase tidak tersedia untuk mengambil preset Reader."
+    );
+
+    return false;
   }
 
-  const { data, error } = await db
-    .from("reader_presets")
-    .select(
-      "presets, default_preset, active_preset"
+  if (
+    typeof localStorage ===
+      "undefined" ||
+    typeof localStorage.getItem !==
+      "function" ||
+    typeof localStorage.setItem !==
+      "function" ||
+    typeof localStorage.removeItem !==
+      "function"
+  ) {
+
+    logWarn(
+      "localStorage tidak tersedia untuk sinkronisasi preset Reader."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof displayPresets ===
+      "undefined" ||
+    !displayPresets ||
+    typeof displayPresets !==
+      "object" ||
+    Array.isArray(
+      displayPresets
     )
-    .eq("user_id", user.id)
-    .maybeSingle();
+  ) {
 
-  if (error) {
-    console.error(
+    logWarn(
+      "State displayPresets Reader tidak valid."
+    );
+
+    return false;
+  }
+
+  let user = null;
+
+  try {
+
+    const userResult =
+      await db.auth.getUser();
+
+    if (
+      userResult &&
+      userResult.error
+    ) {
+
+      logWarn(
+        "User Reader gagal dibaca sebelum mengambil preset:",
+        userResult.error
+      );
+
+      return false;
+    }
+
+    user =
+      userResult &&
+      userResult.data
+        ? userResult.data.user
+        : null;
+
+  } catch (
+    userException
+  ) {
+
+    logError(
+      "Terjadi error saat membaca user Reader:",
+      userException
+    );
+
+    return false;
+  }
+
+  if (
+    !user ||
+    typeof user.id !==
+      "string" ||
+    !user.id.trim()
+  ) {
+
+    logWarn(
+      "User Reader belum login atau ID user tidak valid."
+    );
+
+    return false;
+  }
+
+  let presetTable = null;
+
+  try {
+
+    presetTable =
+      db.from(
+        "reader_presets"
+      );
+
+  } catch (
+    tableError
+  ) {
+
+    logError(
+      "Tabel reader_presets gagal diakses:",
+      tableError
+    );
+
+    return false;
+  }
+
+  if (
+    !presetTable ||
+    typeof presetTable.select !==
+      "function"
+  ) {
+
+    logWarn(
+      "Operasi select reader_presets tidak tersedia."
+    );
+
+    return false;
+  }
+
+  let query = null;
+
+  try {
+
+    query =
+      presetTable.select(
+        "presets, default_preset, active_preset"
+      );
+
+    if (
+      !query ||
+      typeof query.eq !==
+        "function"
+    ) {
+
+      logWarn(
+        "Operasi filter reader_presets tidak tersedia."
+      );
+
+      return false;
+    }
+
+    query =
+      query.eq(
+        "user_id",
+        user.id.trim()
+      );
+
+    if (
+      !query ||
+      typeof query.maybeSingle !==
+        "function"
+    ) {
+
+      logWarn(
+        "Operasi maybeSingle reader_presets tidak tersedia."
+      );
+
+      return false;
+    }
+
+  } catch (
+    queryError
+  ) {
+
+    logError(
+      "Query reader_presets gagal disiapkan:",
+      queryError
+    );
+
+    return false;
+  }
+
+  let loadResult = null;
+
+  try {
+
+    loadResult =
+      await query.maybeSingle();
+
+  } catch (
+    loadException
+  ) {
+
+    logError(
+      "Terjadi error saat mengambil preset Reader dari cloud:",
+      loadException
+    );
+
+    return false;
+  }
+
+  if (
+    loadResult &&
+    loadResult.error
+  ) {
+
+    logError(
       "Gagal mengambil preset dari cloud:",
-      error
+      loadResult.error
     );
-    return;
+
+    return false;
   }
 
-  if (data) {
+  const data =
+    loadResult
+      ? loadResult.data
+      : null;
+
+  if (
+    data
+  ) {
+
+    let perluMigrasiCloud =
+      false;
+
+    let cloudPresets =
+      data.presets;
+
+    if (
+      !cloudPresets ||
+      typeof cloudPresets !==
+        "object" ||
+      Array.isArray(
+        cloudPresets
+      )
+    ) {
+
+      cloudPresets =
+        {};
+
+      perluMigrasiCloud =
+        true;
+    }
+
+    const normalizedPresets =
+      {};
+
+    const presetEntries =
+      Object.entries(
+        cloudPresets
+      );
+
+    for (
+      const [
+        rawName,
+        rawPreset
+      ] of presetEntries
+    ) {
+
+      if (
+        typeof rawName !==
+          "string"
+      ) {
+
+        perluMigrasiCloud =
+          true;
+
+        continue;
+      }
+
+      const name =
+        rawName.trim();
+
+      if (
+        !name ||
+        name ===
+          "__proto__" ||
+        name ===
+          "prototype" ||
+        name ===
+          "constructor"
+      ) {
+
+        perluMigrasiCloud =
+          true;
+
+        continue;
+      }
+
+      if (
+        !rawPreset ||
+        typeof rawPreset !==
+          "object" ||
+        Array.isArray(
+          rawPreset
+        )
+      ) {
+
+        perluMigrasiCloud =
+          true;
+
+        continue;
+      }
+
+      const readingModeRaw =
+        Number(
+          rawPreset.readingMode ??
+            0
+        );
+
+      const zoomRaw =
+        Number(
+          rawPreset.zoomLevel ??
+            1
+        );
+
+      const brightnessRaw =
+        Number(
+          rawPreset.brightnessLevel ??
+            100
+        );
+
+      const contrastRaw =
+        Number(
+          rawPreset.contrastLevel ??
+            100
+        );
+
+      const readingMode =
+        Number.isInteger(
+          readingModeRaw
+        ) &&
+        readingModeRaw >= 0 &&
+        readingModeRaw <= 2
+          ? readingModeRaw
+          : 0;
+
+      const zoomLevel =
+        Number.isFinite(
+          zoomRaw
+        ) &&
+        zoomRaw > 0
+          ? zoomRaw
+          : 1;
+
+      const brightnessLevel =
+        Number.isFinite(
+          brightnessRaw
+        )
+          ? brightnessRaw
+          : 100;
+
+      const contrastLevel =
+        Number.isFinite(
+          contrastRaw
+        )
+          ? contrastRaw
+          : 100;
+
+      normalizedPresets[
+        name
+      ] = {
+        readingMode,
+        zoomLevel,
+        brightnessLevel,
+        contrastLevel
+      };
+
+      if (
+        name !==
+          rawName ||
+        readingMode !==
+          rawPreset.readingMode ||
+        zoomLevel !==
+          rawPreset.zoomLevel ||
+        brightnessLevel !==
+          rawPreset.brightnessLevel ||
+        contrastLevel !==
+          rawPreset.contrastLevel
+      ) {
+
+        perluMigrasiCloud =
+          true;
+      }
+    }
+
+    let defaultPresetName =
+      null;
+
+    if (
+      typeof data.default_preset ===
+        "string" &&
+      data.default_preset.trim()
+    ) {
+
+      const candidateDefault =
+        data.default_preset.trim();
+
+      if (
+        Object.prototype.hasOwnProperty.call(
+          normalizedPresets,
+          candidateDefault
+        )
+      ) {
+
+        defaultPresetName =
+          candidateDefault;
+
+      } else {
+
+        perluMigrasiCloud =
+          true;
+      }
+    }
+
+    let activePresetName =
+      null;
+
+    if (
+      typeof data.active_preset ===
+        "string" &&
+      data.active_preset.trim()
+    ) {
+
+      const candidateActive =
+        data.active_preset.trim();
+
+      if (
+        candidateActive ===
+          "__CUSTOM__" ||
+        Object.prototype.hasOwnProperty.call(
+          normalizedPresets,
+          candidateActive
+        )
+      ) {
+
+        activePresetName =
+          candidateActive;
+
+      } else {
+
+        perluMigrasiCloud =
+          true;
+      }
+    }
+
     displayPresets =
-      data.presets || {};
+      normalizedPresets;
 
-    localStorage.setItem(
-      presetsKey,
-      JSON.stringify(displayPresets)
+    try {
+
+      localStorage.setItem(
+        presetsKey,
+        JSON.stringify(
+          displayPresets
+        )
+      );
+
+      if (
+        defaultPresetName
+      ) {
+
+        localStorage.setItem(
+          defaultPresetKey,
+          defaultPresetName
+        );
+
+      } else {
+
+        localStorage.removeItem(
+          defaultPresetKey
+        );
+      }
+
+      if (
+        activePresetName
+      ) {
+
+        localStorage.setItem(
+          activePresetKey,
+          activePresetName
+        );
+
+      } else {
+
+        localStorage.removeItem(
+          activePresetKey
+        );
+      }
+
+    } catch (
+      storageError
+    ) {
+
+      logError(
+        "Preset Reader dari cloud gagal disimpan ke localStorage:",
+        storageError
+      );
+
+      return false;
+    }
+
+    let berhasil =
+      true;
+
+    if (
+      typeof refreshPresetList ===
+        "function"
+    ) {
+
+      try {
+
+        if (
+          refreshPresetList() ===
+            false
+        ) {
+
+          berhasil =
+            false;
+        }
+
+      } catch (
+        refreshError
+      ) {
+
+        logError(
+          "Daftar preset gagal diperbarui setelah sinkronisasi cloud:",
+          refreshError
+        );
+
+        berhasil =
+          false;
+      }
+
+    } else {
+
+      berhasil =
+        false;
+
+      logWarn(
+        "Function refreshPresetList tidak tersedia."
+      );
+    }
+
+    if (
+      typeof updatePresetSummary ===
+        "function"
+    ) {
+
+      try {
+
+        if (
+          updatePresetSummary() ===
+            false
+        ) {
+
+          berhasil =
+            false;
+        }
+
+      } catch (
+        summaryError
+      ) {
+
+        logError(
+          "Ringkasan preset gagal diperbarui setelah sinkronisasi cloud:",
+          summaryError
+        );
+
+        berhasil =
+          false;
+      }
+
+    } else {
+
+      berhasil =
+        false;
+
+      logWarn(
+        "Function updatePresetSummary tidak tersedia."
+      );
+    }
+
+    if (
+      typeof updatePresetActionState ===
+        "function"
+    ) {
+
+      try {
+
+        if (
+          updatePresetActionState() ===
+            false
+        ) {
+
+          berhasil =
+            false;
+        }
+
+      } catch (
+        actionError
+      ) {
+
+        logError(
+          "Status aksi preset gagal diperbarui setelah sinkronisasi cloud:",
+          actionError
+        );
+
+        berhasil =
+          false;
+      }
+
+    } else {
+
+      berhasil =
+        false;
+
+      logWarn(
+        "Function updatePresetActionState tidak tersedia."
+      );
+    }
+
+    if (
+      perluMigrasiCloud
+    ) {
+
+      if (
+        typeof savePresetsToCloud !==
+          "function"
+      ) {
+
+        logWarn(
+          "Preset cloud perlu dinormalisasi tetapi savePresetsToCloud tidak tersedia."
+        );
+
+        berhasil =
+          false;
+
+      } else {
+
+        try {
+
+          const hasilMigrasi =
+            await savePresetsToCloud();
+
+          if (
+            hasilMigrasi ===
+              false
+          ) {
+
+            logWarn(
+              "Normalisasi preset cloud belum berhasil disimpan."
+            );
+
+            berhasil =
+              false;
+          }
+
+        } catch (
+          migrationError
+        ) {
+
+          logError(
+            "Normalisasi preset cloud gagal disimpan:",
+            migrationError
+          );
+
+          berhasil =
+            false;
+        }
+      }
+    }
+
+    return berhasil;
+  }
+
+  let hasLocalState =
+    Object.keys(
+      displayPresets
+    ).length > 0;
+
+  try {
+
+    const localDefault =
+      localStorage.getItem(
+        defaultPresetKey
+      );
+
+    const localActive =
+      localStorage.getItem(
+        activePresetKey
+      );
+
+    if (
+      localDefault ||
+      localActive
+    ) {
+
+      hasLocalState =
+        true;
+    }
+
+  } catch (
+    storageError
+  ) {
+
+    logError(
+      "Metadata preset lokal gagal dibaca:",
+      storageError
     );
 
-    if (data.default_preset) {
-      localStorage.setItem(
-        defaultPresetKey,
-        data.default_preset
-      );
-    } else {
-      localStorage.removeItem(defaultPresetKey);
-    }
-
-    if (data.active_preset) {
-      localStorage.setItem(
-        activePresetKey,
-        data.active_preset
-      );
-    } else {
-      localStorage.removeItem(activePresetKey);
-    }
-
-    refreshPresetList();
-    updatePresetSummary();
-    updatePresetActionState();
-
-    return;
+    return false;
   }
 
-  const hasLocalPresets =
-    Object.keys(displayPresets).length > 0;
+  if (
+    hasLocalState
+  ) {
 
-  if (hasLocalPresets) {
-    await savePresetsToCloud();
+    if (
+      typeof savePresetsToCloud !==
+        "function"
+    ) {
+
+      logWarn(
+        "savePresetsToCloud tidak tersedia untuk menyinkronkan preset lokal."
+      );
+
+      return false;
+    }
+
+    try {
+
+      const hasilSimpan =
+        await savePresetsToCloud();
+
+      return hasilSimpan !==
+        false;
+
+    } catch (
+      saveException
+    ) {
+
+      logError(
+        "Preset lokal gagal disinkronkan ke cloud:",
+        saveException
+      );
+
+      return false;
+    }
   }
-}  
+
+  return true;
+}
+/*BATAS FUNCTION*/
   
   refreshPresetList();
 
@@ -8085,55 +10118,443 @@ applySavedBrightness();
 
 async function saveReaderSettingsToCloud() {
 
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
+  const logWarn = (
+    ...args
+  ) => {
 
-  if (userError || !user) {
-    return;
-  }
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-  const { error } = await db
-    .from("reader_settings")
-    .upsert(
-      {
-        user_id: user.id,
-        reading_mode: readingMode,
-        zoom_level: zoomLevel,
-        brightness_level: brightnessLevel,
-        contrast_level: contrastLevel,
-        updated_at: new Date().toISOString()
-      },
-      {
-        onConflict: "user_id"
-      }
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  const logError = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
+
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    !db.auth ||
+    typeof db.auth.getUser !==
+      "function" ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    logWarn(
+      "Supabase tidak tersedia untuk menyimpan pengaturan Reader."
     );
 
-  if (error) {
-    console.error(
+    return false;
+  }
+
+  const readingModeValue =
+    typeof readingMode !==
+      "undefined"
+      ? Number(
+          readingMode
+        )
+      : NaN;
+
+  const zoomValue =
+    typeof zoomLevel !==
+      "undefined"
+      ? Number(
+          zoomLevel
+        )
+      : NaN;
+
+  const brightnessValue =
+    typeof brightnessLevel !==
+      "undefined"
+      ? Number(
+          brightnessLevel
+        )
+      : NaN;
+
+  const contrastValue =
+    typeof contrastLevel !==
+      "undefined"
+      ? Number(
+          contrastLevel
+        )
+      : NaN;
+
+  if (
+    !Number.isInteger(
+      readingModeValue
+    ) ||
+    readingModeValue < 0 ||
+    readingModeValue > 2
+  ) {
+
+    logWarn(
+      "readingMode Reader tidak valid:",
+      readingMode
+    );
+
+    return false;
+  }
+
+  if (
+    !Number.isFinite(
+      zoomValue
+    ) ||
+    zoomValue < 0.6 ||
+    zoomValue > 2
+  ) {
+
+    logWarn(
+      "zoomLevel Reader tidak valid:",
+      zoomLevel
+    );
+
+    return false;
+  }
+
+  if (
+    !Number.isFinite(
+      brightnessValue
+    ) ||
+    brightnessValue < 50 ||
+    brightnessValue > 130
+  ) {
+
+    logWarn(
+      "brightnessLevel Reader tidak valid:",
+      brightnessLevel
+    );
+
+    return false;
+  }
+
+  if (
+    !Number.isFinite(
+      contrastValue
+    ) ||
+    contrastValue < 70 ||
+    contrastValue > 150
+  ) {
+
+    logWarn(
+      "contrastLevel Reader tidak valid:",
+      contrastLevel
+    );
+
+    return false;
+  }
+
+  let user = null;
+
+  try {
+
+    const userResult =
+      await db.auth.getUser();
+
+    if (
+      userResult &&
+      userResult.error
+    ) {
+
+      logWarn(
+        "User Reader gagal dibaca sebelum menyimpan pengaturan:",
+        userResult.error
+      );
+
+      return false;
+    }
+
+    user =
+      userResult &&
+      userResult.data
+        ? userResult.data.user
+        : null;
+
+  } catch (
+    userException
+  ) {
+
+    logError(
+      "Terjadi error saat membaca user Reader:",
+      userException
+    );
+
+    return false;
+  }
+
+  if (
+    !user ||
+    typeof user.id !==
+      "string" ||
+    !user.id.trim()
+  ) {
+
+    logWarn(
+      "User Reader belum login atau ID user tidak valid."
+    );
+
+    return false;
+  }
+
+  let settingsTable =
+    null;
+
+  try {
+
+    settingsTable =
+      db.from(
+        "reader_settings"
+      );
+
+  } catch (
+    tableError
+  ) {
+
+    logError(
+      "Tabel reader_settings gagal diakses:",
+      tableError
+    );
+
+    return false;
+  }
+
+  if (
+    !settingsTable ||
+    typeof settingsTable.upsert !==
+      "function"
+  ) {
+
+    logWarn(
+      "Operasi upsert reader_settings tidak tersedia."
+    );
+
+    return false;
+  }
+
+  let saveResult =
+    null;
+
+  try {
+
+    saveResult =
+      await settingsTable.upsert(
+        {
+          user_id:
+            user.id.trim(),
+
+          reading_mode:
+            readingModeValue,
+
+          zoom_level:
+            zoomValue,
+
+          brightness_level:
+            brightnessValue,
+
+          contrast_level:
+            contrastValue,
+
+          updated_at:
+            new Date()
+              .toISOString()
+        },
+        {
+          onConflict:
+            "user_id"
+        }
+      );
+
+  } catch (
+    saveException
+  ) {
+
+    logError(
+      "Terjadi error saat menyimpan pengaturan Reader ke cloud:",
+      saveException
+    );
+
+    return false;
+  }
+
+  if (
+    saveResult &&
+    saveResult.error
+  ) {
+
+    logError(
       "Gagal menyimpan pengaturan Reader ke cloud:",
-      error
+      saveResult.error
     );
-  }
-}
 
+    return false;
+  }
+
+  return true;
+}
+/*BATAS FUNCTION*/
 
 let readerSettingsCloudSaveTimer = null;
 
 function scheduleReaderSettingsCloudSave() {
 
-  clearTimeout(
-    readerSettingsCloudSaveTimer
-  );
+  const logWarn = (
+    ...args
+  ) => {
 
-  readerSettingsCloudSaveTimer =
-    setTimeout(() => {
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-      saveReaderSettingsToCloud();
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-    }, 800);
+  const logError = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
+
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof readerSettingsCloudSaveTimer ===
+      "undefined"
+  ) {
+
+    logWarn(
+      "State timer Reader settings cloud tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof clearTimeout !==
+      "function" ||
+    typeof setTimeout !==
+      "function"
+  ) {
+
+    logWarn(
+      "Timer browser tidak tersedia untuk menjadwalkan penyimpanan pengaturan Reader."
+    );
+
+    return false;
+  }
+
+  try {
+
+    if (
+      readerSettingsCloudSaveTimer !==
+        null
+    ) {
+
+      clearTimeout(
+        readerSettingsCloudSaveTimer
+      );
+
+      readerSettingsCloudSaveTimer =
+        null;
+    }
+
+    readerSettingsCloudSaveTimer =
+      setTimeout(
+        async () => {
+
+          try {
+
+            if (
+              typeof saveReaderSettingsToCloud !==
+                "function"
+            ) {
+
+              return false;
+            }
+
+            const berhasil =
+              await saveReaderSettingsToCloud();
+
+            return berhasil !==
+              false;
+
+          } catch (
+            error
+          ) {
+
+            if (
+              typeof console !==
+                "undefined" &&
+              typeof console.error ===
+                "function"
+            ) {
+
+              console.error(
+                "Scheduled Reader settings cloud save gagal:",
+                error
+              );
+            }
+
+            return false;
+          }
+        },
+        800
+      );
+
+  } catch (
+    scheduleError
+  ) {
+
+    readerSettingsCloudSaveTimer =
+      null;
+
+    logError(
+      "Gagal menjadwalkan penyimpanan pengaturan Reader ke cloud:",
+      scheduleError
+    );
+
+    return false;
+  }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 
 async function loadReaderSettingsFromCloud() {
