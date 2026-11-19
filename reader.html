@@ -5186,43 +5186,441 @@ function updateCurrentPageBookmarkStatus() {
 bookmarkCloudReady = true;
   
 function playPageFlipSound() {
-  if (!soundEnabled) return;
 
-  const flipAudio = document.getElementById("page-flip-audio");
+  const logWarn = (
+    ...args
+  ) => {
 
-  flipAudio.currentTime = 0;
-  flipAudio.volume = 0.45;
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-  flipAudio.play().catch((error) => {
-    console.log("Suara kertas gagal diputar:", error);
-  });
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof soundEnabled ===
+      "undefined"
+  ) {
+
+    logWarn(
+      "State soundEnabled Reader tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    !soundEnabled
+  ) {
+
+    return true;
+  }
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk memutar suara flip halaman."
+    );
+
+    return false;
+  }
+
+  const flipAudio =
+    document.getElementById(
+      "page-flip-audio"
+    );
+
+  if (
+    !flipAudio ||
+    typeof flipAudio.play !==
+      "function"
+  ) {
+
+    logWarn(
+      "Audio flip halaman Reader tidak tersedia."
+    );
+
+    return false;
+  }
+
+  try {
+
+    flipAudio.currentTime =
+      0;
+
+    flipAudio.volume =
+      0.45;
+
+    const playResult =
+      flipAudio.play();
+
+    if (
+      playResult &&
+      typeof playResult.catch ===
+        "function"
+    ) {
+
+      playResult.catch(
+        (error) => {
+
+          if (
+            typeof console !==
+              "undefined" &&
+            typeof console.warn ===
+              "function"
+          ) {
+
+            console.warn(
+              "Suara kertas gagal diputar:",
+              error
+            );
+          }
+
+          return false;
+        }
+      );
+    }
+
+  } catch (
+    playError
+  ) {
+
+    logWarn(
+      "Suara kertas gagal diputar:",
+      playError
+    );
+
+    return false;
+  }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
-  async function renderPDFPages() {
-  const images = [];
+async function renderPDFPages() {
 
-  for (let num = 1; num <= pdfDoc.numPages; num++) {
-    const page = await pdfDoc.getPage(num);
+  const logWarn = (
+    ...args
+  ) => {
 
-    const viewport = page.getViewport({ scale: 1.4 });
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+  const logError = (
+    ...args
+  ) => {
 
-    await page.render({
-      canvasContext: context,
-      viewport: viewport
-    }).promise;
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
 
-    images.push(canvas.toDataURL("image/jpeg", 0.92));
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof pdfDoc ===
+      "undefined" ||
+    !pdfDoc ||
+    typeof pdfDoc.getPage !==
+      "function"
+  ) {
+
+    logWarn(
+      "Dokumen PDF belum tersedia untuk dirender."
+    );
+
+    return [];
+  }
+
+  const totalPages =
+    Number(
+      pdfDoc.numPages
+    );
+
+  if (
+    !Number.isInteger(
+      totalPages
+    ) ||
+    totalPages < 1
+  ) {
+
+    logWarn(
+      "Jumlah halaman PDF tidak valid:",
+      pdfDoc.numPages
+    );
+
+    return [];
+  }
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.createElement !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk membuat canvas PDF."
+    );
+
+    return [];
+  }
+
+  const images =
+    [];
+
+  try {
+
+    for (
+      let num = 1;
+      num <= totalPages;
+      num++
+    ) {
+
+      let page =
+        null;
+
+      try {
+
+        page =
+          await pdfDoc.getPage(
+            num
+          );
+
+        if (
+          !page ||
+          typeof page.getViewport !==
+            "function" ||
+          typeof page.render !==
+            "function"
+        ) {
+
+          throw new Error(
+            `Halaman PDF ${num} tidak valid.`
+          );
+        }
+
+        const viewport =
+          page.getViewport({
+            scale: 1.4
+          });
+
+        if (
+          !viewport ||
+          !Number.isFinite(
+            Number(
+              viewport.width
+            )
+          ) ||
+          !Number.isFinite(
+            Number(
+              viewport.height
+            )
+          ) ||
+          Number(
+            viewport.width
+          ) <= 0 ||
+          Number(
+            viewport.height
+          ) <= 0
+        ) {
+
+          throw new Error(
+            `Viewport halaman PDF ${num} tidak valid.`
+          );
+        }
+
+        const canvas =
+          document.createElement(
+            "canvas"
+          );
+
+        if (
+          !canvas ||
+          typeof canvas.getContext !==
+            "function" ||
+          typeof canvas.toDataURL !==
+            "function"
+        ) {
+
+          throw new Error(
+            `Canvas halaman PDF ${num} tidak tersedia.`
+          );
+        }
+
+        const context =
+          canvas.getContext(
+            "2d"
+          );
+
+        if (
+          !context
+        ) {
+
+          throw new Error(
+            `Context 2D halaman PDF ${num} tidak tersedia.`
+          );
+        }
+
+        canvas.width =
+          Math.ceil(
+            Number(
+              viewport.width
+            )
+          );
+
+        canvas.height =
+          Math.ceil(
+            Number(
+              viewport.height
+            )
+          );
+
+        const renderTask =
+          page.render({
+            canvasContext:
+              context,
+
+            viewport:
+              viewport
+          });
+
+        if (
+          !renderTask ||
+          !renderTask.promise ||
+          typeof renderTask.promise.then !==
+            "function"
+        ) {
+
+          throw new Error(
+            `Render task halaman PDF ${num} tidak valid.`
+          );
+        }
+
+        await renderTask.promise;
+
+        const imageData =
+          canvas.toDataURL(
+            "image/jpeg",
+            0.92
+          );
+
+        if (
+          typeof imageData !==
+            "string" ||
+          !imageData.startsWith(
+            "data:image/jpeg"
+          )
+        ) {
+
+          throw new Error(
+            `Hasil render halaman PDF ${num} tidak valid.`
+          );
+        }
+
+        images.push(
+          imageData
+        );
+
+      } catch (
+        pageError
+      ) {
+
+        logError(
+          `Gagal merender halaman PDF ${num}:`,
+          pageError
+        );
+
+        return [];
+
+      } finally {
+
+        if (
+          page &&
+          typeof page.cleanup ===
+            "function"
+        ) {
+
+          try {
+
+            page.cleanup();
+
+          } catch (
+            cleanupError
+          ) {
+
+            logWarn(
+              `Cleanup halaman PDF ${num} gagal:`,
+              cleanupError
+            );
+          }
+        }
+      }
+    }
+
+  } catch (
+    renderError
+  ) {
+
+    logError(
+      "Proses render halaman PDF gagal:",
+      renderError
+    );
+
+    return [];
+  }
+
+  if (
+    images.length !==
+      totalPages
+  ) {
+
+    logWarn(
+      "Jumlah hasil render PDF tidak sesuai jumlah halaman.",
+      {
+        expected:
+          totalPages,
+        actual:
+          images.length
+      }
+    );
+
+    return [];
   }
 
   return images;
 }
-  let pageFlip = null;
+/*BATAS FUNCTION*/
+  
+let pageFlip = null;
   
   /* =========================================
      READER PROGRESS CLOUD SYNC
@@ -8609,120 +9007,1374 @@ async function loadPresetsFromCloud() {
   applyZoom();
 
 async function loadPDF() {
-  if (!pdfUrl) {
 
-    showReaderNotice(
-      "⚠️ File Tidak Ditemukan",
-      "File PDF tidak ditemukan."
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  const logError = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
+
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof pdfUrl !==
+      "string" ||
+    !pdfUrl.trim()
+  ) {
+
+    if (
+      typeof showReaderNotice ===
+        "function"
+    ) {
+
+      try {
+
+        showReaderNotice(
+          "⚠️ File Tidak Ditemukan",
+          "File PDF tidak ditemukan."
+        );
+
+      } catch (
+        noticeError
+      ) {
+
+        logWarn(
+          "Notifikasi file PDF tidak ditemukan gagal ditampilkan:",
+          noticeError
+        );
+      }
+    }
+
+    return false;
+  }
+
+  if (
+    typeof pdfjsLib ===
+      "undefined" ||
+    !pdfjsLib ||
+    typeof pdfjsLib.getDocument !==
+      "function"
+  ) {
+
+    logError(
+      "PDF.js tidak tersedia."
     );
 
-    return;
+    return false;
   }
 
-  pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function"
+  ) {
 
-  document.getElementById("page-count").textContent = pdfDoc.numPages;
-  document.getElementById("reading-progress-bar").style.width =
-  (1 / pdfDoc.numPages) * 100 + "%";
+    logError(
+      "Document tidak tersedia untuk memuat Reader PDF."
+    );
 
-  const firstPage = await pdfDoc.getPage(1);
-  const firstViewport = firstPage.getViewport({ scale: 1 });
+    return false;
+  }
 
-  const ratio = firstViewport.height / firstViewport.width;
-  const pageWidth = 480;
-  const pageHeight = Math.round(pageWidth * ratio);
+  const pageCountElement =
+    document.getElementById(
+      "page-count"
+    );
 
-  const images = await renderPDFPages();
+  const progressBar =
+    document.getElementById(
+      "reading-progress-bar"
+    );
 
-  pageFlip = new St.PageFlip(
-    document.getElementById("page-flip"),
-    {
-      width: pageWidth,
-      height: pageHeight,
-      startPage: Math.min(
-  Math.max(savedPage - 1, 0),
-  pdfDoc.numPages - 1
-),
-      size: "stretch",
-      minWidth: 280,
-      maxWidth: pageWidth,
-      minHeight: Math.round(280 * ratio),
-      maxHeight: pageHeight,
-      drawShadow: true,
-      flippingTime: 900,
-      usePortrait: true,
-      autoSize: true,
-      maxShadowOpacity: 0.5,
-      showCover: true,
-      mobileScrollSupport: false
+  const pageFlipElement =
+    document.getElementById(
+      "page-flip"
+    );
+
+  if (
+    !pageCountElement
+  ) {
+
+    logError(
+      "Elemen page-count Reader tidak ditemukan."
+    );
+
+    return false;
+  }
+
+  if (
+    !progressBar ||
+    !progressBar.style
+  ) {
+
+    logError(
+      "Elemen reading-progress-bar Reader tidak ditemukan."
+    );
+
+    return false;
+  }
+
+  if (
+    !pageFlipElement
+  ) {
+
+    logError(
+      "Elemen page-flip Reader tidak ditemukan."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof St ===
+      "undefined" ||
+    !St ||
+    typeof St.PageFlip !==
+      "function"
+  ) {
+
+    logError(
+      "Library St.PageFlip tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof renderPDFPages !==
+      "function"
+  ) {
+
+    logError(
+      "renderPDFPages() tidak tersedia."
+    );
+
+    return false;
+  }
+
+  let firstPage =
+    null;
+
+  try {
+
+    const loadingTask =
+      pdfjsLib.getDocument(
+        pdfUrl.trim()
+      );
+
+    if (
+      !loadingTask ||
+      !loadingTask.promise ||
+      typeof loadingTask.promise.then !==
+        "function"
+    ) {
+
+      throw new Error(
+        "Loading task PDF tidak valid."
+      );
     }
-  );
 
-  function updateReadingStatus(currentIndex = pageFlip.getCurrentPageIndex()) {
-  const orientation = pageFlip.getOrientation();
-  const startPage = currentIndex + 1;
+    pdfDoc =
+      await loadingTask.promise;
 
-  let pageLabel = String(startPage);
-  let progressPage = startPage;
+    if (
+      !pdfDoc ||
+      typeof pdfDoc.getPage !==
+        "function"
+    ) {
 
-  if (orientation === "landscape" && currentIndex > 0) {
-    const endPage = Math.min(startPage + 1, pdfDoc.numPages);
+      throw new Error(
+        "Dokumen PDF yang dimuat tidak valid."
+      );
+    }
 
-    pageLabel =
-      startPage === endPage
-        ? String(startPage)
-        : startPage + "-" + endPage;
+    const totalPages =
+      Number(
+        pdfDoc.numPages
+      );
 
-    progressPage = endPage;
+    if (
+      !Number.isInteger(
+        totalPages
+      ) ||
+      totalPages < 1
+    ) {
+
+      throw new Error(
+        "Jumlah halaman PDF tidak valid."
+      );
+    }
+
+    const savedPageValue =
+      typeof savedPage !==
+        "undefined"
+        ? Number(
+            savedPage
+          )
+        : 1;
+
+    const normalizedSavedPage =
+      Number.isInteger(
+        savedPageValue
+      ) &&
+      savedPageValue >= 1
+        ? savedPageValue
+        : 1;
+
+    const startIndex =
+      Math.min(
+        Math.max(
+          normalizedSavedPage - 1,
+          0
+        ),
+        totalPages - 1
+      );
+
+    pageNum =
+      startIndex + 1;
+
+    pageCountElement.textContent =
+      String(
+        totalPages
+      );
+
+    progressBar.style.width =
+      (
+        (
+          startIndex + 1
+        ) /
+        totalPages
+      ) *
+        100 +
+      "%";
+
+    firstPage =
+      await pdfDoc.getPage(
+        1
+      );
+
+    if (
+      !firstPage ||
+      typeof firstPage.getViewport !==
+        "function"
+    ) {
+
+      throw new Error(
+        "Halaman pertama PDF tidak valid."
+      );
+    }
+
+    const firstViewport =
+      firstPage.getViewport({
+        scale: 1
+      });
+
+    if (
+      !firstViewport
+    ) {
+
+      throw new Error(
+        "Viewport halaman pertama PDF tidak tersedia."
+      );
+    }
+
+    const viewportWidth =
+      Number(
+        firstViewport.width
+      );
+
+    const viewportHeight =
+      Number(
+        firstViewport.height
+      );
+
+    if (
+      !Number.isFinite(
+        viewportWidth
+      ) ||
+      !Number.isFinite(
+        viewportHeight
+      ) ||
+      viewportWidth <= 0 ||
+      viewportHeight <= 0
+    ) {
+
+      throw new Error(
+        "Ukuran halaman pertama PDF tidak valid."
+      );
+    }
+
+    const ratio =
+      viewportHeight /
+      viewportWidth;
+
+    if (
+      !Number.isFinite(
+        ratio
+      ) ||
+      ratio <= 0
+    ) {
+
+      throw new Error(
+        "Rasio halaman PDF tidak valid."
+      );
+    }
+
+    const pageWidth =
+      480;
+
+    const pageHeight =
+      Math.round(
+        pageWidth *
+        ratio
+      );
+
+    if (
+      !Number.isInteger(
+        pageHeight
+      ) ||
+      pageHeight < 1
+    ) {
+
+      throw new Error(
+        "Tinggi halaman PageFlip tidak valid."
+      );
+    }
+
+    if (
+      firstPage &&
+      typeof firstPage.cleanup ===
+        "function"
+    ) {
+
+      try {
+
+        firstPage.cleanup();
+
+      } catch (
+        cleanupError
+      ) {
+
+        logWarn(
+          "Cleanup halaman pertama PDF gagal:",
+          cleanupError
+        );
+      }
+
+      firstPage =
+        null;
+    }
+
+    const images =
+      await renderPDFPages();
+
+    if (
+      !Array.isArray(
+        images
+      ) ||
+      images.length !==
+        totalPages ||
+      images.length < 1
+    ) {
+
+      throw new Error(
+        "Hasil render halaman PDF tidak lengkap."
+      );
+    }
+
+    if (
+      typeof pageFlip !==
+        "undefined" &&
+      pageFlip &&
+      typeof pageFlip.destroy ===
+        "function"
+    ) {
+
+      try {
+
+        pageFlip.destroy();
+
+      } catch (
+        destroyError
+      ) {
+
+        logWarn(
+          "Instance PageFlip sebelumnya gagal dibersihkan:",
+          destroyError
+        );
+      }
+    }
+
+    pageFlipElement.innerHTML =
+      "";
+
+    pageFlip =
+      new St.PageFlip(
+        pageFlipElement,
+        {
+          width:
+            pageWidth,
+
+          height:
+            pageHeight,
+
+          startPage:
+            startIndex,
+
+          size:
+            "stretch",
+
+          minWidth:
+            280,
+
+          maxWidth:
+            pageWidth,
+
+          minHeight:
+            Math.round(
+              280 *
+              ratio
+            ),
+
+          maxHeight:
+            pageHeight,
+
+          drawShadow:
+            true,
+
+          flippingTime:
+            900,
+
+          usePortrait:
+            true,
+
+          autoSize:
+            true,
+
+          maxShadowOpacity:
+            0.5,
+
+          showCover:
+            true,
+
+          mobileScrollSupport:
+            false
+        }
+      );
+
+    if (
+      !pageFlip ||
+      typeof pageFlip.on !==
+        "function" ||
+      typeof pageFlip.loadFromImages !==
+        "function" ||
+      typeof pageFlip.getCurrentPageIndex !==
+        "function" ||
+      typeof pageFlip.getOrientation !==
+        "function"
+    ) {
+
+      throw new Error(
+        "Instance PageFlip tidak valid."
+      );
+    }
+
+    function updateReadingStatus(
+      currentIndex
+    ) {
+
+      const logWarn = (
+        ...args
+      ) => {
+
+        if (
+          typeof console !==
+            "undefined" &&
+          typeof console.warn ===
+            "function"
+        ) {
+
+          console.warn(
+            ...args
+          );
+        }
+      };
+
+      if (
+        typeof pageFlip ===
+          "undefined" ||
+        !pageFlip ||
+        typeof pageFlip.getCurrentPageIndex !==
+          "function" ||
+        typeof pageFlip.getOrientation !==
+          "function"
+      ) {
+
+        logWarn(
+          "PageFlip belum siap untuk memperbarui status membaca."
+        );
+
+        return false;
+      }
+
+      if (
+        typeof pdfDoc ===
+          "undefined" ||
+        !pdfDoc
+      ) {
+
+        logWarn(
+          "Dokumen PDF belum tersedia untuk memperbarui status membaca."
+        );
+
+        return false;
+      }
+
+      const totalPages =
+        Number(
+          pdfDoc.numPages
+        );
+
+      if (
+        !Number.isInteger(
+          totalPages
+        ) ||
+        totalPages < 1
+      ) {
+
+        logWarn(
+          "Jumlah halaman PDF tidak valid:",
+          pdfDoc.numPages
+        );
+
+        return false;
+      }
+
+      let indexValue =
+        currentIndex;
+
+      if (
+        typeof indexValue ===
+          "undefined" ||
+        indexValue ===
+          null
+      ) {
+
+        try {
+
+          indexValue =
+            pageFlip.getCurrentPageIndex();
+
+        } catch (
+          indexError
+        ) {
+
+          logWarn(
+            "Index halaman Reader gagal dibaca:",
+            indexError
+          );
+
+          return false;
+        }
+      }
+
+      indexValue =
+        Number(
+          indexValue
+        );
+
+      if (
+        !Number.isInteger(
+          indexValue
+        ) ||
+        indexValue < 0 ||
+        indexValue >= totalPages
+      ) {
+
+        logWarn(
+          "Index halaman Reader tidak valid:",
+          indexValue
+        );
+
+        return false;
+      }
+
+      if (
+        typeof document ===
+          "undefined" ||
+        typeof document.getElementById !==
+          "function"
+      ) {
+
+        logWarn(
+          "Document tidak tersedia untuk memperbarui status membaca."
+        );
+
+        return false;
+      }
+
+      const pageNumberElement =
+        document.getElementById(
+          "page-num"
+        );
+
+      const progressBar =
+        document.getElementById(
+          "reading-progress-bar"
+        );
+
+      if (
+        !pageNumberElement
+      ) {
+
+        logWarn(
+          "Elemen page-num Reader tidak ditemukan."
+        );
+
+        return false;
+      }
+
+      if (
+        !progressBar ||
+        !progressBar.style
+      ) {
+
+        logWarn(
+          "Elemen reading-progress-bar Reader tidak ditemukan."
+        );
+
+        return false;
+      }
+
+      let orientation;
+
+      try {
+
+        orientation =
+          pageFlip.getOrientation();
+
+      } catch (
+        orientationError
+      ) {
+
+        logWarn(
+          "Orientasi PageFlip gagal dibaca:",
+          orientationError
+        );
+
+        return false;
+      }
+
+      const startPage =
+        indexValue + 1;
+
+      let pageLabel =
+        String(
+          startPage
+        );
+
+      let progressPage =
+        startPage;
+
+      if (
+        orientation ===
+          "landscape" &&
+        indexValue > 0
+      ) {
+
+        const endPage =
+          Math.min(
+            startPage + 1,
+            totalPages
+          );
+
+        pageLabel =
+          startPage ===
+            endPage
+            ? String(
+                startPage
+              )
+            : startPage +
+              "-" +
+              endPage;
+
+        progressPage =
+          endPage;
+      }
+
+      try {
+
+        pageNum =
+          startPage;
+
+        pageNumberElement.textContent =
+          pageLabel;
+
+        const progress =
+          (
+            progressPage /
+            totalPages
+          ) *
+          100;
+
+        progressBar.style.width =
+          progress +
+          "%";
+
+      } catch (
+        updateError
+      ) {
+
+        logWarn(
+          "Status membaca Reader gagal diperbarui:",
+          updateError
+        );
+
+        return false;
+      }
+
+      return true;
+    }
+    /*Batas Nested Function*/
+
+    pageFlip.on(
+      "flip",
+      (e) => {
+
+        const logWarn = (
+          ...args
+        ) => {
+
+          if (
+            typeof console !==
+              "undefined" &&
+            typeof console.warn ===
+              "function"
+          ) {
+
+            console.warn(
+              ...args
+            );
+          }
+        };
+
+        const currentIndex =
+          e &&
+          typeof e ===
+            "object"
+            ? Number(
+                e.data
+              )
+            : NaN;
+
+        const totalPages =
+          typeof pdfDoc !==
+            "undefined" &&
+          pdfDoc
+            ? Number(
+                pdfDoc.numPages
+              )
+            : NaN;
+
+        if (
+          !Number.isInteger(
+            currentIndex
+          ) ||
+          currentIndex < 0
+        ) {
+
+          logWarn(
+            "Index halaman hasil event flip tidak valid:",
+            e
+          );
+
+          return false;
+        }
+
+        if (
+          !Number.isInteger(
+            totalPages
+          ) ||
+          totalPages < 1 ||
+          currentIndex >=
+            totalPages
+        ) {
+
+          logWarn(
+            "Index halaman hasil event flip berada di luar batas PDF:",
+            {
+              currentIndex:
+                currentIndex,
+              totalPages:
+                totalPages
+            }
+          );
+
+          return false;
+        }
+
+        pageNum =
+          currentIndex + 1;
+
+        if (
+          typeof localStorage !==
+            "undefined" &&
+          typeof localStorage.setItem ===
+            "function" &&
+          typeof readingKey ===
+            "string" &&
+          readingKey.trim()
+        ) {
+
+          try {
+
+            localStorage.setItem(
+              readingKey,
+              String(
+                pageNum
+              )
+            );
+
+          } catch (
+            storageError
+          ) {
+
+            logWarn(
+              "Progress membaca lokal gagal disimpan:",
+              storageError
+            );
+          }
+
+        } else {
+
+          logWarn(
+            "Penyimpanan progress membaca lokal tidak tersedia."
+          );
+        }
+
+        if (
+          typeof scheduleReadingProgressCloudSave ===
+            "function"
+        ) {
+
+          try {
+
+            const scheduleResult =
+              scheduleReadingProgressCloudSave();
+
+            if (
+              scheduleResult ===
+                false
+            ) {
+
+              logWarn(
+                "Penjadwalan penyimpanan progress membaca ke cloud gagal."
+              );
+            }
+
+          } catch (
+            scheduleError
+          ) {
+
+            logWarn(
+              "Penjadwalan progress membaca ke cloud mengalami error:",
+              scheduleError
+            );
+          }
+
+        } else {
+
+          logWarn(
+            "scheduleReadingProgressCloudSave() tidak tersedia."
+          );
+        }
+
+        if (
+          typeof updateReadingStatus ===
+            "function"
+        ) {
+
+          try {
+
+            const statusResult =
+              updateReadingStatus(
+                currentIndex
+              );
+
+            if (
+              statusResult ===
+                false
+            ) {
+
+              logWarn(
+                "Status membaca gagal diperbarui setelah flip halaman."
+              );
+            }
+
+          } catch (
+            statusError
+          ) {
+
+            logWarn(
+              "Update status membaca setelah flip mengalami error:",
+              statusError
+            );
+          }
+
+        } else {
+
+          logWarn(
+            "updateReadingStatus() tidak tersedia."
+          );
+        }
+
+        if (
+          typeof updateCurrentPageBookmarkStatus ===
+            "function"
+        ) {
+
+          try {
+
+            const bookmarkResult =
+              updateCurrentPageBookmarkStatus();
+
+            if (
+              bookmarkResult ===
+                false
+            ) {
+
+              logWarn(
+                "Status bookmark halaman aktif gagal diperbarui."
+              );
+            }
+
+          } catch (
+            bookmarkError
+          ) {
+
+            logWarn(
+              "Update status bookmark setelah flip mengalami error:",
+              bookmarkError
+            );
+          }
+
+        } else {
+
+          logWarn(
+            "updateCurrentPageBookmarkStatus() tidak tersedia."
+          );
+        }
+
+        return true;
+      }
+    );
+
+    pageFlip.on(
+      "changeOrientation",
+      () => {
+
+        const logWarn = (
+          ...args
+        ) => {
+
+          if (
+            typeof console !==
+              "undefined" &&
+            typeof console.warn ===
+              "function"
+          ) {
+
+            console.warn(
+              ...args
+            );
+          }
+        };
+
+        if (
+          typeof updateReadingStatus ===
+            "function"
+        ) {
+
+          try {
+
+            const statusResult =
+              updateReadingStatus();
+
+            if (
+              statusResult ===
+                false
+            ) {
+
+              logWarn(
+                "Status membaca gagal diperbarui setelah perubahan orientasi."
+              );
+            }
+
+          } catch (
+            statusError
+          ) {
+
+            logWarn(
+              "Update status membaca setelah perubahan orientasi mengalami error:",
+              statusError
+            );
+          }
+
+        } else {
+
+          logWarn(
+            "updateReadingStatus() tidak tersedia."
+          );
+        }
+
+        if (
+          typeof updateCurrentPageBookmarkStatus ===
+            "function"
+        ) {
+
+          try {
+
+            const bookmarkResult =
+              updateCurrentPageBookmarkStatus();
+
+            if (
+              bookmarkResult ===
+                false
+            ) {
+
+              logWarn(
+                "Status bookmark halaman aktif gagal diperbarui setelah perubahan orientasi."
+              );
+            }
+
+          } catch (
+            bookmarkError
+          ) {
+
+            logWarn(
+              "Update status bookmark setelah perubahan orientasi mengalami error:",
+              bookmarkError
+            );
+          }
+
+        } else {
+
+          logWarn(
+            "updateCurrentPageBookmarkStatus() tidak tersedia."
+          );
+        }
+
+        return true;
+      }
+    );
+
+    pageFlip.on(
+      "changeState",
+      (e) => {
+
+        const logWarn = (
+          ...args
+        ) => {
+
+          if (
+            typeof console !==
+              "undefined" &&
+            typeof console.warn ===
+              "function"
+          ) {
+
+            console.warn(
+              ...args
+            );
+          }
+        };
+
+        const state =
+          e &&
+          typeof e ===
+            "object" &&
+          typeof e.data ===
+            "string"
+            ? e.data
+            : "";
+
+        if (
+          !state
+        ) {
+
+          logWarn(
+            "State PageFlip dari event changeState tidak valid:",
+            e
+          );
+
+          return false;
+        }
+
+        if (
+          state !==
+            "flipping"
+        ) {
+
+          return true;
+        }
+
+        if (
+          typeof playPageFlipSound !==
+            "function"
+        ) {
+
+          logWarn(
+            "playPageFlipSound() tidak tersedia."
+          );
+
+          return false;
+        }
+
+        try {
+
+          const soundResult =
+            playPageFlipSound();
+
+          if (
+            soundResult ===
+              false
+          ) {
+
+            logWarn(
+              "Suara flip halaman gagal diputar."
+            );
+
+            return false;
+          }
+
+        } catch (
+          soundError
+        ) {
+
+          logWarn(
+            "Pemutaran suara flip halaman mengalami error:",
+            soundError
+          );
+
+          return false;
+        }
+
+        return true;
+      }
+    );
+
+    pageFlip.on(
+      "init",
+      () => {
+
+        const logWarn = (
+          ...args
+        ) => {
+
+          if (
+            typeof console !==
+              "undefined" &&
+            typeof console.warn ===
+              "function"
+          ) {
+
+            console.warn(
+              ...args
+            );
+          }
+        };
+
+        if (
+          typeof updateReadingStatus ===
+            "function"
+        ) {
+
+          try {
+
+            const statusResult =
+              updateReadingStatus();
+
+            if (
+              statusResult ===
+                false
+            ) {
+
+              logWarn(
+                "Status membaca gagal diperbarui saat PageFlip diinisialisasi."
+              );
+            }
+
+          } catch (
+            statusError
+          ) {
+
+            logWarn(
+              "Update status membaca saat inisialisasi PageFlip mengalami error:",
+              statusError
+            );
+          }
+
+        } else {
+
+          logWarn(
+            "updateReadingStatus() tidak tersedia."
+          );
+        }
+
+        if (
+          typeof updateCurrentPageBookmarkStatus ===
+            "function"
+        ) {
+
+          try {
+
+            const bookmarkResult =
+              updateCurrentPageBookmarkStatus();
+
+            if (
+              bookmarkResult ===
+                false
+            ) {
+
+              logWarn(
+                "Status bookmark halaman aktif gagal diperbarui saat PageFlip diinisialisasi."
+              );
+            }
+
+          } catch (
+            bookmarkError
+          ) {
+
+            logWarn(
+              "Update status bookmark saat inisialisasi PageFlip mengalami error:",
+              bookmarkError
+            );
+          }
+
+        } else {
+
+          logWarn(
+            "updateCurrentPageBookmarkStatus() tidak tersedia."
+          );
+        }
+
+        return true;
+      }
+    );
+
+    pageFlip.loadFromImages(
+      images
+    );
+
+    return true;
+
+  } catch (
+    loadError
+  ) {
+
+    logError(
+      "Reader PDF gagal dimuat:",
+      loadError
+    );
+
+    if (
+      firstPage &&
+      typeof firstPage.cleanup ===
+        "function"
+    ) {
+
+      try {
+
+        firstPage.cleanup();
+
+      } catch (
+        cleanupError
+      ) {
+
+        logWarn(
+          "Cleanup halaman pertama setelah kegagalan loadPDF() gagal:",
+          cleanupError
+        );
+      }
+    }
+
+    if (
+      typeof pageFlip !==
+        "undefined" &&
+      pageFlip &&
+      typeof pageFlip.destroy ===
+        "function"
+    ) {
+
+      try {
+
+        pageFlip.destroy();
+
+      } catch (
+        destroyError
+      ) {
+
+        logWarn(
+          "Cleanup PageFlip setelah kegagalan loadPDF() gagal:",
+          destroyError
+        );
+      }
+    }
+
+    if (
+      typeof showReaderNotice ===
+        "function"
+    ) {
+
+      try {
+
+        showReaderNotice(
+          "⚠️ Gagal Membuka Buku",
+          "File PDF gagal dimuat. Silakan coba lagi."
+        );
+
+      } catch (
+        noticeError
+      ) {
+
+        logWarn(
+          "Notifikasi kegagalan Reader PDF tidak dapat ditampilkan:",
+          noticeError
+        );
+      }
+    }
+
+    return false;
   }
-
-  pageNum = startPage;
-
-  document.getElementById("page-num").textContent = pageLabel;
-
-  const progress = (progressPage / pdfDoc.numPages) * 100;
-
-  document.getElementById("reading-progress-bar").style.width =
-    progress + "%";
 }
-
-pageFlip.on("flip", (e) => {
-  const currentIndex = Number(e.data);
-
-  pageNum = currentIndex + 1;
-
-  localStorage.setItem(
-    readingKey,
-    pageNum
-  );
-
-  scheduleReadingProgressCloudSave();
-
-  updateReadingStatus(currentIndex);
-
-  updateCurrentPageBookmarkStatus();
-});
-
-pageFlip.on("changeOrientation", () => {
-  updateReadingStatus();
-  updateCurrentPageBookmarkStatus();
-});
-
-pageFlip.on("changeState", (e) => {
-  if (e.data === "flipping") {
-    playPageFlipSound();
-  }
-});
-
-pageFlip.on("init", () => {
-  updateReadingStatus();
-
-  updateCurrentPageBookmarkStatus();
-});
-  
-  pageFlip.loadFromImages(images);
-  
-}
+/*BATAS FUNCTION*/
 
 document.getElementById("prev-page").addEventListener("click", () => {
   if (!pageFlip || pageFlip.getCurrentPageIndex() <= 0) return;
@@ -8769,51 +10421,356 @@ const readerDialogClose =
 
 let readerDialogAction = null;
 
-
 /* Buka dialog */
-
 function openReaderDialog({
   title = "Input",
   message = "",
   value = "",
   type = "text",
   action = null
-}){
+} = {}) {
 
-  readerDialogTitle.textContent = title;
+  const logWarn = (
+    ...args
+  ) => {
 
-  readerDialogMessage.textContent = message;
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-  readerDialogInput.type = type;
-  readerDialogInput.value = value;
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-  readerDialogError.textContent = "";
+  if (
+    typeof readerDialogTitle ===
+      "undefined" ||
+    !readerDialogTitle ||
+    typeof readerDialogMessage ===
+      "undefined" ||
+    !readerDialogMessage ||
+    typeof readerDialogInput ===
+      "undefined" ||
+    !readerDialogInput ||
+    typeof readerDialogError ===
+      "undefined" ||
+    !readerDialogError ||
+    typeof readerDialogCancel ===
+      "undefined" ||
+    !readerDialogCancel ||
+    typeof readerDialogConfirm ===
+      "undefined" ||
+    !readerDialogConfirm ||
+    typeof readerDialog ===
+      "undefined" ||
+    !readerDialog
+  ) {
 
-readerDialogInput.style.display = "";
-readerDialogCancel.style.display = "";
-readerDialogConfirm.textContent = "OK";
+    logWarn(
+      "Elemen Reader Dialog belum lengkap."
+    );
 
-readerDialogAction = action;
+    return false;
+  }
 
-  readerDialog.classList.add("show");
+  if (
+    !readerDialogInput.style ||
+    !readerDialogCancel.style ||
+    !readerDialog.classList ||
+    typeof readerDialog.classList.add !==
+      "function"
+  ) {
 
-  setTimeout(() => {
-    readerDialogInput.focus();
-    readerDialogInput.select();
-  }, 50);
+    logWarn(
+      "Struktur elemen Reader Dialog tidak valid."
+    );
+
+    return false;
+  }
+
+  const safeTitle =
+    typeof title ===
+      "string"
+      ? title
+      : String(
+          title ?? ""
+        );
+
+  const safeMessage =
+    typeof message ===
+      "string"
+      ? message
+      : String(
+          message ?? ""
+        );
+
+  const safeValue =
+    typeof value ===
+      "string"
+      ? value
+      : String(
+          value ?? ""
+        );
+
+  const safeType =
+    typeof type ===
+      "string" &&
+    type.trim()
+      ? type.trim()
+      : "text";
+
+  if (
+    action !== null &&
+    typeof action !==
+      "function"
+  ) {
+
+    logWarn(
+      "Action Reader Dialog bukan function:",
+      action
+    );
+
+    return false;
+  }
+
+  try {
+
+    readerDialogTitle.textContent =
+      safeTitle;
+
+    readerDialogMessage.textContent =
+      safeMessage;
+
+    readerDialogInput.type =
+      safeType;
+
+    readerDialogInput.value =
+      safeValue;
+
+    readerDialogError.textContent =
+      "";
+
+    readerDialogInput.style.display =
+      "";
+
+    readerDialogCancel.style.display =
+      "";
+
+    readerDialogConfirm.textContent =
+      "OK";
+
+    readerDialogAction =
+      action;
+
+    readerDialog.classList.add(
+      "show"
+    );
+
+  } catch (
+    dialogError
+  ) {
+
+    logWarn(
+      "Reader Dialog gagal dibuka:",
+      dialogError
+    );
+
+    return false;
+  }
+
+  if (
+    typeof setTimeout !==
+      "function"
+  ) {
+
+    logWarn(
+      "setTimeout tidak tersedia untuk fokus Reader Dialog."
+    );
+
+    return true;
+  }
+
+  try {
+
+    setTimeout(
+      () => {
+
+        const logWarn = (
+          ...args
+        ) => {
+
+          if (
+            typeof console !==
+              "undefined" &&
+            typeof console.warn ===
+              "function"
+          ) {
+
+            console.warn(
+              ...args
+            );
+          }
+        };
+
+        if (
+          typeof readerDialogInput ===
+            "undefined" ||
+          !readerDialogInput
+        ) {
+
+          logWarn(
+            "Input Reader Dialog tidak tersedia untuk menerima fokus."
+          );
+
+          return false;
+        }
+
+        if (
+          typeof readerDialogInput.focus ===
+            "function"
+        ) {
+
+          try {
+
+            readerDialogInput.focus();
+
+          } catch (
+            focusError
+          ) {
+
+            logWarn(
+              "Fokus Reader Dialog gagal:",
+              focusError
+            );
+          }
+
+        } else {
+
+          logWarn(
+            "Method focus() Reader Dialog tidak tersedia."
+          );
+        }
+
+        if (
+          typeof readerDialogInput.select ===
+            "function"
+        ) {
+
+          try {
+
+            readerDialogInput.select();
+
+          } catch (
+            selectError
+          ) {
+
+            logWarn(
+              "Seleksi input Reader Dialog gagal:",
+              selectError
+            );
+          }
+        }
+
+        return true;
+      },
+      50
+    );
+
+  } catch (
+    timerError
+  ) {
+
+    logWarn(
+      "Penjadwalan fokus Reader Dialog gagal:",
+      timerError
+    );
+  }
+
+  return true;
 }
-
+/*BATAS FUNCTION*/
 
 /* Tutup dialog */
+function closeReaderDialog() {
 
-function closeReaderDialog(){
+  const logWarn = (
+    ...args
+  ) => {
 
-  readerDialog.classList.remove("show");
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-  readerDialogError.textContent = "";
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-  readerDialogAction = null;
+  if (
+    typeof readerDialog ===
+      "undefined" ||
+    !readerDialog ||
+    !readerDialog.classList ||
+    typeof readerDialog.classList.remove !==
+      "function"
+  ) {
+
+    logWarn(
+      "Reader Dialog tidak tersedia untuk ditutup."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof readerDialogError ===
+      "undefined" ||
+    !readerDialogError
+  ) {
+
+    logWarn(
+      "Elemen error Reader Dialog tidak tersedia."
+    );
+
+    return false;
+  }
+
+  try {
+
+    readerDialog.classList.remove(
+      "show"
+    );
+
+    readerDialogError.textContent =
+      "";
+
+    readerDialogAction =
+      null;
+
+  } catch (
+    closeError
+  ) {
+
+    logWarn(
+      "Reader Dialog gagal ditutup:",
+      closeError
+    );
+
+    return false;
+  }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 /* =========================================
    READER NOTICE
@@ -8822,29 +10779,131 @@ function closeReaderDialog(){
 function showReaderNotice(
   title,
   message
-){
+) {
 
-  openReaderDialog({
+  const logWarn = (
+    ...args
+  ) => {
 
-    title:title,
-    message:message,
-    value:"",
-    type:"text",
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-    action:() => true
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-  });
+  if (
+    typeof openReaderDialog !==
+      "function"
+  ) {
 
-  readerDialogInput.style.display =
-    "none";
+    logWarn(
+      "openReaderDialog() tidak tersedia untuk menampilkan notice Reader."
+    );
 
-  readerDialogCancel.style.display =
-    "none";
+    return false;
+  }
 
-  readerDialogConfirm.textContent =
-    "OK";
+  let openResult;
+
+  try {
+
+    openResult =
+      openReaderDialog({
+
+        title:
+          title,
+
+        message:
+          message,
+
+        value:
+          "",
+
+        type:
+          "text",
+
+        action:
+          () => true
+      });
+
+  } catch (
+    openError
+  ) {
+
+    logWarn(
+      "Reader Notice gagal membuka dialog:",
+      openError
+    );
+
+    return false;
+  }
+
+  if (
+    openResult ===
+      false
+  ) {
+
+    logWarn(
+      "Reader Notice gagal karena openReaderDialog() mengembalikan false."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof readerDialogInput ===
+      "undefined" ||
+    !readerDialogInput ||
+    !readerDialogInput.style ||
+    typeof readerDialogCancel ===
+      "undefined" ||
+    !readerDialogCancel ||
+    !readerDialogCancel.style ||
+    typeof readerDialogConfirm ===
+      "undefined" ||
+    !readerDialogConfirm
+  ) {
+
+    logWarn(
+      "Elemen Reader Notice tidak lengkap."
+    );
+
+    return false;
+  }
+
+  try {
+
+    readerDialogInput.style.display =
+      "none";
+
+    readerDialogCancel.style.display =
+      "none";
+
+    readerDialogConfirm.textContent =
+      "OK";
+
+  } catch (
+    noticeError
+  ) {
+
+    logWarn(
+      "Reader Notice gagal dikonfigurasi:",
+      noticeError
+    );
+
+    return false;
+  }
+
+  return true;
 }
-
+/*BATAS FUNCTION*/
 
 /* =========================================
    READER CONFIRM
@@ -8855,150 +10914,1084 @@ function showReaderConfirm(
   message,
   confirmText,
   onConfirm
-){
+) {
 
-  openReaderDialog({
+  const logWarn = (
+    ...args
+  ) => {
 
-    title:title,
-    message:message,
-    value:"",
-    type:"text",
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-    action:() => {
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-      if (typeof onConfirm === "function") {
-        onConfirm();
+  if (
+    typeof openReaderDialog !==
+      "function"
+  ) {
+
+    logWarn(
+      "openReaderDialog() tidak tersedia untuk menampilkan konfirmasi Reader."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof onConfirm !==
+      "function"
+  ) {
+
+    logWarn(
+      "Callback onConfirm Reader tidak valid."
+    );
+
+    return false;
+  }
+
+  let openResult;
+
+  try {
+
+    openResult =
+      openReaderDialog({
+
+        title:
+          title,
+
+        message:
+          message,
+
+        value:
+          "",
+
+        type:
+          "text",
+
+        action: () => {
+
+          const logWarn = (
+            ...args
+          ) => {
+
+            if (
+              typeof console !==
+                "undefined" &&
+              typeof console.warn ===
+                "function"
+            ) {
+
+              console.warn(
+                ...args
+              );
+            }
+          };
+
+          if (
+            typeof onConfirm !==
+              "function"
+          ) {
+
+            logWarn(
+              "Callback onConfirm Reader tidak tersedia."
+            );
+
+            return false;
+          }
+
+          try {
+
+            const confirmResult =
+              onConfirm();
+
+            if (
+              confirmResult ===
+                false
+            ) {
+
+              return false;
+            }
+
+          } catch (
+            confirmError
+          ) {
+
+            logWarn(
+              "Aksi konfirmasi Reader gagal:",
+              confirmError
+            );
+
+            return false;
+          }
+
+          return true;
+        }
+      });
+
+  } catch (
+    openError
+  ) {
+
+    logWarn(
+      "Reader Confirm gagal membuka dialog:",
+      openError
+    );
+
+    return false;
+  }
+
+  if (
+    openResult ===
+      false
+  ) {
+
+    logWarn(
+      "Reader Confirm gagal karena openReaderDialog() mengembalikan false."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof readerDialogInput ===
+      "undefined" ||
+    !readerDialogInput ||
+    !readerDialogInput.style ||
+    typeof readerDialogCancel ===
+      "undefined" ||
+    !readerDialogCancel ||
+    !readerDialogCancel.style ||
+    typeof readerDialogConfirm ===
+      "undefined" ||
+    !readerDialogConfirm
+  ) {
+
+    logWarn(
+      "Elemen Reader Confirm tidak lengkap."
+    );
+
+    return false;
+  }
+
+  const safeConfirmText =
+    typeof confirmText ===
+      "string" &&
+    confirmText.trim()
+      ? confirmText
+      : "OK";
+
+  try {
+
+    readerDialogInput.style.display =
+      "none";
+
+    readerDialogCancel.style.display =
+      "";
+
+    readerDialogConfirm.textContent =
+      safeConfirmText;
+
+  } catch (
+    confirmDialogError
+  ) {
+
+    logWarn(
+      "Reader Confirm gagal dikonfigurasi:",
+      confirmDialogError
+    );
+
+    return false;
+  }
+
+  return true;
+}
+/* BATAS FUNCTION */
+
+/* EVENT Tombol "OK" */
+if (
+  typeof readerDialogConfirm !==
+    "undefined" &&
+  readerDialogConfirm &&
+  typeof readerDialogConfirm.addEventListener ===
+    "function"
+) {
+
+  /* CALLBACK Tombol "OK" */
+  readerDialogConfirm.addEventListener(
+    "click",
+    () => {
+
+      const logWarn = (
+        ...args
+      ) => {
+
+        if (
+          typeof console !==
+            "undefined" &&
+          typeof console.warn ===
+            "function"
+        ) {
+
+          console.warn(
+            ...args
+          );
+        }
+      };
+
+      if (
+        typeof readerDialogAction ===
+          "undefined" ||
+        readerDialogAction ===
+          null
+      ) {
+
+        if (
+          typeof closeReaderDialog !==
+            "function"
+        ) {
+
+          logWarn(
+            "closeReaderDialog() tidak tersedia."
+          );
+
+          return false;
+        }
+
+        try {
+
+          const closeResult =
+            closeReaderDialog();
+
+          if (
+            closeResult ===
+              false
+          ) {
+
+            logWarn(
+              "Reader Dialog gagal ditutup."
+            );
+
+            return false;
+          }
+
+        } catch (
+          closeError
+        ) {
+
+          logWarn(
+            "Penutupan Reader Dialog mengalami error:",
+            closeError
+          );
+
+          return false;
+        }
+
+        return true;
+      }
+
+      if (
+        typeof readerDialogAction !==
+          "function"
+      ) {
+
+        logWarn(
+          "readerDialogAction bukan function:",
+          readerDialogAction
+        );
+
+        return false;
+      }
+
+      if (
+        typeof readerDialogInput ===
+          "undefined" ||
+        !readerDialogInput
+      ) {
+
+        logWarn(
+          "Input Reader Dialog tidak tersedia."
+        );
+
+        return false;
+      }
+
+      let shouldClose;
+
+      try {
+
+        shouldClose =
+          readerDialogAction(
+            readerDialogInput.value
+          );
+
+      } catch (
+        actionError
+      ) {
+
+        logWarn(
+          "Aksi Reader Dialog mengalami error:",
+          actionError
+        );
+
+        return false;
+      }
+
+      if (
+        shouldClose ===
+          false
+      ) {
+
+        return true;
+      }
+
+      if (
+        typeof closeReaderDialog !==
+          "function"
+      ) {
+
+        logWarn(
+          "closeReaderDialog() tidak tersedia."
+        );
+
+        return false;
+      }
+
+      try {
+
+        const closeResult =
+          closeReaderDialog();
+
+        if (
+          closeResult ===
+            false
+        ) {
+
+          logWarn(
+            "Reader Dialog gagal ditutup setelah aksi selesai."
+          );
+
+          return false;
+        }
+
+      } catch (
+        closeError
+      ) {
+
+        logWarn(
+          "Penutupan Reader Dialog setelah aksi mengalami error:",
+          closeError
+        );
+
+        return false;
       }
 
       return true;
     }
+  );
+  /* Batas CALLBACK Tombol "OK" */
 
-  });
+} else {
 
-  readerDialogInput.style.display =
-    "none";
+  if (
+    typeof console !==
+      "undefined" &&
+    typeof console.warn ===
+      "function"
+  ) {
 
-  readerDialogCancel.style.display =
-    "";
-
-  readerDialogConfirm.textContent =
-    confirmText || "OK";
+    console.warn(
+      "Event tombol OK Reader Dialog gagal dipasang."
+    );
+  }
 }
+/* Batas EVENT Tombol "OK" */
 
-/* OK */
+/* EVENT Tombol "Batal" */
+if (
+  typeof readerDialogCancel !==
+    "undefined" &&
+  readerDialogCancel &&
+  typeof readerDialogCancel.addEventListener ===
+    "function" &&
+  typeof closeReaderDialog ===
+    "function"
+) {
 
-readerDialogConfirm.addEventListener("click", () => {
+  readerDialogCancel.addEventListener(
+    "click",
+    closeReaderDialog
+  );
 
-  if (!readerDialogAction) {
-    closeReaderDialog();
-    return;
+} else {
+
+  if (
+    typeof console !==
+      "undefined" &&
+    typeof console.warn ===
+      "function"
+  ) {
+
+    console.warn(
+      "Event tombol Batal Reader Dialog gagal dipasang."
+    );
   }
+}
+/* Batas EVENT Tombol "Batal" */
 
-  const shouldClose =
-    readerDialogAction(readerDialogInput.value);
+/* EVENT Tombol "X" */
+if (
+  typeof readerDialogClose !==
+    "undefined" &&
+  readerDialogClose &&
+  typeof readerDialogClose.addEventListener ===
+    "function" &&
+  typeof closeReaderDialog ===
+    "function"
+) {
 
-  if (shouldClose !== false) {
-    closeReaderDialog();
+  readerDialogClose.addEventListener(
+    "click",
+    closeReaderDialog
+  );
+
+} else {
+
+  if (
+    typeof console !==
+      "undefined" &&
+    typeof console.warn ===
+      "function"
+  ) {
+
+    console.warn(
+      "Event tombol X Reader Dialog gagal dipasang."
+    );
   }
-});
+}
+/* Batas EVENT Tombol "X" */
 
+/* CALLBACK Klik Area Gelap */
+if (
+  typeof readerDialog !==
+    "undefined" &&
+  readerDialog &&
+  typeof readerDialog.addEventListener ===
+    "function"
+) {
 
-/* Batal */
+  readerDialog.addEventListener(
+    "click",
+    (event) => {
 
-readerDialogCancel.addEventListener(
-  "click",
-  closeReaderDialog
-);
+      const logWarn = (
+        ...args
+      ) => {
 
+        if (
+          typeof console !==
+            "undefined" &&
+          typeof console.warn ===
+            "function"
+        ) {
 
-/* Tombol X */
+          console.warn(
+            ...args
+          );
+        }
+      };
 
-readerDialogClose.addEventListener(
-  "click",
-  closeReaderDialog
-);
+      if (
+        !event ||
+        typeof event !==
+          "object"
+      ) {
 
+        logWarn(
+          "Event klik Reader Dialog tidak valid:",
+          event
+        );
 
-/* Klik area gelap */
+        return false;
+      }
 
-readerDialog.addEventListener("click", (event) => {
+      if (
+        event.target !==
+          readerDialog
+      ) {
 
-  if (event.target === readerDialog) {
-    closeReaderDialog();
-  }
-});
+        return true;
+      }
 
+      if (
+        typeof closeReaderDialog !==
+          "function"
+      ) {
 
-/* Enter dan Escape */
+        logWarn(
+          "closeReaderDialog() tidak tersedia."
+        );
 
-readerDialogInput.addEventListener(
-  "keydown",
-  (event) => {
+        return false;
+      }
 
-    if (event.key === "Enter") {
-      readerDialogConfirm.click();
+      try {
+
+        const closeResult =
+          closeReaderDialog();
+
+        if (
+          closeResult ===
+            false
+        ) {
+
+          logWarn(
+            "Reader Dialog gagal ditutup dari klik area gelap."
+          );
+
+          return false;
+        }
+
+      } catch (
+        closeError
+      ) {
+
+        logWarn(
+          "Penutupan Reader Dialog dari klik area gelap mengalami error:",
+          closeError
+        );
+
+        return false;
+      }
+
+      return true;
     }
+  );
 
-    if (event.key === "Escape") {
-      closeReaderDialog();
-    }
+} else {
 
+  if (
+    typeof console !==
+      "undefined" &&
+    typeof console.warn ===
+      "function"
+  ) {
+
+    console.warn(
+      "Event klik area gelap Reader Dialog gagal dipasang."
+    );
   }
-);
+}
+/* Batas CALLBACK Klik Area Gelap */
 
+/* EVENT Keydown Input */
+if (
+  typeof readerDialogInput !==
+    "undefined" &&
+  readerDialogInput &&
+  typeof readerDialogInput.addEventListener ===
+    "function"
+) {
+
+  /* CALLBACK Enter/Escape */
+  readerDialogInput.addEventListener(
+    "keydown",
+    (event) => {
+
+      const logWarn = (
+        ...args
+      ) => {
+
+        if (
+          typeof console !==
+            "undefined" &&
+          typeof console.warn ===
+            "function"
+        ) {
+
+          console.warn(
+            ...args
+          );
+        }
+      };
+
+      if (
+        !event ||
+        typeof event !==
+          "object"
+      ) {
+
+        logWarn(
+          "Event keydown Reader Dialog tidak valid:",
+          event
+        );
+
+        return false;
+      }
+
+      const key =
+        typeof event.key ===
+          "string"
+          ? event.key
+          : "";
+
+      if (
+        key ===
+          "Enter"
+      ) {
+
+        if (
+          typeof readerDialogConfirm ===
+            "undefined" ||
+          !readerDialogConfirm ||
+          typeof readerDialogConfirm.click !==
+            "function"
+        ) {
+
+          logWarn(
+            "Tombol konfirmasi Reader Dialog tidak tersedia."
+          );
+
+          return false;
+        }
+
+        try {
+
+          readerDialogConfirm.click();
+
+        } catch (
+          clickError
+        ) {
+
+          logWarn(
+            "Klik tombol konfirmasi Reader Dialog gagal:",
+            clickError
+          );
+
+          return false;
+        }
+
+        return true;
+      }
+
+      if (
+        key ===
+          "Escape"
+      ) {
+
+        if (
+          typeof closeReaderDialog !==
+            "function"
+        ) {
+
+          logWarn(
+            "closeReaderDialog() tidak tersedia."
+          );
+
+          return false;
+        }
+
+        try {
+
+          const closeResult =
+            closeReaderDialog();
+
+          if (
+            closeResult ===
+              false
+          ) {
+
+            logWarn(
+              "Reader Dialog gagal ditutup dengan tombol Escape."
+            );
+
+            return false;
+          }
+
+        } catch (
+          closeError
+        ) {
+
+          logWarn(
+            "Penutupan Reader Dialog dengan Escape mengalami error:",
+            closeError
+          );
+
+          return false;
+        }
+
+        return true;
+      }
+
+      return true;
+    }
+  );
+  /* Batas CALLBACK Enter/Escape */
+
+} else {
+
+  if (
+    typeof console !==
+      "undefined" &&
+    typeof console.warn ===
+      "function"
+  ) {
+
+    console.warn(
+      "Event keydown Reader Dialog gagal dipasang."
+    );
+  }
+}
+/* Batas EVENT Keydown Input */
 
 /* =========================================
    LOMPAT HALAMAN
    ========================================= */
 
-document.getElementById("go-page")
-.addEventListener("click", () => {
+/* EVENT Tombol "go-page" */
+if (
+  typeof document !==
+    "undefined" &&
+  document &&
+  typeof document.getElementById ===
+    "function"
+) {
 
-  if (!pageFlip || !pdfDoc) return;
+  const goPageButton =
+    document.getElementById(
+      "go-page"
+    );
 
-  openReaderDialog({
+  if (
+    goPageButton &&
+    typeof goPageButton.addEventListener ===
+      "function"
+  ) {
 
-    title:"🔢 Lompat Halaman",
+    goPageButton.addEventListener(
+      "click",
 
-    message:
-      "Masukkan nomor halaman 1 sampai " +
-      pdfDoc.numPages + ".",
+      /* CALLBACK Klik Lompat Halaman */
+      () => {
 
-    value:String(pageNum),
+        const logWarn = (
+          ...args
+        ) => {
 
-    type:"number",
+          if (
+            typeof console !==
+              "undefined" &&
+            typeof console.warn ===
+              "function"
+          ) {
 
-    action:(value) => {
+            console.warn(
+              ...args
+            );
+          }
+        };
 
-      const targetPage = Number(value);
+        if (
+          typeof pageFlip ===
+            "undefined" ||
+          !pageFlip
+        ) {
 
-      if (
-        !Number.isInteger(targetPage) ||
-        targetPage < 1 ||
-        targetPage > pdfDoc.numPages
-      ){
+          logWarn(
+            "PageFlip tidak tersedia untuk lompat halaman."
+          );
 
-        readerDialogError.textContent =
-          "Nomor halaman harus antara 1 sampai " +
-          pdfDoc.numPages + ".";
+          return false;
+        }
 
-        return false;
+        if (
+          typeof pdfDoc ===
+            "undefined" ||
+          !pdfDoc
+        ) {
+
+          logWarn(
+            "Dokumen PDF tidak tersedia untuk lompat halaman."
+          );
+
+          return false;
+        }
+
+        const totalPages =
+          Number(
+            pdfDoc.numPages
+          );
+
+        if (
+          !Number.isInteger(
+            totalPages
+          ) ||
+          totalPages < 1
+        ) {
+
+          logWarn(
+            "Jumlah halaman PDF tidak valid:",
+            pdfDoc.numPages
+          );
+
+          return false;
+        }
+
+        if (
+          typeof openReaderDialog !==
+            "function"
+        ) {
+
+          logWarn(
+            "openReaderDialog() tidak tersedia."
+          );
+
+          return false;
+        }
+
+        let currentPage =
+          Number(
+            typeof pageNum !==
+              "undefined"
+              ? pageNum
+              : 1
+          );
+
+        if (
+          !Number.isInteger(
+            currentPage
+          ) ||
+          currentPage < 1 ||
+          currentPage > totalPages
+        ) {
+
+          currentPage = 1;
+        }
+
+        try {
+
+          const dialogResult =
+            openReaderDialog({
+
+              title:
+                "🔢 Lompat Halaman",
+
+              message:
+                "Masukkan nomor halaman 1 sampai " +
+                totalPages +
+                ".",
+
+              value:
+                String(
+                  currentPage
+                ),
+
+              type:
+                "number",
+
+              /* CALLBACK action(value) */
+              action: (value) => {
+
+                const logWarn = (
+                  ...args
+                ) => {
+
+                  if (
+                    typeof console !==
+                      "undefined" &&
+                    typeof console.warn ===
+                      "function"
+                  ) {
+
+                    console.warn(
+                      ...args
+                    );
+                  }
+                };
+
+                if (
+                  typeof pdfDoc ===
+                    "undefined" ||
+                  !pdfDoc
+                ) {
+
+                  logWarn(
+                    "Dokumen PDF tidak tersedia untuk lompat halaman."
+                  );
+
+                  return false;
+                }
+
+                const totalPages =
+                  Number(
+                    pdfDoc.numPages
+                  );
+
+                if (
+                  !Number.isInteger(
+                    totalPages
+                  ) ||
+                  totalPages < 1
+                ) {
+
+                  logWarn(
+                    "Jumlah halaman PDF tidak valid:",
+                    pdfDoc.numPages
+                  );
+
+                  return false;
+                }
+
+                const targetPage =
+                  Number(
+                    value
+                  );
+
+                if (
+                  !Number.isInteger(
+                    targetPage
+                  ) ||
+                  targetPage < 1 ||
+                  targetPage > totalPages
+                ) {
+
+                  if (
+                    typeof readerDialogError !==
+                      "undefined" &&
+                    readerDialogError
+                  ) {
+
+                    try {
+
+                      readerDialogError.textContent =
+                        "Nomor halaman harus antara 1 sampai " +
+                        totalPages +
+                        ".";
+
+                    } catch (
+                      errorMessageError
+                    ) {
+
+                      logWarn(
+                        "Pesan error lompat halaman gagal ditampilkan:",
+                        errorMessageError
+                      );
+                    }
+                  }
+
+                  return false;
+                }
+
+                if (
+                  typeof pageFlip ===
+                    "undefined" ||
+                  !pageFlip ||
+                  typeof pageFlip.flip !==
+                    "function"
+                ) {
+
+                  logWarn(
+                    "PageFlip tidak tersedia untuk lompat halaman."
+                  );
+
+                  return false;
+                }
+
+                const targetIndex =
+                  targetPage - 1;
+
+                try {
+
+                  pageFlip.flip(
+                    targetIndex,
+                    "bottom"
+                  );
+
+                } catch (
+                  flipError
+                ) {
+
+                  logWarn(
+                    "Lompat halaman Reader gagal:",
+                    flipError
+                  );
+
+                  return false;
+                }
+
+                return true;
+              }
+              /* Batas CALLBACK action(value) */
+
+            });
+
+          if (
+            dialogResult ===
+              false
+          ) {
+
+            logWarn(
+              "Dialog lompat halaman gagal dibuka."
+            );
+
+            return false;
+          }
+
+        } catch (
+          dialogError
+        ) {
+
+          logWarn(
+            "Pembukaan dialog lompat halaman mengalami error:",
+            dialogError
+          );
+
+          return false;
+        }
+
+        return true;
       }
+      /* Batas CALLBACK Klik Lompat Halaman */
 
-      const targetIndex =
-        targetPage - 1;
+    );
 
-      pageFlip.flip(
-        targetIndex,
-        "bottom"
+  } else {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        'Tombol "go-page" tidak tersedia atau tidak mendukung addEventListener().'
       );
-
-      return true;
     }
+  }
 
-  });
+} else {
 
-});
+  if (
+    typeof console !==
+      "undefined" &&
+    typeof console.warn ===
+      "function"
+  ) {
+
+    console.warn(
+      "Document tidak tersedia untuk memasang event Lompat Halaman."
+    );
+  }
+}
+/* Batas EVENT Tombol "go-page" */
   
   /* =========================================
    BUAT / HAPUS BOOKMARK
