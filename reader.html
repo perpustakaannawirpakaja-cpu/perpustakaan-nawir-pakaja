@@ -3700,132 +3700,928 @@ function playPageFlipSound() {
 
 async function saveReadingProgressToCloud() {
 
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
+  const logWarn = (
+    ...args
+  ) => {
 
-  if (userError || !user) {
-    return;
-  }
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-  const { error } = await db
-    .from("reader_progress")
-    .upsert(
-      {
-        user_id: user.id,
-        book_key: readingKey,
-        page_number: pageNum,
-        updated_at: new Date().toISOString()
-      },
-      {
-        onConflict: "user_id,book_key"
-      }
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  const logError = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
+
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db
+  ) {
+
+    logWarn(
+      "Supabase client tidak tersedia untuk menyimpan progress PDF."
     );
 
-  if (error) {
-    console.error(
-      "Gagal menyimpan progress baca ke cloud:",
+    return false;
+  }
+
+  if (
+    !db.auth ||
+    typeof db.auth.getUser !==
+      "function"
+  ) {
+
+    logWarn(
+      "Supabase Auth tidak tersedia untuk menyimpan progress PDF."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof db.from !==
+      "function"
+  ) {
+
+    logWarn(
+      "Supabase database tidak tersedia untuk menyimpan progress PDF."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof readingKey !==
+      "string" ||
+    !readingKey.trim() ||
+    readingKey.trim() ===
+      "lastPage:"
+  ) {
+
+    logWarn(
+      "Book key progress PDF tidak valid."
+    );
+
+    return false;
+  }
+
+  const numericPage =
+    Number(
+      pageNum
+    );
+
+  if (
+    !Number.isFinite(
+      numericPage
+    )
+  ) {
+
+    logWarn(
+      "Nomor halaman PDF tidak valid untuk disimpan."
+    );
+
+    return false;
+  }
+
+  const normalizedPage =
+    Math.max(
+      1,
+      Math.trunc(
+        numericPage
+      )
+    );
+
+  let user =
+    null;
+
+  try {
+
+    const userResult =
+      await db.auth.getUser();
+
+    const userError =
+      userResult &&
+      userResult.error
+        ? userResult.error
+        : null;
+
+    user =
+      userResult &&
+      userResult.data &&
+      userResult.data.user
+        ? userResult.data.user
+        : null;
+
+    if (
+      userError
+    ) {
+
+      logWarn(
+        "Gagal membaca user untuk menyimpan progress PDF:",
+        userError
+      );
+
+      return false;
+    }
+
+    if (
+      !user ||
+      !user.id
+    ) {
+
+      return false;
+    }
+
+  } catch (
+    userReadError
+  ) {
+
+    logError(
+      "Gagal membaca user untuk menyimpan progress PDF:",
+      userReadError
+    );
+
+    return false;
+  }
+
+  let updatedAt =
+    "";
+
+  try {
+
+    updatedAt =
+      new Date().toISOString();
+
+  } catch (
+    dateError
+  ) {
+
+    logError(
+      "Timestamp progress PDF gagal dibuat:",
+      dateError
+    );
+
+    return false;
+  }
+
+  try {
+
+    const progressTable =
+      db.from(
+        "reader_progress"
+      );
+
+    if (
+      !progressTable ||
+      typeof progressTable.upsert !==
+        "function"
+    ) {
+
+      logWarn(
+        "Tabel reader_progress tidak tersedia untuk proses upsert."
+      );
+
+      return false;
+    }
+
+    const {
       error
-    );
-  }
-}
+    } =
+      await progressTable.upsert(
+        {
+          user_id:
+            user.id,
 
+          book_key:
+            readingKey.trim(),
+
+          page_number:
+            normalizedPage,
+
+          reader_type:
+            "pdf",
+
+          updated_at:
+            updatedAt
+        },
+        {
+          onConflict:
+            "user_id,book_key"
+        }
+      );
+
+    if (
+      error
+    ) {
+
+      logError(
+        "Gagal menyimpan progress baca PDF ke cloud:",
+        error
+      );
+
+      return false;
+    }
+
+  } catch (
+    saveError
+  ) {
+
+    logError(
+      "Gagal menyimpan progress baca PDF ke cloud:",
+      saveError
+    );
+
+    return false;
+  }
+
+  return true;
+}
+/*BATAS FUNCTION*/
 
 let readingProgressCloudSaveTimer = null;
 
 function scheduleReadingProgressCloudSave() {
 
-  clearTimeout(
-    readingProgressCloudSaveTimer
-  );
+  const logWarn = (
+    ...args
+  ) => {
 
-  readingProgressCloudSaveTimer =
-    setTimeout(() => {
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-      saveReadingProgressToCloud();
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-    }, 800);
+  if (
+    typeof readingProgressCloudSaveTimer ===
+      "undefined"
+  ) {
+
+    logWarn(
+      "State timer penyimpanan progress PDF tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof clearTimeout !==
+      "function" ||
+    typeof setTimeout !==
+      "function"
+  ) {
+
+    logWarn(
+      "Timer browser tidak tersedia untuk penyimpanan progress PDF."
+    );
+
+    return false;
+  }
+
+  try {
+
+    if (
+      readingProgressCloudSaveTimer !==
+        null
+    ) {
+
+      clearTimeout(
+        readingProgressCloudSaveTimer
+      );
+
+      readingProgressCloudSaveTimer =
+        null;
+    }
+
+    readingProgressCloudSaveTimer =
+      setTimeout(
+        async () => {
+
+          const logWarn = (
+            ...args
+          ) => {
+
+            if (
+              typeof console !==
+                "undefined" &&
+              typeof console.warn ===
+                "function"
+            ) {
+
+              console.warn(
+                ...args
+              );
+            }
+          };
+
+          if (
+            typeof saveReadingProgressToCloud !==
+              "function"
+          ) {
+
+            logWarn(
+              "Function saveReadingProgressToCloud tidak tersedia."
+            );
+
+            return false;
+          }
+
+          try {
+
+            const hasilSimpan =
+              await saveReadingProgressToCloud();
+
+            if (
+              hasilSimpan ===
+                false
+            ) {
+
+              logWarn(
+                "Progress baca PDF gagal disimpan oleh proses terjadwal."
+              );
+
+              return false;
+            }
+
+          } catch (
+            saveError
+          ) {
+
+            logWarn(
+              "Proses terjadwal penyimpanan progress PDF gagal:",
+              saveError
+            );
+
+            return false;
+          }
+
+          return true;
+        },
+        800
+      );
+
+  } catch (
+    timerError
+  ) {
+
+    logWarn(
+      "Penjadwalan penyimpanan progress PDF gagal:",
+      timerError
+    );
+
+    readingProgressCloudSaveTimer =
+      null;
+
+    return false;
+  }
+
+  return true;
 }
-
+/*BATAS FUNCTION*/
 
 async function loadReadingProgressFromCloud() {
 
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
+  const logWarn = (
+    ...args
+  ) => {
 
-  if (userError || !user) {
-    return;
-  }
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-  const { data, error } = await db
-    .from("reader_progress")
-    .select("page_number")
-    .eq("user_id", user.id)
-    .eq("book_key", readingKey)
-    .maybeSingle();
-
-  if (error) {
-
-    console.error(
-      "Gagal mengambil progress baca dari cloud:",
-      error
-    );
-
-    return;
-  }
-
-  if (data) {
-
-    const cloudPage =
-      Math.max(
-        1,
-        parseInt(data.page_number, 10) || 1
-      );
-
-    savedPage = cloudPage;
-    pageNum = cloudPage;
-
-    localStorage.setItem(
-      readingKey,
-      cloudPage
-    );
-
-    if (pageFlip && pdfDoc) {
-
-      const targetPage =
-        Math.min(
-          cloudPage,
-          pdfDoc.numPages
-        ) - 1;
-
-      pageFlip.flip(
-        targetPage,
-        "bottom"
+      console.warn(
+        ...args
       );
     }
+  };
 
-    updateCurrentPageBookmarkStatus();
+  const logError = (
+    ...args
+  ) => {
 
-    return;
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
+
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    !db.auth ||
+    typeof db.auth.getUser !==
+      "function" ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    logWarn(
+      "Supabase tidak tersedia untuk memuat progress PDF."
+    );
+
+    return false;
   }
 
+  if (
+    typeof readingKey !==
+      "string" ||
+    !readingKey.trim() ||
+    readingKey.trim() ===
+      "lastPage:"
+  ) {
+
+    logWarn(
+      "Book key progress PDF tidak valid."
+    );
+
+    return false;
+  }
+
+  const ambilLocalPage =
+    () => {
+
+      if (
+        typeof localStorage ===
+          "undefined" ||
+        typeof localStorage.getItem !==
+          "function"
+      ) {
+
+        return 1;
+      }
+
+      try {
+
+        const parsedPage =
+          parseInt(
+            localStorage.getItem(
+              readingKey
+            ),
+            10
+          );
+
+        return (
+          Number.isFinite(
+            parsedPage
+          ) &&
+          parsedPage > 0
+            ? parsedPage
+            : 1
+        );
+
+      } catch (
+        localReadError
+      ) {
+
+        logWarn(
+          "Progress PDF lokal gagal dibaca:",
+          localReadError
+        );
+
+        return 1;
+      }
+    };
+
+  const terapkanProgress =
+    (
+      targetPage
+    ) => {
+
+      const numericPage =
+        Number(
+          targetPage
+        );
+
+      const normalizedPage =
+        Number.isFinite(
+          numericPage
+        )
+          ? Math.max(
+              1,
+              Math.trunc(
+                numericPage
+              )
+            )
+          : 1;
+
+      savedPage =
+        normalizedPage;
+
+      pageNum =
+        normalizedPage;
+
+      if (
+        typeof localStorage !==
+          "undefined" &&
+        typeof localStorage.setItem ===
+          "function"
+      ) {
+
+        try {
+
+          localStorage.setItem(
+            readingKey,
+            normalizedPage
+          );
+
+        } catch (
+          localWriteError
+        ) {
+
+          logWarn(
+            "Progress PDF lokal gagal diperbarui:",
+            localWriteError
+          );
+        }
+      }
+
+      if (
+        typeof pageFlip !==
+          "undefined" &&
+        pageFlip &&
+        typeof pageFlip.flip ===
+          "function" &&
+        typeof pdfDoc !==
+          "undefined" &&
+        pdfDoc &&
+        Number.isFinite(
+          Number(
+            pdfDoc.numPages
+          )
+        ) &&
+        Number(
+          pdfDoc.numPages
+        ) > 0
+      ) {
+
+        const targetIndex =
+          Math.min(
+            normalizedPage,
+            Math.trunc(
+              Number(
+                pdfDoc.numPages
+              )
+            )
+          ) - 1;
+
+        try {
+
+          pageFlip.flip(
+            targetIndex,
+            "bottom"
+          );
+
+        } catch (
+          flipError
+        ) {
+
+          logWarn(
+            "Reader PDF gagal berpindah ke progress cloud:",
+            flipError
+          );
+        }
+      }
+
+      if (
+        typeof updateCurrentPageBookmarkStatus ===
+          "function"
+      ) {
+
+        try {
+
+          updateCurrentPageBookmarkStatus();
+
+        } catch (
+          bookmarkStatusError
+        ) {
+
+          logWarn(
+            "Status bookmark gagal diperbarui setelah memuat progress PDF:",
+            bookmarkStatusError
+          );
+        }
+      }
+
+      return normalizedPage;
+    };
+
+  let user =
+    null;
+
+  try {
+
+    const userResult =
+      await db.auth.getUser();
+
+    const userError =
+      userResult &&
+      userResult.error
+        ? userResult.error
+        : null;
+
+    user =
+      userResult &&
+      userResult.data &&
+      userResult.data.user
+        ? userResult.data.user
+        : null;
+
+    if (
+      userError
+    ) {
+
+      logWarn(
+        "Gagal membaca user untuk memuat progress PDF:",
+        userError
+      );
+
+      return false;
+    }
+
+    if (
+      !user ||
+      !user.id
+    ) {
+
+      return false;
+    }
+
+  } catch (
+    userReadError
+  ) {
+
+    logError(
+      "Gagal membaca user untuk memuat progress PDF:",
+      userReadError
+    );
+
+    return false;
+  }
+
+  let data =
+    null;
+
+  try {
+
+    const progressTable =
+      db.from(
+        "reader_progress"
+      );
+
+    if (
+      !progressTable ||
+      typeof progressTable.select !==
+        "function"
+    ) {
+
+      logWarn(
+        "Tabel reader_progress tidak tersedia."
+      );
+
+      return false;
+    }
+
+    const query =
+      progressTable
+        .select(
+          "page_number, reader_type"
+        )
+        .eq(
+          "user_id",
+          user.id
+        )
+        .eq(
+          "book_key",
+          readingKey.trim()
+        );
+
+    if (
+      !query ||
+      typeof query.maybeSingle !==
+        "function"
+    ) {
+
+      logWarn(
+        "Query reader_progress tidak mendukung maybeSingle."
+      );
+
+      return false;
+    }
+
+    const result =
+      await query.maybeSingle();
+
+    const error =
+      result &&
+      result.error
+        ? result.error
+        : null;
+
+    data =
+      result
+        ? result.data
+        : null;
+
+    if (
+      error
+    ) {
+
+      logError(
+        "Gagal mengambil progress baca PDF dari cloud:",
+        error
+      );
+
+      return false;
+    }
+
+  } catch (
+    queryError
+  ) {
+
+    logError(
+      "Gagal mengambil progress baca PDF dari cloud:",
+      queryError
+    );
+
+    return false;
+  }
+
+  if (
+    data
+  ) {
+
+    const readerType =
+      typeof data.reader_type ===
+        "string"
+        ? data.reader_type.trim()
+        : "";
+
+    if (
+      readerType &&
+      readerType !==
+        "pdf"
+    ) {
+
+      logWarn(
+        "Progress dengan book key PDF memiliki reader_type yang tidak sesuai:",
+        readerType
+      );
+
+      return false;
+    }
+
+    const cloudPage =
+      terapkanProgress(
+        data.page_number
+      );
+
+    if (
+      !readerType
+    ) {
+
+      if (
+        typeof saveReadingProgressToCloud !==
+          "function"
+      ) {
+
+        logWarn(
+          "Function saveReadingProgressToCloud tidak tersedia untuk migrasi progress PDF lama."
+        );
+
+        return false;
+      }
+
+      try {
+
+        const hasilMigrasi =
+          await saveReadingProgressToCloud();
+
+        if (
+          hasilMigrasi ===
+            false
+        ) {
+
+          logWarn(
+            "Progress PDF lama berhasil dibaca tetapi gagal dimigrasikan ke reader_type pdf."
+          );
+
+          return false;
+        }
+
+      } catch (
+        migrationError
+      ) {
+
+        logError(
+          "Migrasi progress PDF lama gagal:",
+          migrationError
+        );
+
+        return false;
+      }
+    }
+
+    return (
+      cloudPage >= 1
+    );
+  }
 
   const localPage =
-    parseInt(
-      localStorage.getItem(readingKey),
-      10
-    ) || 1;
+    ambilLocalPage();
 
-  savedPage = localPage;
-  pageNum = localPage;
+  terapkanProgress(
+    localPage
+  );
 
-  if (localPage > 1) {
-    await saveReadingProgressToCloud();
+  if (
+    localPage > 1
+  ) {
+
+    if (
+      typeof saveReadingProgressToCloud !==
+        "function"
+    ) {
+
+      logWarn(
+        "Function saveReadingProgressToCloud tidak tersedia untuk sinkronisasi progress PDF lokal."
+      );
+
+      return false;
+    }
+
+    try {
+
+      const hasilSimpan =
+        await saveReadingProgressToCloud();
+
+      if (
+        hasilSimpan ===
+          false
+      ) {
+
+        logWarn(
+          "Progress PDF lokal gagal disinkronkan ke cloud."
+        );
+
+        return false;
+      }
+
+    } catch (
+      saveLocalError
+    ) {
+
+      logError(
+        "Progress PDF lokal gagal disinkronkan ke cloud:",
+        saveLocalError
+      );
+
+      return false;
+    }
   }
+
+  return true;
 }
+/*BATAS FUNCTION*/
   
   const zoomKey = "readerZoom";
   const brightnessKey = "readerBrightness";
