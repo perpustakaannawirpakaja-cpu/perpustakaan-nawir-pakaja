@@ -3301,40 +3301,330 @@ let readingProgressCloudReady = false;
 let readerSettingsCloudReady = false;
   
 async function updateReaderAuthUI() {
-  const {
-    data: { session }
-  } = await db.auth.getSession();
 
-  const user = session?.user;
+  const logWarn = (
+    ...args
+  ) => {
 
-  if (user) {
-    userStatus.textContent =
-      "✅ " + user.email;
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-    loginButton.hidden = true;
-    logoutButton.hidden = false;
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-    await loadPresetsFromCloud();
+  const logError = (
+    ...args
+  ) => {
 
-    if (bookmarkCloudReady) {
-      await loadBookmarksFromCloud();
-}
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
 
-    if (readingProgressCloudReady) {
-      await loadReadingProgressFromCloud();
-}
+      console.error(
+        ...args
+      );
+    }
+  };
 
-    if (readerSettingsCloudReady) {
-  await loadReaderSettingsFromCloud();
-}
-    
-  } else {
-    userStatus.textContent = "Belum login";
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    !db.auth ||
+    typeof db.auth.getSession !==
+      "function"
+  ) {
 
-    loginButton.hidden = false;
-    logoutButton.hidden = true;
+    logWarn(
+      "Supabase Auth tidak tersedia untuk memperbarui UI Reader."
+    );
+
+    return false;
   }
+
+  if (
+    typeof userStatus ===
+      "undefined" ||
+    !userStatus ||
+    typeof loginButton ===
+      "undefined" ||
+    !loginButton ||
+    typeof logoutButton ===
+      "undefined" ||
+    !logoutButton
+  ) {
+
+    logWarn(
+      "Elemen UI autentikasi Reader tidak tersedia."
+    );
+
+    return false;
+  }
+
+  let session =
+    null;
+
+  try {
+
+    const sessionResult =
+      await db.auth.getSession();
+
+    const sessionError =
+      sessionResult &&
+      sessionResult.error
+        ? sessionResult.error
+        : null;
+
+    session =
+      sessionResult &&
+      sessionResult.data
+        ? sessionResult.data.session
+        : null;
+
+    if (
+      sessionError
+    ) {
+
+      logError(
+        "Gagal membaca session Reader:",
+        sessionError
+      );
+
+      return false;
+    }
+
+  } catch (
+    sessionReadError
+  ) {
+
+    logError(
+      "Gagal membaca session Reader:",
+      sessionReadError
+    );
+
+    return false;
+  }
+
+  const user =
+    session &&
+    session.user
+      ? session.user
+      : null;
+
+  if (
+    !user
+  ) {
+
+    userStatus.textContent =
+      "Belum login";
+
+    loginButton.hidden =
+      false;
+
+    logoutButton.hidden =
+      true;
+
+    return true;
+  }
+
+  const userEmail =
+    typeof user.email ===
+      "string" &&
+    user.email.trim()
+      ? user.email.trim()
+      : "User";
+
+  userStatus.textContent =
+    "✅ " + userEmail;
+
+  loginButton.hidden =
+    true;
+
+  logoutButton.hidden =
+    false;
+
+  if (
+    typeof loadPresetsFromCloud ===
+      "function"
+  ) {
+
+    try {
+
+      const hasilPreset =
+        await loadPresetsFromCloud();
+
+      if (
+        hasilPreset ===
+          false
+      ) {
+
+        logWarn(
+          "Sinkronisasi preset Reader belum berhasil."
+        );
+      }
+
+    } catch (
+      presetError
+    ) {
+
+      logError(
+        "Sinkronisasi preset Reader gagal:",
+        presetError
+      );
+    }
+
+  } else {
+
+    logWarn(
+      "Function loadPresetsFromCloud tidak tersedia."
+    );
+  }
+
+  if (
+    typeof bookmarkCloudReady !==
+      "undefined" &&
+    bookmarkCloudReady
+  ) {
+
+    if (
+      typeof loadBookmarksFromCloud ===
+        "function"
+    ) {
+
+      try {
+
+        const hasilBookmark =
+          await loadBookmarksFromCloud();
+
+        if (
+          hasilBookmark ===
+            false
+        ) {
+
+          logWarn(
+            "Sinkronisasi bookmark Reader belum berhasil."
+          );
+        }
+
+      } catch (
+        bookmarkError
+      ) {
+
+        logError(
+          "Sinkronisasi bookmark Reader gagal:",
+          bookmarkError
+        );
+      }
+
+    } else {
+
+      logWarn(
+        "Function loadBookmarksFromCloud tidak tersedia."
+      );
+    }
+  }
+
+  if (
+    typeof readingProgressCloudReady !==
+      "undefined" &&
+    readingProgressCloudReady
+  ) {
+
+    if (
+      typeof loadReadingProgressFromCloud ===
+        "function"
+    ) {
+
+      try {
+
+        const hasilProgress =
+          await loadReadingProgressFromCloud();
+
+        if (
+          hasilProgress ===
+            false
+        ) {
+
+          logWarn(
+            "Sinkronisasi progress PDF Reader belum berhasil."
+          );
+        }
+
+      } catch (
+        progressError
+      ) {
+
+        logError(
+          "Sinkronisasi progress PDF Reader gagal:",
+          progressError
+        );
+      }
+
+    } else {
+
+      logWarn(
+        "Function loadReadingProgressFromCloud tidak tersedia."
+      );
+    }
+  }
+
+  if (
+    typeof readerSettingsCloudReady !==
+      "undefined" &&
+    readerSettingsCloudReady
+  ) {
+
+    if (
+      typeof loadReaderSettingsFromCloud ===
+        "function"
+    ) {
+
+      try {
+
+        const hasilSettings =
+          await loadReaderSettingsFromCloud();
+
+        if (
+          hasilSettings ===
+            false
+        ) {
+
+          logWarn(
+            "Sinkronisasi pengaturan Reader belum berhasil."
+          );
+        }
+
+      } catch (
+        settingsError
+      ) {
+
+        logError(
+          "Sinkronisasi pengaturan Reader gagal:",
+          settingsError
+        );
+      }
+
+    } else {
+
+      logWarn(
+        "Function loadReaderSettingsFromCloud tidak tersedia."
+      );
+    }
+  }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 loginButton.addEventListener("click", () => {
   loginMessage.textContent = "";
@@ -3430,138 +3720,1156 @@ localStorage.setItem(
 
 async function saveBookmarksToCloud() {
 
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
+  const logWarn = (
+    ...args
+  ) => {
 
-  if (userError || !user) {
-    return;
-  }
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-  const { error } = await db
-    .from("reader_bookmarks")
-    .upsert(
-      {
-        user_id: user.id,
-        book_key: bookmarkKey,
-        bookmarks: bookmarks,
-        updated_at: new Date().toISOString()
-      },
-      {
-        onConflict: "user_id,book_key"
-      }
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  const logError = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
+
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db
+  ) {
+
+    logWarn(
+      "Supabase client tidak tersedia untuk menyimpan bookmark Reader."
     );
 
-  if (error) {
-    console.error(
-      "Gagal menyimpan bookmark ke cloud:",
+    return false;
+  }
+
+  if (
+    !db.auth ||
+    typeof db.auth.getUser !==
+      "function"
+  ) {
+
+    logWarn(
+      "Supabase Auth tidak tersedia untuk menyimpan bookmark Reader."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof db.from !==
+      "function"
+  ) {
+
+    logWarn(
+      "Supabase database tidak tersedia untuk menyimpan bookmark Reader."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof bookmarkKey !==
+      "string" ||
+    !bookmarkKey.trim() ||
+    bookmarkKey.trim() ===
+      "bookmarks:"
+  ) {
+
+    logWarn(
+      "Book key bookmark Reader tidak valid."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof bookmarks ===
+      "undefined" ||
+    !Array.isArray(
+      bookmarks
+    )
+  ) {
+
+    logWarn(
+      "Data bookmark Reader tidak valid."
+    );
+
+    return false;
+  }
+
+  let user =
+    null;
+
+  try {
+
+    const userResult =
+      await db.auth.getUser();
+
+    const userError =
+      userResult &&
+      userResult.error
+        ? userResult.error
+        : null;
+
+    user =
+      userResult &&
+      userResult.data &&
+      userResult.data.user
+        ? userResult.data.user
+        : null;
+
+    if (
+      userError
+    ) {
+
+      logWarn(
+        "Gagal membaca user untuk menyimpan bookmark Reader:",
+        userError
+      );
+
+      return false;
+    }
+
+    if (
+      !user ||
+      !user.id
+    ) {
+
+      return false;
+    }
+
+  } catch (
+    userReadError
+  ) {
+
+    logError(
+      "Gagal membaca user untuk menyimpan bookmark Reader:",
+      userReadError
+    );
+
+    return false;
+  }
+
+  let updatedAt =
+    "";
+
+  try {
+
+    updatedAt =
+      new Date().toISOString();
+
+  } catch (
+    dateError
+  ) {
+
+    logError(
+      "Timestamp bookmark Reader gagal dibuat:",
+      dateError
+    );
+
+    return false;
+  }
+
+  try {
+
+    const bookmarkTable =
+      db.from(
+        "reader_bookmarks"
+      );
+
+    if (
+      !bookmarkTable ||
+      typeof bookmarkTable.upsert !==
+        "function"
+    ) {
+
+      logWarn(
+        "Tabel reader_bookmarks tidak tersedia untuk proses upsert."
+      );
+
+      return false;
+    }
+
+    const {
       error
+    } =
+      await bookmarkTable.upsert(
+        {
+          user_id:
+            user.id,
+
+          book_key:
+            bookmarkKey.trim(),
+
+          bookmarks:
+            bookmarks,
+
+          updated_at:
+            updatedAt
+        },
+        {
+          onConflict:
+            "user_id,book_key"
+        }
+      );
+
+    if (
+      error
+    ) {
+
+      logError(
+        "Gagal menyimpan bookmark Reader ke cloud:",
+        error
+      );
+
+      return false;
+    }
+
+  } catch (
+    saveError
+  ) {
+
+    logError(
+      "Gagal menyimpan bookmark Reader ke cloud:",
+      saveError
     );
+
+    return false;
   }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 
 let bookmarkCloudSaveTimer = null;
 
 function scheduleBookmarkCloudSave() {
 
-  clearTimeout(
-    bookmarkCloudSaveTimer
-  );
+  const logWarn = (
+    ...args
+  ) => {
 
-  bookmarkCloudSaveTimer =
-    setTimeout(() => {
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-      saveBookmarksToCloud();
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-    }, 800);
+  if (
+    typeof bookmarkCloudSaveTimer ===
+      "undefined"
+  ) {
+
+    logWarn(
+      "State timer penyimpanan bookmark Reader tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof clearTimeout !==
+      "function" ||
+    typeof setTimeout !==
+      "function"
+  ) {
+
+    logWarn(
+      "Timer browser tidak tersedia untuk penyimpanan bookmark Reader."
+    );
+
+    return false;
+  }
+
+  try {
+
+    if (
+      bookmarkCloudSaveTimer !==
+        null
+    ) {
+
+      clearTimeout(
+        bookmarkCloudSaveTimer
+      );
+
+      bookmarkCloudSaveTimer =
+        null;
+    }
+
+    bookmarkCloudSaveTimer =
+      setTimeout(
+        async () => {
+
+          const logWarn = (
+            ...args
+          ) => {
+
+            if (
+              typeof console !==
+                "undefined" &&
+              typeof console.warn ===
+                "function"
+            ) {
+
+              console.warn(
+                ...args
+              );
+            }
+          };
+
+          if (
+            typeof saveBookmarksToCloud !==
+              "function"
+          ) {
+
+            logWarn(
+              "Function saveBookmarksToCloud tidak tersedia."
+            );
+
+            return false;
+          }
+
+          try {
+
+            const hasilSimpan =
+              await saveBookmarksToCloud();
+
+            if (
+              hasilSimpan ===
+                false
+            ) {
+
+              logWarn(
+                "Bookmark Reader gagal disimpan oleh proses terjadwal."
+              );
+
+              return false;
+            }
+
+          } catch (
+            saveError
+          ) {
+
+            logWarn(
+              "Proses terjadwal penyimpanan bookmark Reader gagal:",
+              saveError
+            );
+
+            return false;
+          }
+
+          return true;
+        },
+        800
+      );
+
+  } catch (
+    timerError
+  ) {
+
+    logWarn(
+      "Penjadwalan penyimpanan bookmark Reader gagal:",
+      timerError
+    );
+
+    bookmarkCloudSaveTimer =
+      null;
+
+    return false;
+  }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 
 async function loadBookmarksFromCloud() {
 
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
+  const logWarn = (
+    ...args
+  ) => {
 
-  if (userError || !user) {
-    return;
-  }
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-  const { data, error } = await db
-    .from("reader_bookmarks")
-    .select("bookmarks")
-    .eq("user_id", user.id)
-    .eq("book_key", bookmarkKey)
-    .maybeSingle();
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-  if (error) {
+  const logError = (
+    ...args
+  ) => {
 
-    console.error(
-      "Gagal mengambil bookmark dari cloud:",
-      error
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.error ===
+        "function"
+    ) {
+
+      console.error(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof db ===
+      "undefined" ||
+    !db ||
+    !db.auth ||
+    typeof db.auth.getUser !==
+      "function" ||
+    typeof db.from !==
+      "function"
+  ) {
+
+    logWarn(
+      "Supabase tidak tersedia untuk memuat bookmark Reader."
     );
 
-    return;
+    return false;
   }
 
-  if (data) {
+  if (
+    typeof bookmarkKey !==
+      "string" ||
+    !bookmarkKey.trim() ||
+    bookmarkKey.trim() ===
+      "bookmarks:"
+  ) {
 
-    bookmarks =
-      Array.isArray(data.bookmarks)
-        ? data.bookmarks
-        : [];
-
-    localStorage.setItem(
-      bookmarkKey,
-      JSON.stringify(bookmarks)
+    logWarn(
+      "Book key bookmark Reader tidak valid."
     );
 
-    updateBookmarkListButton();
-    updateFavoriteFilterButton();
-    updateCurrentPageBookmarkStatus();
+    return false;
+  }
 
-    const bookmarkPanel =
-      document.getElementById(
-        "bookmark-panel"
+  if (
+    typeof bookmarks ===
+      "undefined" ||
+    !Array.isArray(
+      bookmarks
+    )
+  ) {
+
+    logWarn(
+      "State bookmark Reader tidak valid."
+    );
+
+    return false;
+  }
+
+  let user =
+    null;
+
+  try {
+
+    const userResult =
+      await db.auth.getUser();
+
+    const userError =
+      userResult &&
+      userResult.error
+        ? userResult.error
+        : null;
+
+    user =
+      userResult &&
+      userResult.data &&
+      userResult.data.user
+        ? userResult.data.user
+        : null;
+
+    if (
+      userError
+    ) {
+
+      logWarn(
+        "Gagal membaca user untuk memuat bookmark Reader:",
+        userError
+      );
+
+      return false;
+    }
+
+    if (
+      !user ||
+      !user.id
+    ) {
+
+      return false;
+    }
+
+  } catch (
+    userReadError
+  ) {
+
+    logError(
+      "Gagal membaca user untuk memuat bookmark Reader:",
+      userReadError
+    );
+
+    return false;
+  }
+
+  let data =
+    null;
+
+  try {
+
+    const bookmarkTable =
+      db.from(
+        "reader_bookmarks"
       );
 
     if (
-      bookmarkPanel &&
-      bookmarkPanel.style.display === "flex"
+      !bookmarkTable ||
+      typeof bookmarkTable.select !==
+        "function"
     ) {
-      tampilkanBookmarks();
+
+      logWarn(
+        "Tabel reader_bookmarks tidak tersedia."
+      );
+
+      return false;
     }
 
-    return;
+    const query =
+      bookmarkTable
+        .select(
+          "bookmarks"
+        )
+        .eq(
+          "user_id",
+          user.id
+        )
+        .eq(
+          "book_key",
+          bookmarkKey.trim()
+        );
+
+    if (
+      !query ||
+      typeof query.maybeSingle !==
+        "function"
+    ) {
+
+      logWarn(
+        "Query reader_bookmarks tidak mendukung maybeSingle."
+      );
+
+      return false;
+    }
+
+    const result =
+      await query.maybeSingle();
+
+    const error =
+      result &&
+      result.error
+        ? result.error
+        : null;
+
+    data =
+      result
+        ? result.data
+        : null;
+
+    if (
+      error
+    ) {
+
+      logError(
+        "Gagal mengambil bookmark Reader dari cloud:",
+        error
+      );
+
+      return false;
+    }
+
+  } catch (
+    queryError
+  ) {
+
+    logError(
+      "Gagal mengambil bookmark Reader dari cloud:",
+      queryError
+    );
+
+    return false;
   }
 
-  if (bookmarks.length > 0) {
-    await saveBookmarksToCloud();
+  if (
+    data
+  ) {
+
+    if (
+      !Array.isArray(
+        data.bookmarks
+      )
+    ) {
+
+      logWarn(
+        "Data bookmark cloud bukan array yang valid."
+      );
+
+      return false;
+    }
+
+    const uniqueBookmarks =
+      new Map();
+
+    for (
+      const rawItem of
+      data.bookmarks
+    ) {
+
+      let normalizedItem =
+        null;
+
+      if (
+        typeof rawItem ===
+          "number"
+      ) {
+
+        const page =
+          Math.trunc(
+            rawItem
+          );
+
+        if (
+          page < 1
+        ) {
+
+          continue;
+        }
+
+        normalizedItem = {
+          page:
+            page,
+
+          title:
+            "",
+
+          favorite:
+            false
+        };
+
+      } else if (
+        rawItem &&
+        typeof rawItem ===
+          "object" &&
+        !Array.isArray(
+          rawItem
+        )
+      ) {
+
+        const numericPage =
+          Number(
+            rawItem.page
+          );
+
+        if (
+          !Number.isFinite(
+            numericPage
+          )
+        ) {
+
+          continue;
+        }
+
+        const page =
+          Math.trunc(
+            numericPage
+          );
+
+        if (
+          page < 1
+        ) {
+
+          continue;
+        }
+
+        normalizedItem = {
+          page:
+            page,
+
+          title:
+            typeof rawItem.title ===
+              "string"
+              ? rawItem.title.trim()
+              : "",
+
+          favorite:
+            Boolean(
+              rawItem.favorite
+            )
+        };
+
+      } else {
+
+        continue;
+      }
+
+      const existing =
+        uniqueBookmarks.get(
+          normalizedItem.page
+        );
+
+      if (
+        !existing
+      ) {
+
+        uniqueBookmarks.set(
+          normalizedItem.page,
+          normalizedItem
+        );
+
+        continue;
+      }
+
+      if (
+        !existing.title &&
+        normalizedItem.title
+      ) {
+
+        existing.title =
+          normalizedItem.title;
+      }
+
+      if (
+        normalizedItem.favorite
+      ) {
+
+        existing.favorite =
+          true;
+      }
+    }
+
+    const normalizedBookmarks =
+      [];
+
+    for (
+      const item of
+      uniqueBookmarks.values()
+    ) {
+
+      let inserted =
+        false;
+
+      for (
+        let index = 0;
+        index <
+          normalizedBookmarks.length;
+        index += 1
+      ) {
+
+        if (
+          item.page <
+          normalizedBookmarks[index].page
+        ) {
+
+          normalizedBookmarks.splice(
+            index,
+            0,
+            item
+          );
+
+          inserted =
+            true;
+
+          break;
+        }
+      }
+
+      if (
+        !inserted
+      ) {
+
+        normalizedBookmarks.push(
+          item
+        );
+      }
+    }
+
+    let perluMigrasiCloud =
+      false;
+
+    try {
+
+      perluMigrasiCloud =
+        JSON.stringify(
+          normalizedBookmarks
+        ) !==
+        JSON.stringify(
+          data.bookmarks
+        );
+
+    } catch (
+      compareError
+    ) {
+
+      logWarn(
+        "Perbandingan format bookmark cloud gagal:",
+        compareError
+      );
+
+      perluMigrasiCloud =
+        true;
+    }
+
+    bookmarks =
+      normalizedBookmarks;
+
+    if (
+      typeof localStorage !==
+        "undefined" &&
+      typeof localStorage.setItem ===
+        "function"
+    ) {
+
+      try {
+
+        localStorage.setItem(
+          bookmarkKey,
+          JSON.stringify(
+            bookmarks
+          )
+        );
+
+      } catch (
+        localWriteError
+      ) {
+
+        logWarn(
+          "Bookmark Reader gagal disimpan ke localStorage:",
+          localWriteError
+        );
+      }
+    }
+
+    if (
+      typeof updateBookmarkListButton ===
+        "function"
+    ) {
+
+      try {
+
+        updateBookmarkListButton();
+
+      } catch (
+        listButtonError
+      ) {
+
+        logWarn(
+          "Tombol daftar bookmark gagal diperbarui:",
+          listButtonError
+        );
+      }
+    }
+
+    if (
+      typeof updateFavoriteFilterButton ===
+        "function"
+    ) {
+
+      try {
+
+        updateFavoriteFilterButton();
+
+      } catch (
+        favoriteButtonError
+      ) {
+
+        logWarn(
+          "Tombol filter favorit gagal diperbarui:",
+          favoriteButtonError
+        );
+      }
+    }
+
+    if (
+      typeof updateCurrentPageBookmarkStatus ===
+        "function"
+    ) {
+
+      try {
+
+        updateCurrentPageBookmarkStatus();
+
+      } catch (
+        currentStatusError
+      ) {
+
+        logWarn(
+          "Status bookmark halaman aktif gagal diperbarui:",
+          currentStatusError
+        );
+      }
+    }
+
+    if (
+      typeof document !==
+        "undefined" &&
+      typeof document.getElementById ===
+        "function"
+    ) {
+
+      const bookmarkPanel =
+        document.getElementById(
+          "bookmark-panel"
+        );
+
+      if (
+        bookmarkPanel &&
+        bookmarkPanel.style &&
+        bookmarkPanel.style.display ===
+          "flex" &&
+        typeof tampilkanBookmarks ===
+          "function"
+      ) {
+
+        try {
+
+          tampilkanBookmarks();
+
+        } catch (
+          panelError
+        ) {
+
+          logWarn(
+            "Panel bookmark gagal diperbarui:",
+            panelError
+          );
+        }
+      }
+    }
+
+    if (
+      perluMigrasiCloud
+    ) {
+
+      if (
+        typeof saveBookmarksToCloud !==
+          "function"
+      ) {
+
+        logWarn(
+          "Function saveBookmarksToCloud tidak tersedia untuk migrasi bookmark cloud."
+        );
+
+        return false;
+      }
+
+      try {
+
+        const hasilMigrasi =
+          await saveBookmarksToCloud();
+
+        if (
+          hasilMigrasi ===
+            false
+        ) {
+
+          logWarn(
+            "Bookmark cloud berhasil dimuat tetapi format normalisasi gagal disimpan kembali."
+          );
+
+          return false;
+        }
+
+      } catch (
+        migrationError
+      ) {
+
+        logError(
+          "Migrasi format bookmark cloud gagal:",
+          migrationError
+        );
+
+        return false;
+      }
+    }
+
+    return true;
   }
+
+  if (
+    bookmarks.length >
+      0
+  ) {
+
+    if (
+      typeof saveBookmarksToCloud !==
+        "function"
+    ) {
+
+      logWarn(
+        "Function saveBookmarksToCloud tidak tersedia untuk sinkronisasi bookmark lokal."
+      );
+
+      return false;
+    }
+
+    try {
+
+      const hasilSimpan =
+        await saveBookmarksToCloud();
+
+      if (
+        hasilSimpan ===
+          false
+      ) {
+
+        logWarn(
+          "Bookmark lokal gagal disinkronkan ke cloud."
+        );
+
+        return false;
+      }
+
+    } catch (
+      saveLocalError
+    ) {
+
+      logError(
+        "Bookmark lokal gagal disinkronkan ke cloud:",
+        saveLocalError
+      );
+
+      return false;
+    }
+  }
+
+  return true;
 }
+/*BATAS FUNCTION*/
 
 /* =========================================
    BOOKMARK COUNT BUTTON
    ========================================= */
 
-function updateBookmarkListButton(){
+function updateBookmarkListButton() {
+
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk memperbarui tombol daftar bookmark."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof bookmarks ===
+      "undefined" ||
+    !Array.isArray(
+      bookmarks
+    )
+  ) {
+
+    logWarn(
+      "State bookmark Reader tidak valid untuk memperbarui tombol daftar bookmark."
+    );
+
+    return false;
+  }
 
   const button =
-    document.getElementById("bookmark-list");
+    document.getElementById(
+      "bookmark-list"
+    );
 
-  if (!button) return;
+  if (
+    !button
+  ) {
 
-  if (bookmarks.length > 0) {
+    logWarn(
+      "Tombol daftar bookmark tidak ditemukan."
+    );
+
+    return false;
+  }
+
+  const bookmarkCount =
+    bookmarks.length;
+
+  if (
+    bookmarkCount >
+      0
+  ) {
 
     button.textContent =
-      "📑 " + bookmarks.length;
+      "📑 " +
+      bookmarkCount;
 
     button.title =
       "Daftar bookmark (" +
-      bookmarks.length +
+      bookmarkCount +
       ")";
 
   } else {
@@ -3571,31 +4879,117 @@ function updateBookmarkListButton(){
 
     button.title =
       "Daftar bookmark";
-
   }
 
+  return true;
 }
+/*BATAS FUNCTION*/
 
 /* =========================================
    FAVORITE BOOKMARK COUNT
    ========================================= */
 
-function updateFavoriteFilterButton(){
+function updateFavoriteFilterButton() {
+
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk memperbarui tombol filter favorit."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof bookmarks ===
+      "undefined" ||
+    !Array.isArray(
+      bookmarks
+    )
+  ) {
+
+    logWarn(
+      "State bookmark Reader tidak valid untuk menghitung favorit."
+    );
+
+    return false;
+  }
 
   const button =
-    document.getElementById("favorite-filter");
+    document.getElementById(
+      "favorite-filter"
+    );
 
-  if (!button) return;
+  if (
+    !button
+  ) {
+
+    logWarn(
+      "Tombol filter favorit tidak ditemukan."
+    );
+
+    return false;
+  }
+
+  if (
+    !button.classList ||
+    typeof button.classList.contains !==
+      "function"
+  ) {
+
+    logWarn(
+      "classList tombol filter favorit tidak tersedia."
+    );
+
+    return false;
+  }
 
   const favoriteCount =
     bookmarks.filter(
-      (item) => item.favorite
+      (item) => {
+
+        return Boolean(
+          item &&
+          typeof item ===
+            "object" &&
+          !Array.isArray(
+            item
+          ) &&
+          item.favorite
+        );
+      }
     ).length;
 
   const isActive =
-    button.classList.contains("active");
+    button.classList.contains(
+      "active"
+    );
 
-  if (isActive) {
+  if (
+    isActive
+  ) {
 
     button.textContent =
       "⭐ Semua favorit (" +
@@ -3608,10 +5002,11 @@ function updateFavoriteFilterButton(){
       "☆ Favorit saja (" +
       favoriteCount +
       ")";
-
   }
 
+  return true;
 }
+/*BATAS FUNCTION*/
 
 updateBookmarkListButton();
 
@@ -3629,16 +5024,149 @@ let audioCtx = null;
    CURRENT PAGE BOOKMARK STATUS
    ========================================= */
 
-function updateCurrentPageBookmarkStatus(){
+function updateCurrentPageBookmarkStatus() {
+
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk memperbarui status bookmark halaman."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof bookmarks ===
+      "undefined" ||
+    !Array.isArray(
+      bookmarks
+    )
+  ) {
+
+    logWarn(
+      "State bookmark Reader tidak valid untuk memperbarui status halaman."
+    );
+
+    return false;
+  }
+
+  const currentPage =
+    Number(
+      pageNum
+    );
+
+  if (
+    !Number.isFinite(
+      currentPage
+    ) ||
+    currentPage < 1
+  ) {
+
+    logWarn(
+      "Nomor halaman aktif Reader tidak valid."
+    );
+
+    return false;
+  }
 
   const button =
-    document.getElementById("bookmark-page");
+    document.getElementById(
+      "bookmark-page"
+    );
 
-  if (!button) return;
+  if (
+    !button
+  ) {
+
+    logWarn(
+      "Tombol bookmark halaman tidak ditemukan."
+    );
+
+    return false;
+  }
+
+  if (
+    !button.classList ||
+    typeof button.classList.toggle !==
+      "function"
+  ) {
+
+    logWarn(
+      "classList tombol bookmark halaman tidak tersedia."
+    );
+
+    return false;
+  }
 
   const isBookmarked =
     bookmarks.some(
-      (item) => item.page === pageNum
+      (item) => {
+
+        if (
+          !item ||
+          typeof item !==
+            "object" ||
+          Array.isArray(
+            item
+          )
+        ) {
+
+          return false;
+        }
+
+        const itemPage =
+          Number(
+            item.page
+          );
+
+        const currentPage =
+          Number(
+            pageNum
+          );
+
+        if (
+          !Number.isFinite(
+            itemPage
+          ) ||
+          !Number.isFinite(
+            currentPage
+          )
+        ) {
+
+          return false;
+        }
+
+        return (
+          Math.trunc(
+            itemPage
+          ) ===
+          Math.trunc(
+            currentPage
+          )
+        );
+      }
     );
 
   button.classList.toggle(
@@ -3651,7 +5179,9 @@ function updateCurrentPageBookmarkStatus(){
       ? "Halaman ini sudah di-bookmark"
       : "Bookmark halaman";
 
+  return true;
 }
+/*BATAS FUNCTION*/
 
 bookmarkCloudReady = true;
   
