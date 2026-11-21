@@ -3073,8 +3073,90 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
   "sb_publishable_vu1p7MFzan_Dqx_58B8dmQ_V14Hm0Vj";
 
-const db =
-  supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+/* === BOOTSTRAP SUPABASE CLIENT === */
+let db =
+  null;
+
+const logBootstrapWarn = (
+  ...args
+) => {
+
+  if (
+    typeof console !==
+      "undefined" &&
+    typeof console.warn ===
+      "function"
+  ) {
+
+    console.warn(
+      ...args
+    );
+  }
+};
+
+if (
+  typeof supabase ===
+    "undefined" ||
+  !supabase ||
+  typeof supabase.createClient !==
+    "function"
+) {
+
+  logBootstrapWarn(
+    "Supabase library tidak tersedia. Sinkronisasi cloud Reader dinonaktifkan."
+  );
+
+} else if (
+  typeof SUPABASE_URL !==
+    "string" ||
+  !SUPABASE_URL.trim() ||
+  typeof SUPABASE_KEY !==
+    "string" ||
+  !SUPABASE_KEY.trim()
+) {
+
+  logBootstrapWarn(
+    "Konfigurasi Supabase Reader tidak valid."
+  );
+
+} else {
+
+  try {
+
+    db =
+      supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
+
+    if (
+      !db ||
+      typeof db !==
+        "object"
+    ) {
+
+      logBootstrapWarn(
+        "Supabase client gagal dibuat."
+      );
+
+      db =
+        null;
+    }
+
+  } catch (
+    supabaseInitError
+  ) {
+
+    logBootstrapWarn(
+      "Inisialisasi Supabase Reader gagal:",
+      supabaseInitError
+    );
+
+    db =
+      null;
+  }
+}
+/* === BATAS BOOTSTRAP SUPABASE CLIENT === */
 
 const loginModal =
   document.getElementById("reader-login-modal");
