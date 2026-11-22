@@ -4048,10 +4048,136 @@ if (
 }
 /* === BATAS EVENT SUBMIT LOGIN FORM === */
 
-logoutButton.addEventListener("click", async () => {
-  await db.auth.signOut();
-  await updateReaderAuthUI();
-});
+/* === EVENT TOMBOL LOGOUT === */
+if (
+  logoutButton &&
+  typeof logoutButton.addEventListener ===
+    "function"
+) {
+
+  logoutButton.addEventListener(
+
+    "click",
+
+    /* CALLBACK Klik Tombol Logout */
+    async () => {
+
+      if (
+        !db ||
+        typeof db !==
+          "object" ||
+        !db.auth ||
+        typeof db.auth.signOut !==
+          "function"
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Supabase Auth tidak tersedia untuk proses logout."
+          );
+        }
+
+        return false;
+      }
+
+      try {
+
+        const logoutResult =
+          await db.auth.signOut();
+
+        const logoutError =
+          logoutResult &&
+          logoutResult.error
+            ? logoutResult.error
+            : null;
+
+        if (
+          logoutError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Logout Reader gagal:",
+              logoutError
+            );
+          }
+
+          return false;
+        }
+
+      } catch (
+        logoutProcessError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Proses Logout Reader mengalami error:",
+            logoutProcessError
+          );
+        }
+
+        return false;
+      }
+
+      if (
+        typeof updateReaderAuthUI ===
+          "function"
+      ) {
+
+        try {
+
+          await updateReaderAuthUI();
+
+        } catch (
+          authUiUpdateError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "UI Auth Reader gagal diperbarui setelah logout:",
+              authUiUpdateError
+            );
+          }
+
+          return false;
+        }
+      }
+
+      return true;
+    }
+    /* Batas CALLBACK Klik Tombol Logout */
+
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Tombol Logout Reader gagal dipasang."
+    );
+  }
+}
+/* === BATAS EVENT TOMBOL LOGOUT === */
 
 db.auth.onAuthStateChange(() => {
   updateReaderAuthUI();
