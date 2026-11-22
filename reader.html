@@ -17801,13 +17801,196 @@ if (
 }
 /* === BATAS EVENT ZOOM RESET === */
 
-document.getElementById("zoom-in").addEventListener("click", () => {
-  zoomLevel = Math.min(2, zoomLevel + 0.1);
-  localStorage.setItem(zoomKey, zoomLevel);
-  applyZoom();
-  
-  markDisplayAsCustom();
-});
+/* === EVENT ZOOM IN === */
+const zoomInButton =
+  typeof document !==
+    "undefined" &&
+  document &&
+  typeof document.getElementById ===
+    "function"
+    ? document.getElementById(
+        "zoom-in"
+      )
+    : null;
+
+if (
+  zoomInButton &&
+  typeof zoomInButton.addEventListener ===
+    "function"
+) {
+
+  zoomInButton.addEventListener(
+
+    "click",
+
+    /* CALLBACK Klik Zoom In */
+    () => {
+
+      const currentZoom =
+        Number(
+          typeof zoomLevel !==
+            "undefined"
+            ? zoomLevel
+            : NaN
+        );
+
+      if (
+        !Number.isFinite(
+          currentZoom
+        ) ||
+        currentZoom <= 0
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Nilai zoomLevel tidak valid saat Zoom In."
+          );
+        }
+
+        return false;
+      }
+
+      const nextZoom =
+        Math.min(
+          2,
+          currentZoom + 0.1
+        );
+
+      zoomLevel =
+        Number(
+          nextZoom.toFixed(
+            2
+          )
+        );
+
+      if (
+        typeof localStorage !==
+          "undefined" &&
+        localStorage &&
+        typeof localStorage.setItem ===
+          "function" &&
+        typeof zoomKey ===
+          "string" &&
+        zoomKey
+      ) {
+
+        try {
+
+          localStorage.setItem(
+            zoomKey,
+            String(
+              zoomLevel
+            )
+          );
+
+        } catch (
+          zoomStorageError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Zoom Reader gagal disimpan setelah Zoom In:",
+              zoomStorageError
+            );
+          }
+        }
+      }
+
+      if (
+        typeof applyZoom ===
+          "function"
+      ) {
+
+        try {
+
+          applyZoom();
+
+        } catch (
+          applyZoomError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Zoom Reader gagal diterapkan setelah Zoom In:",
+              applyZoomError
+            );
+          }
+
+          return false;
+        }
+
+      } else {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "applyZoom() tidak tersedia saat Zoom In."
+          );
+        }
+
+        return false;
+      }
+
+      if (
+        typeof markDisplayAsCustom ===
+          "function"
+      ) {
+
+        try {
+
+          markDisplayAsCustom();
+
+        } catch (
+          markCustomError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Status tampilan Custom gagal diperbarui setelah Zoom In:",
+              markCustomError
+            );
+          }
+        }
+      }
+
+      return true;
+    }
+    /* Batas CALLBACK Klik Zoom In */
+
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Zoom In gagal dipasang."
+    );
+  }
+}
+/* === BATAS EVENT ZOOM IN === */
   
 document.getElementById("sound-toggle").addEventListener("click", () => {
   soundEnabled = !soundEnabled;
