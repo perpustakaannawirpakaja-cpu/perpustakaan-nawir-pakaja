@@ -3695,42 +3695,358 @@ if (
 }
 /* === BATAS EVENT TOMBOL CANCEL LOGIN === */
 
-loginForm.addEventListener("submit", async (event) => {
+/* === EVENT SUBMIT LOGIN FORM === */
+if (
+  loginForm &&
+  typeof loginForm.addEventListener ===
+    "function"
+) {
 
-  event.preventDefault();
-  
-  const email = loginEmail.value.trim();
-  const password = loginPassword.value;
+  loginForm.addEventListener(
 
-  if (!email || !password) {
-    loginMessage.textContent =
-      "Email dan password harus diisi.";
-    return;
+    "submit",
+
+    /* CALLBACK Submit Login Form */
+    async (event) => {
+
+      const setLoginMessage = (
+        message
+      ) => {
+
+        if (
+          !loginMessage
+        ) {
+
+          return false;
+        }
+
+        try {
+
+          loginMessage.textContent =
+            typeof message ===
+              "string"
+              ? message
+              : "";
+
+          return true;
+
+        } catch (
+          loginMessageError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Pesan Login Reader gagal diperbarui:",
+              loginMessageError
+            );
+          }
+
+          return false;
+        }
+      };
+
+      if (
+        event &&
+        typeof event.preventDefault ===
+          "function"
+      ) {
+
+        try {
+
+          event.preventDefault();
+
+        } catch (
+          preventDefaultError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "preventDefault() pada Login Form gagal:",
+              preventDefaultError
+            );
+          }
+        }
+      }
+
+      if (
+        !loginEmail ||
+        typeof loginEmail.value !==
+          "string" ||
+        !loginPassword ||
+        typeof loginPassword.value !==
+          "string"
+      ) {
+
+        setLoginMessage(
+          "Form login Reader tidak tersedia dengan benar."
+        );
+
+        return false;
+      }
+
+      const email =
+        loginEmail.value.trim();
+
+      const password =
+        loginPassword.value;
+
+      if (
+        !email ||
+        !password
+      ) {
+
+        setLoginMessage(
+          "Email dan password harus diisi."
+        );
+
+        return false;
+      }
+
+      if (
+        !db ||
+        typeof db !==
+          "object" ||
+        !db.auth ||
+        typeof db.auth.signInWithPassword !==
+          "function"
+      ) {
+
+        setLoginMessage(
+          "Layanan login Reader tidak tersedia."
+        );
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Supabase Auth tidak tersedia untuk proses login."
+          );
+        }
+
+        return false;
+      }
+
+      if (
+        !loginSubmit
+      ) {
+
+        setLoginMessage(
+          "Tombol submit login Reader tidak tersedia."
+        );
+
+        return false;
+      }
+
+      try {
+
+        loginSubmit.disabled =
+          true;
+
+        loginSubmit.textContent =
+          "⏳ Masuk...";
+
+      } catch (
+        loginSubmitStateError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Status tombol Login gagal diperbarui:",
+            loginSubmitStateError
+          );
+        }
+
+        return false;
+      }
+
+      try {
+
+        const loginResult =
+          await db.auth.signInWithPassword({
+            email,
+            password
+          });
+
+        const loginError =
+          loginResult &&
+          loginResult.error
+            ? loginResult.error
+            : null;
+
+        if (
+          loginError
+        ) {
+
+          const errorMessage =
+            typeof loginError.message ===
+              "string" &&
+            loginError.message
+              ? loginError.message
+              : "Terjadi kesalahan saat login.";
+
+          setLoginMessage(
+            "Login gagal: " +
+            errorMessage
+          );
+
+          return false;
+        }
+
+        try {
+
+          loginPassword.value =
+            "";
+
+        } catch (
+          passwordResetError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Password Login gagal dikosongkan:",
+              passwordResetError
+            );
+          }
+        }
+
+        if (
+          loginModal &&
+          loginModal.style
+        ) {
+
+          try {
+
+            loginModal.style.display =
+              "none";
+
+          } catch (
+            loginModalCloseError
+          ) {
+
+            if (
+              typeof logBootstrapWarn ===
+                "function"
+            ) {
+
+              logBootstrapWarn(
+                "Modal Login gagal ditutup setelah login berhasil:",
+                loginModalCloseError
+              );
+            }
+          }
+        }
+
+        if (
+          typeof updateReaderAuthUI ===
+            "function"
+        ) {
+
+          try {
+
+            await updateReaderAuthUI();
+
+          } catch (
+            authUiUpdateError
+          ) {
+
+            if (
+              typeof logBootstrapWarn ===
+                "function"
+            ) {
+
+              logBootstrapWarn(
+                "UI Auth Reader gagal diperbarui setelah login:",
+                authUiUpdateError
+              );
+            }
+          }
+        }
+
+        return true;
+
+      } catch (
+        loginProcessError
+      ) {
+
+        setLoginMessage(
+          "Login gagal karena terjadi kesalahan sistem."
+        );
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Proses Login Reader mengalami error:",
+            loginProcessError
+          );
+        }
+
+        return false;
+
+      } finally {
+
+        try {
+
+          loginSubmit.disabled =
+            false;
+
+          loginSubmit.textContent =
+            "🔐 Masuk";
+
+        } catch (
+          loginSubmitResetError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Status tombol Login gagal dipulihkan:",
+              loginSubmitResetError
+            );
+          }
+        }
+      }
+    }
+    /* Batas CALLBACK Submit Login Form */
+
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Submit Login Form Reader gagal dipasang."
+    );
   }
-
-  loginSubmit.disabled = true;
-  loginSubmit.textContent = "⏳ Masuk...";
-
-  const { error } =
-    await db.auth.signInWithPassword({
-      email,
-      password
-    });
-
-  loginSubmit.disabled = false;
-  loginSubmit.textContent = "🔐 Masuk";
-
-  if (error) {
-    loginMessage.textContent =
-      "Login gagal: " + error.message;
-    return;
-  }
-
-  loginPassword.value = "";
-  loginModal.style.display = "none";
-
-  await updateReaderAuthUI();
-});
+}
+/* === BATAS EVENT SUBMIT LOGIN FORM === */
 
 logoutButton.addEventListener("click", async () => {
   await db.auth.signOut();
