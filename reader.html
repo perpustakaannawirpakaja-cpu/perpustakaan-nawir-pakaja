@@ -16198,13 +16198,109 @@ function tampilkanBookmarks() {
    BOOKMARK SEARCH / FILTER / SORT
    ========================================= */
 
-document.getElementById("bookmark-search")
-.addEventListener("input", () => {
+/* === EVENT BOOKMARK SEARCH INPUT === */
+const bookmarkSearchInput =
+  typeof document !==
+    "undefined" &&
+  document &&
+  typeof document.getElementById ===
+    "function"
+    ? document.getElementById(
+        "bookmark-search"
+      )
+    : null;
 
-  tampilkanBookmarks();
+if (
+  bookmarkSearchInput &&
+  typeof bookmarkSearchInput.addEventListener ===
+    "function"
+) {
 
-});
+  bookmarkSearchInput.addEventListener(
 
+    "input",
+
+    /* CALLBACK Bookmark Search Input */
+    () => {
+
+      if (
+        typeof tampilkanBookmarks !==
+          "function"
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "tampilkanBookmarks() tidak tersedia saat Bookmark Search berubah."
+          );
+        }
+
+        return false;
+      }
+
+      try {
+
+        const renderResult =
+          tampilkanBookmarks();
+
+        if (
+          renderResult ===
+            false
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Daftar bookmark gagal diperbarui dari Bookmark Search."
+            );
+          }
+
+          return false;
+        }
+
+      } catch (
+        bookmarkSearchRenderError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Bookmark Search gagal memperbarui daftar bookmark:",
+            bookmarkSearchRenderError
+          );
+        }
+
+        return false;
+      }
+
+      return true;
+    }
+    /* Batas CALLBACK Bookmark Search Input */
+
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Bookmark Search Input gagal dipasang."
+    );
+  }
+}
+/* === BATAS EVENT BOOKMARK SEARCH INPUT === */
 
 document.getElementById("favorite-filter")
 .addEventListener("click", () => {
