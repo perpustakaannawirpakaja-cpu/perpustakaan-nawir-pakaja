@@ -17457,13 +17457,196 @@ if (
 }
 /* === BATAS EVENT BOOKMARK PANEL ESCAPE CLOSE === */
   
-document.getElementById("zoom-out").addEventListener("click", () => {
-  zoomLevel = Math.max(0.6, zoomLevel - 0.1);
-  localStorage.setItem(zoomKey, zoomLevel);
-  applyZoom();
-  
-  markDisplayAsCustom();
-});
+/* === EVENT ZOOM OUT === */
+const zoomOutButton =
+  typeof document !==
+    "undefined" &&
+  document &&
+  typeof document.getElementById ===
+    "function"
+    ? document.getElementById(
+        "zoom-out"
+      )
+    : null;
+
+if (
+  zoomOutButton &&
+  typeof zoomOutButton.addEventListener ===
+    "function"
+) {
+
+  zoomOutButton.addEventListener(
+
+    "click",
+
+    /* CALLBACK Klik Zoom Out */
+    () => {
+
+      const currentZoom =
+        Number(
+          typeof zoomLevel !==
+            "undefined"
+            ? zoomLevel
+            : NaN
+        );
+
+      if (
+        !Number.isFinite(
+          currentZoom
+        ) ||
+        currentZoom <= 0
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Nilai zoomLevel tidak valid saat Zoom Out."
+          );
+        }
+
+        return false;
+      }
+
+      const nextZoom =
+        Math.max(
+          0.6,
+          currentZoom - 0.1
+        );
+
+      zoomLevel =
+        Number(
+          nextZoom.toFixed(
+            2
+          )
+        );
+
+      if (
+        typeof localStorage !==
+          "undefined" &&
+        localStorage &&
+        typeof localStorage.setItem ===
+          "function" &&
+        typeof zoomKey ===
+          "string" &&
+        zoomKey
+      ) {
+
+        try {
+
+          localStorage.setItem(
+            zoomKey,
+            String(
+              zoomLevel
+            )
+          );
+
+        } catch (
+          zoomStorageError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Zoom Reader gagal disimpan setelah Zoom Out:",
+              zoomStorageError
+            );
+          }
+        }
+      }
+
+      if (
+        typeof applyZoom ===
+          "function"
+      ) {
+
+        try {
+
+          applyZoom();
+
+        } catch (
+          applyZoomError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Zoom Reader gagal diterapkan setelah Zoom Out:",
+              applyZoomError
+            );
+          }
+
+          return false;
+        }
+
+      } else {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "applyZoom() tidak tersedia saat Zoom Out."
+          );
+        }
+
+        return false;
+      }
+
+      if (
+        typeof markDisplayAsCustom ===
+          "function"
+      ) {
+
+        try {
+
+          markDisplayAsCustom();
+
+        } catch (
+          markCustomError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Status tampilan Custom gagal diperbarui setelah Zoom Out:",
+              markCustomError
+            );
+          }
+        }
+      }
+
+      return true;
+    }
+    /* Batas CALLBACK Klik Zoom Out */
+
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Zoom Out gagal dipasang."
+    );
+  }
+}
+/* === BATAS EVENT ZOOM OUT === */
 
 document.getElementById("zoom-reset").addEventListener("click", () => {
   zoomLevel = 1;
