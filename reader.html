@@ -17216,19 +17216,99 @@ if (
    BOOKMARK PANEL BACKDROP CLOSE
    ========================================= */
 
+/* === EVENT BOOKMARK PANEL BACKDROP CLOSE === */
 const bookmarkPanel =
-  document.getElementById("bookmark-panel");
+  typeof document !==
+    "undefined" &&
+  document &&
+  typeof document.getElementById ===
+    "function"
+    ? document.getElementById(
+        "bookmark-panel"
+      )
+    : null;
 
-bookmarkPanel.addEventListener("click", (event) => {
+if (
+  bookmarkPanel &&
+  typeof bookmarkPanel.addEventListener ===
+    "function"
+) {
 
-  if (event.target === bookmarkPanel) {
+  bookmarkPanel.addEventListener(
 
-    bookmarkPanel.style.display =
-      "none";
+    "click",
 
+    /* CALLBACK Klik Backdrop Bookmark Panel */
+    (event) => {
+
+      if (
+        !event ||
+        event.target !==
+          bookmarkPanel
+      ) {
+
+        return true;
+      }
+
+      if (
+        !bookmarkPanel.style
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Style Bookmark Panel tidak tersedia untuk menutup backdrop."
+          );
+        }
+
+        return false;
+      }
+
+      try {
+
+        bookmarkPanel.style.display =
+          "none";
+
+      } catch (
+        bookmarkBackdropCloseError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Bookmark Panel gagal ditutup dari backdrop:",
+            bookmarkBackdropCloseError
+          );
+        }
+
+        return false;
+      }
+
+      return true;
+    }
+    /* Batas CALLBACK Klik Backdrop Bookmark Panel */
+
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Bookmark Panel Backdrop Close gagal dipasang."
+    );
   }
-
-});
+}
+/* === BATAS EVENT BOOKMARK PANEL BACKDROP CLOSE === */
 
 /* =========================================
    BOOKMARK PANEL ESCAPE CLOSE
