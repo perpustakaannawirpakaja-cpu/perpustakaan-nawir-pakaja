@@ -17648,13 +17648,158 @@ if (
 }
 /* === BATAS EVENT ZOOM OUT === */
 
-document.getElementById("zoom-reset").addEventListener("click", () => {
-  zoomLevel = 1;
-  localStorage.setItem(zoomKey, zoomLevel);
-  applyZoom();
-  
-  markDisplayAsCustom();
-});
+/* === EVENT ZOOM RESET === */
+const zoomResetButton =
+  typeof document !==
+    "undefined" &&
+  document &&
+  typeof document.getElementById ===
+    "function"
+    ? document.getElementById(
+        "zoom-reset"
+      )
+    : null;
+
+if (
+  zoomResetButton &&
+  typeof zoomResetButton.addEventListener ===
+    "function"
+) {
+
+  zoomResetButton.addEventListener(
+
+    "click",
+
+    /* CALLBACK Klik Zoom Reset */
+    () => {
+
+      zoomLevel =
+        1;
+
+      if (
+        typeof localStorage !==
+          "undefined" &&
+        localStorage &&
+        typeof localStorage.setItem ===
+          "function" &&
+        typeof zoomKey ===
+          "string" &&
+        zoomKey
+      ) {
+
+        try {
+
+          localStorage.setItem(
+            zoomKey,
+            String(
+              zoomLevel
+            )
+          );
+
+        } catch (
+          zoomResetStorageError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Zoom Reader gagal disimpan setelah Zoom Reset:",
+              zoomResetStorageError
+            );
+          }
+        }
+      }
+
+      if (
+        typeof applyZoom ===
+          "function"
+      ) {
+
+        try {
+
+          applyZoom();
+
+        } catch (
+          zoomResetApplyError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Zoom Reader gagal diterapkan setelah Zoom Reset:",
+              zoomResetApplyError
+            );
+          }
+
+          return false;
+        }
+
+      } else {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "applyZoom() tidak tersedia saat Zoom Reset."
+          );
+        }
+
+        return false;
+      }
+
+      if (
+        typeof markDisplayAsCustom ===
+          "function"
+      ) {
+
+        try {
+
+          markDisplayAsCustom();
+
+        } catch (
+          markCustomError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Status tampilan Custom gagal diperbarui setelah Zoom Reset:",
+              markCustomError
+            );
+          }
+        }
+      }
+
+      return true;
+    }
+    /* Batas CALLBACK Klik Zoom Reset */
+
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Zoom Reset gagal dipasang."
+    );
+  }
+}
+/* === BATAS EVENT ZOOM RESET === */
 
 document.getElementById("zoom-in").addEventListener("click", () => {
   zoomLevel = Math.min(2, zoomLevel + 0.1);
