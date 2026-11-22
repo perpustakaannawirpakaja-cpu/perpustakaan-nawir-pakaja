@@ -4013,10 +4013,69 @@ bookmarks =
 
   );
 
-localStorage.setItem(
-  bookmarkKey,
-  JSON.stringify(bookmarks)
-);
+/* === BOOTSTRAP SIMPAN BOOKMARK LOKAL === */
+if (
+  typeof localStorage ===
+    "undefined" ||
+  !localStorage ||
+  typeof localStorage.setItem !==
+    "function"
+) {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "localStorage tidak tersedia untuk menyimpan Bookmark Reader."
+    );
+  }
+
+} else if (
+  typeof bookmarkKey !==
+    "string" ||
+  !bookmarkKey
+) {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "bookmarkKey tidak tersedia atau tidak valid."
+    );
+  }
+
+} else {
+
+  try {
+
+    localStorage.setItem(
+      bookmarkKey,
+      JSON.stringify(
+        bookmarks
+      )
+    );
+
+  } catch (
+    bookmarkStorageError
+  ) {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "Bookmark Reader gagal disimpan ke localStorage:",
+        bookmarkStorageError
+      );
+    }
+  }
+}
+/* === BATAS BOOTSTRAP SIMPAN BOOKMARK LOKAL === */
 
 /* =========================================
    READER BOOKMARK CLOUD SYNC
