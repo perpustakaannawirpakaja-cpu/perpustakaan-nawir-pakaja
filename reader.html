@@ -17115,9 +17115,102 @@ if (
 }
 /* === BATAS EVENT BOOKMARK PANEL OPEN FOCUS === */
 
-  document.getElementById("close-bookmarks").addEventListener("click", () => {
-  document.getElementById("bookmark-panel").style.display = "none";
-});
+/* === EVENT CLOSE BOOKMARKS === */
+const closeBookmarksButton =
+  typeof document !==
+    "undefined" &&
+  document &&
+  typeof document.getElementById ===
+    "function"
+    ? document.getElementById(
+        "close-bookmarks"
+      )
+    : null;
+
+if (
+  closeBookmarksButton &&
+  typeof closeBookmarksButton.addEventListener ===
+    "function"
+) {
+
+  closeBookmarksButton.addEventListener(
+
+    "click",
+
+    /* CALLBACK Klik Close Bookmarks */
+    () => {
+
+      const bookmarkPanelElement =
+        typeof document !==
+          "undefined" &&
+        document &&
+        typeof document.getElementById ===
+          "function"
+          ? document.getElementById(
+              "bookmark-panel"
+            )
+          : null;
+
+      if (
+        !bookmarkPanelElement ||
+        !bookmarkPanelElement.style
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Panel Bookmark tidak tersedia untuk ditutup."
+          );
+        }
+
+        return false;
+      }
+
+      try {
+
+        bookmarkPanelElement.style.display =
+          "none";
+
+      } catch (
+        closeBookmarksError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Panel Bookmark gagal ditutup:",
+            closeBookmarksError
+          );
+        }
+
+        return false;
+      }
+
+      return true;
+    }
+    /* Batas CALLBACK Klik Close Bookmarks */
+
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Close Bookmarks gagal dipasang."
+    );
+  }
+}
+/* === BATAS EVENT CLOSE BOOKMARKS === */
 
 /* =========================================
    BOOKMARK PANEL BACKDROP CLOSE
