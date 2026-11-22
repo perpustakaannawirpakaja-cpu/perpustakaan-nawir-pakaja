@@ -3620,9 +3620,80 @@ if (
 }
 /* === BATAS EVENT TOMBOL LOGIN === */
 
-loginCancel.addEventListener("click", () => {
-  loginModal.style.display = "none";
-});
+/* === EVENT TOMBOL CANCEL LOGIN === */
+if (
+  loginCancel &&
+  typeof loginCancel.addEventListener ===
+    "function"
+) {
+
+  loginCancel.addEventListener(
+
+    "click",
+
+    /* CALLBACK Klik Cancel Login */
+    () => {
+
+      if (
+        !loginModal ||
+        !loginModal.style
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Modal Login Reader tidak tersedia untuk ditutup."
+          );
+        }
+
+        return false;
+      }
+
+      try {
+
+        loginModal.style.display =
+          "none";
+
+      } catch (
+        loginCancelError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Modal Login Reader gagal ditutup:",
+            loginCancelError
+          );
+        }
+
+        return false;
+      }
+
+      return true;
+    }
+    /* Batas CALLBACK Klik Cancel Login */
+
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Tombol Cancel Login Reader gagal dipasang."
+    );
+  }
+}
+/* === BATAS EVENT TOMBOL CANCEL LOGIN === */
 
 loginForm.addEventListener("submit", async (event) => {
 
