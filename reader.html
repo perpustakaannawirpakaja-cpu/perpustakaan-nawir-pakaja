@@ -16830,43 +16830,290 @@ if (
    BOOKMARK PANEL OPEN FOCUS
    ========================================= */
 
-document.getElementById("bookmark-list")
-.addEventListener("click", () => {
-  tampilkanBookmarks();
+/* === EVENT BOOKMARK PANEL OPEN FOCUS === */
+const bookmarkListButton =
+  typeof document !==
+    "undefined" &&
+  document &&
+  typeof document.getElementById ===
+    "function"
+    ? document.getElementById(
+        "bookmark-list"
+      )
+    : null;
+
+if (
+  bookmarkListButton &&
+  typeof bookmarkListButton.addEventListener ===
+    "function"
+) {
+
+  bookmarkListButton.addEventListener(
+
+    "click",
+
+    /* CALLBACK Klik Bookmark List */
+    () => {
+
+      if (
+        typeof tampilkanBookmarks ===
+          "function"
+      ) {
+
+        try {
+
+          const renderResult =
+            tampilkanBookmarks();
+
+          if (
+            renderResult ===
+              false
+          ) {
+
+            if (
+              typeof logBootstrapWarn ===
+                "function"
+            ) {
+
+              logBootstrapWarn(
+                "Panel bookmark gagal diperbarui saat dibuka."
+              );
+            }
+          }
+
+        } catch (
+          bookmarkPanelRenderError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Panel bookmark gagal ditampilkan:",
+              bookmarkPanelRenderError
+            );
+          }
+        }
+      }
+
+      let desktopMode =
+        false;
+
+      if (
+        typeof window !==
+          "undefined" &&
+        window &&
+        typeof window.matchMedia ===
+          "function"
+      ) {
+
+        try {
+
+          desktopMode =
+            Boolean(
+              window.matchMedia(
+                "(min-width: 601px)"
+              ).matches
+            );
+
+        } catch (
+          matchMediaError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Pemeriksaan ukuran layar Bookmark gagal:",
+              matchMediaError
+            );
+          }
+        }
+      }
+
+      if (
+        desktopMode &&
+        typeof setTimeout ===
+          "function"
+      ) {
+
+        setTimeout(
+
+          /* CALLBACK setTimeout() Focus Bookmark Search */
+          () => {
+
+            const searchInput =
+              typeof document !==
+                "undefined" &&
+              document &&
+              typeof document.getElementById ===
+                "function"
+                ? document.getElementById(
+                    "bookmark-search"
+                  )
+                : null;
+
+            if (
+              !searchInput ||
+              typeof searchInput.focus !==
+                "function"
+            ) {
+
+              return false;
+            }
+
+            try {
+
+              searchInput.focus();
+
+            } catch (
+              bookmarkSearchFocusError
+            ) {
+
+              if (
+                typeof logBootstrapWarn ===
+                  "function"
+              ) {
+
+                logBootstrapWarn(
+                  "Fokus Bookmark Search gagal:",
+                  bookmarkSearchFocusError
+                );
+              }
+
+              return false;
+            }
+
+            return true;
+          }
+          /* Batas CALLBACK setTimeout() Focus Bookmark Search */,
+
+          50
+        );
+      }
+
+      if (
+        typeof setTimeout ===
+          "function"
+      ) {
+
+        setTimeout(
+
+          /* CALLBACK setTimeout() Scroll Bookmark Aktif */
+          () => {
+
+            if (
+              typeof document ===
+                "undefined" ||
+              !document ||
+              typeof document.querySelector !==
+                "function"
+            ) {
+
+              return false;
+            }
+
+            let currentRow =
+              null;
+
+            try {
+
+              currentRow =
+                document.querySelector(
+                  "#bookmark-items .bookmark-row.current-page"
+                );
+
+            } catch (
+              bookmarkQueryError
+            ) {
+
+              if (
+                typeof logBootstrapWarn ===
+                  "function"
+              ) {
+
+                logBootstrapWarn(
+                  "Pencarian bookmark halaman aktif gagal:",
+                  bookmarkQueryError
+                );
+              }
+
+              return false;
+            }
+
+            if (
+              !currentRow
+            ) {
+
+              return true;
+            }
+
+            if (
+              typeof currentRow.scrollIntoView !==
+                "function"
+            ) {
+
+              return false;
+            }
+
+            try {
+
+              currentRow.scrollIntoView({
+                behavior:
+                  "smooth",
+                block:
+                  "center"
+              });
+
+            } catch (
+              bookmarkScrollError
+            ) {
+
+              if (
+                typeof logBootstrapWarn ===
+                  "function"
+              ) {
+
+                logBootstrapWarn(
+                  "Scroll ke bookmark halaman aktif gagal:",
+                  bookmarkScrollError
+                );
+              }
+
+              return false;
+            }
+
+            return true;
+          }
+          /* Batas CALLBACK setTimeout() Scroll Bookmark Aktif */,
+
+          100
+        );
+      }
+
+      return true;
+    }
+    /* Batas CALLBACK Klik Bookmark List */
+
+  );
+
+} else {
 
   if (
-    window.matchMedia("(min-width: 601px)").matches
+    typeof logBootstrapWarn ===
+      "function"
   ) {
 
-    setTimeout(() => {
-
-      document.getElementById(
-        "bookmark-search"
-      ).focus();
-
-    }, 50);
-
+    logBootstrapWarn(
+      "Event Bookmark Panel Open Focus gagal dipasang."
+    );
   }
-
-  setTimeout(() => {
-
-    const currentRow =
-      document.querySelector(
-        "#bookmark-items .bookmark-row.current-page"
-      );
-
-    if (currentRow) {
-
-      currentRow.scrollIntoView({
-        behavior:"smooth",
-        block:"center"
-      });
-
-    }
-
-  }, 100);
-
-});
+}
+/* === BATAS EVENT BOOKMARK PANEL OPEN FOCUS === */
 
   document.getElementById("close-bookmarks").addEventListener("click", () => {
   document.getElementById("bookmark-panel").style.display = "none";
