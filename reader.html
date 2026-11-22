@@ -3962,8 +3962,56 @@ bookmarks.forEach(
 
 );
 
-bookmarks = Array.from(uniqueBookmarks.values())
-  .sort((a, b) => a.page - b.page);
+bookmarks =
+  Array.from(
+    uniqueBookmarks.values()
+  ).sort(
+
+    /* CALLBACK sort() Urutan Bookmark Lokal */
+    (a, b) => {
+
+      const pageA =
+        Number(
+          a &&
+          typeof a ===
+            "object"
+            ? a.page
+            : NaN
+        );
+
+      const pageB =
+        Number(
+          b &&
+          typeof b ===
+            "object"
+            ? b.page
+            : NaN
+        );
+
+      const validPageA =
+        Number.isInteger(
+          pageA
+        ) &&
+        pageA >= 1
+          ? pageA
+          : Number.MAX_SAFE_INTEGER;
+
+      const validPageB =
+        Number.isInteger(
+          pageB
+        ) &&
+        pageB >= 1
+          ? pageB
+          : Number.MAX_SAFE_INTEGER;
+
+      return (
+        validPageA -
+        validPageB
+      );
+    }
+    /* Batas CALLBACK sort() Urutan Bookmark Lokal */
+
+  );
 
 localStorage.setItem(
   bookmarkKey,
