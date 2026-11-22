@@ -3519,10 +3519,106 @@ async function updateReaderAuthUI() {
 }
 /* === BATAS async function updateReaderAuthUI === */
 
-loginButton.addEventListener("click", () => {
-  loginMessage.textContent = "";
-  loginModal.style.display = "flex";
-});
+/* === EVENT TOMBOL LOGIN === */
+if (
+  loginButton &&
+  typeof loginButton.addEventListener ===
+    "function"
+) {
+
+  loginButton.addEventListener(
+
+    "click",
+
+    /* CALLBACK Klik Tombol Login */
+    () => {
+
+      if (
+        loginMessage
+      ) {
+
+        try {
+
+          loginMessage.textContent =
+            "";
+
+        } catch (
+          loginMessageError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Pesan Login gagal dikosongkan:",
+              loginMessageError
+            );
+          }
+        }
+      }
+
+      if (
+        !loginModal ||
+        !loginModal.style
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Modal Login Reader tidak tersedia."
+          );
+        }
+
+        return false;
+      }
+
+      try {
+
+        loginModal.style.display =
+          "flex";
+
+      } catch (
+        loginModalError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Modal Login Reader gagal dibuka:",
+            loginModalError
+          );
+        }
+
+        return false;
+      }
+
+      return true;
+    }
+    /* Batas CALLBACK Klik Tombol Login */
+
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Tombol Login Reader gagal dipasang."
+    );
+  }
+}
+/* === BATAS EVENT TOMBOL LOGIN === */
 
 loginCancel.addEventListener("click", () => {
   loginModal.style.display = "none";
