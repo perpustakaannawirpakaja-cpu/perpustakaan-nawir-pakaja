@@ -9407,9 +9407,121 @@ document.getElementById("preset-list").addEventListener("change", () => {
 updatePresetSummary();
 updatePresetActionState();
   
+/* === BOOTSTRAP READER CONTRAST & ZOOM === */
+
 let contrastLevel =
-parseInt(localStorage.getItem(contrastKey), 10) || 100;
-let zoomLevel = parseFloat(localStorage.getItem(zoomKey)) || 1;
+  100;
+
+let zoomLevel =
+  1;
+
+if (
+  typeof localStorage ===
+    "undefined" ||
+  !localStorage ||
+  typeof localStorage.getItem !==
+    "function"
+) {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "localStorage tidak tersedia untuk memuat Contrast dan Zoom Reader."
+    );
+  }
+
+} else {
+
+  try {
+
+    const rawContrast =
+      localStorage.getItem(
+        contrastKey
+      );
+
+    const parsedContrast =
+      Number.parseInt(
+        rawContrast,
+        10
+      );
+
+    if (
+      Number.isFinite(
+        parsedContrast
+      ) &&
+      parsedContrast > 0
+    ) {
+
+      contrastLevel =
+        parsedContrast;
+    }
+
+  } catch (
+    contrastStorageError
+  ) {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "Contrast Reader gagal dimuat dari localStorage:",
+        contrastStorageError
+      );
+    }
+
+    contrastLevel =
+      100;
+  }
+
+  try {
+
+    const rawZoom =
+      localStorage.getItem(
+        zoomKey
+      );
+
+    const parsedZoom =
+      Number.parseFloat(
+        rawZoom
+      );
+
+    if (
+      Number.isFinite(
+        parsedZoom
+      ) &&
+      parsedZoom > 0
+    ) {
+
+      zoomLevel =
+        parsedZoom;
+    }
+
+  } catch (
+    zoomStorageError
+  ) {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "Zoom Reader gagal dimuat dari localStorage:",
+        zoomStorageError
+      );
+    }
+
+    zoomLevel =
+      1;
+  }
+}
+
+/* === BATAS BOOTSTRAP READER CONTRAST & ZOOM === */
 
 /* === TOP LEVEL FUNCTION === */
 function applyZoom() {
