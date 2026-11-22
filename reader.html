@@ -3574,30 +3574,393 @@ db.auth.onAuthStateChange(() => {
   updateReaderAuthUI();
 });
 
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+/* === BOOTSTRAP PDF.JS WORKER === */
+if (
+  typeof pdfjsLib ===
+    "undefined" ||
+  !pdfjsLib
+) {
 
-const params = new URLSearchParams(window.location.search);
-const pdfUrl = params.get("file");
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
 
-const readingKey = "lastPage:" + encodeURIComponent(pdfUrl || "");
-const bookmarkKey = "bookmarks:" + encodeURIComponent(pdfUrl || "");
-let bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || "[]");
-
-bookmarks = bookmarks.map((item) =>
-  typeof item === "number"
-    ? { page: item, title: "" }
-    : item
-);
-  const uniqueBookmarks = new Map();
-
-bookmarks.forEach((item) => {
-  const existing = uniqueBookmarks.get(item.page);
-
-  if (!existing || (!existing.title && item.title)) {
-    uniqueBookmarks.set(item.page, item);
+    logBootstrapWarn(
+      "PDF.js library tidak tersedia. Reader PDF belum dapat diinisialisasi."
+    );
   }
-});
+
+} else if (
+  !pdfjsLib.GlobalWorkerOptions ||
+  typeof pdfjsLib.GlobalWorkerOptions !==
+    "object"
+) {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "PDF.js GlobalWorkerOptions tidak tersedia."
+    );
+  }
+
+} else {
+
+  try {
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  } catch (
+    pdfWorkerInitError
+  ) {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "Konfigurasi PDF.js Worker gagal:",
+        pdfWorkerInitError
+      );
+    }
+  }
+}
+/* === BATAS BOOTSTRAP PDF.JS WORKER === */
+
+/* === BOOTSTRAP READER URL & BOOKMARK DATA === */
+let params =
+  null;
+
+let pdfUrl =
+  "";
+
+if (
+  typeof window ===
+    "undefined" ||
+  !window ||
+  !window.location
+) {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "window.location tidak tersedia untuk membaca URL Reader."
+    );
+  }
+
+} else if (
+  typeof URLSearchParams !==
+    "function"
+) {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "URLSearchParams tidak tersedia untuk membaca parameter Reader."
+    );
+  }
+
+} else {
+
+  try {
+
+    params =
+      new URLSearchParams(
+        window.location.search ||
+        ""
+      );
+
+    const fileParam =
+      params.get(
+        "file"
+      );
+
+    if (
+      typeof fileParam ===
+        "string"
+    ) {
+
+      pdfUrl =
+        fileParam.trim();
+    }
+
+  } catch (
+    urlParamsError
+  ) {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "Parameter URL Reader gagal dibaca:",
+        urlParamsError
+      );
+    }
+
+    params =
+      null;
+
+    pdfUrl =
+      "";
+  }
+}
+
+const readingKey =
+  "lastPage:" +
+  encodeURIComponent(
+    pdfUrl
+  );
+
+const bookmarkKey =
+  "bookmarks:" +
+  encodeURIComponent(
+    pdfUrl
+  );
+
+let bookmarks =
+  [];
+
+if (
+  typeof localStorage ===
+    "undefined" ||
+  !localStorage ||
+  typeof localStorage.getItem !==
+    "function"
+) {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "localStorage tidak tersedia untuk memuat Bookmark Reader."
+    );
+  }
+
+} else {
+
+  try {
+
+    const rawBookmarks =
+      localStorage.getItem(
+        bookmarkKey
+      );
+
+    if (
+      rawBookmarks
+    ) {
+
+      const parsedBookmarks =
+        JSON.parse(
+          rawBookmarks
+        );
+
+      if (
+        Array.isArray(
+          parsedBookmarks
+        )
+      ) {
+
+        bookmarks =
+          parsedBookmarks;
+
+      } else {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Data Bookmark lokal bukan array. Data diabaikan."
+          );
+        }
+      }
+    }
+
+  } catch (
+    bookmarkParseError
+  ) {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "Data Bookmark lokal gagal dibaca:",
+        bookmarkParseError
+      );
+    }
+
+    bookmarks =
+      [];
+  }
+}
+/* === BATAS BOOTSTRAP READER URL & BOOKMARK DATA === */
+
+bookmarks =
+  bookmarks.map(
+
+    /* CALLBACK map() Normalisasi Bookmark Lokal */
+    (item) => {
+
+      if (
+        typeof item ===
+          "number"
+      ) {
+
+        if (
+          !Number.isInteger(
+            item
+          ) ||
+          item < 1
+        ) {
+
+          return null;
+        }
+
+        return {
+          page: item,
+          title: ""
+        };
+      }
+
+      if (
+        !item ||
+        typeof item !==
+          "object" ||
+        Array.isArray(
+          item
+        )
+      ) {
+
+        return null;
+      }
+
+      const normalizedPage =
+        Number(
+          item.page
+        );
+
+      if (
+        !Number.isInteger(
+          normalizedPage
+        ) ||
+        normalizedPage < 1
+      ) {
+
+        return null;
+      }
+
+      return {
+        ...item,
+        page:
+          normalizedPage,
+        title:
+          typeof item.title ===
+            "string"
+            ? item.title
+            : ""
+      };
+    }
+    /* Batas CALLBACK map() Normalisasi Bookmark Lokal */
+
+  );
+
+const uniqueBookmarks = new Map();
+
+bookmarks.forEach(
+
+  /* CALLBACK forEach() Deduplikasi Bookmark Lokal */
+  (item) => {
+
+    if (
+      !item ||
+      typeof item !==
+        "object" ||
+      Array.isArray(
+        item
+      )
+    ) {
+
+      return false;
+    }
+
+    const bookmarkPage =
+      Number(
+        item.page
+      );
+
+    if (
+      !Number.isInteger(
+        bookmarkPage
+      ) ||
+      bookmarkPage < 1
+    ) {
+
+      return false;
+    }
+
+    const existing =
+      uniqueBookmarks.get(
+        bookmarkPage
+      );
+
+    if (
+      !existing
+    ) {
+
+      uniqueBookmarks.set(
+        bookmarkPage,
+        item
+      );
+
+      return true;
+    }
+
+    const existingTitle =
+      typeof existing.title ===
+        "string"
+        ? existing.title.trim()
+        : "";
+
+    const incomingTitle =
+      typeof item.title ===
+        "string"
+        ? item.title.trim()
+        : "";
+
+    if (
+      !existingTitle &&
+      incomingTitle
+    ) {
+
+      uniqueBookmarks.set(
+        bookmarkPage,
+        item
+      );
+    }
+
+    return true;
+  }
+  /* Batas CALLBACK forEach() Deduplikasi Bookmark Lokal */
+
+);
 
 bookmarks = Array.from(uniqueBookmarks.values())
   .sort((a, b) => a.page - b.page);
