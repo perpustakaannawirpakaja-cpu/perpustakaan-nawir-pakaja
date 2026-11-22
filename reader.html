@@ -16302,20 +16302,178 @@ if (
 }
 /* === BATAS EVENT BOOKMARK SEARCH INPUT === */
 
-document.getElementById("favorite-filter")
-.addEventListener("click", () => {
+/* === EVENT BOOKMARK FAVORITE FILTER === */
+const bookmarkFavoriteFilter =
+  typeof document !==
+    "undefined" &&
+  document &&
+  typeof document.getElementById ===
+    "function"
+    ? document.getElementById(
+        "favorite-filter"
+      )
+    : null;
 
-  const tombol =
-    document.getElementById("favorite-filter");
+if (
+  bookmarkFavoriteFilter &&
+  typeof bookmarkFavoriteFilter.addEventListener ===
+    "function"
+) {
 
-  tombol.classList.toggle("active");
+  bookmarkFavoriteFilter.addEventListener(
 
-  updateFavoriteFilterButton();
+    "click",
 
-  tampilkanBookmarks();
+    /* CALLBACK Klik Favorite Filter */
+    () => {
 
-});
+      if (
+        !bookmarkFavoriteFilter.classList ||
+        typeof bookmarkFavoriteFilter.classList.toggle !==
+          "function"
+      ) {
 
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "classList Favorite Filter tidak tersedia."
+          );
+        }
+
+        return false;
+      }
+
+      try {
+
+        bookmarkFavoriteFilter.classList.toggle(
+          "active"
+        );
+
+      } catch (
+        favoriteToggleError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Favorite Filter gagal diubah:",
+            favoriteToggleError
+          );
+        }
+
+        return false;
+      }
+
+      if (
+        typeof updateFavoriteFilterButton ===
+          "function"
+      ) {
+
+        try {
+
+          updateFavoriteFilterButton();
+
+        } catch (
+          favoriteButtonUpdateError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Tombol Favorite Filter gagal diperbarui:",
+              favoriteButtonUpdateError
+            );
+          }
+        }
+      }
+
+      if (
+        typeof tampilkanBookmarks !==
+          "function"
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "tampilkanBookmarks() tidak tersedia saat Favorite Filter berubah."
+          );
+        }
+
+        return false;
+      }
+
+      try {
+
+        const renderResult =
+          tampilkanBookmarks();
+
+        if (
+          renderResult ===
+            false
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Daftar bookmark gagal diperbarui dari Favorite Filter."
+            );
+          }
+
+          return false;
+        }
+
+      } catch (
+        favoriteFilterRenderError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Favorite Filter gagal memperbarui daftar bookmark:",
+            favoriteFilterRenderError
+          );
+        }
+
+        return false;
+      }
+
+      return true;
+    }
+    /* Batas CALLBACK Klik Favorite Filter */
+
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Favorite Filter Bookmark gagal dipasang."
+    );
+  }
+}
+/* === BATAS EVENT BOOKMARK FAVORITE FILTER === */
 
 document.getElementById("bookmark-sort")
 .addEventListener("change", () => {
