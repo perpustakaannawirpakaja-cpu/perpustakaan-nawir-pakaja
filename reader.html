@@ -25336,29 +25336,333 @@ async function loadReaderSettingsFromCloud() {
 /* === BATAS async function loadReaderSettingsFromCloud === */
 
 applySavedReadingMode();
-  const defaultPresetName = localStorage.getItem(defaultPresetKey);
+  /* === BOOTSTRAP DEFAULT READER PRESET === */
+let defaultPresetName =
+  "";
 
-if (defaultPresetName && displayPresets[defaultPresetName]) {
-  const defaultPreset = displayPresets[defaultPresetName];
+if (
+  typeof localStorage ===
+    "undefined" ||
+  !localStorage ||
+  typeof localStorage.getItem !==
+    "function"
+) {
 
-  readingMode = defaultPreset.readingMode ?? 0;
-  zoomLevel = defaultPreset.zoomLevel ?? 1;
-  brightnessLevel = defaultPreset.brightnessLevel ?? 100;
-  contrastLevel = defaultPreset.contrastLevel ?? 100;
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
 
-  localStorage.setItem(readingModeKey, readingMode);
-  localStorage.setItem(zoomKey, zoomLevel);
-  localStorage.setItem(brightnessKey, brightnessLevel);
-  localStorage.setItem(contrastKey, contrastLevel);
+    logBootstrapWarn(
+      "localStorage tidak tersedia untuk memuat Default Preset Reader."
+    );
+  }
 
-  applySavedReadingMode();
-  applyZoom();
-  applySavedBrightness();
-  applySavedContrast();
+} else {
 
-  localStorage.setItem(activePresetKey, defaultPresetName);
-refreshPresetList();
+  try {
+
+    const storedDefaultPresetName =
+      localStorage.getItem(
+        defaultPresetKey
+      );
+
+    if (
+      typeof storedDefaultPresetName ===
+        "string"
+    ) {
+
+      defaultPresetName =
+        storedDefaultPresetName.trim();
+    }
+
+  } catch (
+    defaultPresetReadError
+  ) {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "Default Preset Reader gagal dibaca:",
+        defaultPresetReadError
+      );
+    }
+
+    defaultPresetName =
+      "";
+  }
 }
+
+if (
+  defaultPresetName &&
+  displayPresets &&
+  typeof displayPresets ===
+    "object" &&
+  !Array.isArray(
+    displayPresets
+  )
+) {
+
+  const defaultPreset =
+    displayPresets[
+      defaultPresetName
+    ];
+
+  if (
+    defaultPreset &&
+    typeof defaultPreset ===
+      "object" &&
+    !Array.isArray(
+      defaultPreset
+    )
+  ) {
+
+    const presetReadingMode =
+      Number(
+        defaultPreset.readingMode
+      );
+
+    const presetZoomLevel =
+      Number(
+        defaultPreset.zoomLevel
+      );
+
+    const presetBrightnessLevel =
+      Number(
+        defaultPreset.brightnessLevel
+      );
+
+    const presetContrastLevel =
+      Number(
+        defaultPreset.contrastLevel
+      );
+
+    readingMode =
+      Number.isFinite(
+        presetReadingMode
+      )
+        ? presetReadingMode
+        : 0;
+
+    zoomLevel =
+      Number.isFinite(
+        presetZoomLevel
+      ) &&
+      presetZoomLevel > 0
+        ? presetZoomLevel
+        : 1;
+
+    brightnessLevel =
+      Number.isFinite(
+        presetBrightnessLevel
+      ) &&
+      presetBrightnessLevel > 0
+        ? presetBrightnessLevel
+        : 100;
+
+    contrastLevel =
+      Number.isFinite(
+        presetContrastLevel
+      ) &&
+      presetContrastLevel > 0
+        ? presetContrastLevel
+        : 100;
+
+    if (
+      typeof localStorage !==
+        "undefined" &&
+      localStorage &&
+      typeof localStorage.setItem ===
+        "function"
+    ) {
+
+      try {
+
+        localStorage.setItem(
+          readingModeKey,
+          String(
+            readingMode
+          )
+        );
+
+        localStorage.setItem(
+          zoomKey,
+          String(
+            zoomLevel
+          )
+        );
+
+        localStorage.setItem(
+          brightnessKey,
+          String(
+            brightnessLevel
+          )
+        );
+
+        localStorage.setItem(
+          contrastKey,
+          String(
+            contrastLevel
+          )
+        );
+
+        localStorage.setItem(
+          activePresetKey,
+          defaultPresetName
+        );
+
+      } catch (
+        defaultPresetStorageError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Default Preset Reader gagal disimpan ke localStorage:",
+            defaultPresetStorageError
+          );
+        }
+      }
+    }
+
+    if (
+      typeof applySavedReadingMode ===
+        "function"
+    ) {
+
+      try {
+
+        applySavedReadingMode();
+
+      } catch (
+        readingModeApplyError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Reading Mode dari Default Preset gagal diterapkan:",
+            readingModeApplyError
+          );
+        }
+      }
+    }
+
+    if (
+      typeof applyZoom ===
+        "function"
+    ) {
+
+      try {
+
+        applyZoom();
+
+      } catch (
+        zoomApplyError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Zoom dari Default Preset gagal diterapkan:",
+            zoomApplyError
+          );
+        }
+      }
+    }
+
+    if (
+      typeof applySavedBrightness ===
+        "function"
+    ) {
+
+      try {
+
+        applySavedBrightness();
+
+      } catch (
+        brightnessApplyError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Brightness dari Default Preset gagal diterapkan:",
+            brightnessApplyError
+          );
+        }
+      }
+    }
+
+    if (
+      typeof applySavedContrast ===
+        "function"
+    ) {
+
+      try {
+
+        applySavedContrast();
+
+      } catch (
+        contrastApplyError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Contrast dari Default Preset gagal diterapkan:",
+            contrastApplyError
+          );
+        }
+      }
+    }
+
+    if (
+      typeof refreshPresetList ===
+        "function"
+    ) {
+
+      try {
+
+        refreshPresetList();
+
+      } catch (
+        presetListRefreshError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Daftar Preset Reader gagal diperbarui:",
+            presetListRefreshError
+          );
+        }
+      }
+    }
+  }
+}
+/* === BATAS BOOTSTRAP DEFAULT READER PRESET === */
   
   let toolbarTimer = null;
   let toolbarInteractionActive = false;
