@@ -4179,9 +4179,122 @@ if (
 }
 /* === BATAS EVENT TOMBOL LOGOUT === */
 
-db.auth.onAuthStateChange(() => {
-  updateReaderAuthUI();
-});
+/* === EVENT AUTH STATE CHANGE === */
+if (
+  db &&
+  typeof db ===
+    "object" &&
+  db.auth &&
+  typeof db.auth.onAuthStateChange ===
+    "function"
+) {
+
+  try {
+
+    db.auth.onAuthStateChange(
+
+      /* CALLBACK Auth State Change */
+      () => {
+
+        if (
+          typeof updateReaderAuthUI !==
+            "function"
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "updateReaderAuthUI() tidak tersedia saat Auth State berubah."
+            );
+          }
+
+          return false;
+        }
+
+        try {
+
+          const authUiResult =
+            updateReaderAuthUI();
+
+          if (
+            authUiResult &&
+            typeof authUiResult.catch ===
+              "function"
+          ) {
+
+            authUiResult.catch(
+              (authUiError) => {
+
+                if (
+                  typeof logBootstrapWarn ===
+                    "function"
+                ) {
+
+                  logBootstrapWarn(
+                    "Update UI Auth Reader gagal setelah perubahan Auth State:",
+                    authUiError
+                  );
+                }
+              }
+            );
+          }
+
+        } catch (
+          authStateUiError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Pemanggilan updateReaderAuthUI() gagal setelah perubahan Auth State:",
+              authStateUiError
+            );
+          }
+
+          return false;
+        }
+
+        return true;
+      }
+      /* Batas CALLBACK Auth State Change */
+
+    );
+
+  } catch (
+    authStateListenerError
+  ) {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "Listener perubahan Auth State Reader gagal dipasang:",
+        authStateListenerError
+      );
+    }
+  }
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Supabase Auth State Listener tidak tersedia."
+    );
+  }
+}
+/* === BATAS EVENT AUTH STATE CHANGE === */
 
 /* === BOOTSTRAP PDF.JS WORKER === */
 if (
