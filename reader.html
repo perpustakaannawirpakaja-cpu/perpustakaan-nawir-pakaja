@@ -6924,18 +6924,161 @@ async function loadReadingProgressFromCloud() {
 }
 /* === BATAS async function loadReadingProgressFromCloud === */
   
-  const zoomKey = "readerZoom";
-  const brightnessKey = "readerBrightness";
-  let brightnessLevel =
-  parseInt(localStorage.getItem(brightnessKey), 10) || 100;
-  const contrastKey = "readerContrast";
-  const presetKey = "readerDisplayPreset";
-  const presetsKey = "readerDisplayPresets";
-  const defaultPresetKey = "readerDefaultPreset";
-  const activePresetKey = "readerActivePreset";
-  let displayPresets = JSON.parse(
-  localStorage.getItem(presetsKey) || "{}"
-);
+  /* === BOOTSTRAP READER DISPLAY SETTINGS === */
+
+const zoomKey =
+  "readerZoom";
+
+const brightnessKey =
+  "readerBrightness";
+
+const contrastKey =
+  "readerContrast";
+
+const presetKey =
+  "readerDisplayPreset";
+
+const presetsKey =
+  "readerDisplayPresets";
+
+const defaultPresetKey =
+  "readerDefaultPreset";
+
+const activePresetKey =
+  "readerActivePreset";
+
+let brightnessLevel =
+  100;
+
+let displayPresets =
+  {};
+
+if (
+  typeof localStorage ===
+    "undefined" ||
+  !localStorage ||
+  typeof localStorage.getItem !==
+    "function"
+) {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "localStorage tidak tersedia untuk memuat pengaturan tampilan Reader."
+    );
+  }
+
+} else {
+
+  try {
+
+    const rawBrightness =
+      localStorage.getItem(
+        brightnessKey
+      );
+
+    const parsedBrightness =
+      Number.parseInt(
+        rawBrightness,
+        10
+      );
+
+    if (
+      Number.isFinite(
+        parsedBrightness
+      ) &&
+      parsedBrightness > 0
+    ) {
+
+      brightnessLevel =
+        parsedBrightness;
+    }
+
+  } catch (
+    brightnessStorageError
+  ) {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "Brightness Reader gagal dimuat dari localStorage:",
+        brightnessStorageError
+      );
+    }
+
+    brightnessLevel =
+      100;
+  }
+
+  try {
+
+    const rawPresets =
+      localStorage.getItem(
+        presetsKey
+      );
+
+    if (
+      rawPresets
+    ) {
+
+      const parsedPresets =
+        JSON.parse(
+          rawPresets
+        );
+
+      if (
+        parsedPresets &&
+        typeof parsedPresets ===
+          "object" &&
+        !Array.isArray(
+          parsedPresets
+        )
+      ) {
+
+        displayPresets =
+          parsedPresets;
+
+      } else {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Data preset tampilan Reader bukan object. Data diabaikan."
+          );
+        }
+      }
+    }
+
+  } catch (
+    presetParseError
+  ) {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "Preset tampilan Reader gagal dibaca:",
+        presetParseError
+      );
+    }
+
+    displayPresets =
+      {};
+  }
+}
+
+/* === BATAS BOOTSTRAP READER DISPLAY SETTINGS === */
 
 /* === TOP LEVEL FUNCTION === */
 function refreshPresetList() {
