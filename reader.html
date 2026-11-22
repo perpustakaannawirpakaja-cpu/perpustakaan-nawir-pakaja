@@ -17314,24 +17314,148 @@ if (
    BOOKMARK PANEL ESCAPE CLOSE
    ========================================= */
 
-document.addEventListener(
-  "keydown",
-  (event) => {
+/* === EVENT BOOKMARK PANEL ESCAPE CLOSE === */
+if (
+  typeof document !==
+    "undefined" &&
+  document &&
+  typeof document.addEventListener ===
+    "function"
+) {
 
-    if (
-      event.key === "Escape" &&
-      !readerDialog.classList.contains("show") &&
-      bookmarkPanel.style.display !== "none"
-    ) {
+  document.addEventListener(
 
-      bookmarkPanel.style.display =
-        "none";
+    "keydown",
 
+    /* CALLBACK Keydown Bookmark Panel Escape */
+    (event) => {
+
+      if (
+        !event ||
+        event.key !==
+          "Escape"
+      ) {
+
+        return true;
+      }
+
+      const dialogOpen =
+        Boolean(
+          typeof readerDialog !==
+            "undefined" &&
+          readerDialog &&
+          readerDialog.classList &&
+          typeof readerDialog.classList.contains ===
+            "function" &&
+          readerDialog.classList.contains(
+            "show"
+          )
+        );
+
+      if (
+        dialogOpen
+      ) {
+
+        return true;
+      }
+
+      if (
+        typeof bookmarkPanel ===
+          "undefined" ||
+        !bookmarkPanel ||
+        !bookmarkPanel.style
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Bookmark Panel tidak tersedia saat tombol Escape ditekan."
+          );
+        }
+
+        return false;
+      }
+
+      let panelTerbuka =
+        false;
+
+      try {
+
+        panelTerbuka =
+          bookmarkPanel.style.display !==
+            "none";
+
+      } catch (
+        bookmarkPanelStateError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Status Bookmark Panel gagal diperiksa:",
+            bookmarkPanelStateError
+          );
+        }
+
+        return false;
+      }
+
+      if (
+        !panelTerbuka
+      ) {
+
+        return true;
+      }
+
+      try {
+
+        bookmarkPanel.style.display =
+          "none";
+
+      } catch (
+        bookmarkEscapeCloseError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "Bookmark Panel gagal ditutup dengan Escape:",
+            bookmarkEscapeCloseError
+          );
+        }
+
+        return false;
+      }
+
+      return true;
     }
+    /* Batas CALLBACK Keydown Bookmark Panel Escape */,
 
-  },
-  true
-);
+    true
+  );
+
+} else {
+
+  if (
+    typeof logBootstrapWarn ===
+      "function"
+  ) {
+
+    logBootstrapWarn(
+      "Event Bookmark Panel Escape Close gagal dipasang."
+    );
+  }
+}
+/* === BATAS EVENT BOOKMARK PANEL ESCAPE CLOSE === */
   
 document.getElementById("zoom-out").addEventListener("click", () => {
   zoomLevel = Math.max(0.6, zoomLevel - 0.1);
