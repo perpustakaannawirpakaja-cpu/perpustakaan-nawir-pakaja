@@ -18810,154 +18810,174 @@ if (
     /* CALLBACK Klik Zoom In */
     () => {
 
-      const currentZoom =
-        Number(
-          typeof zoomLevel !==
-            "undefined"
-            ? zoomLevel
-            : NaN
-        );
+  const currentZoom =
+    Number(
+      typeof zoomLevel !==
+        "undefined"
+        ? zoomLevel
+        : NaN
+    );
 
-      if (
-        !Number.isFinite(
-          currentZoom
-        ) ||
-        currentZoom <= 0
-      ) {
+  if (
+    !Number.isFinite(
+      currentZoom
+    ) ||
+    currentZoom < 0.6 ||
+    currentZoom > 2
+  ) {
 
-        if (
-          typeof logBootstrapWarn ===
-            "function"
-        ) {
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
 
-          logBootstrapWarn(
-            "Nilai zoomLevel tidak valid saat Zoom In."
-          );
-        }
-
-        return false;
-      }
-
-      const nextZoom =
-        Math.min(
-          2,
-          currentZoom + 0.1
-        );
-
-      zoomLevel =
-        Number(
-          nextZoom.toFixed(
-            2
-          )
-        );
-
-      if (
-        typeof localStorage !==
-          "undefined" &&
-        localStorage &&
-        typeof localStorage.setItem ===
-          "function" &&
-        typeof zoomKey ===
-          "string" &&
-        zoomKey
-      ) {
-
-        try {
-
-          localStorage.setItem(
-            zoomKey,
-            String(
-              zoomLevel
-            )
-          );
-
-        } catch (
-          zoomStorageError
-        ) {
-
-          if (
-            typeof logBootstrapWarn ===
-              "function"
-          ) {
-
-            logBootstrapWarn(
-              "Zoom Reader gagal disimpan setelah Zoom In:",
-              zoomStorageError
-            );
-          }
-        }
-      }
-
-      if (
-        typeof applyZoom ===
-          "function"
-      ) {
-
-        try {
-
-          applyZoom();
-
-        } catch (
-          applyZoomError
-        ) {
-
-          if (
-            typeof logBootstrapWarn ===
-              "function"
-          ) {
-
-            logBootstrapWarn(
-              "Zoom Reader gagal diterapkan setelah Zoom In:",
-              applyZoomError
-            );
-          }
-
-          return false;
-        }
-
-      } else {
-
-        if (
-          typeof logBootstrapWarn ===
-            "function"
-        ) {
-
-          logBootstrapWarn(
-            "applyZoom() tidak tersedia saat Zoom In."
-          );
-        }
-
-        return false;
-      }
-
-      if (
-        typeof markDisplayAsCustom ===
-          "function"
-      ) {
-
-        try {
-
-          markDisplayAsCustom();
-
-        } catch (
-          markCustomError
-        ) {
-
-          if (
-            typeof logBootstrapWarn ===
-              "function"
-          ) {
-
-            logBootstrapWarn(
-              "Status tampilan Custom gagal diperbarui setelah Zoom In:",
-              markCustomError
-            );
-          }
-        }
-      }
-
-      return true;
+      logBootstrapWarn(
+        "Nilai zoomLevel tidak valid saat Zoom In."
+      );
     }
+
+    return false;
+  }
+
+  const nextZoom =
+    Math.min(
+      2,
+      currentZoom + 0.1
+    );
+
+  zoomLevel =
+    Number(
+      nextZoom.toFixed(
+        2
+      )
+    );
+
+  if (
+    typeof localStorage !==
+      "undefined" &&
+    localStorage &&
+    typeof localStorage.setItem ===
+      "function" &&
+    typeof zoomKey ===
+      "string" &&
+    zoomKey
+  ) {
+
+    try {
+
+      localStorage.setItem(
+        zoomKey,
+        String(
+          zoomLevel
+        )
+      );
+
+    } catch (
+      zoomStorageError
+    ) {
+
+      if (
+        typeof logBootstrapWarn ===
+          "function"
+      ) {
+
+        logBootstrapWarn(
+          "Zoom Reader gagal disimpan setelah Zoom In:",
+          zoomStorageError
+        );
+      }
+    }
+  }
+
+  if (
+    typeof applyZoom ===
+      "function"
+  ) {
+
+    try {
+
+      const applyResult =
+        applyZoom();
+
+      if (
+        applyResult ===
+          false
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "applyZoom() mengembalikan false setelah Zoom In."
+          );
+        }
+
+        return false;
+      }
+
+    } catch (
+      applyZoomError
+    ) {
+
+      if (
+        typeof logBootstrapWarn ===
+          "function"
+      ) {
+
+        logBootstrapWarn(
+          "Zoom Reader gagal diterapkan setelah Zoom In:",
+          applyZoomError
+        );
+      }
+
+      return false;
+    }
+
+  } else {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "applyZoom() tidak tersedia saat Zoom In."
+      );
+    }
+
+    return false;
+  }
+
+  if (
+    typeof markDisplayAsCustom ===
+      "function"
+  ) {
+
+    try {
+
+      markDisplayAsCustom();
+
+    } catch (
+      markCustomError
+    ) {
+
+      if (
+        typeof logBootstrapWarn ===
+          "function"
+      ) {
+
+        logBootstrapWarn(
+          "Status tampilan Custom gagal diperbarui setelah Zoom In:",
+          markCustomError
+        );
+      }
+    }
+  }
+
+  return true;
+}
     /* Batas CALLBACK Klik Zoom In */
 
   );
@@ -20116,6 +20136,7 @@ function applySavedContrast() {
   if (
     typeof document ===
       "undefined" ||
+    !document ||
     typeof document.getElementById !==
       "function"
   ) {
@@ -20258,290 +20279,397 @@ if (
     /* CALLBACK Reset Tampilan */
     () => {
 
-      const logWarn = (
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      console &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
         ...args
-      ) => {
+      );
+    }
+  };
 
-        if (
-          typeof console !==
-            "undefined" &&
-          console &&
-          typeof console.warn ===
-            "function"
-        ) {
+  const nextReadingMode =
+    0;
 
-          console.warn(
-            ...args
-          );
-        }
-      };
+  const nextZoomLevel =
+    1;
 
-      const nextReadingMode =
-        0;
+  const nextBrightnessLevel =
+    100;
 
-      const nextZoomLevel =
-        1;
+  const nextContrastLevel =
+    100;
 
-      const nextBrightnessLevel =
-        100;
+  if (
+    typeof localStorage ===
+      "undefined" ||
+    !localStorage ||
+    typeof localStorage.setItem !==
+      "function"
+  ) {
 
-      const nextContrastLevel =
-        100;
+    logWarn(
+      "localStorage tidak tersedia untuk mereset tampilan Reader."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof readingModeKey !==
+      "string" ||
+    !readingModeKey ||
+    typeof zoomKey !==
+      "string" ||
+    !zoomKey ||
+    typeof brightnessKey !==
+      "string" ||
+    !brightnessKey ||
+    typeof contrastKey !==
+      "string" ||
+    !contrastKey
+  ) {
+
+    logWarn(
+      "Salah satu key pengaturan tampilan Reader tidak valid."
+    );
+
+    return false;
+  }
+
+  try {
+
+    localStorage.setItem(
+      readingModeKey,
+      String(
+        nextReadingMode
+      )
+    );
+
+    localStorage.setItem(
+      zoomKey,
+      String(
+        nextZoomLevel
+      )
+    );
+
+    localStorage.setItem(
+      brightnessKey,
+      String(
+        nextBrightnessLevel
+      )
+    );
+
+    localStorage.setItem(
+      contrastKey,
+      String(
+        nextContrastLevel
+      )
+    );
+
+  } catch (
+    storageError
+  ) {
+
+    logWarn(
+      "Reset tampilan Reader gagal disimpan ke localStorage:",
+      storageError
+    );
+
+    return false;
+  }
+
+  readingMode =
+    nextReadingMode;
+
+  zoomLevel =
+    nextZoomLevel;
+
+  brightnessLevel =
+    nextBrightnessLevel;
+
+  contrastLevel =
+    nextContrastLevel;
+
+  let resetBerhasil =
+    true;
+
+  if (
+    typeof applySavedReadingMode ===
+      "function"
+  ) {
+
+    try {
+
+      const readingModeResult =
+        applySavedReadingMode();
 
       if (
-        typeof localStorage ===
-          "undefined" ||
-        !localStorage ||
-        typeof localStorage.setItem !==
-          "function"
+        readingModeResult ===
+          false
       ) {
 
         logWarn(
-          "localStorage tidak tersedia untuk mereset tampilan Reader."
+          "applySavedReadingMode() mengembalikan false setelah reset."
         );
 
-        return false;
+        resetBerhasil =
+          false;
       }
 
+    } catch (
+      readingModeError
+    ) {
+
+      logWarn(
+        "Reading Mode gagal diterapkan setelah reset:",
+        readingModeError
+      );
+
+      resetBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "applySavedReadingMode() tidak tersedia setelah reset."
+    );
+
+    resetBerhasil =
+      false;
+  }
+
+  if (
+    typeof applyZoom ===
+      "function"
+  ) {
+
+    try {
+
+      const zoomResult =
+        applyZoom();
+
       if (
-        typeof readingModeKey !==
-          "string" ||
-        !readingModeKey ||
-        typeof zoomKey !==
-          "string" ||
-        !zoomKey ||
-        typeof brightnessKey !==
-          "string" ||
-        !brightnessKey ||
-        typeof contrastKey !==
-          "string" ||
-        !contrastKey
+        zoomResult ===
+          false
       ) {
 
         logWarn(
-          "Salah satu key pengaturan tampilan Reader tidak valid."
+          "applyZoom() mengembalikan false setelah reset."
         );
 
-        return false;
+        resetBerhasil =
+          false;
       }
+
+    } catch (
+      zoomError
+    ) {
+
+      logWarn(
+        "Zoom gagal diterapkan setelah reset:",
+        zoomError
+      );
+
+      resetBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "applyZoom() tidak tersedia setelah reset."
+    );
+
+    resetBerhasil =
+      false;
+  }
+
+  if (
+    typeof applySavedBrightness ===
+      "function"
+  ) {
+
+    try {
+
+      const brightnessResult =
+        applySavedBrightness();
+
+      if (
+        brightnessResult ===
+          false
+      ) {
+
+        logWarn(
+          "applySavedBrightness() mengembalikan false setelah reset."
+        );
+
+        resetBerhasil =
+          false;
+      }
+
+    } catch (
+      brightnessError
+    ) {
+
+      logWarn(
+        "Brightness gagal diterapkan setelah reset:",
+        brightnessError
+      );
+
+      resetBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "applySavedBrightness() tidak tersedia setelah reset."
+    );
+
+    resetBerhasil =
+      false;
+  }
+
+  if (
+    typeof applySavedContrast ===
+      "function"
+  ) {
+
+    try {
+
+      const contrastResult =
+        applySavedContrast();
+
+      if (
+        contrastResult ===
+          false
+      ) {
+
+        logWarn(
+          "applySavedContrast() mengembalikan false setelah reset."
+        );
+
+        resetBerhasil =
+          false;
+      }
+
+    } catch (
+      contrastError
+    ) {
+
+      logWarn(
+        "Contrast gagal diterapkan setelah reset:",
+        contrastError
+      );
+
+      resetBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "applySavedContrast() tidak tersedia setelah reset."
+    );
+
+    resetBerhasil =
+      false;
+  }
+
+  if (
+    typeof document !==
+      "undefined" &&
+    document &&
+    typeof document.getElementById ===
+      "function"
+  ) {
+
+    const brightnessPanel =
+      document.getElementById(
+        "brightness-panel"
+      );
+
+    const contrastPanel =
+      document.getElementById(
+        "contrast-panel"
+      );
+
+    if (
+      brightnessPanel &&
+      brightnessPanel.style
+    ) {
 
       try {
 
-        localStorage.setItem(
-          readingModeKey,
-          String(
-            nextReadingMode
-          )
-        );
-
-        localStorage.setItem(
-          zoomKey,
-          String(
-            nextZoomLevel
-          )
-        );
-
-        localStorage.setItem(
-          brightnessKey,
-          String(
-            nextBrightnessLevel
-          )
-        );
-
-        localStorage.setItem(
-          contrastKey,
-          String(
-            nextContrastLevel
-          )
-        );
+        brightnessPanel.style.display =
+          "none";
 
       } catch (
-        storageError
+        brightnessPanelError
       ) {
 
         logWarn(
-          "Reset tampilan Reader gagal disimpan ke localStorage:",
-          storageError
+          "Panel Brightness gagal ditutup setelah reset:",
+          brightnessPanelError
         );
-
-        return false;
       }
-
-      readingMode =
-        nextReadingMode;
-
-      zoomLevel =
-        nextZoomLevel;
-
-      brightnessLevel =
-        nextBrightnessLevel;
-
-      contrastLevel =
-        nextContrastLevel;
-
-      if (
-        typeof applySavedReadingMode ===
-          "function"
-      ) {
-
-        try {
-
-          applySavedReadingMode();
-
-        } catch (
-          readingModeError
-        ) {
-
-          logWarn(
-            "Reading Mode gagal diterapkan setelah reset:",
-            readingModeError
-          );
-        }
-      }
-
-      if (
-        typeof applyZoom ===
-          "function"
-      ) {
-
-        try {
-
-          applyZoom();
-
-        } catch (
-          zoomError
-        ) {
-
-          logWarn(
-            "Zoom gagal diterapkan setelah reset:",
-            zoomError
-          );
-        }
-      }
-
-      if (
-        typeof applySavedBrightness ===
-          "function"
-      ) {
-
-        try {
-
-          applySavedBrightness();
-
-        } catch (
-          brightnessError
-        ) {
-
-          logWarn(
-            "Brightness gagal diterapkan setelah reset:",
-            brightnessError
-          );
-        }
-      }
-
-      if (
-        typeof applySavedContrast ===
-          "function"
-      ) {
-
-        try {
-
-          applySavedContrast();
-
-        } catch (
-          contrastError
-        ) {
-
-          logWarn(
-            "Contrast gagal diterapkan setelah reset:",
-            contrastError
-          );
-        }
-      }
-
-      if (
-        typeof document !==
-          "undefined" &&
-        document &&
-        typeof document.getElementById ===
-          "function"
-      ) {
-
-        const brightnessPanel =
-          document.getElementById(
-            "brightness-panel"
-          );
-
-        const contrastPanel =
-          document.getElementById(
-            "contrast-panel"
-          );
-
-        if (
-          brightnessPanel &&
-          brightnessPanel.style
-        ) {
-
-          try {
-
-            brightnessPanel.style.display =
-              "none";
-
-          } catch (
-            brightnessPanelError
-          ) {
-
-            logWarn(
-              "Panel Brightness gagal ditutup setelah reset:",
-              brightnessPanelError
-            );
-          }
-        }
-
-        if (
-          contrastPanel &&
-          contrastPanel.style
-        ) {
-
-          try {
-
-            contrastPanel.style.display =
-              "none";
-
-          } catch (
-            contrastPanelError
-          ) {
-
-            logWarn(
-              "Panel Contrast gagal ditutup setelah reset:",
-              contrastPanelError
-            );
-          }
-        }
-      }
-
-      if (
-        typeof markDisplayAsCustom ===
-          "function"
-      ) {
-
-        try {
-
-          markDisplayAsCustom();
-
-        } catch (
-          customDisplayError
-        ) {
-
-          logWarn(
-            "Status tampilan Custom gagal diperbarui setelah reset:",
-            customDisplayError
-          );
-        }
-      }
-
-      return true;
     }
+
+    if (
+      contrastPanel &&
+      contrastPanel.style
+    ) {
+
+      try {
+
+        contrastPanel.style.display =
+          "none";
+
+      } catch (
+        contrastPanelError
+      ) {
+
+        logWarn(
+          "Panel Contrast gagal ditutup setelah reset:",
+          contrastPanelError
+        );
+      }
+    }
+  }
+
+  if (
+    typeof markDisplayAsCustom ===
+      "function"
+  ) {
+
+    try {
+
+      markDisplayAsCustom();
+
+    } catch (
+      customDisplayError
+    ) {
+
+      logWarn(
+        "Status tampilan Custom gagal diperbarui setelah reset:",
+        customDisplayError
+      );
+    }
+  }
+
+  return resetBerhasil;
+}
     /* Batas CALLBACK Reset Tampilan */
 
   );
@@ -20587,163 +20715,220 @@ if (
     /* CALLBACK Klik Preset Toggle */
     () => {
 
-      const logWarn = (
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      console &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
         ...args
-      ) => {
-
-        if (
-          typeof console !==
-            "undefined" &&
-          console &&
-          typeof console.warn ===
-            "function"
-        ) {
-
-          console.warn(
-            ...args
-          );
-        }
-      };
-
-      if (
-        typeof document ===
-          "undefined" ||
-        !document ||
-        typeof document.getElementById !==
-          "function"
-      ) {
-
-        logWarn(
-          "Document tidak tersedia untuk membuka panel Preset."
-        );
-
-        return false;
-      }
-
-      const panel =
-        document.getElementById(
-          "preset-panel"
-        );
-
-      const presetList =
-        document.getElementById(
-          "preset-list"
-        );
-
-      if (
-        !panel ||
-        !panel.style
-      ) {
-
-        logWarn(
-          "Panel Preset tidak tersedia atau style tidak valid."
-        );
-
-        return false;
-      }
-
-      if (
-        !presetList
-      ) {
-
-        logWarn(
-          "Daftar Preset tidak tersedia."
-        );
-
-        return false;
-      }
-
-      let panelOpened =
-        false;
-
-      try {
-
-        panel.style.display =
-          panel.style.display ===
-            "flex"
-            ? "none"
-            : "flex";
-
-        panelOpened =
-          panel.style.display ===
-            "flex";
-
-      } catch (
-        panelError
-      ) {
-
-        logWarn(
-          "Panel Preset gagal dibuka atau ditutup:",
-          panelError
-        );
-
-        return false;
-      }
-
-      if (
-        panelOpened
-      ) {
-
-        try {
-
-          presetList.value =
-            "";
-
-        } catch (
-          presetListError
-        ) {
-
-          logWarn(
-            "Daftar Preset gagal direset:",
-            presetListError
-          );
-
-          return false;
-        }
-
-        if (
-          typeof updatePresetSummary ===
-            "function"
-        ) {
-
-          try {
-
-            updatePresetSummary();
-
-          } catch (
-            summaryError
-          ) {
-
-            logWarn(
-              "Ringkasan Preset gagal diperbarui:",
-              summaryError
-            );
-          }
-        }
-
-        if (
-          typeof updatePresetActionState ===
-            "function"
-        ) {
-
-          try {
-
-            updatePresetActionState();
-
-          } catch (
-            actionStateError
-          ) {
-
-            logWarn(
-              "Status aksi Preset gagal diperbarui:",
-              actionStateError
-            );
-          }
-        }
-      }
-
-      return true;
+      );
     }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    !document ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk membuka panel Preset."
+    );
+
+    return false;
+  }
+
+  const panel =
+    document.getElementById(
+      "preset-panel"
+    );
+
+  const presetList =
+    document.getElementById(
+      "preset-list"
+    );
+
+  if (
+    !panel ||
+    !panel.style
+  ) {
+
+    logWarn(
+      "Panel Preset tidak tersedia atau style tidak valid."
+    );
+
+    return false;
+  }
+
+  if (
+    !presetList
+  ) {
+
+    logWarn(
+      "Daftar Preset tidak tersedia."
+    );
+
+    return false;
+  }
+
+  let panelOpened =
+    false;
+
+  try {
+
+    panel.style.display =
+      panel.style.display ===
+        "flex"
+        ? "none"
+        : "flex";
+
+    panelOpened =
+      panel.style.display ===
+        "flex";
+
+  } catch (
+    panelError
+  ) {
+
+    logWarn(
+      "Panel Preset gagal dibuka atau ditutup:",
+      panelError
+    );
+
+    return false;
+  }
+
+  if (
+    !panelOpened
+  ) {
+
+    return true;
+  }
+
+  try {
+
+    presetList.value =
+      "";
+
+  } catch (
+    presetListError
+  ) {
+
+    logWarn(
+      "Daftar Preset gagal direset:",
+      presetListError
+    );
+
+    return false;
+  }
+
+  let panelBerhasil =
+    true;
+
+  if (
+    typeof updatePresetSummary ===
+      "function"
+  ) {
+
+    try {
+
+      const summaryResult =
+        updatePresetSummary();
+
+      if (
+        summaryResult ===
+          false
+      ) {
+
+        logWarn(
+          "updatePresetSummary() mengembalikan false saat panel Preset dibuka."
+        );
+
+        panelBerhasil =
+          false;
+      }
+
+    } catch (
+      summaryError
+    ) {
+
+      logWarn(
+        "Ringkasan Preset gagal diperbarui:",
+        summaryError
+      );
+
+      panelBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "updatePresetSummary() tidak tersedia saat panel Preset dibuka."
+    );
+
+    panelBerhasil =
+      false;
+  }
+
+  if (
+    typeof updatePresetActionState ===
+      "function"
+  ) {
+
+    try {
+
+      const actionStateResult =
+        updatePresetActionState();
+
+      if (
+        actionStateResult ===
+          false
+      ) {
+
+        logWarn(
+          "updatePresetActionState() mengembalikan false saat panel Preset dibuka."
+        );
+
+        panelBerhasil =
+          false;
+      }
+
+    } catch (
+      actionStateError
+    ) {
+
+      logWarn(
+        "Status aksi Preset gagal diperbarui:",
+        actionStateError
+      );
+
+      panelBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "updatePresetActionState() tidak tersedia saat panel Preset dibuka."
+    );
+
+    panelBerhasil =
+      false;
+  }
+
+  return panelBerhasil;
+}
     /* Batas CALLBACK Klik Preset Toggle */
 
   );
@@ -21091,569 +21276,679 @@ if (
     /* CALLBACK Klik Preset Save */
     () => {
 
-      const logWarn = (
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      console &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
         ...args
-      ) => {
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    !document ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk menyimpan Preset."
+    );
+
+    return false;
+  }
+
+  const nameInput =
+    document.getElementById(
+      "preset-name"
+    );
+
+  const presetList =
+    document.getElementById(
+      "preset-list"
+    );
+
+  const saveButton =
+    document.getElementById(
+      "preset-save"
+    );
+
+  if (
+    !nameInput ||
+    !presetList ||
+    !saveButton
+  ) {
+
+    logWarn(
+      "Elemen Simpan Preset tidak lengkap."
+    );
+
+    return false;
+  }
+
+  const originalText =
+    typeof saveButton.textContent ===
+      "string"
+      ? saveButton.textContent
+      : "";
+
+  const name =
+    typeof nameInput.value ===
+      "string"
+      ? nameInput.value.trim()
+      : "";
+
+  if (
+    !name
+  ) {
+
+    try {
+
+      saveButton.textContent =
+        "⚠️ Isi Nama Preset";
+
+    } catch (
+      buttonError
+    ) {
+
+      logWarn(
+        "Pesan nama Preset kosong gagal ditampilkan:",
+        buttonError
+      );
+
+      return false;
+    }
+
+    if (
+      typeof setTimeout !==
+        "function"
+    ) {
+
+      logWarn(
+        "setTimeout() tidak tersedia untuk mengembalikan teks tombol Simpan Preset."
+      );
+
+      return false;
+    }
+
+    try {
+
+      setTimeout(
+
+        /* CALLBACK setTimeout() Restore Teks Save - Nama Kosong */
+        () => {
+
+          const logWarn = (
+            ...args
+          ) => {
+
+            if (
+              typeof console !==
+                "undefined" &&
+              console &&
+              typeof console.warn ===
+                "function"
+            ) {
+
+              console.warn(
+                ...args
+              );
+            }
+          };
+
+          if (
+            !saveButton
+          ) {
+
+            logWarn(
+              "Tombol Simpan Preset tidak tersedia untuk mengembalikan teks."
+            );
+
+            return false;
+          }
+
+          const restoreText =
+            typeof originalText ===
+              "string"
+              ? originalText
+              : "";
+
+          try {
+
+            saveButton.textContent =
+              restoreText;
+
+          } catch (
+            restoreError
+          ) {
+
+            logWarn(
+              "Teks tombol Simpan Preset gagal dikembalikan setelah nama Preset kosong:",
+              restoreError
+            );
+
+            return false;
+          }
+
+          return true;
+        }
+        /* Batas CALLBACK setTimeout() Restore Teks Save - Nama Kosong */,
+
+        1500
+      );
+
+    } catch (
+      timeoutError
+    ) {
+
+      logWarn(
+        "Penjadwalan pemulihan teks tombol Simpan Preset gagal:",
+        timeoutError
+      );
+
+      return false;
+    }
+
+    return false;
+  }
+
+  if (
+    typeof displayPresets ===
+      "undefined" ||
+    !displayPresets ||
+    typeof displayPresets !==
+      "object" ||
+    Array.isArray(
+      displayPresets
+    )
+  ) {
+
+    logWarn(
+      "Data displayPresets tidak tersedia atau tidak valid."
+    );
+
+    return false;
+  }
+
+  const nextReadingMode =
+    typeof readingMode !==
+      "undefined"
+      ? Number(
+          readingMode
+        )
+      : NaN;
+
+  const nextZoomLevel =
+    typeof zoomLevel !==
+      "undefined"
+      ? Number(
+          zoomLevel
+        )
+      : NaN;
+
+  const nextBrightnessLevel =
+    typeof brightnessLevel !==
+      "undefined"
+      ? Number(
+          brightnessLevel
+        )
+      : NaN;
+
+  const nextContrastLevel =
+    typeof contrastLevel !==
+      "undefined"
+      ? Number(
+          contrastLevel
+        )
+      : NaN;
+
+  if (
+    !Number.isInteger(
+      nextReadingMode
+    ) ||
+    nextReadingMode < 0 ||
+    nextReadingMode > 2 ||
+    !Number.isFinite(
+      nextZoomLevel
+    ) ||
+    nextZoomLevel < 0.6 ||
+    nextZoomLevel > 2 ||
+    !Number.isFinite(
+      nextBrightnessLevel
+    ) ||
+    nextBrightnessLevel < 50 ||
+    nextBrightnessLevel > 130 ||
+    !Number.isFinite(
+      nextContrastLevel
+    ) ||
+    nextContrastLevel < 70 ||
+    nextContrastLevel > 150
+  ) {
+
+    logWarn(
+      "Nilai pengaturan tampilan untuk Preset tidak valid."
+    );
+
+    return false;
+  }
+
+  const nextPreset = {
+
+    readingMode:
+      nextReadingMode,
+
+    zoomLevel:
+      nextZoomLevel,
+
+    brightnessLevel:
+      nextBrightnessLevel,
+
+    contrastLevel:
+      nextContrastLevel
+  };
+
+  const nextDisplayPresets = {
+
+    ...displayPresets,
+
+    [name]:
+      nextPreset
+  };
+
+  if (
+    typeof localStorage ===
+      "undefined" ||
+    !localStorage ||
+    typeof localStorage.setItem !==
+      "function"
+  ) {
+
+    logWarn(
+      "localStorage tidak tersedia untuk menyimpan Preset."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof presetsKey !==
+      "string" ||
+    !presetsKey
+  ) {
+
+    logWarn(
+      "presetsKey tidak tersedia atau tidak valid."
+    );
+
+    return false;
+  }
+
+  try {
+
+    localStorage.setItem(
+      presetsKey,
+      JSON.stringify(
+        nextDisplayPresets
+      )
+    );
+
+  } catch (
+    storageError
+  ) {
+
+    logWarn(
+      "Preset gagal disimpan ke localStorage:",
+      storageError
+    );
+
+    return false;
+  }
+
+  try {
+
+    displayPresets =
+      nextDisplayPresets;
+
+  } catch (
+    presetStateError
+  ) {
+
+    logWarn(
+      "Data Preset aktif gagal diperbarui:",
+      presetStateError
+    );
+
+    return false;
+  }
+
+  let saveBerhasil =
+    true;
+
+  if (
+    typeof schedulePresetCloudSave ===
+      "function"
+  ) {
+
+    try {
+
+      const cloudScheduleResult =
+        schedulePresetCloudSave();
+
+      if (
+        cloudScheduleResult ===
+          false
+      ) {
+
+        logWarn(
+          "schedulePresetCloudSave() mengembalikan false setelah Preset disimpan."
+        );
+
+        saveBerhasil =
+          false;
+      }
+
+    } catch (
+      cloudScheduleError
+    ) {
+
+      logWarn(
+        "Penjadwalan sinkronisasi Preset ke cloud gagal:",
+        cloudScheduleError
+      );
+
+      saveBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "schedulePresetCloudSave() tidak tersedia setelah Preset disimpan."
+    );
+
+    saveBerhasil =
+      false;
+  }
+
+  if (
+    typeof refreshPresetList ===
+      "function"
+  ) {
+
+    try {
+
+      const refreshResult =
+        refreshPresetList();
+
+      if (
+        refreshResult ===
+          false
+      ) {
+
+        logWarn(
+          "refreshPresetList() mengembalikan false setelah Preset disimpan."
+        );
+
+        saveBerhasil =
+          false;
+      }
+
+    } catch (
+      refreshError
+    ) {
+
+      logWarn(
+        "Daftar Preset gagal diperbarui:",
+        refreshError
+      );
+
+      saveBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "refreshPresetList() tidak tersedia setelah Preset disimpan."
+    );
+
+    saveBerhasil =
+      false;
+  }
+
+  try {
+
+    presetList.value =
+      name;
+
+    nameInput.value =
+      "";
+
+  } catch (
+    inputError
+  ) {
+
+    logWarn(
+      "Input atau pilihan Preset gagal diperbarui:",
+      inputError
+    );
+
+    return false;
+  }
+
+  if (
+    typeof updatePresetActionState ===
+      "function"
+  ) {
+
+    try {
+
+      const actionStateResult =
+        updatePresetActionState();
+
+      if (
+        actionStateResult ===
+          false
+      ) {
+
+        logWarn(
+          "updatePresetActionState() mengembalikan false setelah Preset disimpan."
+        );
+
+        saveBerhasil =
+          false;
+      }
+
+    } catch (
+      actionStateError
+    ) {
+
+      logWarn(
+        "Status aksi Preset gagal diperbarui:",
+        actionStateError
+      );
+
+      saveBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "updatePresetActionState() tidak tersedia setelah Preset disimpan."
+    );
+
+    saveBerhasil =
+      false;
+  }
+
+  try {
+
+    saveButton.textContent =
+      "✅ Preset Tersimpan";
+
+  } catch (
+    successTextError
+  ) {
+
+    logWarn(
+      "Status Preset tersimpan gagal ditampilkan:",
+      successTextError
+    );
+
+    saveBerhasil =
+      false;
+  }
+
+  if (
+    typeof closePresetPanelSoon ===
+      "function"
+  ) {
+
+    try {
+
+      const closePanelResult =
+        closePresetPanelSoon();
+
+      if (
+        closePanelResult ===
+          false
+      ) {
+
+        logWarn(
+          "closePresetPanelSoon() mengembalikan false setelah Preset disimpan."
+        );
+
+        saveBerhasil =
+          false;
+      }
+
+    } catch (
+      closePanelError
+    ) {
+
+      logWarn(
+        "Penjadwalan penutupan panel Preset gagal:",
+        closePanelError
+      );
+
+      saveBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "closePresetPanelSoon() tidak tersedia setelah Preset disimpan."
+    );
+
+    saveBerhasil =
+      false;
+  }
+
+  if (
+    typeof setTimeout !==
+      "function"
+  ) {
+
+    logWarn(
+      "setTimeout() tidak tersedia untuk mengembalikan teks tombol Simpan Preset."
+    );
+
+    return false;
+  }
+
+  try {
+
+    setTimeout(
+
+      /* CALLBACK setTimeout() Restore Teks Save - Preset Tersimpan */
+      () => {
+
+        const logWarn = (
+          ...args
+        ) => {
+
+          if (
+            typeof console !==
+              "undefined" &&
+            console &&
+            typeof console.warn ===
+              "function"
+          ) {
+
+            console.warn(
+              ...args
+            );
+          }
+        };
 
         if (
-          typeof console !==
-            "undefined" &&
-          console &&
-          typeof console.warn ===
-            "function"
+          !saveButton
         ) {
 
-          console.warn(
-            ...args
+          logWarn(
+            "Tombol Simpan Preset tidak tersedia untuk mengembalikan teks."
           );
+
+          return false;
         }
-      };
 
-      if (
-        typeof document ===
-          "undefined" ||
-        !document ||
-        typeof document.getElementById !==
-          "function"
-      ) {
-
-        logWarn(
-          "Document tidak tersedia untuk menyimpan Preset."
-        );
-
-        return false;
-      }
-
-      const nameInput =
-        document.getElementById(
-          "preset-name"
-        );
-
-      const presetList =
-        document.getElementById(
-          "preset-list"
-        );
-
-      const saveButton =
-        document.getElementById(
-          "preset-save"
-        );
-
-      if (
-        !nameInput ||
-        !presetList ||
-        !saveButton
-      ) {
-
-        logWarn(
-          "Elemen Simpan Preset tidak lengkap."
-        );
-
-        return false;
-      }
-
-      const originalText =
-        typeof saveButton.textContent ===
-          "string"
-          ? saveButton.textContent
-          : "";
-
-      const name =
-        typeof nameInput.value ===
-          "string"
-          ? nameInput.value.trim()
-          : "";
-
-      if (
-        !name
-      ) {
+        const restoreText =
+          typeof originalText ===
+            "string"
+            ? originalText
+            : "";
 
         try {
 
           saveButton.textContent =
-            "⚠️ Isi Nama Preset";
+            restoreText;
 
         } catch (
-          buttonError
+          restoreError
         ) {
 
           logWarn(
-            "Pesan nama Preset kosong gagal ditampilkan:",
-            buttonError
+            "Teks tombol Simpan Preset gagal dikembalikan setelah Preset tersimpan:",
+            restoreError
           );
 
           return false;
         }
 
-        if (
-          typeof setTimeout !==
-            "function"
-        ) {
-
-          logWarn(
-            "setTimeout() tidak tersedia untuk mengembalikan teks tombol Simpan Preset."
-          );
-
-          return false;
-        }
-
-        try {
-
-          setTimeout(
-
-            /* CALLBACK setTimeout() Restore Teks Save - Nama Kosong */
-            () => {
-
-              const logWarn = (
-                ...args
-              ) => {
-
-                if (
-                  typeof console !==
-                    "undefined" &&
-                  console &&
-                  typeof console.warn ===
-                    "function"
-                ) {
-
-                  console.warn(
-                    ...args
-                  );
-                }
-              };
-
-              if (
-                !saveButton
-              ) {
-
-                logWarn(
-                  "Tombol Simpan Preset tidak tersedia untuk mengembalikan teks."
-                );
-
-                return false;
-              }
-
-              const restoreText =
-                typeof originalText ===
-                  "string"
-                  ? originalText
-                  : "";
-
-              try {
-
-                saveButton.textContent =
-                  restoreText;
-
-              } catch (
-                restoreError
-              ) {
-
-                logWarn(
-                  "Teks tombol Simpan Preset gagal dikembalikan setelah nama Preset kosong:",
-                  restoreError
-                );
-
-                return false;
-              }
-
-              return true;
-            }
-            /* Batas CALLBACK setTimeout() Restore Teks Save - Nama Kosong */,
-
-            1500
-          );
-
-        } catch (
-          timeoutError
-        ) {
-
-          logWarn(
-            "Penjadwalan pemulihan teks tombol Simpan Preset gagal:",
-            timeoutError
-          );
-
-          return false;
-        }
-
-        return false;
+        return true;
       }
+      /* Batas CALLBACK setTimeout() Restore Teks Save - Preset Tersimpan */,
 
-      if (
-        typeof displayPresets ===
-          "undefined" ||
-        !displayPresets ||
-        typeof displayPresets !==
-          "object" ||
-        Array.isArray(
-          displayPresets
-        )
-      ) {
+      1500
+    );
 
-        logWarn(
-          "Data displayPresets tidak tersedia atau tidak valid."
-        );
+  } catch (
+    timeoutError
+  ) {
 
-        return false;
-      }
+    logWarn(
+      "Penjadwalan pemulihan teks setelah Preset tersimpan gagal:",
+      timeoutError
+    );
 
-      const nextReadingMode =
-        typeof readingMode !==
-          "undefined"
-          ? Number(
-              readingMode
-            )
-          : NaN;
+    return false;
+  }
 
-      const nextZoomLevel =
-        typeof zoomLevel !==
-          "undefined"
-          ? Number(
-              zoomLevel
-            )
-          : NaN;
-
-      const nextBrightnessLevel =
-        typeof brightnessLevel !==
-          "undefined"
-          ? Number(
-              brightnessLevel
-            )
-          : NaN;
-
-      const nextContrastLevel =
-        typeof contrastLevel !==
-          "undefined"
-          ? Number(
-              contrastLevel
-            )
-          : NaN;
-
-      if (
-        !Number.isInteger(
-          nextReadingMode
-        ) ||
-        nextReadingMode < 0 ||
-        nextReadingMode > 2 ||
-        !Number.isFinite(
-          nextZoomLevel
-        ) ||
-        nextZoomLevel < 0.6 ||
-        nextZoomLevel > 2 ||
-        !Number.isFinite(
-          nextBrightnessLevel
-        ) ||
-        nextBrightnessLevel < 50 ||
-        nextBrightnessLevel > 130 ||
-        !Number.isFinite(
-          nextContrastLevel
-        ) ||
-        nextContrastLevel < 70 ||
-        nextContrastLevel > 150
-      ) {
-
-        logWarn(
-          "Nilai pengaturan tampilan untuk Preset tidak valid."
-        );
-
-        return false;
-      }
-
-      const nextPreset = {
-
-        readingMode:
-          nextReadingMode,
-
-        zoomLevel:
-          nextZoomLevel,
-
-        brightnessLevel:
-          nextBrightnessLevel,
-
-        contrastLevel:
-          nextContrastLevel
-      };
-
-      const nextDisplayPresets = {
-
-        ...displayPresets,
-
-        [name]:
-          nextPreset
-      };
-
-      if (
-        typeof localStorage ===
-          "undefined" ||
-        !localStorage ||
-        typeof localStorage.setItem !==
-          "function"
-      ) {
-
-        logWarn(
-          "localStorage tidak tersedia untuk menyimpan Preset."
-        );
-
-        return false;
-      }
-
-      if (
-        typeof presetsKey !==
-          "string" ||
-        !presetsKey
-      ) {
-
-        logWarn(
-          "presetsKey tidak tersedia atau tidak valid."
-        );
-
-        return false;
-      }
-
-      try {
-
-        localStorage.setItem(
-          presetsKey,
-          JSON.stringify(
-            nextDisplayPresets
-          )
-        );
-
-      } catch (
-        storageError
-      ) {
-
-        logWarn(
-          "Preset gagal disimpan ke localStorage:",
-          storageError
-        );
-
-        return false;
-      }
-
-      try {
-
-        displayPresets =
-          nextDisplayPresets;
-
-      } catch (
-        presetStateError
-      ) {
-
-        logWarn(
-          "Data Preset aktif gagal diperbarui:",
-          presetStateError
-        );
-
-        return false;
-      }
-
-      if (
-        typeof schedulePresetCloudSave ===
-          "function"
-      ) {
-
-        try {
-
-          schedulePresetCloudSave();
-
-        } catch (
-          cloudScheduleError
-        ) {
-
-          logWarn(
-            "Penjadwalan sinkronisasi Preset ke cloud gagal:",
-            cloudScheduleError
-          );
-        }
-      }
-
-      if (
-        typeof refreshPresetList ===
-          "function"
-      ) {
-
-        try {
-
-          refreshPresetList();
-
-        } catch (
-          refreshError
-        ) {
-
-          logWarn(
-            "Daftar Preset gagal diperbarui:",
-            refreshError
-          );
-        }
-      }
-
-      try {
-
-        presetList.value =
-          name;
-
-        nameInput.value =
-          "";
-
-      } catch (
-        inputError
-      ) {
-
-        logWarn(
-          "Input atau pilihan Preset gagal diperbarui:",
-          inputError
-        );
-
-        return false;
-      }
-
-      if (
-        typeof updatePresetActionState ===
-          "function"
-      ) {
-
-        try {
-
-          updatePresetActionState();
-
-        } catch (
-          actionStateError
-        ) {
-
-          logWarn(
-            "Status aksi Preset gagal diperbarui:",
-            actionStateError
-          );
-        }
-      }
-
-      try {
-
-        saveButton.textContent =
-          "✅ Preset Tersimpan";
-
-      } catch (
-        successTextError
-      ) {
-
-        logWarn(
-          "Status Preset tersimpan gagal ditampilkan:",
-          successTextError
-        );
-      }
-
-      if (
-        typeof closePresetPanelSoon ===
-          "function"
-      ) {
-
-        try {
-
-          closePresetPanelSoon();
-
-        } catch (
-          closePanelError
-        ) {
-
-          logWarn(
-            "Penjadwalan penutupan panel Preset gagal:",
-            closePanelError
-          );
-        }
-      }
-
-      if (
-        typeof setTimeout !==
-          "function"
-      ) {
-
-        logWarn(
-          "setTimeout() tidak tersedia untuk mengembalikan teks tombol Simpan Preset."
-        );
-
-        return false;
-      }
-
-      try {
-
-        setTimeout(
-
-          /* CALLBACK setTimeout() Restore Teks Save - Preset Tersimpan */
-          () => {
-
-            const logWarn = (
-              ...args
-            ) => {
-
-              if (
-                typeof console !==
-                  "undefined" &&
-                console &&
-                typeof console.warn ===
-                  "function"
-              ) {
-
-                console.warn(
-                  ...args
-                );
-              }
-            };
-
-            if (
-              !saveButton
-            ) {
-
-              logWarn(
-                "Tombol Simpan Preset tidak tersedia untuk mengembalikan teks."
-              );
-
-              return false;
-            }
-
-            const restoreText =
-              typeof originalText ===
-                "string"
-                ? originalText
-                : "";
-
-            try {
-
-              saveButton.textContent =
-                restoreText;
-
-            } catch (
-              restoreError
-            ) {
-
-              logWarn(
-                "Teks tombol Simpan Preset gagal dikembalikan setelah Preset tersimpan:",
-                restoreError
-              );
-
-              return false;
-            }
-
-            return true;
-          }
-          /* Batas CALLBACK setTimeout() Restore Teks Save - Preset Tersimpan */,
-
-          1500
-        );
-
-      } catch (
-        timeoutError
-      ) {
-
-        logWarn(
-          "Penjadwalan pemulihan teks setelah Preset tersimpan gagal:",
-          timeoutError
-        );
-
-        return false;
-      }
-
-      return true;
-    }
+  return saveBerhasil;
+}
     /* Batas CALLBACK Klik Preset Save */
 
   );
@@ -21699,689 +21994,943 @@ if (
     /* CALLBACK Klik Preset Load */
     () => {
 
-      const logWarn = (
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      console &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
         ...args
-      ) => {
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    !document ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk memuat Preset."
+    );
+
+    return false;
+  }
+
+  const presetList =
+    document.getElementById(
+      "preset-list"
+    );
+
+  const loadButton =
+    document.getElementById(
+      "preset-load"
+    );
+
+  if (
+    !presetList ||
+    !loadButton
+  ) {
+
+    logWarn(
+      "Elemen Muat Preset tidak lengkap."
+    );
+
+    return false;
+  }
+
+  const originalText =
+    typeof loadButton.textContent ===
+      "string"
+      ? loadButton.textContent
+      : "";
+
+  const name =
+    typeof presetList.value ===
+      "string"
+      ? presetList.value.trim()
+      : "";
+
+  const presetsAvailable =
+    typeof displayPresets !==
+      "undefined" &&
+    displayPresets &&
+    typeof displayPresets ===
+      "object" &&
+    !Array.isArray(
+      displayPresets
+    );
+
+  const presetOwnProperty =
+    Boolean(
+      presetsAvailable &&
+      name &&
+      typeof Object !==
+        "undefined" &&
+      Object.prototype &&
+      typeof Object.prototype.hasOwnProperty ===
+        "function" &&
+      Object.prototype.hasOwnProperty.call(
+        displayPresets,
+        name
+      )
+    );
+
+  const presetCandidate =
+    presetOwnProperty
+      ? displayPresets[
+          name
+        ]
+      : null;
+
+  const selectedPreset =
+    presetCandidate &&
+    typeof presetCandidate ===
+      "object" &&
+    !Array.isArray(
+      presetCandidate
+    )
+      ? presetCandidate
+      : null;
+
+  if (
+    !name ||
+    !selectedPreset
+  ) {
+
+    try {
+
+      loadButton.textContent =
+        "⚠️ Pilih Preset";
+
+    } catch (
+      buttonError
+    ) {
+
+      logWarn(
+        "Pesan Pilih Preset gagal ditampilkan:",
+        buttonError
+      );
+
+      return false;
+    }
+
+    if (
+      typeof setTimeout !==
+        "function"
+    ) {
+
+      logWarn(
+        "setTimeout() tidak tersedia untuk mengembalikan teks tombol Muat Preset."
+      );
+
+      return false;
+    }
+
+    try {
+
+      setTimeout(
+
+        /* CALLBACK setTimeout() Restore Teks Load - Pilih Preset */
+        () => {
+
+          const logWarn = (
+            ...args
+          ) => {
+
+            if (
+              typeof console !==
+                "undefined" &&
+              console &&
+              typeof console.warn ===
+                "function"
+            ) {
+
+              console.warn(
+                ...args
+              );
+            }
+          };
+
+          if (
+            !loadButton
+          ) {
+
+            logWarn(
+              "Tombol Muat Preset tidak tersedia untuk mengembalikan teks."
+            );
+
+            return false;
+          }
+
+          const restoreText =
+            typeof originalText ===
+              "string"
+              ? originalText
+              : "";
+
+          try {
+
+            loadButton.textContent =
+              restoreText;
+
+          } catch (
+            restoreError
+          ) {
+
+            logWarn(
+              "Teks tombol Muat Preset gagal dikembalikan setelah Preset belum dipilih:",
+              restoreError
+            );
+
+            return false;
+          }
+
+          return true;
+        }
+        /* Batas CALLBACK setTimeout() Restore Teks Load - Pilih Preset */,
+
+        1500
+      );
+
+    } catch (
+      timeoutError
+    ) {
+
+      logWarn(
+        "Penjadwalan pemulihan teks tombol Muat Preset gagal:",
+        timeoutError
+      );
+
+      return false;
+    }
+
+    return false;
+  }
+
+  const rawReadingMode =
+    Number(
+      selectedPreset.readingMode
+    );
+
+  const rawZoomLevel =
+    Number(
+      selectedPreset.zoomLevel
+    );
+
+  const rawBrightnessLevel =
+    Number(
+      selectedPreset.brightnessLevel
+    );
+
+  const rawContrastLevel =
+    Number(
+      selectedPreset.contrastLevel
+    );
+
+  const nextReadingMode =
+    Number.isInteger(
+      rawReadingMode
+    ) &&
+    rawReadingMode >= 0 &&
+    rawReadingMode <= 2
+      ? rawReadingMode
+      : 0;
+
+  const nextZoomLevel =
+    Number.isFinite(
+      rawZoomLevel
+    ) &&
+    rawZoomLevel >= 0.6 &&
+    rawZoomLevel <= 2
+      ? rawZoomLevel
+      : 1;
+
+  const nextBrightnessLevel =
+    Number.isFinite(
+      rawBrightnessLevel
+    ) &&
+    rawBrightnessLevel >= 50 &&
+    rawBrightnessLevel <= 130
+      ? rawBrightnessLevel
+      : 100;
+
+  const nextContrastLevel =
+    Number.isFinite(
+      rawContrastLevel
+    ) &&
+    rawContrastLevel >= 70 &&
+    rawContrastLevel <= 150
+      ? rawContrastLevel
+      : 100;
+
+  if (
+    typeof localStorage ===
+      "undefined" ||
+    !localStorage ||
+    typeof localStorage.setItem !==
+      "function"
+  ) {
+
+    logWarn(
+      "localStorage tidak tersedia untuk memuat Preset."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof readingModeKey !==
+      "string" ||
+    !readingModeKey ||
+    typeof zoomKey !==
+      "string" ||
+    !zoomKey ||
+    typeof brightnessKey !==
+      "string" ||
+    !brightnessKey ||
+    typeof contrastKey !==
+      "string" ||
+    !contrastKey ||
+    typeof activePresetKey !==
+      "string" ||
+    !activePresetKey
+  ) {
+
+    logWarn(
+      "Salah satu key pengaturan Preset tidak tersedia atau tidak valid."
+    );
+
+    return false;
+  }
+
+  try {
+
+    localStorage.setItem(
+      readingModeKey,
+      String(
+        nextReadingMode
+      )
+    );
+
+    localStorage.setItem(
+      zoomKey,
+      String(
+        nextZoomLevel
+      )
+    );
+
+    localStorage.setItem(
+      brightnessKey,
+      String(
+        nextBrightnessLevel
+      )
+    );
+
+    localStorage.setItem(
+      contrastKey,
+      String(
+        nextContrastLevel
+      )
+    );
+
+    localStorage.setItem(
+      activePresetKey,
+      name
+    );
+
+  } catch (
+    storageError
+  ) {
+
+    logWarn(
+      "Preset gagal diterapkan ke localStorage:",
+      storageError
+    );
+
+    return false;
+  }
+
+  try {
+
+    readingMode =
+      nextReadingMode;
+
+    zoomLevel =
+      nextZoomLevel;
+
+    brightnessLevel =
+      nextBrightnessLevel;
+
+    contrastLevel =
+      nextContrastLevel;
+
+  } catch (
+    stateError
+  ) {
+
+    logWarn(
+      "State pengaturan Reader gagal diperbarui dari Preset:",
+      stateError
+    );
+
+    return false;
+  }
+
+  let loadBerhasil =
+    true;
+
+  if (
+    typeof applySavedReadingMode ===
+      "function"
+  ) {
+
+    try {
+
+      const readingModeResult =
+        applySavedReadingMode();
+
+      if (
+        readingModeResult ===
+          false
+      ) {
+
+        logWarn(
+          "applySavedReadingMode() mengembalikan false."
+        );
+
+        loadBerhasil =
+          false;
+      }
+
+    } catch (
+      readingModeError
+    ) {
+
+      logWarn(
+        "Reading Mode dari Preset gagal diterapkan:",
+        readingModeError
+      );
+
+      loadBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "applySavedReadingMode() tidak tersedia."
+    );
+
+    loadBerhasil =
+      false;
+  }
+
+  if (
+    typeof applyZoom ===
+      "function"
+  ) {
+
+    try {
+
+      const zoomResult =
+        applyZoom();
+
+      if (
+        zoomResult ===
+          false
+      ) {
+
+        logWarn(
+          "applyZoom() mengembalikan false."
+        );
+
+        loadBerhasil =
+          false;
+      }
+
+    } catch (
+      zoomError
+    ) {
+
+      logWarn(
+        "Zoom dari Preset gagal diterapkan:",
+        zoomError
+      );
+
+      loadBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "applyZoom() tidak tersedia."
+    );
+
+    loadBerhasil =
+      false;
+  }
+
+  if (
+    typeof applySavedBrightness ===
+      "function"
+  ) {
+
+    try {
+
+      const brightnessResult =
+        applySavedBrightness();
+
+      if (
+        brightnessResult ===
+          false
+      ) {
+
+        logWarn(
+          "applySavedBrightness() mengembalikan false."
+        );
+
+        loadBerhasil =
+          false;
+      }
+
+    } catch (
+      brightnessError
+    ) {
+
+      logWarn(
+        "Brightness dari Preset gagal diterapkan:",
+        brightnessError
+      );
+
+      loadBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "applySavedBrightness() tidak tersedia."
+    );
+
+    loadBerhasil =
+      false;
+  }
+
+  if (
+    typeof applySavedContrast ===
+      "function"
+  ) {
+
+    try {
+
+      const contrastResult =
+        applySavedContrast();
+
+      if (
+        contrastResult ===
+          false
+      ) {
+
+        logWarn(
+          "applySavedContrast() mengembalikan false."
+        );
+
+        loadBerhasil =
+          false;
+      }
+
+    } catch (
+      contrastError
+    ) {
+
+      logWarn(
+        "Contrast dari Preset gagal diterapkan:",
+        contrastError
+      );
+
+      loadBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "applySavedContrast() tidak tersedia."
+    );
+
+    loadBerhasil =
+      false;
+  }
+
+  if (
+    typeof schedulePresetCloudSave ===
+      "function"
+  ) {
+
+    try {
+
+      const presetCloudResult =
+        schedulePresetCloudSave();
+
+      if (
+        presetCloudResult ===
+          false
+      ) {
+
+        logWarn(
+          "schedulePresetCloudSave() mengembalikan false setelah Preset dipakai."
+        );
+
+        loadBerhasil =
+          false;
+      }
+
+    } catch (
+      presetCloudError
+    ) {
+
+      logWarn(
+        "Penjadwalan sinkronisasi Preset ke cloud gagal:",
+        presetCloudError
+      );
+
+      loadBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "schedulePresetCloudSave() tidak tersedia setelah Preset dipakai."
+    );
+
+    loadBerhasil =
+      false;
+  }
+
+  if (
+    typeof scheduleReaderSettingsCloudSave ===
+      "function"
+  ) {
+
+    try {
+
+      const settingsCloudResult =
+        scheduleReaderSettingsCloudSave();
+
+      if (
+        settingsCloudResult ===
+          false
+      ) {
+
+        logWarn(
+          "scheduleReaderSettingsCloudSave() mengembalikan false setelah Preset dipakai."
+        );
+
+        loadBerhasil =
+          false;
+      }
+
+    } catch (
+      settingsCloudError
+    ) {
+
+      logWarn(
+        "Penjadwalan sinkronisasi pengaturan Reader ke cloud gagal:",
+        settingsCloudError
+      );
+
+      loadBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "scheduleReaderSettingsCloudSave() tidak tersedia setelah Preset dipakai."
+    );
+
+    loadBerhasil =
+      false;
+  }
+
+  if (
+    typeof refreshPresetList ===
+      "function"
+  ) {
+
+    try {
+
+      const refreshResult =
+        refreshPresetList();
+
+      if (
+        refreshResult ===
+          false
+      ) {
+
+        logWarn(
+          "refreshPresetList() mengembalikan false setelah Preset dipakai."
+        );
+
+        loadBerhasil =
+          false;
+      }
+
+    } catch (
+      refreshError
+    ) {
+
+      logWarn(
+        "Daftar Preset gagal diperbarui:",
+        refreshError
+      );
+
+      loadBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "refreshPresetList() tidak tersedia setelah Preset dipakai."
+    );
+
+    loadBerhasil =
+      false;
+  }
+
+  try {
+
+    presetList.value =
+      name;
+
+  } catch (
+    presetListError
+  ) {
+
+    logWarn(
+      "Pilihan Preset aktif gagal diperbarui:",
+      presetListError
+    );
+
+    return false;
+  }
+
+  if (
+    typeof updatePresetSummary ===
+      "function"
+  ) {
+
+    try {
+
+      const summaryResult =
+        updatePresetSummary();
+
+      if (
+        summaryResult ===
+          false
+      ) {
+
+        logWarn(
+          "updatePresetSummary() mengembalikan false setelah Preset dipakai."
+        );
+
+        loadBerhasil =
+          false;
+      }
+
+    } catch (
+      summaryError
+    ) {
+
+      logWarn(
+        "Ringkasan Preset gagal diperbarui:",
+        summaryError
+      );
+
+      loadBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "updatePresetSummary() tidak tersedia setelah Preset dipakai."
+    );
+
+    loadBerhasil =
+      false;
+  }
+
+  try {
+
+    loadButton.textContent =
+      "✅ Preset Dipakai";
+
+  } catch (
+    successTextError
+  ) {
+
+    logWarn(
+      "Status Preset Dipakai gagal ditampilkan:",
+      successTextError
+    );
+
+    loadBerhasil =
+      false;
+  }
+
+  if (
+    typeof closePresetPanelSoon ===
+      "function"
+  ) {
+
+    try {
+
+      const closePanelResult =
+        closePresetPanelSoon();
+
+      if (
+        closePanelResult ===
+          false
+      ) {
+
+        logWarn(
+          "closePresetPanelSoon() mengembalikan false setelah Preset dipakai."
+        );
+
+        loadBerhasil =
+          false;
+      }
+
+    } catch (
+      closePanelError
+    ) {
+
+      logWarn(
+        "Penjadwalan penutupan panel Preset gagal:",
+        closePanelError
+      );
+
+      loadBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "closePresetPanelSoon() tidak tersedia setelah Preset dipakai."
+    );
+
+    loadBerhasil =
+      false;
+  }
+
+  if (
+    typeof setTimeout !==
+      "function"
+  ) {
+
+    logWarn(
+      "setTimeout() tidak tersedia untuk mengembalikan teks tombol Muat Preset."
+    );
+
+    return false;
+  }
+
+  try {
+
+    setTimeout(
+
+      /* CALLBACK setTimeout() Restore Teks Load - Preset Dipakai */
+      () => {
+
+        const logWarn = (
+          ...args
+        ) => {
+
+          if (
+            typeof console !==
+              "undefined" &&
+            console &&
+            typeof console.warn ===
+              "function"
+          ) {
+
+            console.warn(
+              ...args
+            );
+          }
+        };
 
         if (
-          typeof console !==
-            "undefined" &&
-          console &&
-          typeof console.warn ===
-            "function"
+          !loadButton
         ) {
 
-          console.warn(
-            ...args
+          logWarn(
+            "Tombol Muat Preset tidak tersedia untuk mengembalikan teks."
           );
+
+          return false;
         }
-      };
 
-      if (
-        typeof document ===
-          "undefined" ||
-        !document ||
-        typeof document.getElementById !==
-          "function"
-      ) {
-
-        logWarn(
-          "Document tidak tersedia untuk memuat Preset."
-        );
-
-        return false;
-      }
-
-      const presetList =
-        document.getElementById(
-          "preset-list"
-        );
-
-      const loadButton =
-        document.getElementById(
-          "preset-load"
-        );
-
-      if (
-        !presetList ||
-        !loadButton
-      ) {
-
-        logWarn(
-          "Elemen Muat Preset tidak lengkap."
-        );
-
-        return false;
-      }
-
-      const originalText =
-        typeof loadButton.textContent ===
-          "string"
-          ? loadButton.textContent
-          : "";
-
-      const name =
-        typeof presetList.value ===
-          "string"
-          ? presetList.value.trim()
-          : "";
-
-      const presetsAvailable =
-        typeof displayPresets !==
-          "undefined" &&
-        displayPresets &&
-        typeof displayPresets ===
-          "object" &&
-        !Array.isArray(
-          displayPresets
-        );
-
-      const presetOwnProperty =
-        Boolean(
-          presetsAvailable &&
-          name &&
-          typeof Object !==
-            "undefined" &&
-          Object.prototype &&
-          typeof Object.prototype.hasOwnProperty ===
-            "function" &&
-          Object.prototype.hasOwnProperty.call(
-            displayPresets,
-            name
-          )
-        );
-
-      const presetCandidate =
-        presetOwnProperty
-          ? displayPresets[
-              name
-            ]
-          : null;
-
-      const selectedPreset =
-        presetCandidate &&
-        typeof presetCandidate ===
-          "object" &&
-        !Array.isArray(
-          presetCandidate
-        )
-          ? presetCandidate
-          : null;
-
-      if (
-        !name ||
-        !selectedPreset
-      ) {
+        const restoreText =
+          typeof originalText ===
+            "string"
+            ? originalText
+            : "";
 
         try {
 
           loadButton.textContent =
-            "⚠️ Pilih Preset";
+            restoreText;
 
         } catch (
-          buttonError
+          restoreError
         ) {
 
           logWarn(
-            "Pesan Pilih Preset gagal ditampilkan:",
-            buttonError
+            "Teks tombol Muat Preset gagal dikembalikan setelah Preset dipakai:",
+            restoreError
           );
 
           return false;
         }
 
-        if (
-          typeof setTimeout !==
-            "function"
-        ) {
-
-          logWarn(
-            "setTimeout() tidak tersedia untuk mengembalikan teks tombol Muat Preset."
-          );
-
-          return false;
-        }
-
-        try {
-
-          setTimeout(
-
-            /* CALLBACK setTimeout() Restore Teks Load - Pilih Preset */
-            () => {
-
-              const logWarn = (
-                ...args
-              ) => {
-
-                if (
-                  typeof console !==
-                    "undefined" &&
-                  console &&
-                  typeof console.warn ===
-                    "function"
-                ) {
-
-                  console.warn(
-                    ...args
-                  );
-                }
-              };
-
-              if (
-                !loadButton
-              ) {
-
-                logWarn(
-                  "Tombol Muat Preset tidak tersedia untuk mengembalikan teks."
-                );
-
-                return false;
-              }
-
-              const restoreText =
-                typeof originalText ===
-                  "string"
-                  ? originalText
-                  : "";
-
-              try {
-
-                loadButton.textContent =
-                  restoreText;
-
-              } catch (
-                restoreError
-              ) {
-
-                logWarn(
-                  "Teks tombol Muat Preset gagal dikembalikan setelah Preset belum dipilih:",
-                  restoreError
-                );
-
-                return false;
-              }
-
-              return true;
-            }
-            /* Batas CALLBACK setTimeout() Restore Teks Load - Pilih Preset */,
-
-            1500
-          );
-
-        } catch (
-          timeoutError
-        ) {
-
-          logWarn(
-            "Penjadwalan pemulihan teks tombol Muat Preset gagal:",
-            timeoutError
-          );
-
-          return false;
-        }
-
-        return false;
+        return true;
       }
+      /* Batas CALLBACK setTimeout() Restore Teks Load - Preset Dipakai */,
 
-      const rawReadingMode =
-        Number(
-          selectedPreset.readingMode
-        );
+      1500
+    );
 
-      const rawZoomLevel =
-        Number(
-          selectedPreset.zoomLevel
-        );
+  } catch (
+    timeoutError
+  ) {
 
-      const rawBrightnessLevel =
-        Number(
-          selectedPreset.brightnessLevel
-        );
+    logWarn(
+      "Penjadwalan pemulihan teks setelah Preset dipakai gagal:",
+      timeoutError
+    );
 
-      const rawContrastLevel =
-        Number(
-          selectedPreset.contrastLevel
-        );
+    return false;
+  }
 
-      const nextReadingMode =
-        Number.isInteger(
-          rawReadingMode
-        ) &&
-        rawReadingMode >= 0 &&
-        rawReadingMode <= 2
-          ? rawReadingMode
-          : 0;
-
-      const nextZoomLevel =
-        Number.isFinite(
-          rawZoomLevel
-        ) &&
-        rawZoomLevel >= 0.6 &&
-        rawZoomLevel <= 2
-          ? rawZoomLevel
-          : 1;
-
-      const nextBrightnessLevel =
-        Number.isFinite(
-          rawBrightnessLevel
-        ) &&
-        rawBrightnessLevel >= 50 &&
-        rawBrightnessLevel <= 130
-          ? rawBrightnessLevel
-          : 100;
-
-      const nextContrastLevel =
-        Number.isFinite(
-          rawContrastLevel
-        ) &&
-        rawContrastLevel >= 70 &&
-        rawContrastLevel <= 150
-          ? rawContrastLevel
-          : 100;
-
-      if (
-        typeof localStorage ===
-          "undefined" ||
-        !localStorage ||
-        typeof localStorage.setItem !==
-          "function"
-      ) {
-
-        logWarn(
-          "localStorage tidak tersedia untuk memuat Preset."
-        );
-
-        return false;
-      }
-
-      if (
-        typeof readingModeKey !==
-          "string" ||
-        !readingModeKey ||
-        typeof zoomKey !==
-          "string" ||
-        !zoomKey ||
-        typeof brightnessKey !==
-          "string" ||
-        !brightnessKey ||
-        typeof contrastKey !==
-          "string" ||
-        !contrastKey ||
-        typeof activePresetKey !==
-          "string" ||
-        !activePresetKey
-      ) {
-
-        logWarn(
-          "Salah satu key pengaturan Preset tidak tersedia atau tidak valid."
-        );
-
-        return false;
-      }
-
-      try {
-
-        localStorage.setItem(
-          readingModeKey,
-          String(
-            nextReadingMode
-          )
-        );
-
-        localStorage.setItem(
-          zoomKey,
-          String(
-            nextZoomLevel
-          )
-        );
-
-        localStorage.setItem(
-          brightnessKey,
-          String(
-            nextBrightnessLevel
-          )
-        );
-
-        localStorage.setItem(
-          contrastKey,
-          String(
-            nextContrastLevel
-          )
-        );
-
-        localStorage.setItem(
-          activePresetKey,
-          name
-        );
-
-      } catch (
-        storageError
-      ) {
-
-        logWarn(
-          "Preset gagal diterapkan ke localStorage:",
-          storageError
-        );
-
-        return false;
-      }
-
-      readingMode =
-        nextReadingMode;
-
-      zoomLevel =
-        nextZoomLevel;
-
-      brightnessLevel =
-        nextBrightnessLevel;
-
-      contrastLevel =
-        nextContrastLevel;
-
-      if (
-        typeof applySavedReadingMode ===
-          "function"
-      ) {
-
-        try {
-
-          applySavedReadingMode();
-
-        } catch (
-          readingModeError
-        ) {
-
-          logWarn(
-            "Reading Mode dari Preset gagal diterapkan:",
-            readingModeError
-          );
-        }
-      }
-
-      if (
-        typeof applyZoom ===
-          "function"
-      ) {
-
-        try {
-
-          applyZoom();
-
-        } catch (
-          zoomError
-        ) {
-
-          logWarn(
-            "Zoom dari Preset gagal diterapkan:",
-            zoomError
-          );
-        }
-      }
-
-      if (
-        typeof applySavedBrightness ===
-          "function"
-      ) {
-
-        try {
-
-          applySavedBrightness();
-
-        } catch (
-          brightnessError
-        ) {
-
-          logWarn(
-            "Brightness dari Preset gagal diterapkan:",
-            brightnessError
-          );
-        }
-      }
-
-      if (
-        typeof applySavedContrast ===
-          "function"
-      ) {
-
-        try {
-
-          applySavedContrast();
-
-        } catch (
-          contrastError
-        ) {
-
-          logWarn(
-            "Contrast dari Preset gagal diterapkan:",
-            contrastError
-          );
-        }
-      }
-
-      if (
-        typeof schedulePresetCloudSave ===
-          "function"
-      ) {
-
-        try {
-
-          schedulePresetCloudSave();
-
-        } catch (
-          presetCloudError
-        ) {
-
-          logWarn(
-            "Penjadwalan sinkronisasi Preset ke cloud gagal:",
-            presetCloudError
-          );
-        }
-      }
-
-      if (
-        typeof scheduleReaderSettingsCloudSave ===
-          "function"
-      ) {
-
-        try {
-
-          scheduleReaderSettingsCloudSave();
-
-        } catch (
-          settingsCloudError
-        ) {
-
-          logWarn(
-            "Penjadwalan sinkronisasi pengaturan Reader ke cloud gagal:",
-            settingsCloudError
-          );
-        }
-      }
-
-      if (
-        typeof refreshPresetList ===
-          "function"
-      ) {
-
-        try {
-
-          refreshPresetList();
-
-        } catch (
-          refreshError
-        ) {
-
-          logWarn(
-            "Daftar Preset gagal diperbarui:",
-            refreshError
-          );
-        }
-      }
-
-      try {
-
-        presetList.value =
-          name;
-
-      } catch (
-        presetListError
-      ) {
-
-        logWarn(
-          "Pilihan Preset aktif gagal diperbarui:",
-          presetListError
-        );
-
-        return false;
-      }
-
-      if (
-        typeof updatePresetSummary ===
-          "function"
-      ) {
-
-        try {
-
-          updatePresetSummary();
-
-        } catch (
-          summaryError
-        ) {
-
-          logWarn(
-            "Ringkasan Preset gagal diperbarui:",
-            summaryError
-          );
-        }
-      }
-
-      try {
-
-        loadButton.textContent =
-          "✅ Preset Dipakai";
-
-      } catch (
-        successTextError
-      ) {
-
-        logWarn(
-          "Status Preset Dipakai gagal ditampilkan:",
-          successTextError
-        );
-      }
-
-      if (
-        typeof closePresetPanelSoon ===
-          "function"
-      ) {
-
-        try {
-
-          closePresetPanelSoon();
-
-        } catch (
-          closePanelError
-        ) {
-
-          logWarn(
-            "Penjadwalan penutupan panel Preset gagal:",
-            closePanelError
-          );
-        }
-      }
-
-      if (
-        typeof setTimeout !==
-          "function"
-      ) {
-
-        logWarn(
-          "setTimeout() tidak tersedia untuk mengembalikan teks tombol Muat Preset."
-        );
-
-        return false;
-      }
-
-      try {
-
-        setTimeout(
-
-          /* CALLBACK setTimeout() Restore Teks Load - Preset Dipakai */
-          () => {
-
-            const logWarn = (
-              ...args
-            ) => {
-
-              if (
-                typeof console !==
-                  "undefined" &&
-                console &&
-                typeof console.warn ===
-                  "function"
-              ) {
-
-                console.warn(
-                  ...args
-                );
-              }
-            };
-
-            if (
-              !loadButton
-            ) {
-
-              logWarn(
-                "Tombol Muat Preset tidak tersedia untuk mengembalikan teks."
-              );
-
-              return false;
-            }
-
-            const restoreText =
-              typeof originalText ===
-                "string"
-                ? originalText
-                : "";
-
-            try {
-
-              loadButton.textContent =
-                restoreText;
-
-            } catch (
-              restoreError
-            ) {
-
-              logWarn(
-                "Teks tombol Muat Preset gagal dikembalikan setelah Preset dipakai:",
-                restoreError
-              );
-
-              return false;
-            }
-
-            return true;
-          }
-          /* Batas CALLBACK setTimeout() Restore Teks Load - Preset Dipakai */,
-
-          1500
-        );
-
-      } catch (
-        timeoutError
-      ) {
-
-        logWarn(
-          "Penjadwalan pemulihan teks setelah Preset dipakai gagal:",
-          timeoutError
-        );
-
-        return false;
-      }
-
-      return true;
-    }
+  return loadBerhasil;
+}
     /* Batas CALLBACK Klik Preset Load */
 
   );
@@ -23140,6 +23689,9 @@ async () => {
     return false;
   }
 
+  let renameBerhasil =
+    true;
+
   if (
     typeof savePresetsToCloud ===
       "function"
@@ -23147,7 +23699,21 @@ async () => {
 
     try {
 
-      await savePresetsToCloud();
+      const cloudResult =
+        await savePresetsToCloud();
+
+      if (
+        cloudResult ===
+          false
+      ) {
+
+        logWarn(
+          "savePresetsToCloud() mengembalikan false setelah Rename Preset."
+        );
+
+        renameBerhasil =
+          false;
+      }
 
     } catch (
       cloudError
@@ -23157,6 +23723,9 @@ async () => {
         "Rename Preset sudah tersimpan lokal, tetapi sinkronisasi ke cloud gagal:",
         cloudError
       );
+
+      renameBerhasil =
+        false;
     }
 
   } else {
@@ -23164,6 +23733,9 @@ async () => {
     logWarn(
       "savePresetsToCloud() tidak tersedia."
     );
+
+    renameBerhasil =
+      false;
   }
 
   if (
@@ -23173,7 +23745,21 @@ async () => {
 
     try {
 
-      refreshPresetList();
+      const refreshResult =
+        refreshPresetList();
+
+      if (
+        refreshResult ===
+          false
+      ) {
+
+        logWarn(
+          "refreshPresetList() mengembalikan false setelah Rename Preset."
+        );
+
+        renameBerhasil =
+          false;
+      }
 
     } catch (
       refreshError
@@ -23183,7 +23769,19 @@ async () => {
         "Daftar Preset gagal diperbarui setelah rename:",
         refreshError
       );
+
+      renameBerhasil =
+        false;
     }
+
+  } else {
+
+    logWarn(
+      "refreshPresetList() tidak tersedia setelah Rename Preset."
+    );
+
+    renameBerhasil =
+      false;
   }
 
   try {
@@ -23219,6 +23817,9 @@ async () => {
       "Status Preset Direname gagal ditampilkan:",
       successTextError
     );
+
+    renameBerhasil =
+      false;
   }
 
   if (
@@ -23228,7 +23829,21 @@ async () => {
 
     try {
 
-      closePresetPanelSoon();
+      const closePanelResult =
+        closePresetPanelSoon();
+
+      if (
+        closePanelResult ===
+          false
+      ) {
+
+        logWarn(
+          "closePresetPanelSoon() mengembalikan false setelah Rename Preset."
+        );
+
+        renameBerhasil =
+          false;
+      }
 
     } catch (
       closePanelError
@@ -23238,7 +23853,19 @@ async () => {
         "Penjadwalan penutupan panel Preset gagal:",
         closePanelError
       );
+
+      renameBerhasil =
+        false;
     }
+
+  } else {
+
+    logWarn(
+      "closePresetPanelSoon() tidak tersedia setelah Rename Preset."
+    );
+
+    renameBerhasil =
+      false;
   }
 
   if (
@@ -23331,7 +23958,7 @@ async () => {
     return false;
   }
 
-  return true;
+  return renameBerhasil;
 }
 /* Batas CALLBACK Klik Preset Rename */
 
@@ -23937,6 +24564,9 @@ if (
     return false;
   }
 
+  let duplicateBerhasil =
+    true;
+
   if (
     typeof schedulePresetCloudSave ===
       "function"
@@ -23944,7 +24574,21 @@ if (
 
     try {
 
-      schedulePresetCloudSave();
+      const cloudScheduleResult =
+        schedulePresetCloudSave();
+
+      if (
+        cloudScheduleResult ===
+          false
+      ) {
+
+        logWarn(
+          "schedulePresetCloudSave() mengembalikan false setelah Duplicate Preset."
+        );
+
+        duplicateBerhasil =
+          false;
+      }
 
     } catch (
       cloudScheduleError
@@ -23954,7 +24598,19 @@ if (
         "Penjadwalan sinkronisasi Preset hasil duplikat ke cloud gagal:",
         cloudScheduleError
       );
+
+      duplicateBerhasil =
+        false;
     }
+
+  } else {
+
+    logWarn(
+      "schedulePresetCloudSave() tidak tersedia setelah Duplicate Preset."
+    );
+
+    duplicateBerhasil =
+      false;
   }
 
   if (
@@ -23964,7 +24620,21 @@ if (
 
     try {
 
-      refreshPresetList();
+      const refreshResult =
+        refreshPresetList();
+
+      if (
+        refreshResult ===
+          false
+      ) {
+
+        logWarn(
+          "refreshPresetList() mengembalikan false setelah Duplicate Preset."
+        );
+
+        duplicateBerhasil =
+          false;
+      }
 
     } catch (
       refreshError
@@ -23974,7 +24644,19 @@ if (
         "Daftar Preset gagal diperbarui setelah duplikasi:",
         refreshError
       );
+
+      duplicateBerhasil =
+        false;
     }
+
+  } else {
+
+    logWarn(
+      "refreshPresetList() tidak tersedia setelah Duplicate Preset."
+    );
+
+    duplicateBerhasil =
+      false;
   }
 
   try {
@@ -24010,6 +24692,9 @@ if (
       "Status Preset Diduplikat gagal ditampilkan:",
       successTextError
     );
+
+    duplicateBerhasil =
+      false;
   }
 
   if (
@@ -24019,7 +24704,21 @@ if (
 
     try {
 
-      closePresetPanelSoon();
+      const closePanelResult =
+        closePresetPanelSoon();
+
+      if (
+        closePanelResult ===
+          false
+      ) {
+
+        logWarn(
+          "closePresetPanelSoon() mengembalikan false setelah Duplicate Preset."
+        );
+
+        duplicateBerhasil =
+          false;
+      }
 
     } catch (
       closePanelError
@@ -24029,7 +24728,19 @@ if (
         "Penjadwalan penutupan panel Preset gagal:",
         closePanelError
       );
+
+      duplicateBerhasil =
+        false;
     }
+
+  } else {
+
+    logWarn(
+      "closePresetPanelSoon() tidak tersedia setelah Duplicate Preset."
+    );
+
+    duplicateBerhasil =
+      false;
   }
 
   if (
@@ -24122,7 +24833,7 @@ if (
     return false;
   }
 
-  return true;
+  return duplicateBerhasil;
 }
 /* Batas CALLBACK Klik Preset Duplicate */
 
@@ -24169,481 +24880,591 @@ if (
     /* CALLBACK Klik Preset Default */
     () => {
 
-      const logWarn = (
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      console &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
         ...args
-      ) => {
+      );
+    }
+  };
+
+  if (
+    typeof document ===
+      "undefined" ||
+    !document ||
+    typeof document.getElementById !==
+      "function"
+  ) {
+
+    logWarn(
+      "Document tidak tersedia untuk menetapkan Default Preset."
+    );
+
+    return false;
+  }
+
+  const presetList =
+    document.getElementById(
+      "preset-list"
+    );
+
+  const defaultButton =
+    document.getElementById(
+      "preset-default"
+    );
+
+  if (
+    !presetList ||
+    !defaultButton
+  ) {
+
+    logWarn(
+      "Elemen Default Preset tidak lengkap."
+    );
+
+    return false;
+  }
+
+  const originalText =
+    typeof defaultButton.textContent ===
+      "string"
+      ? defaultButton.textContent
+      : "";
+
+  const name =
+    typeof presetList.value ===
+      "string"
+      ? presetList.value.trim()
+      : "";
+
+  const presetsAvailable =
+    typeof displayPresets !==
+      "undefined" &&
+    displayPresets &&
+    typeof displayPresets ===
+      "object" &&
+    !Array.isArray(
+      displayPresets
+    );
+
+  const presetOwnProperty =
+    Boolean(
+      presetsAvailable &&
+      name &&
+      typeof Object !==
+        "undefined" &&
+      Object.prototype &&
+      typeof Object.prototype.hasOwnProperty ===
+        "function" &&
+      Object.prototype.hasOwnProperty.call(
+        displayPresets,
+        name
+      )
+    );
+
+  const selectedPreset =
+    presetOwnProperty
+      ? displayPresets[
+          name
+        ]
+      : null;
+
+  const presetExists =
+    Boolean(
+      selectedPreset &&
+      typeof selectedPreset ===
+        "object" &&
+      !Array.isArray(
+        selectedPreset
+      )
+    );
+
+  if (
+    !presetExists
+  ) {
+
+    try {
+
+      defaultButton.textContent =
+        "⚠️ Pilih Preset";
+
+    } catch (
+      buttonError
+    ) {
+
+      logWarn(
+        "Pesan Pilih Preset gagal ditampilkan:",
+        buttonError
+      );
+
+      return false;
+    }
+
+    if (
+      typeof setTimeout !==
+        "function"
+    ) {
+
+      logWarn(
+        "setTimeout() tidak tersedia untuk mengembalikan teks tombol Default Preset."
+      );
+
+      return false;
+    }
+
+    try {
+
+      setTimeout(
+
+        /* CALLBACK setTimeout() Restore Teks Default - Pilih Preset */
+        () => {
+
+          const logWarn = (
+            ...args
+          ) => {
+
+            if (
+              typeof console !==
+                "undefined" &&
+              console &&
+              typeof console.warn ===
+                "function"
+            ) {
+
+              console.warn(
+                ...args
+              );
+            }
+          };
+
+          if (
+            !defaultButton
+          ) {
+
+            logWarn(
+              "Tombol Default Preset tidak tersedia untuk mengembalikan teks."
+            );
+
+            return false;
+          }
+
+          const restoreText =
+            typeof originalText ===
+              "string"
+              ? originalText
+              : "";
+
+          try {
+
+            defaultButton.textContent =
+              restoreText;
+
+          } catch (
+            restoreError
+          ) {
+
+            logWarn(
+              "Teks tombol Default Preset gagal dikembalikan setelah Preset belum dipilih:",
+              restoreError
+            );
+
+            return false;
+          }
+
+          return true;
+        }
+        /* Batas CALLBACK setTimeout() Restore Teks Default - Pilih Preset */,
+
+        1500
+      );
+
+    } catch (
+      timeoutError
+    ) {
+
+      logWarn(
+        "Penjadwalan pemulihan teks Default Preset gagal:",
+        timeoutError
+      );
+
+      return false;
+    }
+
+    return false;
+  }
+
+  if (
+    typeof localStorage ===
+      "undefined" ||
+    !localStorage ||
+    typeof localStorage.setItem !==
+      "function"
+  ) {
+
+    logWarn(
+      "localStorage tidak tersedia untuk menyimpan Default Preset."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof defaultPresetKey !==
+      "string" ||
+    !defaultPresetKey
+  ) {
+
+    logWarn(
+      "defaultPresetKey tidak tersedia atau tidak valid."
+    );
+
+    return false;
+  }
+
+  try {
+
+    localStorage.setItem(
+      defaultPresetKey,
+      name
+    );
+
+  } catch (
+    storageError
+  ) {
+
+    logWarn(
+      "Default Preset gagal disimpan ke localStorage:",
+      storageError
+    );
+
+    return false;
+  }
+
+  let defaultBerhasil =
+    true;
+
+  if (
+    typeof schedulePresetCloudSave ===
+      "function"
+  ) {
+
+    try {
+
+      const cloudScheduleResult =
+        schedulePresetCloudSave();
+
+      if (
+        cloudScheduleResult ===
+          false
+      ) {
+
+        logWarn(
+          "schedulePresetCloudSave() mengembalikan false setelah menetapkan Default Preset."
+        );
+
+        defaultBerhasil =
+          false;
+      }
+
+    } catch (
+      cloudScheduleError
+    ) {
+
+      logWarn(
+        "Penjadwalan sinkronisasi Default Preset ke cloud gagal:",
+        cloudScheduleError
+      );
+
+      defaultBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "schedulePresetCloudSave() tidak tersedia setelah menetapkan Default Preset."
+    );
+
+    defaultBerhasil =
+      false;
+  }
+
+  if (
+    typeof refreshPresetList ===
+      "function"
+  ) {
+
+    try {
+
+      const refreshResult =
+        refreshPresetList();
+
+      if (
+        refreshResult ===
+          false
+      ) {
+
+        logWarn(
+          "refreshPresetList() mengembalikan false setelah menetapkan Default Preset."
+        );
+
+        defaultBerhasil =
+          false;
+      }
+
+    } catch (
+      refreshError
+    ) {
+
+      logWarn(
+        "Daftar Preset gagal diperbarui setelah menetapkan Default:",
+        refreshError
+      );
+
+      defaultBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "refreshPresetList() tidak tersedia setelah menetapkan Default Preset."
+    );
+
+    defaultBerhasil =
+      false;
+  }
+
+  try {
+
+    presetList.value =
+      name;
+
+  } catch (
+    presetListError
+  ) {
+
+    logWarn(
+      "Pilihan Preset gagal dikembalikan setelah menetapkan Default:",
+      presetListError
+    );
+
+    return false;
+  }
+
+  if (
+    typeof updatePresetActionState ===
+      "function"
+  ) {
+
+    try {
+
+      const actionStateResult =
+        updatePresetActionState();
+
+      if (
+        actionStateResult ===
+          false
+      ) {
+
+        logWarn(
+          "updatePresetActionState() mengembalikan false setelah menetapkan Default Preset."
+        );
+
+        defaultBerhasil =
+          false;
+      }
+
+    } catch (
+      actionStateError
+    ) {
+
+      logWarn(
+        "Status aksi Preset gagal diperbarui:",
+        actionStateError
+      );
+
+      defaultBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "updatePresetActionState() tidak tersedia setelah menetapkan Default Preset."
+    );
+
+    defaultBerhasil =
+      false;
+  }
+
+  try {
+
+    defaultButton.textContent =
+      "✅ Default: " +
+      name;
+
+  } catch (
+    successTextError
+  ) {
+
+    logWarn(
+      "Status Default Preset gagal ditampilkan:",
+      successTextError
+    );
+
+    defaultBerhasil =
+      false;
+  }
+
+  if (
+    typeof closePresetPanelSoon ===
+      "function"
+  ) {
+
+    try {
+
+      const closePanelResult =
+        closePresetPanelSoon();
+
+      if (
+        closePanelResult ===
+          false
+      ) {
+
+        logWarn(
+          "closePresetPanelSoon() mengembalikan false setelah menetapkan Default Preset."
+        );
+
+        defaultBerhasil =
+          false;
+      }
+
+    } catch (
+      closePanelError
+    ) {
+
+      logWarn(
+        "Penjadwalan penutupan panel Preset gagal:",
+        closePanelError
+      );
+
+      defaultBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "closePresetPanelSoon() tidak tersedia setelah menetapkan Default Preset."
+    );
+
+    defaultBerhasil =
+      false;
+  }
+
+  if (
+    typeof setTimeout !==
+      "function"
+  ) {
+
+    logWarn(
+      "setTimeout() tidak tersedia untuk mengembalikan teks tombol Default Preset."
+    );
+
+    return false;
+  }
+
+  try {
+
+    setTimeout(
+
+      /* CALLBACK setTimeout() Restore Teks Default - Default Tersimpan */
+      () => {
+
+        const logWarn = (
+          ...args
+        ) => {
+
+          if (
+            typeof console !==
+              "undefined" &&
+            console &&
+            typeof console.warn ===
+              "function"
+          ) {
+
+            console.warn(
+              ...args
+            );
+          }
+        };
 
         if (
-          typeof console !==
-            "undefined" &&
-          console &&
-          typeof console.warn ===
-            "function"
+          !defaultButton
         ) {
 
-          console.warn(
-            ...args
+          logWarn(
+            "Tombol Default Preset tidak tersedia untuk mengembalikan teks."
           );
+
+          return false;
         }
-      };
 
-      if (
-        typeof document ===
-          "undefined" ||
-        !document ||
-        typeof document.getElementById !==
-          "function"
-      ) {
-
-        logWarn(
-          "Document tidak tersedia untuk menetapkan Default Preset."
-        );
-
-        return false;
-      }
-
-      const presetList =
-        document.getElementById(
-          "preset-list"
-        );
-
-      const defaultButton =
-        document.getElementById(
-          "preset-default"
-        );
-
-      if (
-        !presetList ||
-        !defaultButton
-      ) {
-
-        logWarn(
-          "Elemen Default Preset tidak lengkap."
-        );
-
-        return false;
-      }
-
-      const originalText =
-        typeof defaultButton.textContent ===
-          "string"
-          ? defaultButton.textContent
-          : "";
-
-      const name =
-        typeof presetList.value ===
-          "string"
-          ? presetList.value.trim()
-          : "";
-
-      const presetsAvailable =
-        typeof displayPresets !==
-          "undefined" &&
-        displayPresets &&
-        typeof displayPresets ===
-          "object" &&
-        !Array.isArray(
-          displayPresets
-        );
-
-      const presetOwnProperty =
-        Boolean(
-          presetsAvailable &&
-          name &&
-          typeof Object !==
-            "undefined" &&
-          Object.prototype &&
-          typeof Object.prototype.hasOwnProperty ===
-            "function" &&
-          Object.prototype.hasOwnProperty.call(
-            displayPresets,
-            name
-          )
-        );
-
-      const selectedPreset =
-        presetOwnProperty
-          ? displayPresets[
-              name
-            ]
-          : null;
-
-      const presetExists =
-        Boolean(
-          selectedPreset &&
-          typeof selectedPreset ===
-            "object" &&
-          !Array.isArray(
-            selectedPreset
-          )
-        );
-
-      if (
-        !presetExists
-      ) {
+        const restoreText =
+          typeof originalText ===
+            "string"
+            ? originalText
+            : "";
 
         try {
 
           defaultButton.textContent =
-            "⚠️ Pilih Preset";
+            restoreText;
 
         } catch (
-          buttonError
+          restoreError
         ) {
 
           logWarn(
-            "Pesan Pilih Preset gagal ditampilkan:",
-            buttonError
+            "Teks tombol Default Preset gagal dikembalikan setelah Default Preset tersimpan:",
+            restoreError
           );
 
           return false;
         }
 
-        if (
-          typeof setTimeout !==
-            "function"
-        ) {
-
-          logWarn(
-            "setTimeout() tidak tersedia untuk mengembalikan teks tombol Default Preset."
-          );
-
-          return false;
-        }
-
-        try {
-
-          setTimeout(
-
-            /* CALLBACK setTimeout() Restore Teks Default - Pilih Preset */
-            () => {
-
-              const logWarn = (
-                ...args
-              ) => {
-
-                if (
-                  typeof console !==
-                    "undefined" &&
-                  console &&
-                  typeof console.warn ===
-                    "function"
-                ) {
-
-                  console.warn(
-                    ...args
-                  );
-                }
-              };
-
-              if (
-                !defaultButton
-              ) {
-
-                logWarn(
-                  "Tombol Default Preset tidak tersedia untuk mengembalikan teks."
-                );
-
-                return false;
-              }
-
-              const restoreText =
-                typeof originalText ===
-                  "string"
-                  ? originalText
-                  : "";
-
-              try {
-
-                defaultButton.textContent =
-                  restoreText;
-
-              } catch (
-                restoreError
-              ) {
-
-                logWarn(
-                  "Teks tombol Default Preset gagal dikembalikan setelah Preset belum dipilih:",
-                  restoreError
-                );
-
-                return false;
-              }
-
-              return true;
-            }
-            /* Batas CALLBACK setTimeout() Restore Teks Default - Pilih Preset */,
-
-            1500
-          );
-
-        } catch (
-          timeoutError
-        ) {
-
-          logWarn(
-            "Penjadwalan pemulihan teks Default Preset gagal:",
-            timeoutError
-          );
-
-          return false;
-        }
-
-        return false;
+        return true;
       }
+      /* Batas CALLBACK setTimeout() Restore Teks Default - Default Tersimpan */,
 
-      if (
-        typeof localStorage ===
-          "undefined" ||
-        !localStorage ||
-        typeof localStorage.setItem !==
-          "function"
-      ) {
+      1500
+    );
 
-        logWarn(
-          "localStorage tidak tersedia untuk menyimpan Default Preset."
-        );
+  } catch (
+    timeoutError
+  ) {
 
-        return false;
-      }
+    logWarn(
+      "Penjadwalan pemulihan teks setelah Default Preset tersimpan gagal:",
+      timeoutError
+    );
 
-      if (
-        typeof defaultPresetKey !==
-          "string" ||
-        !defaultPresetKey
-      ) {
+    return false;
+  }
 
-        logWarn(
-          "defaultPresetKey tidak tersedia atau tidak valid."
-        );
-
-        return false;
-      }
-
-      try {
-
-        localStorage.setItem(
-          defaultPresetKey,
-          name
-        );
-
-      } catch (
-        storageError
-      ) {
-
-        logWarn(
-          "Default Preset gagal disimpan ke localStorage:",
-          storageError
-        );
-
-        return false;
-      }
-
-      if (
-        typeof schedulePresetCloudSave ===
-          "function"
-      ) {
-
-        try {
-
-          schedulePresetCloudSave();
-
-        } catch (
-          cloudScheduleError
-        ) {
-
-          logWarn(
-            "Penjadwalan sinkronisasi Default Preset ke cloud gagal:",
-            cloudScheduleError
-          );
-        }
-      }
-
-      if (
-        typeof refreshPresetList ===
-          "function"
-      ) {
-
-        try {
-
-          refreshPresetList();
-
-        } catch (
-          refreshError
-        ) {
-
-          logWarn(
-            "Daftar Preset gagal diperbarui setelah menetapkan Default:",
-            refreshError
-          );
-        }
-      }
-
-      try {
-
-        presetList.value =
-          name;
-
-      } catch (
-        presetListError
-      ) {
-
-        logWarn(
-          "Pilihan Preset gagal dikembalikan setelah menetapkan Default:",
-          presetListError
-        );
-
-        return false;
-      }
-
-      if (
-        typeof updatePresetActionState ===
-          "function"
-      ) {
-
-        try {
-
-          updatePresetActionState();
-
-        } catch (
-          actionStateError
-        ) {
-
-          logWarn(
-            "Status aksi Preset gagal diperbarui:",
-            actionStateError
-          );
-        }
-      }
-
-      try {
-
-        defaultButton.textContent =
-          "✅ Default: " +
-          name;
-
-      } catch (
-        successTextError
-      ) {
-
-        logWarn(
-          "Status Default Preset gagal ditampilkan:",
-          successTextError
-        );
-      }
-
-      if (
-        typeof closePresetPanelSoon ===
-          "function"
-      ) {
-
-        try {
-
-          closePresetPanelSoon();
-
-        } catch (
-          closePanelError
-        ) {
-
-          logWarn(
-            "Penjadwalan penutupan panel Preset gagal:",
-            closePanelError
-          );
-        }
-      }
-
-      if (
-        typeof setTimeout !==
-          "function"
-      ) {
-
-        logWarn(
-          "setTimeout() tidak tersedia untuk mengembalikan teks tombol Default Preset."
-        );
-
-        return false;
-      }
-
-      try {
-
-        setTimeout(
-
-          /* CALLBACK setTimeout() Restore Teks Default - Default Tersimpan */
-          () => {
-
-            const logWarn = (
-              ...args
-            ) => {
-
-              if (
-                typeof console !==
-                  "undefined" &&
-                console &&
-                typeof console.warn ===
-                  "function"
-              ) {
-
-                console.warn(
-                  ...args
-                );
-              }
-            };
-
-            if (
-              !defaultButton
-            ) {
-
-              logWarn(
-                "Tombol Default Preset tidak tersedia untuk mengembalikan teks."
-              );
-
-              return false;
-            }
-
-            const restoreText =
-              typeof originalText ===
-                "string"
-                ? originalText
-                : "";
-
-            try {
-
-              defaultButton.textContent =
-                restoreText;
-
-            } catch (
-              restoreError
-            ) {
-
-              logWarn(
-                "Teks tombol Default Preset gagal dikembalikan setelah Default Preset tersimpan:",
-                restoreError
-              );
-
-              return false;
-            }
-
-            return true;
-          }
-          /* Batas CALLBACK setTimeout() Restore Teks Default - Default Tersimpan */,
-
-          1500
-        );
-
-      } catch (
-        timeoutError
-      ) {
-
-        logWarn(
-          "Penjadwalan pemulihan teks setelah Default Preset tersimpan gagal:",
-          timeoutError
-        );
-
-        return false;
-      }
-
-      return true;
-    }
+  return defaultBerhasil;
+}
     /* Batas CALLBACK Klik Preset Default */
 
   );
