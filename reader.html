@@ -25510,491 +25510,601 @@ if (
     /* CALLBACK Klik Clear Default Preset */
     () => {
 
-      const logWarn = (
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      console &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
         ...args
-      ) => {
+      );
+    }
+  };
 
-        if (
-          typeof console !==
-            "undefined" &&
-          console &&
-          typeof console.warn ===
-            "function"
-        ) {
+  if (
+    typeof document ===
+      "undefined" ||
+    !document ||
+    typeof document.getElementById !==
+      "function"
+  ) {
 
-          console.warn(
+    logWarn(
+      "Document tidak tersedia untuk membatalkan Default Preset."
+    );
+
+    return false;
+  }
+
+  const presetList =
+    document.getElementById(
+      "preset-list"
+    );
+
+  const clearButton =
+    document.getElementById(
+      "preset-clear-default"
+    );
+
+  if (
+    !presetList ||
+    !clearButton
+  ) {
+
+    logWarn(
+      "Elemen Clear Default Preset tidak lengkap."
+    );
+
+    return false;
+  }
+
+  const originalText =
+    typeof clearButton.textContent ===
+      "string"
+      ? clearButton.textContent
+      : "";
+
+  const currentSelection =
+    typeof presetList.value ===
+      "string"
+      ? presetList.value.trim()
+      : "";
+
+  if (
+    typeof localStorage ===
+      "undefined" ||
+    !localStorage ||
+    typeof localStorage.getItem !==
+      "function" ||
+    typeof localStorage.removeItem !==
+      "function"
+  ) {
+
+    logWarn(
+      "localStorage tidak tersedia untuk membatalkan Default Preset."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof defaultPresetKey !==
+      "string" ||
+    !defaultPresetKey
+  ) {
+
+    logWarn(
+      "defaultPresetKey tidak tersedia atau tidak valid."
+    );
+
+    return false;
+  }
+
+  let currentDefaultPreset =
+    null;
+
+  try {
+
+    currentDefaultPreset =
+      localStorage.getItem(
+        defaultPresetKey
+      );
+
+  } catch (
+    storageReadError
+  ) {
+
+    logWarn(
+      "Default Preset gagal dibaca dari localStorage:",
+      storageReadError
+    );
+
+    return false;
+  }
+
+  if (
+    !currentDefaultPreset
+  ) {
+
+    try {
+
+      clearButton.textContent =
+        "ℹ️ Belum Ada Default";
+
+    } catch (
+      buttonError
+    ) {
+
+      logWarn(
+        "Pesan Belum Ada Default gagal ditampilkan:",
+        buttonError
+      );
+
+      return false;
+    }
+
+    if (
+      typeof setTimeout !==
+        "function"
+    ) {
+
+      logWarn(
+        "setTimeout() tidak tersedia untuk mengembalikan teks tombol Clear Default Preset."
+      );
+
+      return false;
+    }
+
+    try {
+
+      setTimeout(
+
+        /* CALLBACK setTimeout() Restore Teks Clear Default - Belum Ada Default */
+        () => {
+
+          const logWarn = (
             ...args
-          );
+          ) => {
+
+            if (
+              typeof console !==
+                "undefined" &&
+              console &&
+              typeof console.warn ===
+                "function"
+            ) {
+
+              console.warn(
+                ...args
+              );
+            }
+          };
+
+          if (
+            !clearButton
+          ) {
+
+            logWarn(
+              "Tombol Clear Default Preset tidak tersedia untuk mengembalikan teks."
+            );
+
+            return false;
+          }
+
+          const restoreText =
+            typeof originalText ===
+              "string"
+              ? originalText
+              : "";
+
+          try {
+
+            clearButton.textContent =
+              restoreText;
+
+          } catch (
+            restoreError
+          ) {
+
+            logWarn(
+              "Teks tombol Clear Default Preset gagal dikembalikan setelah belum ada Default Preset:",
+              restoreError
+            );
+
+            return false;
+          }
+
+          return true;
         }
-      };
+        /* Batas CALLBACK setTimeout() Restore Teks Clear Default - Belum Ada Default */,
+
+        1500
+      );
+
+    } catch (
+      timeoutError
+    ) {
+
+      logWarn(
+        "Penjadwalan pemulihan teks Clear Default Preset gagal:",
+        timeoutError
+      );
+
+      return false;
+    }
+
+    return false;
+  }
+
+  try {
+
+    localStorage.removeItem(
+      defaultPresetKey
+    );
+
+  } catch (
+    storageRemoveError
+  ) {
+
+    logWarn(
+      "Default Preset gagal dihapus dari localStorage:",
+      storageRemoveError
+    );
+
+    return false;
+  }
+
+  let clearDefaultBerhasil =
+    true;
+
+  if (
+    typeof schedulePresetCloudSave ===
+      "function"
+  ) {
+
+    try {
+
+      const cloudScheduleResult =
+        schedulePresetCloudSave();
 
       if (
-        typeof document ===
-          "undefined" ||
-        !document ||
-        typeof document.getElementById !==
-          "function"
+        cloudScheduleResult ===
+          false
       ) {
 
         logWarn(
-          "Document tidak tersedia untuk membatalkan Default Preset."
+          "schedulePresetCloudSave() mengembalikan false setelah Default Preset dibatalkan."
         );
 
-        return false;
+        clearDefaultBerhasil =
+          false;
       }
 
-      const presetList =
-        document.getElementById(
-          "preset-list"
-        );
+    } catch (
+      cloudScheduleError
+    ) {
 
-      const clearButton =
-        document.getElementById(
-          "preset-clear-default"
-        );
+      logWarn(
+        "Penjadwalan sinkronisasi pembatalan Default Preset ke cloud gagal:",
+        cloudScheduleError
+      );
+
+      clearDefaultBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "schedulePresetCloudSave() tidak tersedia setelah Default Preset dibatalkan."
+    );
+
+    clearDefaultBerhasil =
+      false;
+  }
+
+  if (
+    typeof refreshPresetList ===
+      "function"
+  ) {
+
+    try {
+
+      const refreshResult =
+        refreshPresetList();
 
       if (
-        !presetList ||
-        !clearButton
+        refreshResult ===
+          false
       ) {
 
         logWarn(
-          "Elemen Clear Default Preset tidak lengkap."
+          "refreshPresetList() mengembalikan false setelah Default Preset dibatalkan."
         );
 
-        return false;
+        clearDefaultBerhasil =
+          false;
       }
 
-      const originalText =
-        typeof clearButton.textContent ===
-          "string"
-          ? clearButton.textContent
-          : "";
+    } catch (
+      refreshError
+    ) {
 
-      const currentSelection =
-        typeof presetList.value ===
-          "string"
-          ? presetList.value.trim()
-          : "";
+      logWarn(
+        "Daftar Preset gagal diperbarui setelah Default dibatalkan:",
+        refreshError
+      );
 
-      if (
-        typeof localStorage ===
-          "undefined" ||
-        !localStorage ||
-        typeof localStorage.getItem !==
-          "function" ||
-        typeof localStorage.removeItem !==
-          "function"
-      ) {
+      clearDefaultBerhasil =
+        false;
+    }
 
-        logWarn(
-          "localStorage tidak tersedia untuk membatalkan Default Preset."
-        );
+  } else {
 
-        return false;
-      }
+    logWarn(
+      "refreshPresetList() tidak tersedia setelah Default Preset dibatalkan."
+    );
 
-      if (
-        typeof defaultPresetKey !==
-          "string" ||
-        !defaultPresetKey
-      ) {
+    clearDefaultBerhasil =
+      false;
+  }
 
-        logWarn(
-          "defaultPresetKey tidak tersedia atau tidak valid."
-        );
+  const presetsAvailable =
+    typeof displayPresets !==
+      "undefined" &&
+    displayPresets &&
+    typeof displayPresets ===
+      "object" &&
+    !Array.isArray(
+      displayPresets
+    );
 
-        return false;
-      }
+  const selectionExists =
+    Boolean(
+      presetsAvailable &&
+      currentSelection &&
+      typeof Object !==
+        "undefined" &&
+      Object.prototype &&
+      typeof Object.prototype.hasOwnProperty ===
+        "function" &&
+      Object.prototype.hasOwnProperty.call(
+        displayPresets,
+        currentSelection
+      )
+    );
 
-      let currentDefaultPreset =
-        null;
+  if (
+    selectionExists
+  ) {
+
+    if (
+      typeof updatePresetActionState ===
+        "function"
+    ) {
 
       try {
 
-        currentDefaultPreset =
-          localStorage.getItem(
-            defaultPresetKey
+        const actionStateResult =
+          updatePresetActionState();
+
+        if (
+          actionStateResult ===
+            false
+        ) {
+
+          logWarn(
+            "updatePresetActionState() mengembalikan false setelah Default Preset dibatalkan."
           );
 
+          clearDefaultBerhasil =
+            false;
+        }
+
       } catch (
-        storageReadError
+        actionStateError
       ) {
 
         logWarn(
-          "Default Preset gagal dibaca dari localStorage:",
-          storageReadError
+          "Status aksi Preset gagal diperbarui setelah Default dibatalkan:",
+          actionStateError
         );
 
-        return false;
+        clearDefaultBerhasil =
+          false;
       }
 
+    } else {
+
+      logWarn(
+        "updatePresetActionState() tidak tersedia setelah Default Preset dibatalkan."
+      );
+
+      clearDefaultBerhasil =
+        false;
+    }
+
+    try {
+
+      presetList.value =
+        currentSelection;
+
+    } catch (
+      presetListError
+    ) {
+
+      logWarn(
+        "Pilihan Preset gagal dikembalikan setelah Default dibatalkan:",
+        presetListError
+      );
+
+      return false;
+    }
+  }
+
+  try {
+
+    clearButton.textContent =
+      "✅ Default Dibatalkan";
+
+  } catch (
+    successTextError
+  ) {
+
+    logWarn(
+      "Status Default Dibatalkan gagal ditampilkan:",
+      successTextError
+    );
+
+    clearDefaultBerhasil =
+      false;
+  }
+
+  if (
+    typeof closePresetPanelSoon ===
+      "function"
+  ) {
+
+    try {
+
+      const closePanelResult =
+        closePresetPanelSoon();
+
       if (
-        !currentDefaultPreset
+        closePanelResult ===
+          false
       ) {
+
+        logWarn(
+          "closePresetPanelSoon() mengembalikan false setelah Default Preset dibatalkan."
+        );
+
+        clearDefaultBerhasil =
+          false;
+      }
+
+    } catch (
+      closePanelError
+    ) {
+
+      logWarn(
+        "Penjadwalan penutupan panel Preset gagal:",
+        closePanelError
+      );
+
+      clearDefaultBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "closePresetPanelSoon() tidak tersedia setelah Default Preset dibatalkan."
+    );
+
+    clearDefaultBerhasil =
+      false;
+  }
+
+  if (
+    typeof setTimeout !==
+      "function"
+  ) {
+
+    logWarn(
+      "setTimeout() tidak tersedia untuk mengembalikan teks tombol Clear Default Preset."
+    );
+
+    return false;
+  }
+
+  try {
+
+    setTimeout(
+
+      /* CALLBACK setTimeout() Restore Teks Clear Default - Default Dibatalkan */
+      () => {
+
+        const logWarn = (
+          ...args
+        ) => {
+
+          if (
+            typeof console !==
+              "undefined" &&
+            console &&
+            typeof console.warn ===
+              "function"
+          ) {
+
+            console.warn(
+              ...args
+            );
+          }
+        };
+
+        if (
+          !clearButton
+        ) {
+
+          logWarn(
+            "Tombol Clear Default Preset tidak tersedia untuk mengembalikan teks."
+          );
+
+          return false;
+        }
+
+        const restoreText =
+          typeof originalText ===
+            "string"
+            ? originalText
+            : "";
 
         try {
 
           clearButton.textContent =
-            "ℹ️ Belum Ada Default";
+            restoreText;
 
         } catch (
-          buttonError
+          restoreError
         ) {
 
           logWarn(
-            "Pesan Belum Ada Default gagal ditampilkan:",
-            buttonError
+            "Teks tombol Clear Default Preset gagal dikembalikan setelah Default Preset dibatalkan:",
+            restoreError
           );
 
           return false;
         }
 
-        if (
-          typeof setTimeout !==
-            "function"
-        ) {
-
-          logWarn(
-            "setTimeout() tidak tersedia untuk mengembalikan teks tombol Clear Default Preset."
-          );
-
-          return false;
-        }
-
-        try {
-
-          setTimeout(
-
-            /* CALLBACK setTimeout() Restore Teks Clear Default - Belum Ada Default */
-            () => {
-
-              const logWarn = (
-                ...args
-              ) => {
-
-                if (
-                  typeof console !==
-                    "undefined" &&
-                  console &&
-                  typeof console.warn ===
-                    "function"
-                ) {
-
-                  console.warn(
-                    ...args
-                  );
-                }
-              };
-
-              if (
-                !clearButton
-              ) {
-
-                logWarn(
-                  "Tombol Clear Default Preset tidak tersedia untuk mengembalikan teks."
-                );
-
-                return false;
-              }
-
-              const restoreText =
-                typeof originalText ===
-                  "string"
-                  ? originalText
-                  : "";
-
-              try {
-
-                clearButton.textContent =
-                  restoreText;
-
-              } catch (
-                restoreError
-              ) {
-
-                logWarn(
-                  "Teks tombol Clear Default Preset gagal dikembalikan setelah belum ada Default Preset:",
-                  restoreError
-                );
-
-                return false;
-              }
-
-              return true;
-            }
-            /* Batas CALLBACK setTimeout() Restore Teks Clear Default - Belum Ada Default */,
-
-            1500
-          );
-
-        } catch (
-          timeoutError
-        ) {
-
-          logWarn(
-            "Penjadwalan pemulihan teks Clear Default Preset gagal:",
-            timeoutError
-          );
-
-          return false;
-        }
-
-        return false;
+        return true;
       }
+      /* Batas CALLBACK setTimeout() Restore Teks Clear Default - Default Dibatalkan */,
 
-      try {
+      1500
+    );
 
-        localStorage.removeItem(
-          defaultPresetKey
-        );
+  } catch (
+    timeoutError
+  ) {
 
-      } catch (
-        storageRemoveError
-      ) {
+    logWarn(
+      "Penjadwalan pemulihan teks setelah Default Preset dibatalkan gagal:",
+      timeoutError
+    );
 
-        logWarn(
-          "Default Preset gagal dihapus dari localStorage:",
-          storageRemoveError
-        );
+    return false;
+  }
 
-        return false;
-      }
-
-      if (
-        typeof schedulePresetCloudSave ===
-          "function"
-      ) {
-
-        try {
-
-          schedulePresetCloudSave();
-
-        } catch (
-          cloudScheduleError
-        ) {
-
-          logWarn(
-            "Penjadwalan sinkronisasi pembatalan Default Preset ke cloud gagal:",
-            cloudScheduleError
-          );
-        }
-      }
-
-      if (
-        typeof refreshPresetList ===
-          "function"
-      ) {
-
-        try {
-
-          refreshPresetList();
-
-        } catch (
-          refreshError
-        ) {
-
-          logWarn(
-            "Daftar Preset gagal diperbarui setelah Default dibatalkan:",
-            refreshError
-          );
-        }
-      }
-
-      const presetsAvailable =
-        typeof displayPresets !==
-          "undefined" &&
-        displayPresets &&
-        typeof displayPresets ===
-          "object" &&
-        !Array.isArray(
-          displayPresets
-        );
-
-      const selectionExists =
-        Boolean(
-          presetsAvailable &&
-          currentSelection &&
-          typeof Object !==
-            "undefined" &&
-          Object.prototype &&
-          typeof Object.prototype.hasOwnProperty ===
-            "function" &&
-          Object.prototype.hasOwnProperty.call(
-            displayPresets,
-            currentSelection
-          )
-        );
-
-      if (
-        selectionExists
-      ) {
-
-        if (
-          typeof updatePresetActionState ===
-            "function"
-        ) {
-
-          try {
-
-            updatePresetActionState();
-
-          } catch (
-            actionStateError
-          ) {
-
-            logWarn(
-              "Status aksi Preset gagal diperbarui setelah Default dibatalkan:",
-              actionStateError
-            );
-          }
-        }
-
-        try {
-
-          presetList.value =
-            currentSelection;
-
-        } catch (
-          presetListError
-        ) {
-
-          logWarn(
-            "Pilihan Preset gagal dikembalikan setelah Default dibatalkan:",
-            presetListError
-          );
-
-          return false;
-        }
-      }
-
-      try {
-
-        clearButton.textContent =
-          "✅ Default Dibatalkan";
-
-      } catch (
-        successTextError
-      ) {
-
-        logWarn(
-          "Status Default Dibatalkan gagal ditampilkan:",
-          successTextError
-        );
-      }
-
-      if (
-        typeof closePresetPanelSoon ===
-          "function"
-      ) {
-
-        try {
-
-          closePresetPanelSoon();
-
-        } catch (
-          closePanelError
-        ) {
-
-          logWarn(
-            "Penjadwalan penutupan panel Preset gagal:",
-            closePanelError
-          );
-        }
-      }
-
-      if (
-        typeof setTimeout !==
-          "function"
-      ) {
-
-        logWarn(
-          "setTimeout() tidak tersedia untuk mengembalikan teks tombol Clear Default Preset."
-        );
-
-        return false;
-      }
-
-      try {
-
-        setTimeout(
-
-          /* CALLBACK setTimeout() Restore Teks Clear Default - Default Dibatalkan */
-          () => {
-
-            const logWarn = (
-              ...args
-            ) => {
-
-              if (
-                typeof console !==
-                  "undefined" &&
-                console &&
-                typeof console.warn ===
-                  "function"
-              ) {
-
-                console.warn(
-                  ...args
-                  );
-                }
-              };
-
-            if (
-              !clearButton
-            ) {
-
-              logWarn(
-                "Tombol Clear Default Preset tidak tersedia untuk mengembalikan teks."
-              );
-
-              return false;
-            }
-
-            const restoreText =
-              typeof originalText ===
-                "string"
-                ? originalText
-                : "";
-
-            try {
-
-              clearButton.textContent =
-                restoreText;
-
-            } catch (
-              restoreError
-            ) {
-
-              logWarn(
-                "Teks tombol Clear Default Preset gagal dikembalikan setelah Default Preset dibatalkan:",
-                restoreError
-              );
-
-              return false;
-            }
-
-            return true;
-          }
-          /* Batas CALLBACK setTimeout() Restore Teks Clear Default - Default Dibatalkan */,
-
-          1500
-        );
-
-      } catch (
-        timeoutError
-      ) {
-
-        logWarn(
-          "Penjadwalan pemulihan teks setelah Default Preset dibatalkan gagal:",
-          timeoutError
-        );
-
-        return false;
-      }
-
-      return true;
-    }
+  return clearDefaultBerhasil;
+}
     /* Batas CALLBACK Klik Clear Default Preset */
 
   );
@@ -26146,7 +26256,8 @@ if (
     return false;
   }
 
-  let currentDefaultPreset = null;
+  let currentDefaultPreset =
+    null;
 
   try {
 
@@ -26178,7 +26289,8 @@ if (
       currentDefaultPreset
   };
 
-  let jsonData = "";
+  let jsonData =
+    "";
 
   try {
 
@@ -26202,6 +26314,19 @@ if (
   }
 
   if (
+    typeof jsonData !==
+      "string" ||
+    !jsonData
+  ) {
+
+    logWarn(
+      "Data JSON hasil export Preset tidak valid."
+    );
+
+    return false;
+  }
+
+  if (
     typeof Blob !==
       "function"
   ) {
@@ -26213,7 +26338,8 @@ if (
     return false;
   }
 
-  let blob = null;
+  let blob =
+    null;
 
   try {
 
@@ -26239,6 +26365,17 @@ if (
   }
 
   if (
+    !blob
+  ) {
+
+    logWarn(
+      "Blob export Preset tidak berhasil dibuat."
+    );
+
+    return false;
+  }
+
+  if (
     typeof URL ===
       "undefined" ||
     !URL ||
@@ -26255,7 +26392,8 @@ if (
     return false;
   }
 
-  let url = "";
+  let url =
+    "";
 
   try {
 
@@ -26289,7 +26427,8 @@ if (
     return false;
   }
 
-  let link = null;
+  let link =
+    null;
 
   try {
 
@@ -26307,26 +26446,20 @@ if (
       createLinkError
     );
 
-    if (
-      typeof URL.revokeObjectURL ===
-        "function"
+    try {
+
+      URL.revokeObjectURL(
+        url
+      );
+
+    } catch (
+      revokeError
     ) {
 
-      try {
-
-        URL.revokeObjectURL(
-          url
-        );
-
-      } catch (
+      logWarn(
+        "Object URL gagal dibersihkan setelah pembuatan link gagal:",
         revokeError
-      ) {
-
-        logWarn(
-          "Object URL gagal dibersihkan setelah pembuatan link gagal:",
-          revokeError
-        );
-      }
+      );
     }
 
     return false;
@@ -26392,34 +26525,74 @@ if (
     return false;
   }
 
-  const now =
-    new Date();
-
-  const pad = (number) =>
-    String(number).padStart(
+  const pad = (
+    number
+  ) =>
+    String(
+      number
+    ).padStart(
       2,
       "0"
     );
 
-  const dateStamp =
-    now.getFullYear() +
-    "-" +
-    pad(
-      now.getMonth() + 1
-    ) +
-    "-" +
-    pad(
-      now.getDate()
+  let dateStamp =
+    "";
+
+  let timeStamp =
+    "";
+
+  try {
+
+    const now =
+      new Date();
+
+    dateStamp =
+      now.getFullYear() +
+      "-" +
+      pad(
+        now.getMonth() + 1
+      ) +
+      "-" +
+      pad(
+        now.getDate()
+      );
+
+    timeStamp =
+      pad(
+        now.getHours()
+      ) +
+      "-" +
+      pad(
+        now.getMinutes()
+      );
+
+  } catch (
+    timestampError
+  ) {
+
+    logWarn(
+      "Timestamp nama file export Preset gagal dibuat:",
+      timestampError
     );
 
-  const timeStamp =
-    pad(
-      now.getHours()
-    ) +
-    "-" +
-    pad(
-      now.getMinutes()
-    );
+    try {
+
+      URL.revokeObjectURL(
+        url
+      );
+
+    } catch (
+      revokeError
+    ) {
+
+      logWarn(
+        "Object URL gagal dibersihkan setelah timestamp export gagal dibuat:",
+        revokeError
+      );
+    }
+
+    return false;
+  }
 
   try {
 
@@ -26511,6 +26684,9 @@ if (
     return false;
   }
 
+  let exportBerhasil =
+    true;
+
   try {
 
     document.body.appendChild(
@@ -26566,6 +26742,15 @@ if (
         link.parentNode.removeChild(
           link
         );
+
+      } else {
+
+        logWarn(
+          "Link sementara export Preset tidak memiliki method cleanup yang tersedia."
+        );
+
+        exportBerhasil =
+          false;
       }
 
     } catch (
@@ -26576,6 +26761,9 @@ if (
         "Link sementara export Preset gagal dibersihkan:",
         removeLinkError
       );
+
+      exportBerhasil =
+        false;
     }
   }
 
@@ -26713,7 +26901,8 @@ if (
     return false;
   }
 
-  let exportCount = 0;
+  let exportCount =
+    0;
 
   try {
 
@@ -26731,7 +26920,11 @@ if (
       countError
     );
 
-    exportCount = 0;
+    exportCount =
+      0;
+
+    exportBerhasil =
+      false;
   }
 
   try {
@@ -26747,6 +26940,9 @@ if (
       "Status hasil export Preset gagal ditampilkan:",
       statusError
     );
+
+    exportBerhasil =
+      false;
   }
 
   if (
@@ -26839,7 +27035,7 @@ if (
     return false;
   }
 
-  return true;
+  return exportBerhasil;
 }
 /* Batas CALLBACK Klik Preset Export */
 );
@@ -27009,654 +27205,772 @@ if (
     /* CALLBACK Change Preset Import File */
     async (e) => {
 
-      const logWarn = (
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      console &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
         ...args
-      ) => {
+      );
+    }
+  };
 
-        if (
-          typeof console !==
-            "undefined" &&
-          console &&
-          typeof console.warn ===
-            "function"
-        ) {
+  if (
+    typeof document ===
+      "undefined" ||
+    !document ||
+    typeof document.getElementById !==
+      "function"
+  ) {
 
-          console.warn(
-            ...args
+    logWarn(
+      "Document tidak tersedia untuk proses Import Preset."
+    );
+
+    return false;
+  }
+
+  const importButton =
+    document.getElementById(
+      "preset-import"
+    );
+
+  if (
+    !importButton
+  ) {
+
+    logWarn(
+      "Tombol Import Preset tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const originalText =
+    typeof importButton.textContent ===
+      "string"
+      ? importButton.textContent
+      : "";
+
+  const eventTarget =
+    e &&
+    e.target
+      ? e.target
+      : null;
+
+  if (
+    !eventTarget
+  ) {
+
+    logWarn(
+      "Target event Import Preset tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const files =
+    eventTarget.files;
+
+  const file =
+    files &&
+    files.length > 0
+      ? files[0]
+      : null;
+
+  if (
+    !file
+  ) {
+
+    return false;
+  }
+
+  let importSucceeded =
+    false;
+
+  try {
+
+    if (
+      typeof file.text !==
+        "function"
+    ) {
+
+      throw new Error(
+        "Method file.text() tidak tersedia"
+      );
+    }
+
+    const text =
+      await file.text();
+
+    if (
+      typeof text !==
+        "string" ||
+      !text.trim()
+    ) {
+
+      throw new Error(
+        "Isi file preset kosong"
+      );
+    }
+
+    let importData =
+      null;
+
+    try {
+
+      importData =
+        JSON.parse(
+          text
+        );
+
+    } catch (
+      parseError
+    ) {
+
+      throw new Error(
+        "File bukan JSON preset yang valid"
+      );
+    }
+
+    if (
+      !importData ||
+      typeof importData !==
+        "object" ||
+      Array.isArray(
+        importData
+      ) ||
+      !importData.presets ||
+      typeof importData.presets !==
+        "object" ||
+      Array.isArray(
+        importData.presets
+      )
+    ) {
+
+      throw new Error(
+        "Format preset tidak valid"
+      );
+    }
+
+    if (
+      typeof Object ===
+        "undefined" ||
+      typeof Object.keys !==
+        "function" ||
+      !Object.prototype ||
+      typeof Object.prototype.hasOwnProperty !==
+        "function"
+    ) {
+
+      throw new Error(
+        "Object API tidak tersedia untuk memvalidasi Preset"
+      );
+    }
+
+    const presetsAvailable =
+      typeof displayPresets !==
+        "undefined" &&
+      displayPresets &&
+      typeof displayPresets ===
+        "object" &&
+      !Array.isArray(
+        displayPresets
+      );
+
+    if (
+      !presetsAvailable
+    ) {
+
+      throw new Error(
+        "Data displayPresets tidak tersedia atau tidak valid"
+      );
+    }
+
+    if (
+      typeof localStorage ===
+        "undefined" ||
+      !localStorage ||
+      typeof localStorage.getItem !==
+        "function" ||
+      typeof localStorage.setItem !==
+        "function" ||
+      typeof localStorage.removeItem !==
+        "function"
+    ) {
+
+      throw new Error(
+        "localStorage tidak tersedia"
+      );
+    }
+
+    if (
+      typeof presetsKey !==
+        "string" ||
+      !presetsKey
+    ) {
+
+      throw new Error(
+        "presetsKey tidak tersedia atau tidak valid"
+      );
+    }
+
+    const importedPresetNames =
+      Object.keys(
+        importData.presets
+      );
+
+    for (
+      const importedName
+      of importedPresetNames
+    ) {
+
+      if (
+        typeof importedName !==
+          "string" ||
+        !importedName.trim()
+      ) {
+
+        throw new Error(
+          "Nama Preset hasil import tidak valid"
+        );
+      }
+
+      const importedPreset =
+        importData.presets[
+          importedName
+        ];
+
+      if (
+        !importedPreset ||
+        typeof importedPreset !==
+          "object" ||
+        Array.isArray(
+          importedPreset
+        )
+      ) {
+
+        throw new Error(
+          `Data Preset "${importedName}" tidak valid`
+        );
+      }
+    }
+
+    const nextDisplayPresets = {
+      ...displayPresets,
+      ...importData.presets
+    };
+
+    let importedDefaultPreset =
+      null;
+
+    if (
+      typeof importData.defaultPreset ===
+        "string"
+    ) {
+
+      const candidateDefault =
+        importData.defaultPreset.trim();
+
+      const candidateExists =
+        Boolean(
+          candidateDefault &&
+          Object.prototype.hasOwnProperty.call(
+            nextDisplayPresets,
+            candidateDefault
+          )
+        );
+
+      const candidatePreset =
+        candidateExists
+          ? nextDisplayPresets[
+              candidateDefault
+            ]
+          : null;
+
+      const candidateValid =
+        Boolean(
+          candidatePreset &&
+          typeof candidatePreset ===
+            "object" &&
+          !Array.isArray(
+            candidatePreset
+          )
+        );
+
+      if (
+        candidateValid
+      ) {
+
+        importedDefaultPreset =
+          candidateDefault;
+      }
+    }
+
+    const hasImportedDefault =
+      Boolean(
+        importedDefaultPreset
+      );
+
+    if (
+      hasImportedDefault &&
+      (
+        typeof defaultPresetKey !==
+          "string" ||
+        !defaultPresetKey
+      )
+    ) {
+
+      throw new Error(
+        "defaultPresetKey tidak tersedia atau tidak valid"
+      );
+    }
+
+    let previousPresetsValue =
+      null;
+
+    let previousDefaultValue =
+      null;
+
+    try {
+
+      previousPresetsValue =
+        localStorage.getItem(
+          presetsKey
+        );
+
+      if (
+        hasImportedDefault
+      ) {
+
+        previousDefaultValue =
+          localStorage.getItem(
+            defaultPresetKey
           );
-        }
-      };
-
-      if (
-        typeof document ===
-          "undefined" ||
-        !document ||
-        typeof document.getElementById !==
-          "function"
-      ) {
-
-        logWarn(
-          "Document tidak tersedia untuk proses Import Preset."
-        );
-
-        return false;
       }
 
-      const importButton =
-        document.getElementById(
-          "preset-import"
-        );
+    } catch (
+      storageReadError
+    ) {
+
+      throw new Error(
+        "Data Preset sebelumnya gagal dibaca"
+      );
+    }
+
+    try {
+
+      localStorage.setItem(
+        presetsKey,
+        JSON.stringify(
+          nextDisplayPresets
+        )
+      );
 
       if (
-        !importButton
+        hasImportedDefault
       ) {
 
-        logWarn(
-          "Tombol Import Preset tidak tersedia."
+        localStorage.setItem(
+          defaultPresetKey,
+          importedDefaultPreset
         );
-
-        return false;
       }
 
-      const originalText =
-        typeof importButton.textContent ===
-          "string"
-          ? importButton.textContent
-          : "";
-
-      const eventTarget =
-        e &&
-        e.target
-          ? e.target
-          : null;
-
-      if (
-        !eventTarget
-      ) {
-
-        logWarn(
-          "Target event Import Preset tidak tersedia."
-        );
-
-        return false;
-      }
-
-      const files =
-        eventTarget.files;
-
-      const file =
-        files &&
-        files.length > 0
-          ? files[0]
-          : null;
-
-      if (
-        !file
-      ) {
-
-        return false;
-      }
-
-      let importSucceeded =
-        false;
+    } catch (
+      storageWriteError
+    ) {
 
       try {
 
         if (
-          typeof file.text !==
-            "function"
+          previousPresetsValue ===
+            null
         ) {
 
-          throw new Error(
-            "Method file.text() tidak tersedia"
-          );
-        }
-
-        const text =
-          await file.text();
-
-        if (
-          typeof text !==
-            "string" ||
-          !text.trim()
-        ) {
-
-          throw new Error(
-            "Isi file preset kosong"
-          );
-        }
-
-        let importData =
-          null;
-
-        try {
-
-          importData =
-            JSON.parse(
-              text
-            );
-
-        } catch (
-          parseError
-        ) {
-
-          throw new Error(
-            "File bukan JSON preset yang valid"
-          );
-        }
-
-        if (
-          !importData ||
-          typeof importData !==
-            "object" ||
-          Array.isArray(
-            importData
-          ) ||
-          !importData.presets ||
-          typeof importData.presets !==
-            "object" ||
-          Array.isArray(
-            importData.presets
-          )
-        ) {
-
-          throw new Error(
-            "Format preset tidak valid"
-          );
-        }
-
-        if (
-          typeof Object ===
-            "undefined" ||
-          typeof Object.keys !==
-            "function" ||
-          !Object.prototype ||
-          typeof Object.prototype.hasOwnProperty !==
-            "function"
-        ) {
-
-          throw new Error(
-            "Object API tidak tersedia untuk memvalidasi Preset"
-          );
-        }
-
-        const presetsAvailable =
-          typeof displayPresets !==
-            "undefined" &&
-          displayPresets &&
-          typeof displayPresets ===
-            "object" &&
-          !Array.isArray(
-            displayPresets
+          localStorage.removeItem(
+            presetsKey
           );
 
-        if (
-          !presetsAvailable
-        ) {
-
-          throw new Error(
-            "Data displayPresets tidak tersedia atau tidak valid"
-          );
-        }
-
-        if (
-          typeof localStorage ===
-            "undefined" ||
-          !localStorage ||
-          typeof localStorage.getItem !==
-            "function" ||
-          typeof localStorage.setItem !==
-            "function" ||
-          typeof localStorage.removeItem !==
-            "function"
-        ) {
-
-          throw new Error(
-            "localStorage tidak tersedia"
-          );
-        }
-
-        if (
-          typeof presetsKey !==
-            "string" ||
-          !presetsKey
-        ) {
-
-          throw new Error(
-            "presetsKey tidak tersedia atau tidak valid"
-          );
-        }
-
-        const importedPresetNames =
-          Object.keys(
-            importData.presets
-          );
-
-        for (
-          const importedName
-          of importedPresetNames
-        ) {
-
-          if (
-            typeof importedName !==
-              "string" ||
-            !importedName.trim()
-          ) {
-
-            throw new Error(
-              "Nama Preset hasil import tidak valid"
-            );
-          }
-
-          const importedPreset =
-            importData.presets[
-              importedName
-            ];
-
-          if (
-            !importedPreset ||
-            typeof importedPreset !==
-              "object" ||
-            Array.isArray(
-              importedPreset
-            )
-          ) {
-
-            throw new Error(
-              `Data Preset "${importedName}" tidak valid`
-            );
-          }
-        }
-
-        const nextDisplayPresets = {
-          ...displayPresets,
-          ...importData.presets
-        };
-
-        let importedDefaultPreset =
-          null;
-
-        if (
-          typeof importData.defaultPreset ===
-            "string"
-        ) {
-
-          const candidateDefault =
-            importData.defaultPreset.trim();
-
-          const candidateExists =
-            Boolean(
-              candidateDefault &&
-              Object.prototype.hasOwnProperty.call(
-                nextDisplayPresets,
-                candidateDefault
-              )
-            );
-
-          const candidatePreset =
-            candidateExists
-              ? nextDisplayPresets[
-                  candidateDefault
-                ]
-              : null;
-
-          const candidateValid =
-            Boolean(
-              candidatePreset &&
-              typeof candidatePreset ===
-                "object" &&
-              !Array.isArray(
-                candidatePreset
-              )
-            );
-
-          if (
-            candidateValid
-          ) {
-
-            importedDefaultPreset =
-              candidateDefault;
-          }
-        }
-
-        const hasImportedDefault =
-          Boolean(
-            importedDefaultPreset
-          );
-
-        if (
-          hasImportedDefault &&
-          (
-            typeof defaultPresetKey !==
-              "string" ||
-            !defaultPresetKey
-          )
-        ) {
-
-          throw new Error(
-            "defaultPresetKey tidak tersedia atau tidak valid"
-          );
-        }
-
-        let previousPresetsValue =
-          null;
-
-        let previousDefaultValue =
-          null;
-
-        try {
-
-          previousPresetsValue =
-            localStorage.getItem(
-              presetsKey
-            );
-
-          if (
-            hasImportedDefault
-          ) {
-
-            previousDefaultValue =
-              localStorage.getItem(
-                defaultPresetKey
-              );
-          }
-
-        } catch (
-          storageReadError
-        ) {
-
-          throw new Error(
-            "Data Preset sebelumnya gagal dibaca"
-          );
-        }
-
-        try {
+        } else {
 
           localStorage.setItem(
             presetsKey,
-            JSON.stringify(
-              nextDisplayPresets
-            )
+            previousPresetsValue
           );
+        }
+
+        if (
+          hasImportedDefault
+        ) {
 
           if (
-            hasImportedDefault
+            previousDefaultValue ===
+              null
           ) {
+
+            localStorage.removeItem(
+              defaultPresetKey
+            );
+
+          } else {
 
             localStorage.setItem(
               defaultPresetKey,
-              importedDefaultPreset
-            );
-          }
-
-        } catch (
-          storageWriteError
-        ) {
-
-          try {
-
-            if (
-              previousPresetsValue ===
-                null
-            ) {
-
-              localStorage.removeItem(
-                presetsKey
-              );
-
-            } else {
-
-              localStorage.setItem(
-                presetsKey,
-                previousPresetsValue
-              );
-            }
-
-            if (
-              hasImportedDefault
-            ) {
-
-              if (
-                previousDefaultValue ===
-                  null
-              ) {
-
-                localStorage.removeItem(
-                  defaultPresetKey
-                );
-
-              } else {
-
-                localStorage.setItem(
-                  defaultPresetKey,
-                  previousDefaultValue
-                );
-              }
-            }
-
-          } catch (
-            rollbackError
-          ) {
-
-            logWarn(
-              "Rollback Import Preset gagal:",
-              rollbackError
-            );
-          }
-
-          throw new Error(
-            "Preset hasil import gagal disimpan"
-          );
-        }
-
-        try {
-
-          displayPresets =
-            nextDisplayPresets;
-
-        } catch (
-          stateError
-        ) {
-
-          logWarn(
-            "State displayPresets gagal diperbarui setelah import:",
-            stateError
-          );
-
-          throw stateError;
-        }
-
-        if (
-          typeof schedulePresetCloudSave ===
-            "function"
-        ) {
-
-          try {
-
-            schedulePresetCloudSave();
-
-          } catch (
-            cloudScheduleError
-          ) {
-
-            logWarn(
-              "Penjadwalan sinkronisasi Preset hasil import ke cloud gagal:",
-              cloudScheduleError
+              previousDefaultValue
             );
           }
         }
-
-        if (
-          typeof refreshPresetList ===
-            "function"
-        ) {
-
-          try {
-
-            refreshPresetList();
-
-          } catch (
-            refreshError
-          ) {
-
-            logWarn(
-              "Daftar Preset gagal diperbarui setelah import:",
-              refreshError
-            );
-          }
-        }
-
-        const importCount =
-          importedPresetNames.length;
-
-        try {
-
-          importButton.textContent =
-            `✅ ${importCount} Preset Diimport`;
-
-        } catch (
-          statusError
-        ) {
-
-          logWarn(
-            "Status hasil Import Preset gagal ditampilkan:",
-            statusError
-          );
-        }
-
-        importSucceeded =
-          true;
 
       } catch (
-        error
+        rollbackError
       ) {
 
         logWarn(
-          "Import preset gagal:",
-          error
-        );
-
-        try {
-
-          importButton.textContent =
-            "⚠️ File Tidak Valid";
-
-        } catch (
-          statusError
-        ) {
-
-          logWarn(
-            "Status File Tidak Valid gagal ditampilkan:",
-            statusError
-          );
-        }
-      }
-
-      if (
-        typeof setTimeout ===
-          "function"
-      ) {
-
-        try {
-
-          setTimeout(
-
-            /* CALLBACK setTimeout() Restore Teks Import */
-            () => {
-
-              const logWarn = (
-                ...args
-              ) => {
-
-                if (
-                  typeof console !==
-                    "undefined" &&
-                  console &&
-                  typeof console.warn ===
-                    "function"
-                ) {
-
-                  console.warn(
-                    ...args
-                  );
-                }
-              };
-
-              if (
-                !importButton
-              ) {
-
-                logWarn(
-                  "Tombol Import Preset tidak tersedia untuk mengembalikan teks."
-                );
-
-                return false;
-              }
-
-              const restoreText =
-                typeof originalText ===
-                  "string"
-                  ? originalText
-                  : "";
-
-              try {
-
-                importButton.textContent =
-                  restoreText;
-
-              } catch (
-                restoreError
-              ) {
-
-                logWarn(
-                  "Teks tombol Import Preset gagal dikembalikan setelah proses import selesai:",
-                  restoreError
-                );
-
-                return false;
-              }
-
-              return true;
-            }
-            /* Batas CALLBACK setTimeout() Restore Teks Import */,
-
-            1500
-          );
-
-        } catch (
-          timeoutError
-        ) {
-
-          logWarn(
-            "Penjadwalan pemulihan teks tombol Import Preset gagal:",
-            timeoutError
-          );
-        }
-
-      } else {
-
-        logWarn(
-          "setTimeout() tidak tersedia untuk mengembalikan teks tombol Import Preset."
+          "Rollback Import Preset gagal:",
+          rollbackError
         );
       }
+
+      throw new Error(
+        "Preset hasil import gagal disimpan"
+      );
+    }
+
+    try {
+
+      displayPresets =
+        nextDisplayPresets;
+
+    } catch (
+      stateError
+    ) {
+
+      logWarn(
+        "State displayPresets gagal diperbarui setelah import:",
+        stateError
+      );
 
       try {
 
-        eventTarget.value =
-          "";
+        if (
+          previousPresetsValue ===
+            null
+        ) {
+
+          localStorage.removeItem(
+            presetsKey
+          );
+
+        } else {
+
+          localStorage.setItem(
+            presetsKey,
+            previousPresetsValue
+          );
+        }
+
+        if (
+          hasImportedDefault
+        ) {
+
+          if (
+            previousDefaultValue ===
+              null
+          ) {
+
+            localStorage.removeItem(
+              defaultPresetKey
+            );
+
+          } else {
+
+            localStorage.setItem(
+              defaultPresetKey,
+              previousDefaultValue
+            );
+          }
+        }
 
       } catch (
-        resetInputError
+        rollbackStateError
       ) {
 
         logWarn(
-          "Input file Import Preset gagal direset:",
-          resetInputError
+          "Rollback localStorage setelah kegagalan state Import Preset gagal:",
+          rollbackStateError
         );
       }
 
-      return importSucceeded;
+      throw stateError;
     }
+
+    importSucceeded =
+      true;
+
+    if (
+      typeof schedulePresetCloudSave ===
+        "function"
+    ) {
+
+      try {
+
+        const cloudScheduleResult =
+          schedulePresetCloudSave();
+
+        if (
+          cloudScheduleResult ===
+            false
+        ) {
+
+          logWarn(
+            "schedulePresetCloudSave() mengembalikan false setelah Import Preset."
+          );
+
+          importSucceeded =
+            false;
+        }
+
+      } catch (
+        cloudScheduleError
+      ) {
+
+        logWarn(
+          "Penjadwalan sinkronisasi Preset hasil import ke cloud gagal:",
+          cloudScheduleError
+        );
+
+        importSucceeded =
+          false;
+      }
+
+    } else {
+
+      logWarn(
+        "schedulePresetCloudSave() tidak tersedia setelah Import Preset."
+      );
+
+      importSucceeded =
+        false;
+    }
+
+    if (
+      typeof refreshPresetList ===
+        "function"
+    ) {
+
+      try {
+
+        const refreshResult =
+          refreshPresetList();
+
+        if (
+          refreshResult ===
+            false
+        ) {
+
+          logWarn(
+            "refreshPresetList() mengembalikan false setelah Import Preset."
+          );
+
+          importSucceeded =
+            false;
+        }
+
+      } catch (
+        refreshError
+      ) {
+
+        logWarn(
+          "Daftar Preset gagal diperbarui setelah import:",
+          refreshError
+        );
+
+        importSucceeded =
+          false;
+      }
+
+    } else {
+
+      logWarn(
+        "refreshPresetList() tidak tersedia setelah Import Preset."
+      );
+
+      importSucceeded =
+        false;
+    }
+
+    const importCount =
+      importedPresetNames.length;
+
+    try {
+
+      importButton.textContent =
+        `✅ ${importCount} Preset Diimport`;
+
+    } catch (
+      statusError
+    ) {
+
+      logWarn(
+        "Status hasil Import Preset gagal ditampilkan:",
+        statusError
+      );
+
+      importSucceeded =
+        false;
+    }
+
+  } catch (
+    error
+  ) {
+
+    importSucceeded =
+      false;
+
+    logWarn(
+      "Import preset gagal:",
+      error
+    );
+
+    try {
+
+      importButton.textContent =
+        "⚠️ File Tidak Valid";
+
+    } catch (
+      statusError
+    ) {
+
+      logWarn(
+        "Status File Tidak Valid gagal ditampilkan:",
+        statusError
+      );
+    }
+  }
+
+  if (
+    typeof setTimeout ===
+      "function"
+  ) {
+
+    try {
+
+      setTimeout(
+
+        /* CALLBACK setTimeout() Restore Teks Import */
+        () => {
+
+          const logWarn = (
+            ...args
+          ) => {
+
+            if (
+              typeof console !==
+                "undefined" &&
+              console &&
+              typeof console.warn ===
+                "function"
+            ) {
+
+              console.warn(
+                ...args
+              );
+            }
+          };
+
+          if (
+            !importButton
+          ) {
+
+            logWarn(
+              "Tombol Import Preset tidak tersedia untuk mengembalikan teks."
+            );
+
+            return false;
+          }
+
+          const restoreText =
+            typeof originalText ===
+              "string"
+              ? originalText
+              : "";
+
+          try {
+
+            importButton.textContent =
+              restoreText;
+
+          } catch (
+            restoreError
+          ) {
+
+            logWarn(
+              "Teks tombol Import Preset gagal dikembalikan setelah proses import selesai:",
+              restoreError
+            );
+
+            return false;
+          }
+
+          return true;
+        }
+        /* Batas CALLBACK setTimeout() Restore Teks Import */,
+
+        1500
+      );
+
+    } catch (
+      timeoutError
+    ) {
+
+      logWarn(
+        "Penjadwalan pemulihan teks tombol Import Preset gagal:",
+        timeoutError
+      );
+
+      importSucceeded =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "setTimeout() tidak tersedia untuk mengembalikan teks tombol Import Preset."
+    );
+
+    importSucceeded =
+      false;
+  }
+
+  try {
+
+    eventTarget.value =
+      "";
+
+  } catch (
+    resetInputError
+  ) {
+
+    logWarn(
+      "Input file Import Preset gagal direset:",
+      resetInputError
+    );
+
+    importSucceeded =
+      false;
+  }
+
+  return importSucceeded;
+}
     /* Batas CALLBACK Change Preset Import File */
 
   );
@@ -28122,8 +28436,74 @@ if (
       stateError
     );
 
+    try {
+
+      if (
+        previousPresetsValue ===
+          null
+      ) {
+
+        localStorage.removeItem(
+          presetsKey
+        );
+
+      } else {
+
+        localStorage.setItem(
+          presetsKey,
+          previousPresetsValue
+        );
+      }
+
+      if (
+        previousDefaultValue ===
+          null
+      ) {
+
+        localStorage.removeItem(
+          defaultPresetKey
+        );
+
+      } else {
+
+        localStorage.setItem(
+          defaultPresetKey,
+          previousDefaultValue
+        );
+      }
+
+      if (
+        previousActiveValue ===
+          null
+      ) {
+
+        localStorage.removeItem(
+          activePresetKey
+        );
+
+      } else {
+
+        localStorage.setItem(
+          activePresetKey,
+          previousActiveValue
+        );
+      }
+
+    } catch (
+      rollbackStateError
+    ) {
+
+      logWarn(
+        "Rollback localStorage setelah kegagalan state penghapusan Preset gagal:",
+        rollbackStateError
+      );
+    }
+
     return false;
   }
+
+  let deleteBerhasil =
+    true;
 
   if (
     typeof schedulePresetCloudSave ===
@@ -28132,7 +28512,21 @@ if (
 
     try {
 
-      schedulePresetCloudSave();
+      const cloudScheduleResult =
+        schedulePresetCloudSave();
+
+      if (
+        cloudScheduleResult ===
+          false
+      ) {
+
+        logWarn(
+          "schedulePresetCloudSave() mengembalikan false setelah Preset dihapus."
+        );
+
+        deleteBerhasil =
+          false;
+      }
 
     } catch (
       cloudScheduleError
@@ -28142,7 +28536,19 @@ if (
         "Penjadwalan sinkronisasi penghapusan Preset ke cloud gagal:",
         cloudScheduleError
       );
+
+      deleteBerhasil =
+        false;
     }
+
+  } else {
+
+    logWarn(
+      "schedulePresetCloudSave() tidak tersedia setelah Preset dihapus."
+    );
+
+    deleteBerhasil =
+      false;
   }
 
   if (
@@ -28152,7 +28558,21 @@ if (
 
     try {
 
-      refreshPresetList();
+      const refreshResult =
+        refreshPresetList();
+
+      if (
+        refreshResult ===
+          false
+      ) {
+
+        logWarn(
+          "refreshPresetList() mengembalikan false setelah Preset dihapus."
+        );
+
+        deleteBerhasil =
+          false;
+      }
 
     } catch (
       refreshError
@@ -28162,7 +28582,19 @@ if (
         "Daftar Preset gagal diperbarui setelah penghapusan:",
         refreshError
       );
+
+      deleteBerhasil =
+        false;
     }
+
+  } else {
+
+    logWarn(
+      "refreshPresetList() tidak tersedia setelah Preset dihapus."
+    );
+
+    deleteBerhasil =
+      false;
   }
 
   if (
@@ -28172,7 +28604,21 @@ if (
 
     try {
 
-      updatePresetActionState();
+      const actionStateResult =
+        updatePresetActionState();
+
+      if (
+        actionStateResult ===
+          false
+      ) {
+
+        logWarn(
+          "updatePresetActionState() mengembalikan false setelah Preset dihapus."
+        );
+
+        deleteBerhasil =
+          false;
+      }
 
     } catch (
       actionStateError
@@ -28182,7 +28628,19 @@ if (
         "Status aksi Preset gagal diperbarui setelah penghapusan:",
         actionStateError
       );
+
+      deleteBerhasil =
+        false;
     }
+
+  } else {
+
+    logWarn(
+      "updatePresetActionState() tidak tersedia setelah Preset dihapus."
+    );
+
+    deleteBerhasil =
+      false;
   }
 
   try {
@@ -28198,6 +28656,9 @@ if (
       "Status Preset Dihapus gagal ditampilkan:",
       successTextError
     );
+
+    deleteBerhasil =
+      false;
   }
 
   if (
@@ -28207,7 +28668,21 @@ if (
 
     try {
 
-      closePresetPanelSoon();
+      const closePanelResult =
+        closePresetPanelSoon();
+
+      if (
+        closePanelResult ===
+          false
+      ) {
+
+        logWarn(
+          "closePresetPanelSoon() mengembalikan false setelah Preset dihapus."
+        );
+
+        deleteBerhasil =
+          false;
+      }
 
     } catch (
       closePanelError
@@ -28217,7 +28692,19 @@ if (
         "Penjadwalan penutupan panel Preset gagal:",
         closePanelError
       );
+
+      deleteBerhasil =
+        false;
     }
+
+  } else {
+
+    logWarn(
+      "closePresetPanelSoon() tidak tersedia setelah Preset dihapus."
+    );
+
+    deleteBerhasil =
+      false;
   }
 
   if (
@@ -28310,9 +28797,10 @@ if (
     return false;
   }
 
-  return true;
+  return deleteBerhasil;
 }
 /* Batas CALLBACK Klik Preset Delete */
+
 );
 
 } else {
@@ -28623,6 +29111,7 @@ function applySavedBrightness() {
   if (
     typeof document ===
       "undefined" ||
+    !document ||
     typeof document.getElementById !==
       "function"
   ) {
@@ -29795,6 +30284,30 @@ async function loadReaderSettingsFromCloud() {
       return false;
     }
 
+    const previousReadingModeState =
+      typeof readingMode !==
+        "undefined"
+        ? readingMode
+        : undefined;
+
+    const previousZoomState =
+      typeof zoomLevel !==
+        "undefined"
+        ? zoomLevel
+        : undefined;
+
+    const previousBrightnessState =
+      typeof brightnessLevel !==
+        "undefined"
+        ? brightnessLevel
+        : undefined;
+
+    const previousContrastState =
+      typeof contrastLevel !==
+        "undefined"
+        ? contrastLevel
+        : undefined;
+
     try {
 
       localStorage.setItem(
@@ -29939,6 +30452,110 @@ async function loadReaderSettingsFromCloud() {
         "State pengaturan Reader gagal diperbarui dari cloud:",
         stateError
       );
+
+      try {
+
+        readingMode =
+          previousReadingModeState;
+
+        zoomLevel =
+          previousZoomState;
+
+        brightnessLevel =
+          previousBrightnessState;
+
+        contrastLevel =
+          previousContrastState;
+
+      } catch (
+        stateRollbackError
+      ) {
+
+        logError(
+          "Rollback state pengaturan Reader gagal:",
+          stateRollbackError
+        );
+      }
+
+      try {
+
+        if (
+          previousReadingModeValue ===
+            null
+        ) {
+
+          localStorage.removeItem(
+            readingModeKey
+          );
+
+        } else {
+
+          localStorage.setItem(
+            readingModeKey,
+            previousReadingModeValue
+          );
+        }
+
+        if (
+          previousZoomValue ===
+            null
+        ) {
+
+          localStorage.removeItem(
+            zoomKey
+          );
+
+        } else {
+
+          localStorage.setItem(
+            zoomKey,
+            previousZoomValue
+          );
+        }
+
+        if (
+          previousBrightnessValue ===
+            null
+        ) {
+
+          localStorage.removeItem(
+            brightnessKey
+          );
+
+        } else {
+
+          localStorage.setItem(
+            brightnessKey,
+            previousBrightnessValue
+          );
+        }
+
+        if (
+          previousContrastValue ===
+            null
+        ) {
+
+          localStorage.removeItem(
+            contrastKey
+          );
+
+        } else {
+
+          localStorage.setItem(
+            contrastKey,
+            previousContrastValue
+          );
+        }
+
+      } catch (
+        storageRollbackError
+      ) {
+
+        logError(
+          "Rollback localStorage setelah kegagalan state pengaturan Reader gagal:",
+          storageRollbackError
+        );
+      }
 
       return false;
     }
@@ -32726,299 +33343,310 @@ if (
     "pointerdown",
 
     /* CALLBACK Pointerdown Flipbook */
-    (event) => {
+async (event) => {
 
-      const logWarn = (
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      console &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
         ...args
-      ) => {
+      );
+    }
+  };
 
-        if (
-          typeof console !==
-            "undefined" &&
-          console &&
-          typeof console.warn ===
-            "function"
-        ) {
+  const eventTarget =
+    event &&
+    event.target
+      ? event.target
+      : null;
 
-          console.warn(
-            ...args
-          );
-        }
-      };
+  if (
+    eventTarget &&
+    typeof eventTarget.closest ===
+      "function"
+  ) {
 
-      const eventTarget =
-        event &&
-        event.target
-          ? event.target
-          : null;
+    try {
 
-      if (
-        eventTarget &&
-        typeof eventTarget.closest ===
-          "function"
-      ) {
-
-        try {
-
-          const interactiveArea =
-            eventTarget.closest(
-              "#toolbar-toggle, .page-controls, #brightness-panel, #contrast-panel, #preset-panel"
-            );
-
-          if (
-            interactiveArea
-          ) {
-
-            return true;
-          }
-
-        } catch (
-          closestError
-        ) {
-
-          logWarn(
-            "Pemeriksaan area interaktif Flipbook gagal:",
-            closestError
-          );
-
-          return false;
-        }
-      }
-
-      if (
-        typeof document ===
-          "undefined" ||
-        !document ||
-        typeof document.querySelector !==
-          "function" ||
-        typeof document.getElementById !==
-          "function"
-      ) {
-
-        logWarn(
-          "Document tidak tersedia untuk interaksi Flipbook."
-        );
-
-        return false;
-      }
-
-      const controls =
-        document.querySelector(
-          ".page-controls"
-        );
-
-      const toggle =
-        document.getElementById(
-          "toolbar-toggle"
+      const interactiveArea =
+        eventTarget.closest(
+          "#toolbar-toggle, .page-controls, #brightness-panel, #contrast-panel, #preset-panel"
         );
 
       if (
-        !controls ||
-        !toggle
+        interactiveArea
       ) {
 
-        logWarn(
-          "Elemen toolbar Flipbook tidak lengkap."
-        );
-
-        return false;
+        return true;
       }
 
-      if (
-        !controls.classList ||
-        typeof controls.classList.remove !==
-          "function"
-      ) {
+    } catch (
+      closestError
+    ) {
 
-        logWarn(
-          "classList toolbar Flipbook tidak tersedia."
-        );
+      logWarn(
+        "Pemeriksaan area interaktif Flipbook gagal:",
+        closestError
+      );
 
-        return false;
-      }
+      return false;
+    }
+  }
 
-      if (
-        typeof lastBookTap ===
-          "undefined"
-      ) {
+  if (
+    typeof document ===
+      "undefined" ||
+    !document ||
+    typeof document.querySelector !==
+      "function" ||
+    typeof document.getElementById !==
+      "function"
+  ) {
 
-        logWarn(
-          "State lastBookTap tidak tersedia."
-        );
+    logWarn(
+      "Document tidak tersedia untuk interaksi Flipbook."
+    );
 
-        return false;
-      }
+    return false;
+  }
 
-      const now =
-        Date.now();
+  const controls =
+    document.querySelector(
+      ".page-controls"
+    );
 
-      const previousBookTap =
-        Number(
-          lastBookTap
-        );
+  const toggle =
+    document.getElementById(
+      "toolbar-toggle"
+    );
 
-      const validPreviousBookTap =
-        Number.isFinite(
-          previousBookTap
-        )
-          ? previousBookTap
-          : 0;
+  if (
+    !controls ||
+    !toggle
+  ) {
 
-      const isDoubleTap =
-        now -
-          validPreviousBookTap <
-        350;
+    logWarn(
+      "Elemen toolbar Flipbook tidak lengkap."
+    );
+
+    return false;
+  }
+
+  if (
+    !controls.classList ||
+    typeof controls.classList.remove !==
+      "function"
+  ) {
+
+    logWarn(
+      "classList toolbar Flipbook tidak tersedia."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof lastBookTap ===
+      "undefined"
+  ) {
+
+    logWarn(
+      "State lastBookTap tidak tersedia."
+    );
+
+    return false;
+  }
+
+  const now =
+    Date.now();
+
+  const previousBookTap =
+    Number(
+      lastBookTap
+    );
+
+  const validPreviousBookTap =
+    Number.isFinite(
+      previousBookTap
+    )
+      ? previousBookTap
+      : 0;
+
+  const isDoubleTap =
+    now -
+      validPreviousBookTap <
+    350;
+
+  try {
+
+    lastBookTap =
+      now;
+
+  } catch (
+    tapStateError
+  ) {
+
+    logWarn(
+      "State lastBookTap gagal diperbarui:",
+      tapStateError
+    );
+
+    return false;
+  }
+
+  if (
+    isDoubleTap
+  ) {
+
+    if (
+      event &&
+      typeof event.preventDefault ===
+        "function"
+    ) {
 
       try {
 
-        lastBookTap =
-          now;
+        event.preventDefault();
 
       } catch (
-        tapStateError
+        preventDefaultError
       ) {
 
         logWarn(
-          "State lastBookTap gagal diperbarui:",
-          tapStateError
+          "preventDefault() Double Tap Flipbook gagal:",
+          preventDefaultError
         );
-
-        return false;
-      }
-
-      if (
-        isDoubleTap
-      ) {
-
-        if (
-          event &&
-          typeof event.preventDefault ===
-            "function"
-        ) {
-
-          try {
-
-            event.preventDefault();
-
-          } catch (
-            preventDefaultError
-          ) {
-
-            logWarn(
-              "preventDefault() Double Tap Flipbook gagal:",
-              preventDefaultError
-            );
-          }
-        }
-
-        if (
-          event &&
-          typeof event.stopPropagation ===
-            "function"
-        ) {
-
-          try {
-
-            event.stopPropagation();
-
-          } catch (
-            propagationError
-          ) {
-
-            logWarn(
-              "stopPropagation() Double Tap Flipbook gagal:",
-              propagationError
-            );
-          }
-        }
-
-        if (
-          typeof toggleFullscreen !==
-            "function"
-        ) {
-
-          logWarn(
-            "toggleFullscreen() tidak tersedia saat Double Tap Flipbook."
-          );
-
-          return false;
-        }
-
-        try {
-
-          const fullscreenResult =
-            toggleFullscreen();
-
-          return fullscreenResult !==
-            false;
-
-        } catch (
-          fullscreenError
-        ) {
-
-          logWarn(
-            "Fullscreen gagal dijalankan saat Double Tap Flipbook:",
-            fullscreenError
-          );
-
-          return false;
-        }
-      }
-
-      try {
-
-        controls.classList.remove(
-          "toolbar-hidden"
-        );
-
-        toggle.textContent =
-          "✕";
-
-      } catch (
-        toolbarDisplayError
-      ) {
-
-        logWarn(
-          "Toolbar gagal ditampilkan dari Flipbook:",
-          toolbarDisplayError
-        );
-
-        return false;
-      }
-
-      if (
-        typeof scheduleToolbarHide !==
-          "function"
-      ) {
-
-        logWarn(
-          "scheduleToolbarHide() tidak tersedia setelah toolbar ditampilkan."
-        );
-
-        return false;
-      }
-
-      try {
-
-        const scheduleResult =
-          scheduleToolbarHide();
-
-        return scheduleResult !==
-          false;
-
-      } catch (
-        scheduleError
-      ) {
-
-        logWarn(
-          "Toolbar Hide gagal dijadwalkan dari Flipbook:",
-          scheduleError
-        );
-
-        return false;
       }
     }
-    /* Batas CALLBACK Pointerdown Flipbook */,
+
+    if (
+      event &&
+      typeof event.stopPropagation ===
+        "function"
+    ) {
+
+      try {
+
+        event.stopPropagation();
+
+      } catch (
+        propagationError
+      ) {
+
+        logWarn(
+          "stopPropagation() Double Tap Flipbook gagal:",
+          propagationError
+        );
+      }
+    }
+
+    if (
+      typeof toggleFullscreen !==
+        "function"
+    ) {
+
+      logWarn(
+        "toggleFullscreen() tidak tersedia saat Double Tap Flipbook."
+      );
+
+      return false;
+    }
+
+    try {
+
+      const fullscreenResult =
+        await toggleFullscreen();
+
+      if (
+        fullscreenResult ===
+          false
+      ) {
+
+        logWarn(
+          "Fullscreen tidak berhasil dijalankan saat Double Tap Flipbook."
+        );
+
+        return false;
+      }
+
+      return true;
+
+    } catch (
+      fullscreenError
+    ) {
+
+      logWarn(
+        "Fullscreen gagal dijalankan saat Double Tap Flipbook:",
+        fullscreenError
+      );
+
+      return false;
+    }
+  }
+
+  try {
+
+    controls.classList.remove(
+      "toolbar-hidden"
+    );
+
+    toggle.textContent =
+      "✕";
+
+  } catch (
+    toolbarDisplayError
+  ) {
+
+    logWarn(
+      "Toolbar gagal ditampilkan dari Flipbook:",
+      toolbarDisplayError
+    );
+
+    return false;
+  }
+
+  if (
+    typeof scheduleToolbarHide !==
+      "function"
+  ) {
+
+    logWarn(
+      "scheduleToolbarHide() tidak tersedia setelah toolbar ditampilkan."
+    );
+
+    return false;
+  }
+
+  try {
+
+    const scheduleResult =
+      scheduleToolbarHide();
+
+    return scheduleResult !==
+      false;
+
+  } catch (
+    scheduleError
+  ) {
+
+    logWarn(
+      "Toolbar Hide gagal dijadwalkan dari Flipbook:",
+      scheduleError
+    );
+
+    return false;
+  }
+}
+/* Batas CALLBACK Pointerdown Flipbook */,
 
     true
   );
