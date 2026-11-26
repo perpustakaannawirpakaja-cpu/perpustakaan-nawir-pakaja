@@ -30343,165 +30343,153 @@ function applySavedBrightness() {
 applySavedBrightness();
 
 /* === TOP LEVEL FUNCTION === */
+
 function applySavedReadingMode() {
 
-  const logWarn = (
-    ...args
-  ) => {
-
+  const logWarn = (...args) => {
     if (
-      typeof console !==
-        "undefined" &&
+      typeof console !== "undefined" &&
       console &&
-      typeof console.warn ===
-        "function"
+      typeof console.warn === "function"
     ) {
-
-      console.warn(
-        ...args
-      );
+      console.warn(...args);
     }
   };
 
-  if (
-    typeof document ===
-      "undefined" ||
-    !document ||
-    typeof document.getElementById !==
-      "function"
-  ) {
-
-    logWarn(
-      "Document tidak tersedia untuk menerapkan mode baca Reader."
-    );
-
-    return false;
-  }
-
-  const rawReadingMode =
-    typeof readingMode !==
-      "undefined"
+  const readingModeValue =
+    typeof readingMode !== "undefined"
       ? readingMode
       : undefined;
 
-  const readingModeValue =
-    Number(
-      rawReadingMode
-    );
-
   if (
-    !Number.isInteger(
-      readingModeValue
-    ) ||
+    !Number.isInteger(readingModeValue) ||
     readingModeValue < 0 ||
     readingModeValue > 2
   ) {
-
     logWarn(
       "readingMode Reader tidak valid:",
-      rawReadingMode
+      readingModeValue
     );
 
     return false;
   }
 
-  const page =
-    document.getElementById(
-      "page-flip"
-    );
-
-  const button =
-    document.getElementById(
-      "reading-mode"
-    );
-
-  if (
-    !page ||
-    !page.classList ||
-    typeof page.classList.remove !==
-      "function" ||
-    typeof page.classList.add !==
-      "function"
-  ) {
-
-    logWarn(
-      "Elemen page-flip Reader tidak tersedia untuk menerapkan mode baca."
-    );
-
-    return false;
-  }
-
-  if (
-    !button
-  ) {
-
-    logWarn(
-      "Tombol reading-mode Reader tidak tersedia."
-    );
-
-    return false;
-  }
+  let page;
+  let button;
+  let previousSepia;
+  let previousNight;
+  let previousText;
+  let previousTitle;
 
   try {
-
-    page.classList.remove(
-      "mode-sepia",
-      "mode-night"
-    );
-
     if (
-      readingModeValue ===
-        1
+      typeof document === "undefined" ||
+      !document ||
+      typeof document.getElementById !== "function"
     ) {
-
-      page.classList.add(
-        "mode-sepia"
+      logWarn(
+        "Document tidak tersedia untuk menerapkan mode baca Reader."
       );
 
-      button.textContent =
-        "📜";
-
-      button.title =
-        "Mode Sepia";
-
-    } else if (
-      readingModeValue ===
-        2
-    ) {
-
-      page.classList.add(
-        "mode-night"
-      );
-
-      button.textContent =
-        "🌙";
-
-      button.title =
-        "Mode Malam";
-
-    } else {
-
-      button.textContent =
-        "☀️";
-
-      button.title =
-        "Mode Normal";
+      return false;
     }
 
-  } catch (
-    applyError
-  ) {
+    page = document.getElementById("page-flip");
+    button = document.getElementById("reading-mode");
 
+    if (
+      !page ||
+      !page.classList ||
+      typeof page.classList.contains !== "function" ||
+      typeof page.classList.toggle !== "function" ||
+      !button
+    ) {
+      logWarn(
+        "Elemen page-flip atau tombol reading-mode Reader tidak tersedia atau tidak valid."
+      );
+
+      return false;
+    }
+
+    previousSepia = page.classList.contains("mode-sepia");
+    previousNight = page.classList.contains("mode-night");
+    previousText = button.textContent;
+    previousTitle = button.title;
+
+  } catch (prepareError) {
+    logWarn(
+      "Persiapan penerapan mode baca Reader gagal:",
+      prepareError
+    );
+
+    return false;
+  }
+
+  const isSepia = readingModeValue === 1;
+  const isNight = readingModeValue === 2;
+
+  const nextText = isSepia
+    ? "📜"
+    : isNight
+      ? "🌙"
+      : "☀️";
+
+  const nextTitle = isSepia
+    ? "Mode Sepia"
+    : isNight
+      ? "Mode Malam"
+      : "Mode Normal";
+
+  try {
+    page.classList.toggle("mode-sepia", isSepia);
+    page.classList.toggle("mode-night", isNight);
+
+    button.textContent = nextText;
+    button.title = nextTitle;
+
+    if (
+      page.classList.contains("mode-sepia") !== isSepia ||
+      page.classList.contains("mode-night") !== isNight ||
+      button.textContent !== nextText ||
+      button.title !== nextTitle
+    ) {
+      throw new Error(
+        "Tampilan mode baca Reader tidak sinkron."
+      );
+    }
+
+  } catch (applyError) {
     logWarn(
       "Mode baca Reader gagal diterapkan:",
       applyError
     );
+
+    try {
+      page.classList.toggle("mode-sepia", previousSepia);
+      page.classList.toggle("mode-night", previousNight);
+    } catch (classRollbackError) {
+      logWarn(
+        "Rollback class mode baca Reader gagal:",
+        classRollbackError
+      );
+    }
+
+    try {
+      button.textContent = previousText;
+      button.title = previousTitle;
+    } catch (buttonRollbackError) {
+      logWarn(
+        "Rollback tombol mode baca Reader gagal:",
+        buttonRollbackError
+      );
+    }
 
     return false;
   }
 
   return true;
 }
+
 /* === BATAS function applySavedReadingMode === */
 
 /* =========================================
@@ -30509,466 +30497,283 @@ function applySavedReadingMode() {
    ========================================= */
 
 /* === TOP LEVEL FUNCTION === */
+
 async function saveReaderSettingsToCloud() {
 
-  const logWarn = (
-    ...args
-  ) => {
-
+  const logWarn = (...args) => {
     if (
-      typeof console !==
-        "undefined" &&
+      typeof console !== "undefined" &&
       console &&
-      typeof console.warn ===
-        "function"
+      typeof console.warn === "function"
     ) {
-
-      console.warn(
-        ...args
-      );
+      console.warn(...args);
     }
   };
 
-  const logError = (
-    ...args
-  ) => {
-
+  const logError = (...args) => {
     if (
-      typeof console !==
-        "undefined" &&
+      typeof console !== "undefined" &&
       console &&
-      typeof console.error ===
-        "function"
+      typeof console.error === "function"
     ) {
-
-      console.error(
-        ...args
-      );
+      console.error(...args);
     }
   };
-
-  if (
-    typeof db ===
-      "undefined" ||
-    !db ||
-    !db.auth ||
-    typeof db.auth.getUser !==
-      "function" ||
-    typeof db.from !==
-      "function"
-  ) {
-
-    logWarn(
-      "Supabase tidak tersedia untuk menyimpan pengaturan Reader."
-    );
-
-    return false;
-  }
-
-  const rawReadingMode =
-    typeof readingMode !==
-      "undefined"
-      ? readingMode
-      : undefined;
-
-  const rawZoomLevel =
-    typeof zoomLevel !==
-      "undefined"
-      ? zoomLevel
-      : undefined;
-
-  const rawBrightnessLevel =
-    typeof brightnessLevel !==
-      "undefined"
-      ? brightnessLevel
-      : undefined;
-
-  const rawContrastLevel =
-    typeof contrastLevel !==
-      "undefined"
-      ? contrastLevel
-      : undefined;
-
-  const readingModeValue =
-    Number(
-      rawReadingMode
-    );
-
-  const zoomValue =
-    Number(
-      rawZoomLevel
-    );
-
-  const brightnessValue =
-    Number(
-      rawBrightnessLevel
-    );
-
-  const contrastValue =
-    Number(
-      rawContrastLevel
-    );
-
-  if (
-    !Number.isInteger(
-      readingModeValue
-    ) ||
-    readingModeValue < 0 ||
-    readingModeValue > 2
-  ) {
-
-    logWarn(
-      "readingMode Reader tidak valid:",
-      rawReadingMode
-    );
-
-    return false;
-  }
-
-  if (
-    !Number.isFinite(
-      zoomValue
-    ) ||
-    zoomValue < 0.6 ||
-    zoomValue > 2
-  ) {
-
-    logWarn(
-      "zoomLevel Reader tidak valid:",
-      rawZoomLevel
-    );
-
-    return false;
-  }
-
-  if (
-    !Number.isFinite(
-      brightnessValue
-    ) ||
-    brightnessValue < 50 ||
-    brightnessValue > 130
-  ) {
-
-    logWarn(
-      "brightnessLevel Reader tidak valid:",
-      rawBrightnessLevel
-    );
-
-    return false;
-  }
-
-  if (
-    !Number.isFinite(
-      contrastValue
-    ) ||
-    contrastValue < 70 ||
-    contrastValue > 150
-  ) {
-
-    logWarn(
-      "contrastLevel Reader tidak valid:",
-      rawContrastLevel
-    );
-
-    return false;
-  }
-
-  let user =
-    null;
 
   try {
-
-    const userResult =
-      await db.auth.getUser();
-
     if (
-      userResult &&
-      userResult.error
+      typeof db === "undefined" ||
+      !db ||
+      !db.auth ||
+      typeof db.auth.getUser !== "function" ||
+      typeof db.from !== "function"
     ) {
-
       logWarn(
-        "User Reader gagal dibaca sebelum menyimpan pengaturan:",
-        userResult.error
+        "Supabase tidak tersedia untuk menyimpan pengaturan Reader."
       );
 
       return false;
     }
 
-    user =
-      userResult &&
-      userResult.data
-        ? userResult.data.user
-        : null;
+    const userResult = await db.auth.getUser();
 
-  } catch (
-    userException
-  ) {
-
-    logError(
-      "Terjadi error saat membaca user Reader:",
-      userException
-    );
-
-    return false;
-  }
-
-  if (
-    !user ||
-    typeof user.id !==
-      "string" ||
-    !user.id.trim()
-  ) {
-
-    logWarn(
-      "User Reader belum login atau ID user tidak valid."
-    );
-
-    return false;
-  }
-
-  const userId =
-    user.id.trim();
-
-  let settingsTable =
-    null;
-
-  try {
-
-    settingsTable =
-      db.from(
-        "reader_settings"
+    if (!userResult || userResult.error !== null) {
+      logWarn(
+        "User Reader gagal dibaca sebelum menyimpan pengaturan:",
+        userResult ? userResult.error : userResult
       );
 
-  } catch (
-    tableError
-  ) {
+      return false;
+    }
 
-    logError(
-      "Tabel reader_settings gagal diakses:",
-      tableError
-    );
+    const user = userResult.data && userResult.data.user;
 
-    return false;
-  }
-
-  if (
-    !settingsTable ||
-    typeof settingsTable.upsert !==
-      "function"
-  ) {
-
-    logWarn(
-      "Operasi upsert reader_settings tidak tersedia."
-    );
-
-    return false;
-  }
-
-  let updatedAt =
-    "";
-
-  try {
-
-    updatedAt =
-      new Date()
-        .toISOString();
-
-  } catch (
-    dateError
-  ) {
-
-    logError(
-      "Timestamp pengaturan Reader gagal dibuat:",
-      dateError
-    );
-
-    return false;
-  }
-
-  let saveResult =
-    null;
-
-  try {
-
-    saveResult =
-      await settingsTable.upsert(
-        {
-          user_id:
-            userId,
-
-          reading_mode:
-            readingModeValue,
-
-          zoom_level:
-            zoomValue,
-
-          brightness_level:
-            brightnessValue,
-
-          contrast_level:
-            contrastValue,
-
-          updated_at:
-            updatedAt
-        },
-        {
-          onConflict:
-            "user_id"
-        }
+    if (
+      !user ||
+      typeof user.id !== "string" ||
+      !user.id.trim()
+    ) {
+      logWarn(
+        "User Reader belum login atau ID user tidak valid."
       );
 
-  } catch (
-    saveException
-  ) {
+      return false;
+    }
 
+    const userId = user.id.trim();
+
+    const readingModeValue =
+      typeof readingMode !== "undefined"
+        ? readingMode
+        : undefined;
+
+    const zoomValue =
+      typeof zoomLevel !== "undefined"
+        ? zoomLevel
+        : undefined;
+
+    const brightnessValue =
+      typeof brightnessLevel !== "undefined"
+        ? brightnessLevel
+        : undefined;
+
+    const contrastValue =
+      typeof contrastLevel !== "undefined"
+        ? contrastLevel
+        : undefined;
+
+    if (
+      !Number.isInteger(readingModeValue) ||
+      readingModeValue < 0 ||
+      readingModeValue > 2
+    ) {
+      logWarn("readingMode Reader tidak valid:", readingModeValue);
+      return false;
+    }
+
+    if (
+      !Number.isFinite(zoomValue) ||
+      zoomValue < 0.6 ||
+      zoomValue > 2
+    ) {
+      logWarn("zoomLevel Reader tidak valid:", zoomValue);
+      return false;
+    }
+
+    if (
+      !Number.isFinite(brightnessValue) ||
+      brightnessValue < 50 ||
+      brightnessValue > 130
+    ) {
+      logWarn("brightnessLevel Reader tidak valid:", brightnessValue);
+      return false;
+    }
+
+    if (
+      !Number.isFinite(contrastValue) ||
+      contrastValue < 70 ||
+      contrastValue > 150
+    ) {
+      logWarn("contrastLevel Reader tidak valid:", contrastValue);
+      return false;
+    }
+
+    const settingsTable = db.from("reader_settings");
+
+    if (
+      !settingsTable ||
+      typeof settingsTable.upsert !== "function"
+    ) {
+      logWarn(
+        "Operasi upsert reader_settings tidak tersedia."
+      );
+
+      return false;
+    }
+
+    const saveResult = await settingsTable.upsert(
+      {
+        user_id: userId,
+        reading_mode: readingModeValue,
+        zoom_level: zoomValue,
+        brightness_level: brightnessValue,
+        contrast_level: contrastValue,
+        updated_at: new Date().toISOString()
+      },
+      {
+        onConflict: "user_id"
+      }
+    );
+
+    if (!saveResult || saveResult.error !== null) {
+      logError(
+        "Gagal menyimpan pengaturan Reader ke cloud:",
+        saveResult ? saveResult.error : saveResult
+      );
+
+      return false;
+    }
+
+    return true;
+
+  } catch (error) {
     logError(
       "Terjadi error saat menyimpan pengaturan Reader ke cloud:",
-      saveException
+      error
     );
 
     return false;
   }
-
-  if (
-    saveResult &&
-    saveResult.error
-  ) {
-
-    logError(
-      "Gagal menyimpan pengaturan Reader ke cloud:",
-      saveResult.error
-    );
-
-    return false;
-  }
-
-  return true;
 }
+
 /* === BATAS async function saveReaderSettingsToCloud === */
 
 let readerSettingsCloudSaveTimer = null;
 
 /* === TOP LEVEL FUNCTION === */
+
 function scheduleReaderSettingsCloudSave() {
 
-  const logWarn = (
-    ...args
-  ) => {
-
+  const logWarn = (...args) => {
     if (
-      typeof console !==
-        "undefined" &&
+      typeof console !== "undefined" &&
       console &&
-      typeof console.warn ===
-        "function"
+      typeof console.warn === "function"
     ) {
-
-      console.warn(
-        ...args
-      );
+      console.warn(...args);
     }
   };
 
-  const logError = (
-    ...args
-  ) => {
-
+  const logError = (...args) => {
     if (
-      typeof console !==
-        "undefined" &&
+      typeof console !== "undefined" &&
       console &&
-      typeof console.error ===
-        "function"
+      typeof console.error === "function"
     ) {
-
-      console.error(
-        ...args
-      );
+      console.error(...args);
     }
   };
 
   if (
-    typeof readerSettingsCloudSaveTimer ===
-      "undefined"
+    typeof readerSettingsCloudSaveTimer === "undefined" ||
+    typeof clearTimeout !== "function" ||
+    typeof setTimeout !== "function" ||
+    typeof saveReaderSettingsToCloud !== "function"
   ) {
-
     logWarn(
-      "State timer Reader settings cloud tidak tersedia."
-    );
-
-    return false;
-  }
-
-  if (
-    typeof clearTimeout !==
-      "function" ||
-    typeof setTimeout !==
-      "function"
-  ) {
-
-    logWarn(
-      "Timer browser tidak tersedia untuk menjadwalkan penyimpanan pengaturan Reader."
+      "Penjadwalan Reader settings cloud tidak tersedia."
     );
 
     return false;
   }
 
   try {
-
-    if (
-      readerSettingsCloudSaveTimer !==
-        null
-    ) {
-
-      clearTimeout(
-        readerSettingsCloudSaveTimer
-      );
-
-      readerSettingsCloudSaveTimer =
-        null;
+    if (readerSettingsCloudSaveTimer !== null) {
+      clearTimeout(readerSettingsCloudSaveTimer);
+      readerSettingsCloudSaveTimer = null;
     }
 
-    readerSettingsCloudSaveTimer =
-    setTimeout(
+    const timerId = setTimeout(
 
       /* CALLBACK setTimeout() Reader Settings Cloud Save */
       async () => {
+        let savePromise = null;
 
         try {
+          if (readerSettingsCloudSaveTimer !== timerId) {
+            return false;
+          }
 
-          if (
-            typeof saveReaderSettingsToCloud !==
-              "function"
-          ) {
+          const previousSave =
+            scheduleReaderSettingsCloudSave.inFlight;
+
+          if (previousSave) {
+            try {
+              await previousSave;
+            } catch (previousError) {
+              // Kegagalan request sebelumnya ditangani oleh callback pemiliknya.
+            }
+          }
+
+          if (readerSettingsCloudSaveTimer !== timerId) {
+            return false;
+          }
+
+          readerSettingsCloudSaveTimer = null;
+
+          if (typeof saveReaderSettingsToCloud !== "function") {
+            logWarn(
+              "Function saveReaderSettingsToCloud tidak tersedia."
+            );
 
             return false;
           }
 
-          const berhasil =
-            await saveReaderSettingsToCloud();
+          savePromise = Promise.resolve().then(
+            () => saveReaderSettingsToCloud()
+          );
 
-          return berhasil !==
-            false;
+          scheduleReaderSettingsCloudSave.inFlight = savePromise;
 
-        } catch (
-          error
-        ) {
+          const berhasil = await savePromise;
 
-          if (
-            typeof console !==
-              "undefined" &&
-            console &&
-            typeof console.error ===
-              "function"
-          ) {
+          return berhasil === true;
 
-            console.error(
-              "Scheduled Reader settings cloud save gagal:",
-              error
-            );
-          }
+        } catch (error) {
+          logError(
+            "Scheduled Reader settings cloud save gagal:",
+            error
+          );
 
           return false;
+
+        } finally {
+          if (
+            savePromise !== null &&
+            scheduleReaderSettingsCloudSave.inFlight === savePromise
+          ) {
+            scheduleReaderSettingsCloudSave.inFlight = null;
+          }
         }
       }
       /* Batas CALLBACK setTimeout() Reader Settings Cloud Save */,
@@ -30976,13 +30781,11 @@ function scheduleReaderSettingsCloudSave() {
       800
     );
 
-  } catch (
-    scheduleError
-  ) {
+    readerSettingsCloudSaveTimer = timerId;
 
-    readerSettingsCloudSaveTimer =
-      null;
+    return true;
 
+  } catch (scheduleError) {
     logError(
       "Gagal menjadwalkan penyimpanan pengaturan Reader ke cloud:",
       scheduleError
@@ -30990,930 +30793,318 @@ function scheduleReaderSettingsCloudSave() {
 
     return false;
   }
-
-  return true;
 }
+
 /* === BATAS function scheduleReaderSettingsCloudSave === */
 
 /* === TOP LEVEL FUNCTION === */
 async function loadReaderSettingsFromCloud() {
 
-  const logWarn = (
-    ...args
-  ) => {
-
+  const logWarn = (...args) => {
     if (
-      typeof console !==
-        "undefined" &&
+      typeof console !== "undefined" &&
       console &&
-      typeof console.warn ===
-        "function"
+      typeof console.warn === "function"
     ) {
-
-      console.warn(
-        ...args
-      );
+      console.warn(...args);
     }
   };
 
-  const logError = (
-    ...args
-  ) => {
-
+  const logError = (...args) => {
     if (
-      typeof console !==
-        "undefined" &&
+      typeof console !== "undefined" &&
       console &&
-      typeof console.error ===
-        "function"
+      typeof console.error === "function"
     ) {
-
-      console.error(
-        ...args
-      );
+      console.error(...args);
     }
   };
 
-  if (
-    typeof db ===
-      "undefined" ||
-    !db ||
-    !db.auth ||
-    typeof db.auth.getUser !==
-      "function" ||
-    typeof db.from !==
-      "function"
-  ) {
-
-    logWarn(
-      "Supabase tidak tersedia untuk mengambil pengaturan Reader."
-    );
-
-    return false;
-  }
-
-  if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.getItem !==
-      "function" ||
-    typeof localStorage.setItem !==
-      "function" ||
-    typeof localStorage.removeItem !==
-      "function"
-  ) {
-
-    logWarn(
-      "localStorage tidak tersedia untuk menyimpan pengaturan Reader."
-    );
-
-    return false;
-  }
-
-  if (
-    typeof readingModeKey !==
-      "string" ||
-    !readingModeKey ||
-    typeof zoomKey !==
-      "string" ||
-    !zoomKey ||
-    typeof brightnessKey !==
-      "string" ||
-    !brightnessKey ||
-    typeof contrastKey !==
-      "string" ||
-    !contrastKey
-  ) {
-
-    logWarn(
-      "Salah satu key pengaturan Reader tidak tersedia atau tidak valid."
-    );
-
-    return false;
-  }
-
-  let user =
-    null;
+  const loadToken = {};
+  loadReaderSettingsFromCloud.latestLoad = loadToken;
 
   try {
-
-    const userResult =
-      await db.auth.getUser();
-
     if (
-      userResult &&
-      userResult.error
+      typeof db === "undefined" ||
+      !db || !db.auth ||
+      typeof db.auth.getUser !== "function" ||
+      typeof db.from !== "function" ||
+      typeof scheduleReaderSettingsCloudSave !== "function" ||
+      typeof readerSettingsCloudSaveTimer === "undefined"
     ) {
-
-      logWarn(
-        "User Reader gagal dibaca sebelum mengambil pengaturan:",
-        userResult.error
-      );
-
+      logWarn("Supabase atau scheduler pengaturan Reader tidak tersedia.");
       return false;
     }
 
-    user =
-      userResult &&
-      userResult.data
-        ? userResult.data.user
-        : null;
-
-  } catch (
-    userException
-  ) {
-
-    logError(
-      "Terjadi error saat membaca user Reader:",
-      userException
-    );
-
-    return false;
-  }
-
-  if (
-    !user ||
-    typeof user.id !==
-      "string" ||
-    !user.id.trim()
-  ) {
-
-    logWarn(
-      "User Reader belum login atau ID user tidak valid."
-    );
-
-    return false;
-  }
-
-  const userId =
-    user.id.trim();
-
-  let settingsTable =
-    null;
-
-  try {
-
-    settingsTable =
-      db.from(
-        "reader_settings"
-      );
-
-  } catch (
-    tableError
-  ) {
-
-    logError(
-      "Tabel reader_settings gagal diakses:",
-      tableError
-    );
-
-    return false;
-  }
-
-  if (
-    !settingsTable ||
-    typeof settingsTable.select !==
-      "function"
-  ) {
-
-    logWarn(
-      "Operasi select reader_settings tidak tersedia."
-    );
-
-    return false;
-  }
-
-  let query =
-    null;
-
-  try {
-
-    query =
-      settingsTable.select(
-        "reading_mode, zoom_level, brightness_level, contrast_level"
-      );
-
-    if (
-      !query ||
-      typeof query.eq !==
-        "function"
-    ) {
-
-      logWarn(
-        "Operasi filter reader_settings tidak tersedia."
-      );
-
-      return false;
-    }
-
-    query =
-      query.eq(
-        "user_id",
-        userId
-      );
-
-    if (
-      !query ||
-      typeof query.maybeSingle !==
-        "function"
-    ) {
-
-      logWarn(
-        "Operasi maybeSingle reader_settings tidak tersedia."
-      );
-
-      return false;
-    }
-
-  } catch (
-    queryError
-  ) {
-
-    logError(
-      "Query reader_settings gagal disiapkan:",
-      queryError
-    );
-
-    return false;
-  }
-
-  let loadResult =
-    null;
-
-  try {
-
-    loadResult =
-      await query.maybeSingle();
-
-  } catch (
-    loadException
-  ) {
-
-    logError(
-      "Terjadi error saat mengambil pengaturan Reader dari cloud:",
-      loadException
-    );
-
-    return false;
-  }
-
-  if (
-    loadResult &&
-    loadResult.error
-  ) {
-
-    logError(
-      "Gagal mengambil pengaturan Reader dari cloud:",
-      loadResult.error
-    );
-
-    return false;
-  }
-
-  const data =
-    loadResult
-      ? loadResult.data
+    const storage = typeof localStorage !== "undefined"
+      ? localStorage
       : null;
 
-  if (
-    data
-  ) {
-
-    const rawReadingMode =
-      Number(
-        data.reading_mode ??
-          0
-      );
-
-    const rawZoom =
-      Number(
-        data.zoom_level ??
-          1
-      );
-
-    const rawBrightness =
-      Number(
-        data.brightness_level ??
-          100
-      );
-
-    const rawContrast =
-      Number(
-        data.contrast_level ??
-          100
-      );
-
-    const readingModeBaru =
-      Number.isInteger(
-        rawReadingMode
-      ) &&
-      rawReadingMode >= 0 &&
-      rawReadingMode <= 2
-        ? rawReadingMode
-        : 0;
-
-    const zoomBaru =
-      Number.isFinite(
-        rawZoom
-      ) &&
-      rawZoom >= 0.6 &&
-      rawZoom <= 2
-        ? rawZoom
-        : 1;
-
-    const brightnessBaru =
-      Number.isFinite(
-        rawBrightness
-      ) &&
-      rawBrightness >= 50 &&
-      rawBrightness <= 130
-        ? rawBrightness
-        : 100;
-
-    const contrastBaru =
-      Number.isFinite(
-        rawContrast
-      ) &&
-      rawContrast >= 70 &&
-      rawContrast <= 150
-        ? rawContrast
-        : 100;
-
-    const perluMigrasiCloud =
-      readingModeBaru !==
-        data.reading_mode ||
-      zoomBaru !==
-        data.zoom_level ||
-      brightnessBaru !==
-        data.brightness_level ||
-      contrastBaru !==
-        data.contrast_level;
-
-    let previousReadingModeValue =
-      null;
-
-    let previousZoomValue =
-      null;
-
-    let previousBrightnessValue =
-      null;
-
-    let previousContrastValue =
-      null;
-
-    try {
-
-      previousReadingModeValue =
-        localStorage.getItem(
-          readingModeKey
-        );
-
-      previousZoomValue =
-        localStorage.getItem(
-          zoomKey
-        );
-
-      previousBrightnessValue =
-        localStorage.getItem(
-          brightnessKey
-        );
-
-      previousContrastValue =
-        localStorage.getItem(
-          contrastKey
-        );
-
-    } catch (
-      storageReadError
+    if (
+      !storage ||
+      typeof storage.getItem !== "function" ||
+      typeof storage.setItem !== "function" ||
+      typeof storage.removeItem !== "function"
     ) {
-
-      logError(
-        "Pengaturan Reader sebelumnya gagal dibaca dari localStorage:",
-        storageReadError
-      );
-
+      logWarn("localStorage pengaturan Reader tidak tersedia.");
       return false;
     }
 
-    const previousReadingModeState =
-      typeof readingMode !==
-        "undefined"
-        ? readingMode
-        : undefined;
+    const keys = [
+      typeof readingModeKey === "string" ? readingModeKey : "",
+      typeof zoomKey === "string" ? zoomKey : "",
+      typeof brightnessKey === "string" ? brightnessKey : "",
+      typeof contrastKey === "string" ? contrastKey : ""
+    ];
 
-    const previousZoomState =
-      typeof zoomLevel !==
-        "undefined"
-        ? zoomLevel
-        : undefined;
-
-    const previousBrightnessState =
-      typeof brightnessLevel !==
-        "undefined"
-        ? brightnessLevel
-        : undefined;
-
-    const previousContrastState =
-      typeof contrastLevel !==
-        "undefined"
-        ? contrastLevel
-        : undefined;
-
-    try {
-
-      localStorage.setItem(
-        readingModeKey,
-        String(
-          readingModeBaru
-        )
-      );
-
-      localStorage.setItem(
-        zoomKey,
-        String(
-          zoomBaru
-        )
-      );
-
-      localStorage.setItem(
-        brightnessKey,
-        String(
-          brightnessBaru
-        )
-      );
-
-      localStorage.setItem(
-        contrastKey,
-        String(
-          contrastBaru
-        )
-      );
-
-    } catch (
-      storageError
+    if (
+      keys.some(key => !key.trim()) ||
+      new Set(keys).size !== keys.length ||
+      typeof readingMode === "undefined" ||
+      typeof zoomLevel === "undefined" ||
+      typeof brightnessLevel === "undefined" ||
+      typeof contrastLevel === "undefined"
     ) {
-
-      try {
-
-        if (
-          previousReadingModeValue ===
-            null
-        ) {
-
-          localStorage.removeItem(
-            readingModeKey
-          );
-
-        } else {
-
-          localStorage.setItem(
-            readingModeKey,
-            previousReadingModeValue
-          );
-        }
-
-        if (
-          previousZoomValue ===
-            null
-        ) {
-
-          localStorage.removeItem(
-            zoomKey
-          );
-
-        } else {
-
-          localStorage.setItem(
-            zoomKey,
-            previousZoomValue
-          );
-        }
-
-        if (
-          previousBrightnessValue ===
-            null
-        ) {
-
-          localStorage.removeItem(
-            brightnessKey
-          );
-
-        } else {
-
-          localStorage.setItem(
-            brightnessKey,
-            previousBrightnessValue
-          );
-        }
-
-        if (
-          previousContrastValue ===
-            null
-        ) {
-
-          localStorage.removeItem(
-            contrastKey
-          );
-
-        } else {
-
-          localStorage.setItem(
-            contrastKey,
-            previousContrastValue
-          );
-        }
-
-      } catch (
-        rollbackError
-      ) {
-
-        logError(
-          "Rollback localStorage pengaturan Reader gagal:",
-          rollbackError
-        );
-      }
-
-      logError(
-        "Pengaturan Reader dari cloud gagal disimpan ke localStorage:",
-        storageError
-      );
-
+      logWarn("Key atau state pengaturan Reader tidak valid.");
       return false;
     }
 
-    try {
+    const readState = () => [
+      readingMode, zoomLevel, brightnessLevel, contrastLevel
+    ];
 
-      readingMode =
-        readingModeBaru;
+    const hasPendingSave = () =>
+      readerSettingsCloudSaveTimer !== null ||
+      Boolean(scheduleReaderSettingsCloudSave.inFlight);
 
-      zoomLevel =
-        zoomBaru;
-
-      brightnessLevel =
-        brightnessBaru;
-
-      contrastLevel =
-        contrastBaru;
-
-    } catch (
-      stateError
-    ) {
-
-      logError(
-        "State pengaturan Reader gagal diperbarui dari cloud:",
-        stateError
-      );
-
-      try {
-
-        readingMode =
-          previousReadingModeState;
-
-        zoomLevel =
-          previousZoomState;
-
-        brightnessLevel =
-          previousBrightnessState;
-
-        contrastLevel =
-          previousContrastState;
-
-      } catch (
-        stateRollbackError
-      ) {
-
-        logError(
-          "Rollback state pengaturan Reader gagal:",
-          stateRollbackError
-        );
-      }
-
-      try {
-
-        if (
-          previousReadingModeValue ===
-            null
-        ) {
-
-          localStorage.removeItem(
-            readingModeKey
-          );
-
-        } else {
-
-          localStorage.setItem(
-            readingModeKey,
-            previousReadingModeValue
-          );
-        }
-
-        if (
-          previousZoomValue ===
-            null
-        ) {
-
-          localStorage.removeItem(
-            zoomKey
-          );
-
-        } else {
-
-          localStorage.setItem(
-            zoomKey,
-            previousZoomValue
-          );
-        }
-
-        if (
-          previousBrightnessValue ===
-            null
-        ) {
-
-          localStorage.removeItem(
-            brightnessKey
-          );
-
-        } else {
-
-          localStorage.setItem(
-            brightnessKey,
-            previousBrightnessValue
-          );
-        }
-
-        if (
-          previousContrastValue ===
-            null
-        ) {
-
-          localStorage.removeItem(
-            contrastKey
-          );
-
-        } else {
-
-          localStorage.setItem(
-            contrastKey,
-            previousContrastValue
-          );
-        }
-
-      } catch (
-        storageRollbackError
-      ) {
-
-        logError(
-          "Rollback localStorage setelah kegagalan state pengaturan Reader gagal:",
-          storageRollbackError
-        );
-      }
-
+    if (hasPendingSave()) {
+      logWarn("Load cloud ditunda karena pengaturan Reader sedang disimpan.");
       return false;
     }
 
-    let berhasil =
-      true;
+    const previousState = readState();
+    const previousStorage = keys.map(key => storage.getItem(key));
+
+    const userResult = await db.auth.getUser();
+    const user = userResult && userResult.data && userResult.data.user;
 
     if (
-      typeof applySavedReadingMode ===
-        "function"
+      !userResult || userResult.error !== null ||
+      !user || typeof user.id !== "string" || !user.id.trim()
     ) {
-
-      try {
-
-        if (
-          applySavedReadingMode() ===
-            false
-        ) {
-
-          berhasil =
-            false;
-        }
-
-      } catch (
-        readingModeError
-      ) {
-
-        logError(
-          "Mode baca Reader gagal diterapkan:",
-          readingModeError
-        );
-
-        berhasil =
-          false;
-      }
-
-    } else {
-
-      logWarn(
-        "Function applySavedReadingMode tidak tersedia."
-      );
-
-      berhasil =
-        false;
+      logWarn("User Reader tidak valid saat load cloud.");
+      return false;
     }
 
-    if (
-      typeof applyZoom ===
-        "function"
-    ) {
+    const userId = user.id.trim();
+    const table = db.from("reader_settings");
 
-      try {
-
-        if (
-          applyZoom() ===
-            false
-        ) {
-
-          berhasil =
-            false;
-        }
-
-      } catch (
-        zoomError
-      ) {
-
-        logError(
-          "Zoom Reader gagal diterapkan:",
-          zoomError
-        );
-
-        berhasil =
-          false;
-      }
-
-    } else {
-
-      logWarn(
-        "Function applyZoom tidak tersedia."
-      );
-
-      berhasil =
-        false;
+    if (!table || typeof table.select !== "function") {
+      logWarn("Operasi select reader_settings tidak tersedia.");
+      return false;
     }
 
-    if (
-      typeof applySavedBrightness ===
-        "function"
-    ) {
+    const selection = table.select(
+      "reading_mode, zoom_level, brightness_level, contrast_level"
+    );
 
-      try {
-
-        if (
-          applySavedBrightness() ===
-            false
-        ) {
-
-          berhasil =
-            false;
-        }
-
-      } catch (
-        brightnessError
-      ) {
-
-        logError(
-          "Brightness Reader gagal diterapkan:",
-          brightnessError
-        );
-
-        berhasil =
-          false;
-      }
-
-    } else {
-
-      logWarn(
-        "Function applySavedBrightness tidak tersedia."
-      );
-
-      berhasil =
-        false;
+    if (!selection || typeof selection.eq !== "function") {
+      logWarn("Filter reader_settings tidak tersedia.");
+      return false;
     }
 
-    if (
-      typeof applySavedContrast ===
-        "function"
-    ) {
+    const query = selection.eq("user_id", userId);
 
-      try {
-
-        if (
-          applySavedContrast() ===
-            false
-        ) {
-
-          berhasil =
-            false;
-        }
-
-      } catch (
-        contrastError
-      ) {
-
-        logError(
-          "Contrast Reader gagal diterapkan:",
-          contrastError
-        );
-
-        berhasil =
-          false;
-      }
-
-    } else {
-
-      logWarn(
-        "Function applySavedContrast tidak tersedia."
-      );
-
-      berhasil =
-        false;
+    if (!query || typeof query.maybeSingle !== "function") {
+      logWarn("Operasi maybeSingle reader_settings tidak tersedia.");
+      return false;
     }
 
+    const result = await query.maybeSingle();
+
     if (
-      perluMigrasiCloud
+      !result || result.error !== null ||
+      !Object.prototype.hasOwnProperty.call(result, "data")
     ) {
+      logError("Respons load reader_settings tidak valid:", result?.error);
+      return false;
+    }
+
+    const data = result.data;
+    const fields = [
+      "reading_mode", "zoom_level", "brightness_level", "contrast_level"
+    ];
+
+    if (
+      data !== null && (
+        typeof data !== "object" || Array.isArray(data) ||
+        fields.some(field =>
+          !Object.prototype.hasOwnProperty.call(data, field)
+        )
+      )
+    ) {
+      logWarn("Row reader_settings tidak lengkap atau tidak valid.");
+      return false;
+    }
+
+    const currentUserResult = await db.auth.getUser();
+    const currentUser = currentUserResult &&
+      currentUserResult.data && currentUserResult.data.user;
+
+    if (
+      !currentUserResult || currentUserResult.error !== null ||
+      !currentUser || currentUser.id !== userId ||
+      loadReaderSettingsFromCloud.latestLoad !== loadToken ||
+      hasPendingSave() ||
+      readState().some((value, i) => !Object.is(value, previousState[i])) ||
+      keys.some((key, i) => storage.getItem(key) !== previousStorage[i])
+    ) {
+      logWarn("Load cloud dibatalkan karena user atau pengaturan Reader berubah.");
+      return false;
+    }
+
+    const saveCloud = async () => {
+      if (
+        typeof saveReaderSettingsToCloud !== "function" ||
+        hasPendingSave()
+      ) {
+        logWarn("Penyimpanan reader_settings belum dapat dijalankan.");
+        return false;
+      }
+
+      const promise = Promise.resolve().then(
+        () => saveReaderSettingsToCloud()
+      );
+
+      scheduleReaderSettingsCloudSave.inFlight = promise;
+
+      try {
+        const success = await promise;
+        if (success !== true) {
+          logWarn("Penyimpanan reader_settings belum berhasil.");
+          return false;
+        }
+        return true;
+      } finally {
+        if (scheduleReaderSettingsCloudSave.inFlight === promise) {
+          scheduleReaderSettingsCloudSave.inFlight = null;
+        }
+      }
+    };
+
+    if (data === null) {
+      return await saveCloud();
+    }
+
+    const normalize = (raw, min, max, fallback, integer) => {
+      const value = typeof raw === "number"
+        ? raw
+        : typeof raw === "string" &&
+          /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(raw.trim())
+          ? Number(raw)
+          : NaN;
 
       if (
-        typeof saveReaderSettingsToCloud !==
-          "function"
+        !Number.isFinite(value) || value < min || value > max ||
+        (integer === "strict" && !Number.isInteger(value))
       ) {
-
-        logWarn(
-          "Pengaturan Reader perlu dinormalisasi tetapi saveReaderSettingsToCloud tidak tersedia."
-        );
-
-        berhasil =
-          false;
-
-      } else {
-
-        try {
-
-          const hasilMigrasi =
-            await saveReaderSettingsToCloud();
-
-          if (
-            hasilMigrasi ===
-              false
-          ) {
-
-            logWarn(
-              "Normalisasi pengaturan Reader belum berhasil disimpan ke cloud."
-            );
-
-            berhasil =
-              false;
-          }
-
-        } catch (
-          migrationError
-        ) {
-
-          logError(
-            "Normalisasi pengaturan Reader gagal disimpan ke cloud:",
-            migrationError
-          );
-
-          berhasil =
-            false;
-        }
+        return fallback;
       }
+
+      return integer === "round" ? Math.round(value) : value;
+    };
+
+    const nextState = [
+      normalize(data.reading_mode, 0, 2, 0, "strict"),
+      normalize(data.zoom_level, 0.6, 2, 1),
+      normalize(data.brightness_level, 50, 130, 100, "round"),
+      normalize(data.contrast_level, 70, 150, 100, "round")
+    ];
+
+    const needsMigration = fields.some(
+      (field, i) => data[field] !== nextState[i]
+    );
+
+    const applyFunctions = [
+      typeof applySavedReadingMode === "function" ? applySavedReadingMode : null,
+      typeof applyZoom === "function" ? applyZoom : null,
+      typeof applySavedBrightness === "function" ? applySavedBrightness : null,
+      typeof applySavedContrast === "function" ? applySavedContrast : null
+    ];
+
+    if (applyFunctions.some(fn => !fn)) {
+      logWarn("Function penerapan pengaturan Reader belum lengkap.");
+      return false;
     }
 
-    return berhasil;
-  }
+    let stateTouched = false;
+    let uiTouched = false;
 
-  if (
-    typeof saveReaderSettingsToCloud !==
-      "function"
-  ) {
+    try {
+      keys.forEach((key, i) => storage.setItem(key, String(nextState[i])));
 
-    logWarn(
-      "saveReaderSettingsToCloud tidak tersedia untuk membuat pengaturan Reader di cloud."
-    );
+      stateTouched = true;
+      [readingMode, zoomLevel, brightnessLevel, contrastLevel] = nextState;
 
-    return false;
-  }
+      uiTouched = true;
+      for (const fn of applyFunctions) {
+        if (fn() !== true) {
+          throw new Error("Penerapan pengaturan Reader gagal: " + fn.name);
+        }
+      }
 
-  try {
+      if (
+        readState().some((value, i) => value !== nextState[i]) ||
+        keys.some((key, i) => storage.getItem(key) !== String(nextState[i]))
+      ) {
+        throw new Error("State dan localStorage pengaturan Reader tidak sinkron.");
+      }
+    } catch (applyError) {
+      logError("Pengaturan Reader dari cloud gagal diterapkan:", applyError);
 
-    const hasilSimpan =
-      await saveReaderSettingsToCloud();
+      if (stateTouched) {
+        try {
+          [readingMode, zoomLevel, brightnessLevel, contrastLevel] = previousState;
+        } catch (rollbackError) {
+          logError("Rollback state Reader gagal:", rollbackError);
+        }
+      }
 
-    return hasilSimpan !==
-      false;
+      if (uiTouched) {
+        for (const fn of applyFunctions) {
+          try {
+            if (fn() !== true) {
+              logWarn("Rollback tampilan Reader gagal:", fn.name);
+            }
+          } catch (rollbackError) {
+            logError("Rollback tampilan Reader gagal:", rollbackError);
+          }
+        }
+      }
 
-  } catch (
-    saveException
-  ) {
+      for (let i = 0; i < keys.length; i++) {
+        try {
+          if (previousStorage[i] === null) {
+            storage.removeItem(keys[i]);
+          } else {
+            storage.setItem(keys[i], previousStorage[i]);
+          }
+        } catch (rollbackError) {
+          logError("Rollback localStorage Reader gagal:", keys[i], rollbackError);
+        }
+      }
 
-    logError(
-      "Pengaturan Reader lokal gagal disinkronkan ke cloud:",
-      saveException
-    );
+      return false;
+    }
 
+    if (needsMigration) {
+      return await saveCloud();
+    }
+
+    return true;
+
+  } catch (error) {
+    logError("Load pengaturan Reader dari cloud gagal:", error);
     return false;
   }
 }
@@ -31921,605 +31112,224 @@ async function loadReaderSettingsFromCloud() {
 
 applySavedReadingMode();
   
+
 /* === BOOTSTRAP DEFAULT READER PRESET === */
-let defaultPresetName =
-  "";
+(function bootstrapDefaultReaderPreset() {
 
-const logDefaultPresetWarn = (
-  ...args
-) => {
-
-  if (
-    typeof logBootstrapWarn ===
-      "function"
-  ) {
-
+  const logWarn = (...args) => {
     try {
-
-      logBootstrapWarn(
-        ...args
-      );
-
-    } catch (
-      logError
-    ) {
-
-      if (
-        typeof console !==
-          "undefined" &&
-        console &&
-        typeof console.warn ===
-          "function"
-      ) {
-
-        console.warn(
-          ...args
-        );
+      if (typeof logBootstrapWarn === "function") {
+        logBootstrapWarn(...args);
+        return;
       }
+    } catch (logError) {
+      // Gunakan fallback logger.
     }
 
-  } else if (
-    typeof console !==
-      "undefined" &&
-    console &&
-    typeof console.warn ===
-      "function"
-  ) {
-
-    console.warn(
-      ...args
-    );
-  }
-};
-
-const localStorageAvailable =
-  Boolean(
-    typeof localStorage !==
-      "undefined" &&
-    localStorage &&
-    typeof localStorage.getItem ===
-      "function" &&
-    typeof localStorage.setItem ===
-      "function" &&
-    typeof localStorage.removeItem ===
-      "function"
-  );
-
-const defaultPresetKeyAvailable =
-  Boolean(
-    typeof defaultPresetKey ===
-      "string" &&
-    defaultPresetKey
-  );
-
-if (
-  !localStorageAvailable
-) {
-
-  logDefaultPresetWarn(
-    "localStorage tidak tersedia untuk memuat Default Preset Reader."
-  );
-
-} else if (
-  !defaultPresetKeyAvailable
-) {
-
-  logDefaultPresetWarn(
-    "defaultPresetKey tidak tersedia atau tidak valid."
-  );
-
-} else {
+    try {
+      if (
+        typeof console !== "undefined" && console &&
+        typeof console.warn === "function"
+      ) {
+        console.warn(...args);
+      }
+    } catch (logError) {
+      // Logger tidak boleh menghentikan bootstrap Reader.
+    }
+  };
 
   try {
-
-    const storedDefaultPresetName =
-      localStorage.getItem(
-        defaultPresetKey
-      );
+    const storage = typeof localStorage !== "undefined"
+      ? localStorage
+      : null;
 
     if (
-      typeof storedDefaultPresetName ===
-        "string"
+      !storage ||
+      typeof storage.getItem !== "function" ||
+      typeof storage.setItem !== "function" ||
+      typeof storage.removeItem !== "function" ||
+      typeof defaultPresetKey !== "string" ||
+      !defaultPresetKey.trim()
     ) {
-
-      defaultPresetName =
-        storedDefaultPresetName.trim();
+      logWarn("Penyimpanan Default Preset Reader tidak tersedia.");
+      return false;
     }
 
-  } catch (
-    defaultPresetReadError
-  ) {
+    const storedName = storage.getItem(defaultPresetKey);
+    const name = typeof storedName === "string" ? storedName.trim() : "";
 
-    logDefaultPresetWarn(
-      "Default Preset Reader gagal dibaca:",
-      defaultPresetReadError
-    );
+    if (!name) return true;
 
-    defaultPresetName =
-      "";
-  }
-}
+    if (
+      typeof displayPresets === "undefined" || !displayPresets ||
+      typeof displayPresets !== "object" || Array.isArray(displayPresets) ||
+      name === "__CUSTOM__" ||
+      !Object.prototype.hasOwnProperty.call(displayPresets, name)
+    ) {
+      logWarn("Default Preset Reader tidak ditemukan atau tidak valid:", name);
+      return false;
+    }
 
-const presetsAvailable =
-  Boolean(
-    typeof displayPresets !==
-      "undefined" &&
-    displayPresets &&
-    typeof displayPresets ===
-      "object" &&
-    !Array.isArray(
-      displayPresets
-    )
-  );
+    const preset = displayPresets[name];
 
-const defaultPresetExists =
-  Boolean(
-    presetsAvailable &&
-    defaultPresetName &&
-    typeof Object !==
-      "undefined" &&
-    Object.prototype &&
-    typeof Object.prototype.hasOwnProperty ===
-      "function" &&
-    Object.prototype.hasOwnProperty.call(
-      displayPresets,
-      defaultPresetName
-    )
-  );
+    if (!preset || typeof preset !== "object" || Array.isArray(preset)) {
+      logWarn("Data Default Preset Reader tidak valid:", name);
+      return false;
+    }
 
-const defaultPreset =
-  defaultPresetExists
-    ? displayPresets[
-        defaultPresetName
-      ]
-    : null;
+    const normalize = (raw, min, max, fallback, integer) => {
+      const value = typeof raw === "number"
+        ? raw
+        : typeof raw === "string" &&
+          /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(raw.trim())
+          ? Number(raw)
+          : NaN;
 
-if (
-  defaultPreset &&
-  typeof defaultPreset ===
-    "object" &&
-  !Array.isArray(
-    defaultPreset
-  )
-) {
+      if (
+        !Number.isFinite(value) || value < min || value > max ||
+        (integer === "strict" && !Number.isInteger(value))
+      ) {
+        return fallback;
+      }
 
-  const presetReadingMode =
-    Number(
-      defaultPreset.readingMode
-    );
+      return integer === "round" ? Math.round(value) : value;
+    };
 
-  const presetZoomLevel =
-    Number(
-      defaultPreset.zoomLevel
-    );
+    const nextState = [
+      normalize(preset.readingMode, 0, 2, 0, "strict"),
+      normalize(preset.zoomLevel, 0.6, 2, 1),
+      normalize(preset.brightnessLevel, 50, 130, 100, "round"),
+      normalize(preset.contrastLevel, 70, 150, 100, "round")
+    ];
 
-  const presetBrightnessLevel =
-    Number(
-      defaultPreset.brightnessLevel
-    );
+    const keys = [
+      typeof readingModeKey === "string" ? readingModeKey : "",
+      typeof zoomKey === "string" ? zoomKey : "",
+      typeof brightnessKey === "string" ? brightnessKey : "",
+      typeof contrastKey === "string" ? contrastKey : "",
+      typeof activePresetKey === "string" ? activePresetKey : "",
+      defaultPresetKey
+    ];
 
-  const presetContrastLevel =
-    Number(
-      defaultPreset.contrastLevel
-    );
+    if (
+      keys.some(key => !key.trim()) ||
+      new Set(keys).size !== keys.length ||
+      typeof readingMode === "undefined" ||
+      typeof zoomLevel === "undefined" ||
+      typeof brightnessLevel === "undefined" ||
+      typeof contrastLevel === "undefined"
+    ) {
+      logWarn("Key atau state Default Preset Reader tidak valid.");
+      return false;
+    }
 
-  const nextReadingMode =
-    Number.isInteger(
-      presetReadingMode
-    ) &&
-    presetReadingMode >= 0 &&
-    presetReadingMode <= 2
-      ? presetReadingMode
-      : 0;
+    const applyFunctions = [
+      typeof applySavedReadingMode === "function" ? applySavedReadingMode : null,
+      typeof applyZoom === "function" ? applyZoom : null,
+      typeof applySavedBrightness === "function" ? applySavedBrightness : null,
+      typeof applySavedContrast === "function" ? applySavedContrast : null
+    ];
 
-  const nextZoomLevel =
-    Number.isFinite(
-      presetZoomLevel
-    ) &&
-    presetZoomLevel >= 0.6 &&
-    presetZoomLevel <= 2
-      ? presetZoomLevel
-      : 1;
+    if (
+      applyFunctions.some(fn => !fn) ||
+      typeof refreshPresetList !== "function"
+    ) {
+      logWarn("Function penerapan Default Preset Reader belum lengkap.");
+      return false;
+    }
 
-  const nextBrightnessLevel =
-    Number.isFinite(
-      presetBrightnessLevel
-    ) &&
-    presetBrightnessLevel >= 50 &&
-    presetBrightnessLevel <= 130
-      ? presetBrightnessLevel
-      : 100;
-
-  const nextContrastLevel =
-    Number.isFinite(
-      presetContrastLevel
-    ) &&
-    presetContrastLevel >= 70 &&
-    presetContrastLevel <= 150
-      ? presetContrastLevel
-      : 100;
-
-  const readerKeysAvailable =
-    Boolean(
-      typeof readingModeKey ===
-        "string" &&
-      readingModeKey &&
-      typeof zoomKey ===
-        "string" &&
-      zoomKey &&
-      typeof brightnessKey ===
-        "string" &&
-      brightnessKey &&
-      typeof contrastKey ===
-        "string" &&
-      contrastKey &&
-      typeof activePresetKey ===
-        "string" &&
-      activePresetKey
-    );
-
-  if (
-    !localStorageAvailable ||
-    !readerKeysAvailable
-  ) {
-
-    logDefaultPresetWarn(
-      "Penyimpanan Default Preset Reader tidak tersedia atau key Reader tidak valid."
-    );
-
-  } else {
-
-    let previousReadingModeValue =
-      null;
-
-    let previousZoomValue =
-      null;
-
-    let previousBrightnessValue =
-      null;
-
-    let previousContrastValue =
-      null;
-
-    let previousActivePresetValue =
-      null;
-
-    let snapshotStorageReady =
-      true;
+    const readState = () => [readingMode, zoomLevel, brightnessLevel, contrastLevel];
+    const previousState = readState();
+    const previousStorage = keys.map(key => storage.getItem(key));
+    const nextStorage = [...nextState.map(String), name, name];
+    const attemptedApply = [];
+    let stateTouched = false;
+    let refreshAttempted = false;
 
     try {
+      keys.forEach((key, i) => {
+        if (previousStorage[i] !== nextStorage[i]) {
+          storage.setItem(key, nextStorage[i]);
+        }
+      });
 
-      previousReadingModeValue =
-        localStorage.getItem(
-          readingModeKey
-        );
+      stateTouched = true;
+      [readingMode, zoomLevel, brightnessLevel, contrastLevel] = nextState;
 
-      previousZoomValue =
-        localStorage.getItem(
-          zoomKey
-        );
+      for (const fn of applyFunctions) {
+        attemptedApply.push(fn);
+        if (fn() !== true) {
+          throw new Error("Penerapan Default Preset gagal: " + fn.name);
+        }
+      }
 
-      previousBrightnessValue =
-        localStorage.getItem(
-          brightnessKey
-        );
+      refreshAttempted = true;
+      if (refreshPresetList() !== true) {
+        throw new Error("Refresh daftar Default Preset Reader gagal.");
+      }
 
-      previousContrastValue =
-        localStorage.getItem(
-          contrastKey
-        );
+      if (
+        readState().some((value, i) => value !== nextState[i]) ||
+        keys.some((key, i) => storage.getItem(key) !== nextStorage[i])
+      ) {
+        throw new Error("State dan localStorage Default Preset tidak sinkron.");
+      }
 
-      previousActivePresetValue =
-        localStorage.getItem(
-          activePresetKey
-        );
+      return true;
 
-    } catch (
-      storageReadError
-    ) {
+    } catch (applyError) {
+      logWarn("Default Preset Reader gagal diterapkan:", applyError);
 
-      snapshotStorageReady =
-        false;
+      if (stateTouched) {
+        try {
+          [readingMode, zoomLevel, brightnessLevel, contrastLevel] = previousState;
+        } catch (rollbackError) {
+          logWarn("Rollback state Default Preset gagal:", rollbackError);
+        }
+      }
 
-      logDefaultPresetWarn(
-        "Snapshot localStorage Default Preset Reader gagal dibaca:",
-        storageReadError
-      );
+      for (const fn of attemptedApply) {
+        try {
+          if (fn() !== true) {
+            logWarn("Rollback tampilan Default Preset gagal:", fn.name);
+          }
+        } catch (rollbackError) {
+          logWarn("Rollback tampilan Default Preset gagal:", rollbackError);
+        }
+      }
+
+      for (let i = 0; i < keys.length; i++) {
+        try {
+          if (previousStorage[i] === null) {
+            storage.removeItem(keys[i]);
+          } else {
+            storage.setItem(keys[i], previousStorage[i]);
+          }
+        } catch (rollbackError) {
+          logWarn("Rollback localStorage Default Preset gagal:", keys[i], rollbackError);
+        }
+      }
+
+      if (refreshAttempted) {
+        try {
+          if (refreshPresetList() !== true) {
+            logWarn("Rollback daftar preset Reader gagal.");
+          }
+        } catch (rollbackError) {
+          logWarn("Rollback daftar preset Reader gagal:", rollbackError);
+        }
+      }
+
+      return false;
     }
 
-    let storageReady =
-      snapshotStorageReady;
-
-    if (
-      snapshotStorageReady
-    ) {
-
-      try {
-
-        localStorage.setItem(
-          readingModeKey,
-          String(
-            nextReadingMode
-          )
-        );
-
-        localStorage.setItem(
-          zoomKey,
-          String(
-            nextZoomLevel
-          )
-        );
-
-        localStorage.setItem(
-          brightnessKey,
-          String(
-            nextBrightnessLevel
-          )
-        );
-
-        localStorage.setItem(
-          contrastKey,
-          String(
-            nextContrastLevel
-          )
-        );
-
-        localStorage.setItem(
-          activePresetKey,
-          defaultPresetName
-        );
-
-      } catch (
-        defaultPresetStorageError
-      ) {
-
-        storageReady =
-          false;
-
-        try {
-
-          if (
-            previousReadingModeValue ===
-              null
-          ) {
-
-            localStorage.removeItem(
-              readingModeKey
-            );
-
-          } else {
-
-            localStorage.setItem(
-              readingModeKey,
-              previousReadingModeValue
-            );
-          }
-
-          if (
-            previousZoomValue ===
-              null
-          ) {
-
-            localStorage.removeItem(
-              zoomKey
-            );
-
-          } else {
-
-            localStorage.setItem(
-              zoomKey,
-              previousZoomValue
-            );
-          }
-
-          if (
-            previousBrightnessValue ===
-              null
-          ) {
-
-            localStorage.removeItem(
-              brightnessKey
-            );
-
-          } else {
-
-            localStorage.setItem(
-              brightnessKey,
-              previousBrightnessValue
-            );
-          }
-
-          if (
-            previousContrastValue ===
-              null
-          ) {
-
-            localStorage.removeItem(
-              contrastKey
-            );
-
-          } else {
-
-            localStorage.setItem(
-              contrastKey,
-              previousContrastValue
-            );
-          }
-
-          if (
-            previousActivePresetValue ===
-              null
-          ) {
-
-            localStorage.removeItem(
-              activePresetKey
-            );
-
-          } else {
-
-            localStorage.setItem(
-              activePresetKey,
-              previousActivePresetValue
-            );
-          }
-
-        } catch (
-          rollbackError
-        ) {
-
-          logDefaultPresetWarn(
-            "Rollback Default Preset Reader gagal:",
-            rollbackError
-          );
-        }
-
-        logDefaultPresetWarn(
-          "Default Preset Reader gagal disimpan ke localStorage:",
-          defaultPresetStorageError
-        );
-      }
-    }
-
-    if (
-      storageReady
-    ) {
-
-      try {
-
-        readingMode =
-          nextReadingMode;
-
-        zoomLevel =
-          nextZoomLevel;
-
-        brightnessLevel =
-          nextBrightnessLevel;
-
-        contrastLevel =
-          nextContrastLevel;
-
-      } catch (
-        stateError
-      ) {
-
-        logDefaultPresetWarn(
-          "State Default Preset Reader gagal diperbarui:",
-          stateError
-        );
-
-        storageReady =
-          false;
-      }
-    }
-
-    if (
-      storageReady
-    ) {
-
-      if (
-        typeof applySavedReadingMode ===
-          "function"
-      ) {
-
-        try {
-
-          applySavedReadingMode();
-
-        } catch (
-          readingModeApplyError
-        ) {
-
-          logDefaultPresetWarn(
-            "Reading Mode dari Default Preset gagal diterapkan:",
-            readingModeApplyError
-          );
-        }
-      }
-
-      if (
-        typeof applyZoom ===
-          "function"
-      ) {
-
-        try {
-
-          applyZoom();
-
-        } catch (
-          zoomApplyError
-        ) {
-
-          logDefaultPresetWarn(
-            "Zoom dari Default Preset gagal diterapkan:",
-            zoomApplyError
-          );
-        }
-      }
-
-      if (
-        typeof applySavedBrightness ===
-          "function"
-      ) {
-
-        try {
-
-          applySavedBrightness();
-
-        } catch (
-          brightnessApplyError
-        ) {
-
-          logDefaultPresetWarn(
-            "Brightness dari Default Preset gagal diterapkan:",
-            brightnessApplyError
-          );
-        }
-      }
-
-      if (
-        typeof applySavedContrast ===
-          "function"
-      ) {
-
-        try {
-
-          applySavedContrast();
-
-        } catch (
-          contrastApplyError
-        ) {
-
-          logDefaultPresetWarn(
-            "Contrast dari Default Preset gagal diterapkan:",
-            contrastApplyError
-          );
-        }
-      }
-
-      if (
-        typeof refreshPresetList ===
-          "function"
-      ) {
-
-        try {
-
-          refreshPresetList();
-
-        } catch (
-          presetListRefreshError
-        ) {
-
-          logDefaultPresetWarn(
-            "Daftar Preset Reader gagal diperbarui:",
-            presetListRefreshError
-          );
-        }
-      }
-    }
+  } catch (error) {
+    logWarn("Bootstrap Default Preset Reader gagal:", error);
+    return false;
   }
-}
+})();
 /* === BATAS BOOTSTRAP DEFAULT READER PRESET === */
-  
+
   let toolbarTimer = null;
   let toolbarInteractionActive = false;
   let sliderDragging = false;
