@@ -3052,19 +3052,71 @@ body[data-ui-style="minimal"]
    LOAD READER UI STYLE
    ========================================= */
 
-const savedReaderUiStyle =
-  localStorage.getItem("uiStyle") || "glass";
+let savedReaderUiStyle =
+  "glass";
 
-const savedReaderTheme =
-  localStorage.getItem("tema") || "light";
+let savedReaderTheme =
+  "light";
+
+try {
+
+  if (
+    typeof localStorage !==
+      "undefined" &&
+    localStorage &&
+    typeof localStorage.getItem ===
+      "function"
+  ) {
+
+    savedReaderUiStyle =
+      localStorage.getItem(
+        "uiStyle"
+      ) ||
+      "glass";
+
+    savedReaderTheme =
+      localStorage.getItem(
+        "tema"
+      ) ||
+      "light";
+  }
+
+} catch (
+  readerUiStorageError
+) {
+
+  if (
+    typeof console !==
+      "undefined" &&
+    console &&
+    typeof console.warn ===
+      "function"
+  ) {
+
+    console.warn(
+      "Reader UI Style gagal dibaca dari localStorage:",
+      readerUiStorageError
+    );
+  }
+}
 
 document.body.dataset.uiStyle =
   savedReaderUiStyle;
 
-if (savedReaderTheme === "dark") {
-  document.body.classList.add("dark");
+if (
+  savedReaderTheme ===
+    "dark"
+) {
+
+  document.body.classList.add(
+    "dark"
+  );
+
 } else {
-  document.body.classList.remove("dark");
+
+  document.body.classList.remove(
+    "dark"
+  );
 }
   
 const SUPABASE_URL =
@@ -5782,11 +5834,35 @@ async function loadBookmarksFromCloud() {
     bookmarks =
       normalizedBookmarks;
 
+    let localStorageSiap =
+      false;
+
+    try {
+
+      localStorageSiap =
+        typeof localStorage !==
+          "undefined" &&
+        Boolean(
+          localStorage
+        ) &&
+        typeof localStorage.setItem ===
+          "function";
+
+    } catch (
+      localStorageAccessError
+    ) {
+
+      logWarn(
+        "localStorage tidak dapat diakses saat memuat bookmark Reader:",
+        localStorageAccessError
+      );
+
+      localStorageSiap =
+        false;
+    }
+
     if (
-      typeof localStorage !==
-        "undefined" &&
-      typeof localStorage.setItem ===
-        "function"
+      localStorageSiap
     ) {
 
       try {
@@ -7504,11 +7580,34 @@ async function loadReadingProgressFromCloud() {
   const ambilLocalPage =
     () => {
 
+      let localStorageSiap =
+        false;
+
+      try {
+
+        localStorageSiap =
+          typeof localStorage !==
+            "undefined" &&
+          Boolean(
+            localStorage
+          ) &&
+          typeof localStorage.getItem ===
+            "function";
+
+      } catch (
+        localStorageAccessError
+      ) {
+
+        logWarn(
+          "localStorage tidak dapat diakses saat membaca progress PDF lokal:",
+          localStorageAccessError
+        );
+
+        return 1;
+      }
+
       if (
-        typeof localStorage ===
-          "undefined" ||
-        typeof localStorage.getItem !==
-          "function"
+        !localStorageSiap
       ) {
 
         return 1;
@@ -7574,11 +7673,35 @@ async function loadReadingProgressFromCloud() {
       pageNum =
         normalizedPage;
 
+      let localStorageSiap =
+        false;
+
+      try {
+
+        localStorageSiap =
+          typeof localStorage !==
+            "undefined" &&
+          Boolean(
+            localStorage
+          ) &&
+          typeof localStorage.setItem ===
+            "function";
+
+      } catch (
+        localStorageAccessError
+      ) {
+
+        logWarn(
+          "localStorage tidak dapat diakses saat memperbarui progress PDF lokal:",
+          localStorageAccessError
+        );
+
+        localStorageSiap =
+          false;
+      }
+
       if (
-        typeof localStorage !==
-          "undefined" &&
-        typeof localStorage.setItem ===
-          "function"
+        localStorageSiap
       ) {
 
         try {
@@ -8157,11 +8280,34 @@ function refreshPresetList() {
     return false;
   }
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.getItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk membaca status preset Reader:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    typeof localStorage.getItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -8382,11 +8528,34 @@ function markDisplayAsCustom() {
     }
   };
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.setItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk menandai tampilan Reader sebagai kustom:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    typeof localStorage.setItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -8992,11 +9161,34 @@ function updatePresetActionState() {
     return false;
   }
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.getItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk membaca status preset Reader:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    typeof localStorage.getItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -9122,6 +9314,7 @@ function updatePresetActionState() {
   /* Batas CALLBACK forEach() Preset Action Buttons */
 
 );
+
   const clearDefaultButton =
     document.getElementById(
       "preset-clear-default"
@@ -9186,7 +9379,6 @@ function updatePresetActionState() {
   return true;
 }
 /* === BATAS function updatePresetActionState === */
-
 /* === TOP LEVEL FUNCTION === */
 async function savePresetsToCloud() {
 
@@ -9262,11 +9454,34 @@ async function savePresetsToCloud() {
     return false;
   }
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.getItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk membaca metadata preset Reader:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    typeof localStorage.getItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -9276,7 +9491,8 @@ async function savePresetsToCloud() {
     return false;
   }
 
-  let user = null;
+  let user =
+    null;
 
   try {
 
@@ -9395,7 +9611,8 @@ async function savePresetsToCloud() {
     return false;
   }
 
-  let presetTable = null;
+  let presetTable =
+    null;
 
   try {
 
@@ -9429,7 +9646,8 @@ async function savePresetsToCloud() {
     return false;
   }
 
-  let saveResult = null;
+  let saveResult =
+    null;
 
   try {
 
@@ -9696,16 +9914,38 @@ async function loadPresetsFromCloud() {
     return false;
   }
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.getItem ===
+        "function" &&
+      typeof localStorage.setItem ===
+        "function" &&
+      typeof localStorage.removeItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk sinkronisasi preset Reader:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.getItem !==
-      "function" ||
-    typeof localStorage.setItem !==
-      "function" ||
-    typeof localStorage.removeItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -11743,15 +11983,43 @@ async function loadPDF() {
     pageNum =
       currentIndex + 1;
 
-    if (
-      typeof localStorage !==
-        "undefined" &&
-      localStorage &&
-      typeof localStorage.setItem ===
-        "function" &&
+    let localStorageSiap =
+      false;
+
+    try {
+
+      localStorageSiap =
+        typeof localStorage !==
+          "undefined" &&
+        Boolean(
+          localStorage
+        ) &&
+        typeof localStorage.setItem ===
+          "function";
+
+    } catch (
+      localStorageAccessError
+    ) {
+
+      logWarn(
+        "localStorage tidak dapat diakses untuk menyimpan progress membaca lokal:",
+        localStorageAccessError
+      );
+
+      localStorageSiap =
+        false;
+    }
+
+    const readingKeySiap =
       typeof readingKey ===
         "string" &&
-      readingKey.trim()
+      Boolean(
+        readingKey.trim()
+      );
+
+    if (
+      localStorageSiap &&
+      readingKeySiap
     ) {
 
       try {
@@ -14415,322 +14683,344 @@ if (
                   "text",
 
                 /* CALLBACK action(value) Buat Bookmark */
-                action: (value) => {
-
-                  const logWarn = (
-                    ...args
-                  ) => {
-
-                    if (
-                      typeof console !==
-                        "undefined" &&
-                      console &&
-                      typeof console.warn ===
-                        "function"
-                    ) {
-
-                      console.warn(
-                        ...args
-                      );
-                    }
-                  };
-
-                  const bookmarkTitle =
-                    typeof value ===
-                      "string"
-                      ? value.trim()
-                      : "";
-
-                  if (
-                    !bookmarkTitle
-                  ) {
-
-                    if (
-                      typeof readerDialogError !==
-                        "undefined" &&
-                      readerDialogError
-                    ) {
-
-                      try {
-
-                        readerDialogError.textContent =
-                          "Judul bookmark tidak boleh kosong.";
-
-                      } catch (
-                        errorMessageError
-                      ) {
-
-                        logWarn(
-                          "Pesan error bookmark gagal ditampilkan:",
-                          errorMessageError
-                        );
-                      }
-                    }
-
-                    return false;
-                  }
-
-                  const bookmarkPage =
-                    Number(
-                      typeof currentPage !==
-                        "undefined"
-                        ? currentPage
-                        : NaN
-                    );
-
-                  if (
-                    !Number.isInteger(
-                      bookmarkPage
-                    ) ||
-                    bookmarkPage < 1
-                  ) {
-
-                    logWarn(
-                      "Nomor halaman bookmark tidak valid:",
-                      typeof currentPage !==
-                        "undefined"
-                        ? currentPage
-                        : undefined
-                    );
-
-                    return false;
-                  }
-
-                  if (
-                    typeof bookmarks ===
-                      "undefined" ||
-                    !Array.isArray(
-                      bookmarks
-                    )
-                  ) {
-
-                    logWarn(
-                      "Data bookmarks tidak tersedia atau bukan array."
-                    );
-
-                    return false;
-                  }
-
-                  const updatedBookmarks = [
-                    ...bookmarks,
-                    {
-                      page:
-                        bookmarkPage,
-                      title:
-                        bookmarkTitle,
-                      favorite:
-                        false
-                    }
-                  ];
-
-                  updatedBookmarks.sort(
-
-                    /* CALLBACK sort() Bookmark */
-                    (a, b) => {
-
-                      const pageA =
-                        Number(
-                          a &&
-                          typeof a ===
-                            "object"
-                            ? a.page
-                            : NaN
-                        );
-
-                      const pageB =
-                        Number(
-                          b &&
-                          typeof b ===
-                            "object"
-                            ? b.page
-                            : NaN
-                        );
-
-                      const validPageA =
-                        Number.isInteger(
-                          pageA
-                        ) &&
-                        pageA >= 1
-                          ? pageA
-                          : Number.MAX_SAFE_INTEGER;
-
-                      const validPageB =
-                        Number.isInteger(
-                          pageB
-                        ) &&
-                        pageB >= 1
-                          ? pageB
-                          : Number.MAX_SAFE_INTEGER;
-
-                      return (
-                        validPageA -
-                        validPageB
-                      );
-                    }
-                    /* Batas CALLBACK sort() Bookmark */
-
-                  );
-
-                  if (
-                    typeof localStorage ===
-                      "undefined" ||
-                    !localStorage ||
-                    typeof localStorage.setItem !==
-                      "function"
-                  ) {
-
-                    logWarn(
-                      "localStorage tidak tersedia untuk menyimpan bookmark."
-                    );
-
-                    return false;
-                  }
-
-                  if (
-                    typeof bookmarkKey !==
-                      "string" ||
-                    !bookmarkKey
-                  ) {
-
-                    logWarn(
-                      "bookmarkKey tidak tersedia atau tidak valid."
-                    );
-
-                    return false;
-                  }
-
-                  try {
-
-                    localStorage.setItem(
-                      bookmarkKey,
-                      JSON.stringify(
-                        updatedBookmarks
-                      )
-                    );
-
-                  } catch (
-                    storageError
-                  ) {
-
-                    logWarn(
-                      "Bookmark gagal disimpan ke localStorage:",
-                      storageError
-                    );
-
-                    return false;
-                  }
-
-                  bookmarks =
-                    updatedBookmarks;
-
-                  if (
-                    typeof scheduleBookmarkCloudSave ===
-                      "function"
-                  ) {
-
-                    try {
-
-                      scheduleBookmarkCloudSave();
-
-                    } catch (
-                      cloudScheduleError
-                    ) {
-
-                      logWarn(
-                        "Penjadwalan sinkronisasi bookmark ke cloud gagal:",
-                        cloudScheduleError
-                      );
-                    }
-                  }
-
-                  if (
-                    typeof updateBookmarkListButton ===
-                      "function"
-                  ) {
-
-                    try {
-
-                      updateBookmarkListButton();
-
-                    } catch (
-                      updateListError
-                    ) {
-
-                      logWarn(
-                        "Update tombol daftar bookmark gagal:",
-                        updateListError
-                      );
-                    }
-                  }
-
-                  if (
-                    typeof updateFavoriteFilterButton ===
-                      "function"
-                  ) {
-
-                    try {
-
-                      updateFavoriteFilterButton();
-
-                    } catch (
-                      updateFavoriteError
-                    ) {
-
-                      logWarn(
-                        "Update tombol filter favorit gagal:",
-                        updateFavoriteError
-                      );
-                    }
-                  }
-
-                  if (
-                    typeof updateCurrentPageBookmarkStatus ===
-                      "function"
-                  ) {
-
-                    try {
-
-                      updateCurrentPageBookmarkStatus();
-
-                    } catch (
-                      updateStatusError
-                    ) {
-
-                      logWarn(
-                        "Update status bookmark halaman gagal:",
-                        updateStatusError
-                      );
-                    }
-                  }
-
-                  if (
-                    typeof showReaderNotice ===
-                      "function"
-                  ) {
-
-                    try {
-
-                      showReaderNotice(
-                        "🔖 Bookmark Berhasil",
-                        "Halaman " +
-                        bookmarkPage +
-                        " berhasil di-bookmark."
-                      );
-
-                    } catch (
-                      noticeError
-                    ) {
-
-                      logWarn(
-                        "Notifikasi bookmark gagal ditampilkan:",
-                        noticeError
-                      );
-                    }
-                  }
-
-                  return true;
-                }
-                /* Batas CALLBACK action(value) Buat Bookmark */
+action: (value) => {
+
+  const logWarn = (
+    ...args
+  ) => {
+
+    if (
+      typeof console !==
+        "undefined" &&
+      console &&
+      typeof console.warn ===
+        "function"
+    ) {
+
+      console.warn(
+        ...args
+      );
+    }
+  };
+
+  const bookmarkTitle =
+    typeof value ===
+      "string"
+      ? value.trim()
+      : "";
+
+  if (
+    !bookmarkTitle
+  ) {
+
+    if (
+      typeof readerDialogError !==
+        "undefined" &&
+      readerDialogError
+    ) {
+
+      try {
+
+        readerDialogError.textContent =
+          "Judul bookmark tidak boleh kosong.";
+
+      } catch (
+        errorMessageError
+      ) {
+
+        logWarn(
+          "Pesan error bookmark gagal ditampilkan:",
+          errorMessageError
+        );
+      }
+    }
+
+    return false;
+  }
+
+  const bookmarkPage =
+    Number(
+      typeof currentPage !==
+        "undefined"
+        ? currentPage
+        : NaN
+    );
+
+  if (
+    !Number.isInteger(
+      bookmarkPage
+    ) ||
+    bookmarkPage < 1
+  ) {
+
+    logWarn(
+      "Nomor halaman bookmark tidak valid:",
+      typeof currentPage !==
+        "undefined"
+        ? currentPage
+        : undefined
+    );
+
+    return false;
+  }
+
+  if (
+    typeof bookmarks ===
+      "undefined" ||
+    !Array.isArray(
+      bookmarks
+    )
+  ) {
+
+    logWarn(
+      "Data bookmarks tidak tersedia atau bukan array."
+    );
+
+    return false;
+  }
+
+  const updatedBookmarks = [
+    ...bookmarks,
+    {
+      page:
+        bookmarkPage,
+      title:
+        bookmarkTitle,
+      favorite:
+        false
+    }
+  ];
+
+  updatedBookmarks.sort(
+
+    /* CALLBACK sort() Bookmark */
+    (a, b) => {
+
+      const pageA =
+        Number(
+          a &&
+          typeof a ===
+            "object"
+            ? a.page
+            : NaN
+        );
+
+      const pageB =
+        Number(
+          b &&
+          typeof b ===
+            "object"
+            ? b.page
+            : NaN
+        );
+
+      const validPageA =
+        Number.isInteger(
+          pageA
+        ) &&
+        pageA >= 1
+          ? pageA
+          : Number.MAX_SAFE_INTEGER;
+
+      const validPageB =
+        Number.isInteger(
+          pageB
+        ) &&
+        pageB >= 1
+          ? pageB
+          : Number.MAX_SAFE_INTEGER;
+
+      return (
+        validPageA -
+        validPageB
+      );
+    }
+    /* Batas CALLBACK sort() Bookmark */
+
+  );
+
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.setItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk menyimpan bookmark:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
+  if (
+    !localStorageSiap
+  ) {
+
+    logWarn(
+      "localStorage tidak tersedia untuk menyimpan bookmark."
+    );
+
+    return false;
+  }
+
+  if (
+    typeof bookmarkKey !==
+      "string" ||
+    !bookmarkKey
+  ) {
+
+    logWarn(
+      "bookmarkKey tidak tersedia atau tidak valid."
+    );
+
+    return false;
+  }
+
+  try {
+
+    localStorage.setItem(
+      bookmarkKey,
+      JSON.stringify(
+        updatedBookmarks
+      )
+    );
+
+  } catch (
+    storageError
+  ) {
+
+    logWarn(
+      "Bookmark gagal disimpan ke localStorage:",
+      storageError
+    );
+
+    return false;
+  }
+
+  bookmarks =
+    updatedBookmarks;
+
+  if (
+    typeof scheduleBookmarkCloudSave ===
+      "function"
+  ) {
+
+    try {
+
+      scheduleBookmarkCloudSave();
+
+    } catch (
+      cloudScheduleError
+    ) {
+
+      logWarn(
+        "Penjadwalan sinkronisasi bookmark ke cloud gagal:",
+        cloudScheduleError
+      );
+    }
+  }
+
+  if (
+    typeof updateBookmarkListButton ===
+      "function"
+  ) {
+
+    try {
+
+      updateBookmarkListButton();
+
+    } catch (
+      updateListError
+    ) {
+
+      logWarn(
+        "Update tombol daftar bookmark gagal:",
+        updateListError
+      );
+    }
+  }
+
+  if (
+    typeof updateFavoriteFilterButton ===
+      "function"
+  ) {
+
+    try {
+
+      updateFavoriteFilterButton();
+
+    } catch (
+      updateFavoriteError
+    ) {
+
+      logWarn(
+        "Update tombol filter favorit gagal:",
+        updateFavoriteError
+      );
+    }
+  }
+
+  if (
+    typeof updateCurrentPageBookmarkStatus ===
+      "function"
+  ) {
+
+    try {
+
+      updateCurrentPageBookmarkStatus();
+
+    } catch (
+      updateStatusError
+    ) {
+
+      logWarn(
+        "Update status bookmark halaman gagal:",
+        updateStatusError
+      );
+    }
+  }
+
+  if (
+    typeof showReaderNotice ===
+      "function"
+  ) {
+
+    try {
+
+      showReaderNotice(
+        "🔖 Bookmark Berhasil",
+        "Halaman " +
+        bookmarkPage +
+        " berhasil di-bookmark."
+      );
+
+    } catch (
+      noticeError
+    ) {
+
+      logWarn(
+        "Notifikasi bookmark gagal ditampilkan:",
+        noticeError
+      );
+    }
+  }
+
+  return true;
+}
+/* Batas CALLBACK action(value) Buat Bookmark */
 
               });
 
@@ -14787,7 +15077,7 @@ if (
 
               "Hapus",
 
-              /* CALLBACK Konfirmasi Hapus Bookmark */
+              /* CALLBACK Konfirmasi Hapus Bookmark Halaman Aktif */
               () => {
 
                 const logWarn = (
@@ -14883,17 +15173,39 @@ if (
                         itemPage !==
                         bookmarkPage
                       );
-                    }
-                    /* Batas CALLBACK filter() Hapus Bookmark */
+                    }  
+      /* Batas CALLBACK filter() Hapus Bookmark */
 
                   );
 
+                let localStorageSiap =
+                  false;
+
+                try {
+
+                  localStorageSiap =
+                    typeof localStorage !==
+                      "undefined" &&
+                    Boolean(
+                      localStorage
+                    ) &&
+                    typeof localStorage.setItem ===
+                      "function";
+
+                } catch (
+                  localStorageAccessError
+                ) {
+
+                  logWarn(
+                    "localStorage tidak dapat diakses untuk menghapus bookmark:",
+                    localStorageAccessError
+                  );
+
+                  return false;
+                }
+
                 if (
-                  typeof localStorage ===
-                    "undefined" ||
-                  !localStorage ||
-                  typeof localStorage.setItem !==
-                    "function"
+                  !localStorageSiap
                 ) {
 
                   logWarn(
@@ -15047,7 +15359,7 @@ if (
 
                 return true;
               }
-              /* Batas CALLBACK Konfirmasi Hapus Bookmark */
+              /* Batas CALLBACK Konfirmasi Hapus Bookmark Halaman Aktif */
 
             );
 
@@ -15117,22 +15429,22 @@ if (
 /* === TOP LEVEL FUNCTION === */
 function tampilkanBookmarks() {
   const logWarn = (
-  ...args
-) => {
+    ...args
+  ) => {
 
-  if (
-    typeof console !==
-      "undefined" &&
-    console &&
-    typeof console.warn ===
-      "function"
-  ) {
+    if (
+      typeof console !==
+        "undefined" &&
+      console &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-    console.warn(
-      ...args
-    );
-  }
-};
+      console.warn(
+        ...args
+      );
+    }
+  };
 
   if (
     typeof document ===
@@ -16012,22 +16324,22 @@ function tampilkanBookmarks() {
       () => {
 
         const logWarn = (
-  ...args
-) => {
+          ...args
+        ) => {
 
-  if (
-    typeof console !==
-      "undefined" &&
-    console &&
-    typeof console.warn ===
-      "function"
-  ) {
+          if (
+            typeof console !==
+              "undefined" &&
+            console &&
+            typeof console.warn ===
+              "function"
+          ) {
 
-    console.warn(
-      ...args
-    );
-  }
-};
+            console.warn(
+              ...args
+            );
+          }
+        };
 
         if (
           !item ||
@@ -16090,12 +16402,34 @@ function tampilkanBookmarks() {
           bookmarkIndex
         ] = updatedBookmark;
 
+        let localStorageSiap =
+          false;
+
+        try {
+
+          localStorageSiap =
+            typeof localStorage !==
+              "undefined" &&
+            Boolean(
+              localStorage
+            ) &&
+            typeof localStorage.setItem ===
+              "function";
+
+        } catch (
+          localStorageAccessError
+        ) {
+
+          logWarn(
+            "localStorage tidak dapat diakses untuk menyimpan perubahan Favorite:",
+            localStorageAccessError
+          );
+
+          return false;
+        }
+
         if (
-          typeof localStorage ===
-            "undefined" ||
-          !localStorage ||
-          typeof localStorage.setItem !==
-            "function"
+          !localStorageSiap
         ) {
 
           logWarn(
@@ -16463,12 +16797,34 @@ function tampilkanBookmarks() {
                   bookmarkIndex
                 ] = updatedBookmark;
 
+                let localStorageSiap =
+                  false;
+
+                try {
+
+                  localStorageSiap =
+                    typeof localStorage !==
+                      "undefined" &&
+                    Boolean(
+                      localStorage
+                    ) &&
+                    typeof localStorage.setItem ===
+                      "function";
+
+                } catch (
+                  localStorageAccessError
+                ) {
+
+                  logWarn(
+                    "localStorage tidak dapat diakses untuk menyimpan Edit Bookmark:",
+                    localStorageAccessError
+                  );
+
+                  return false;
+                }
+
                 if (
-                  typeof localStorage ===
-                    "undefined" ||
-                  !localStorage ||
-                  typeof localStorage.setItem !==
-                    "function"
+                  !localStorageSiap
                 ) {
 
                   logWarn(
@@ -16717,287 +17073,309 @@ if (
 
               "Hapus",
 
-              /* CALLBACK Konfirmasi Hapus Bookmark */
-              () => {
+              /* CALLBACK Konfirmasi Hapus Bookmark Dari Daftar */
+() => {
 
-                const logWarn = (
-                  ...args
-                ) => {
+  const logWarn = (
+    ...args
+  ) => {
 
-                  if (
-                    typeof console !==
-                      "undefined" &&
-                    console &&
-                    typeof console.warn ===
-                      "function"
-                  ) {
+    if (
+      typeof console !==
+        "undefined" &&
+      console &&
+      typeof console.warn ===
+        "function"
+    ) {
 
-                    console.warn(
-                      ...args
-                    );
-                  }
-                };
+      console.warn(
+        ...args
+      );
+    }
+  };
 
-                if (
-                  typeof bookmarks ===
-                    "undefined" ||
-                  !Array.isArray(
-                    bookmarks
-                  )
-                ) {
+  if (
+    typeof bookmarks ===
+      "undefined" ||
+    !Array.isArray(
+      bookmarks
+    )
+  ) {
 
-                  logWarn(
-                    "Data bookmarks tidak tersedia atau bukan array."
-                  );
+    logWarn(
+      "Data bookmarks tidak tersedia atau bukan array."
+    );
 
-                  return false;
-                }
+    return false;
+  }
 
-                const targetPage =
-                  Number(
-                    typeof halaman !==
-                      "undefined"
-                      ? halaman
-                      : NaN
-                  );
+  const targetPage =
+    Number(
+      typeof halaman !==
+        "undefined"
+        ? halaman
+        : NaN
+    );
 
-                if (
-                  !Number.isInteger(
-                    targetPage
-                  ) ||
-                  targetPage < 1
-                ) {
+  if (
+    !Number.isInteger(
+      targetPage
+    ) ||
+    targetPage < 1
+  ) {
 
-                  logWarn(
-                    "Nomor halaman bookmark yang akan dihapus tidak valid:",
-                    typeof halaman !==
-                      "undefined"
-                      ? halaman
-                      : undefined
-                  );
+    logWarn(
+      "Nomor halaman bookmark yang akan dihapus tidak valid:",
+      typeof halaman !==
+        "undefined"
+        ? halaman
+        : undefined
+    );
 
-                  return false;
-                }
+    return false;
+  }
 
-                const filteredBookmarks =
-                  bookmarks.filter(
+  const filteredBookmarks =
+    bookmarks.filter(
 
-                    /* CALLBACK filter() Hapus Bookmark */
-                    (bookmark) => {
+      /* CALLBACK filter() Hapus Bookmark */
+      (bookmark) => {
 
-                      if (
-                        !bookmark ||
-                        typeof bookmark !==
-                          "object"
-                      ) {
+        if (
+          !bookmark ||
+          typeof bookmark !==
+            "object"
+        ) {
 
-                        return true;
-                      }
+          return true;
+        }
 
-                      const bookmarkPage =
-                        Number(
-                          bookmark.page
-                        );
+        const bookmarkPage =
+          Number(
+            bookmark.page
+          );
 
-                      if (
-                        !Number.isInteger(
-                          bookmarkPage
-                        ) ||
-                        bookmarkPage < 1
-                      ) {
+        if (
+          !Number.isInteger(
+            bookmarkPage
+          ) ||
+          bookmarkPage < 1
+        ) {
 
-                        return true;
-                      }
+          return true;
+        }
 
-                      return (
-                        bookmarkPage !==
-                        targetPage
-                      );
-                    }
-                    /* Batas CALLBACK filter() Hapus Bookmark */
+        return (
+          bookmarkPage !==
+          targetPage
+        );
+      }
+      /* Batas CALLBACK filter() Hapus Bookmark */
 
-                  );
+    );
 
-                if (
-                  typeof localStorage ===
-                    "undefined" ||
-                  !localStorage ||
-                  typeof localStorage.setItem !==
-                    "function"
-                ) {
+  let localStorageSiap =
+    false;
 
-                  logWarn(
-                    "localStorage tidak tersedia untuk menghapus bookmark."
-                  );
+  try {
 
-                  return false;
-                }
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.setItem ===
+        "function";
 
-                if (
-                  typeof bookmarkKey !==
-                    "string" ||
-                  !bookmarkKey
-                ) {
+  } catch (
+    localStorageAccessError
+  ) {
 
-                  logWarn(
-                    "bookmarkKey tidak tersedia atau tidak valid."
-                  );
+    logWarn(
+      "localStorage tidak dapat diakses untuk menghapus bookmark:",
+      localStorageAccessError
+    );
 
-                  return false;
-                }
+    return false;
+  }
 
-                try {
+  if (
+    !localStorageSiap
+  ) {
 
-                  localStorage.setItem(
-                    bookmarkKey,
-                    JSON.stringify(
-                      filteredBookmarks
-                    )
-                  );
+    logWarn(
+      "localStorage tidak tersedia untuk menghapus bookmark."
+    );
 
-                } catch (
-                  storageError
-                ) {
+    return false;
+  }
 
-                  logWarn(
-                    "Penghapusan bookmark gagal disimpan ke localStorage:",
-                    storageError
-                  );
+  if (
+    typeof bookmarkKey !==
+      "string" ||
+    !bookmarkKey
+  ) {
 
-                  return false;
-                }
+    logWarn(
+      "bookmarkKey tidak tersedia atau tidak valid."
+    );
 
-                bookmarks =
-                  filteredBookmarks;
+    return false;
+  }
 
-                if (
-                  typeof scheduleBookmarkCloudSave ===
-                    "function"
-                ) {
+  try {
 
-                  try {
+    localStorage.setItem(
+      bookmarkKey,
+      JSON.stringify(
+        filteredBookmarks
+      )
+    );
 
-                    scheduleBookmarkCloudSave();
+  } catch (
+    storageError
+  ) {
 
-                  } catch (
-                    cloudScheduleError
-                  ) {
+    logWarn(
+      "Penghapusan bookmark gagal disimpan ke localStorage:",
+      storageError
+    );
 
-                    logWarn(
-                      "Penjadwalan sinkronisasi penghapusan bookmark ke cloud gagal:",
-                      cloudScheduleError
-                    );
-                  }
-                }
+    return false;
+  }
 
-                if (
-                  typeof updateBookmarkListButton ===
-                    "function"
-                ) {
+  bookmarks =
+    filteredBookmarks;
 
-                  try {
+  if (
+    typeof scheduleBookmarkCloudSave ===
+      "function"
+  ) {
 
-                    updateBookmarkListButton();
+    try {
 
-                  } catch (
-                    updateListError
-                  ) {
+      scheduleBookmarkCloudSave();
 
-                    logWarn(
-                      "Update tombol daftar bookmark gagal:",
-                      updateListError
-                    );
-                  }
-                }
+    } catch (
+      cloudScheduleError
+    ) {
 
-                if (
-                  typeof updateFavoriteFilterButton ===
-                    "function"
-                ) {
+      logWarn(
+        "Penjadwalan sinkronisasi penghapusan bookmark ke cloud gagal:",
+        cloudScheduleError
+      );
+    }
+  }
 
-                  try {
+  if (
+    typeof updateBookmarkListButton ===
+      "function"
+  ) {
 
-                    updateFavoriteFilterButton();
+    try {
 
-                  } catch (
-                    favoriteFilterError
-                  ) {
+      updateBookmarkListButton();
 
-                    logWarn(
-                      "Update tombol filter Favorite gagal:",
-                      favoriteFilterError
-                    );
-                  }
-                }
+    } catch (
+      updateListError
+    ) {
 
-                if (
-                  typeof updateCurrentPageBookmarkStatus ===
-                    "function"
-                ) {
+      logWarn(
+        "Update tombol daftar bookmark gagal:",
+        updateListError
+      );
+    }
+  }
 
-                  try {
+  if (
+    typeof updateFavoriteFilterButton ===
+      "function"
+  ) {
 
-                    updateCurrentPageBookmarkStatus();
+    try {
 
-                  } catch (
-                    currentStatusError
-                  ) {
+      updateFavoriteFilterButton();
 
-                    logWarn(
-                      "Update status bookmark halaman aktif gagal:",
-                      currentStatusError
-                    );
-                  }
-                }
+    } catch (
+      favoriteFilterError
+    ) {
 
-                if (
-                  typeof tampilkanBookmarks ===
-                    "function"
-                ) {
+      logWarn(
+        "Update tombol filter Favorite gagal:",
+        favoriteFilterError
+      );
+    }
+  }
 
-                  try {
+  if (
+    typeof updateCurrentPageBookmarkStatus ===
+      "function"
+  ) {
 
-                    tampilkanBookmarks();
+    try {
 
-                  } catch (
-                    renderError
-                  ) {
+      updateCurrentPageBookmarkStatus();
 
-                    logWarn(
-                      "Daftar bookmark gagal ditampilkan ulang setelah penghapusan:",
-                      renderError
-                    );
-                  }
-                }
+    } catch (
+      currentStatusError
+    ) {
 
-                if (
-                  typeof showReaderNotice ===
-                    "function"
-                ) {
+      logWarn(
+        "Update status bookmark halaman aktif gagal:",
+        currentStatusError
+      );
+    }
+  }
 
-                  try {
+  if (
+    typeof tampilkanBookmarks ===
+      "function"
+  ) {
 
-                    showReaderNotice(
-                      "🗑️ Bookmark Dihapus",
-                      "Bookmark halaman " +
-                      targetPage +
-                      " berhasil dihapus."
-                    );
+    try {
 
-                  } catch (
-                    noticeError
-                  ) {
+      tampilkanBookmarks();
 
-                    logWarn(
-                      "Notifikasi penghapusan bookmark gagal ditampilkan:",
-                      noticeError
-                    );
-                  }
-                }
+    } catch (
+      renderError
+    ) {
 
-                return true;
-              }
-              /* Batas CALLBACK Konfirmasi Hapus Bookmark */
+      logWarn(
+        "Daftar bookmark gagal ditampilkan ulang setelah penghapusan:",
+        renderError
+      );
+    }
+  }
+
+  if (
+    typeof showReaderNotice ===
+      "function"
+  ) {
+
+    try {
+
+      showReaderNotice(
+        "🗑️ Bookmark Dihapus",
+        "Bookmark halaman " +
+        targetPage +
+        " berhasil dihapus."
+      );
+
+    } catch (
+      noticeError
+    ) {
+
+      logWarn(
+        "Notifikasi penghapusan bookmark gagal ditampilkan:",
+        noticeError
+      );
+    }
+  }
+
+  return true;
+}
+/* Batas CALLBACK Konfirmasi Hapus Bookmark Dari Daftar */
 
             );
 
@@ -18425,7 +18803,7 @@ if (
     "click",
 
     /* CALLBACK Klik Zoom Out */
-    () => {
+() => {
 
   const currentZoom =
     Number(
@@ -18469,12 +18847,41 @@ if (
       )
     );
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.setItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    if (
+      typeof logBootstrapWarn ===
+        "function"
+    ) {
+
+      logBootstrapWarn(
+        "localStorage tidak dapat diakses saat menyimpan Zoom Out:",
+        localStorageAccessError
+      );
+    }
+
+    localStorageSiap =
+      false;
+  }
+
   if (
-    typeof localStorage !==
-      "undefined" &&
-    localStorage &&
-    typeof localStorage.setItem ===
-      "function" &&
+    localStorageSiap &&
     typeof zoomKey ===
       "string" &&
     zoomKey
@@ -18595,7 +19002,7 @@ if (
 
   return true;
 }
-    /* Batas CALLBACK Klik Zoom Out */
+/* Batas CALLBACK Klik Zoom Out */
 
   );
 
@@ -18638,59 +19045,25 @@ if (
     /* CALLBACK Klik Zoom Reset */
     () => {
 
-  zoomLevel =
-    1;
+      zoomLevel =
+        1;
 
-  if (
-    typeof localStorage !==
-      "undefined" &&
-    localStorage &&
-    typeof localStorage.setItem ===
-      "function" &&
-    typeof zoomKey ===
-      "string" &&
-    zoomKey
-  ) {
+      let localStorageSiap =
+        false;
 
-    try {
+      try {
 
-      localStorage.setItem(
-        zoomKey,
-        String(
-          zoomLevel
-        )
-      );
+        localStorageSiap =
+          typeof localStorage !==
+            "undefined" &&
+          Boolean(
+            localStorage
+          ) &&
+          typeof localStorage.setItem ===
+            "function";
 
-    } catch (
-      zoomResetStorageError
-    ) {
-
-      if (
-        typeof logBootstrapWarn ===
-          "function"
-      ) {
-
-        logBootstrapWarn(
-          "Zoom Reader gagal disimpan setelah Zoom Reset:",
-          zoomResetStorageError
-        );
-      }
-    }
-  }
-
-  if (
-    typeof applyZoom ===
-      "function"
-  ) {
-
-    try {
-
-      const applyResult =
-        applyZoom();
-
-      if (
-        applyResult ===
-          false
+      } catch (
+        localStorageAccessError
       ) {
 
         if (
@@ -18699,74 +19072,137 @@ if (
         ) {
 
           logBootstrapWarn(
-            "applyZoom() mengembalikan false setelah Zoom Reset."
+            "localStorage tidak dapat diakses saat menyimpan Zoom Reset:",
+            localStorageAccessError
+          );
+        }
+
+        localStorageSiap =
+          false;
+      }
+
+      if (
+        localStorageSiap &&
+        typeof zoomKey ===
+          "string" &&
+        zoomKey
+      ) {
+
+        try {
+
+          localStorage.setItem(
+            zoomKey,
+            String(
+              zoomLevel
+            )
+          );
+
+        } catch (
+          zoomResetStorageError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Zoom Reader gagal disimpan setelah Zoom Reset:",
+              zoomResetStorageError
+            );
+          }
+        }
+      }
+
+      if (
+        typeof applyZoom ===
+          "function"
+      ) {
+
+        try {
+
+          const applyResult =
+            applyZoom();
+
+          if (
+            applyResult ===
+              false
+          ) {
+
+            if (
+              typeof logBootstrapWarn ===
+                "function"
+            ) {
+
+              logBootstrapWarn(
+                "applyZoom() mengembalikan false setelah Zoom Reset."
+              );
+            }
+
+            return false;
+          }
+
+        } catch (
+          zoomResetApplyError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Zoom Reader gagal diterapkan setelah Zoom Reset:",
+              zoomResetApplyError
+            );
+          }
+
+          return false;
+        }
+
+      } else {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "applyZoom() tidak tersedia saat Zoom Reset."
           );
         }
 
         return false;
       }
 
-    } catch (
-      zoomResetApplyError
-    ) {
-
       if (
-        typeof logBootstrapWarn ===
+        typeof markDisplayAsCustom ===
           "function"
       ) {
 
-        logBootstrapWarn(
-          "Zoom Reader gagal diterapkan setelah Zoom Reset:",
-          zoomResetApplyError
-        );
-      }
+        try {
 
-      return false;
-    }
+          markDisplayAsCustom();
 
-  } else {
-
-    if (
-      typeof logBootstrapWarn ===
-        "function"
-    ) {
-
-      logBootstrapWarn(
-        "applyZoom() tidak tersedia saat Zoom Reset."
-      );
-    }
-
-    return false;
-  }
-
-  if (
-    typeof markDisplayAsCustom ===
-      "function"
-  ) {
-
-    try {
-
-      markDisplayAsCustom();
-
-    } catch (
-      markCustomError
-    ) {
-
-      if (
-        typeof logBootstrapWarn ===
-          "function"
-      ) {
-
-        logBootstrapWarn(
-          "Status tampilan Custom gagal diperbarui setelah Zoom Reset:",
+        } catch (
           markCustomError
-        );
-      }
-    }
-  }
+        ) {
 
-  return true;
-}
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Status tampilan Custom gagal diperbarui setelah Zoom Reset:",
+              markCustomError
+            );
+          }
+        }
+      }
+
+      return true;
+    }
     /* Batas CALLBACK Klik Zoom Reset */
 
   );
@@ -18807,101 +19243,23 @@ if (
 
     "click",
 
-    /* CALLBACK Klik Zoom In */
+        /* CALLBACK Klik Zoom In */
     () => {
 
-  const currentZoom =
-    Number(
-      typeof zoomLevel !==
-        "undefined"
-        ? zoomLevel
-        : NaN
-    );
-
-  if (
-    !Number.isFinite(
-      currentZoom
-    ) ||
-    currentZoom < 0.6 ||
-    currentZoom > 2
-  ) {
-
-    if (
-      typeof logBootstrapWarn ===
-        "function"
-    ) {
-
-      logBootstrapWarn(
-        "Nilai zoomLevel tidak valid saat Zoom In."
-      );
-    }
-
-    return false;
-  }
-
-  const nextZoom =
-    Math.min(
-      2,
-      currentZoom + 0.1
-    );
-
-  zoomLevel =
-    Number(
-      nextZoom.toFixed(
-        2
-      )
-    );
-
-  if (
-    typeof localStorage !==
-      "undefined" &&
-    localStorage &&
-    typeof localStorage.setItem ===
-      "function" &&
-    typeof zoomKey ===
-      "string" &&
-    zoomKey
-  ) {
-
-    try {
-
-      localStorage.setItem(
-        zoomKey,
-        String(
-          zoomLevel
-        )
-      );
-
-    } catch (
-      zoomStorageError
-    ) {
-
-      if (
-        typeof logBootstrapWarn ===
-          "function"
-      ) {
-
-        logBootstrapWarn(
-          "Zoom Reader gagal disimpan setelah Zoom In:",
-          zoomStorageError
+      const currentZoom =
+        Number(
+          typeof zoomLevel !==
+            "undefined"
+            ? zoomLevel
+            : NaN
         );
-      }
-    }
-  }
-
-  if (
-    typeof applyZoom ===
-      "function"
-  ) {
-
-    try {
-
-      const applyResult =
-        applyZoom();
 
       if (
-        applyResult ===
-          false
+        !Number.isFinite(
+          currentZoom
+        ) ||
+        currentZoom < 0.6 ||
+        currentZoom > 2
       ) {
 
         if (
@@ -18910,74 +19268,181 @@ if (
         ) {
 
           logBootstrapWarn(
-            "applyZoom() mengembalikan false setelah Zoom In."
+            "Nilai zoomLevel tidak valid saat Zoom In."
           );
         }
 
         return false;
       }
 
-    } catch (
-      applyZoomError
-    ) {
+      const nextZoom =
+        Math.min(
+          2,
+          currentZoom + 0.1
+        );
+
+      zoomLevel =
+        Number(
+          nextZoom.toFixed(
+            2
+          )
+        );
+
+      let localStorageSiap =
+        false;
+
+      try {
+
+        localStorageSiap =
+          typeof localStorage !==
+            "undefined" &&
+          Boolean(
+            localStorage
+          ) &&
+          typeof localStorage.setItem ===
+            "function";
+
+      } catch (
+        localStorageAccessError
+      ) {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "localStorage tidak dapat diakses saat menyimpan Zoom In:",
+            localStorageAccessError
+          );
+        }
+
+        localStorageSiap =
+          false;
+      }
 
       if (
-        typeof logBootstrapWarn ===
+        localStorageSiap &&
+        typeof zoomKey ===
+          "string" &&
+        zoomKey
+      ) {
+
+        try {
+
+          localStorage.setItem(
+            zoomKey,
+            String(
+              zoomLevel
+            )
+          );
+
+        } catch (
+          zoomStorageError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Zoom Reader gagal disimpan setelah Zoom In:",
+              zoomStorageError
+            );
+          }
+        }
+      }
+
+      if (
+        typeof applyZoom ===
           "function"
       ) {
 
-        logBootstrapWarn(
-          "Zoom Reader gagal diterapkan setelah Zoom In:",
+        try {
+
+          const applyResult =
+            applyZoom();
+
+          if (
+            applyResult ===
+              false
+          ) {
+
+            if (
+              typeof logBootstrapWarn ===
+                "function"
+            ) {
+
+              logBootstrapWarn(
+                "applyZoom() mengembalikan false setelah Zoom In."
+              );
+            }
+
+            return false;
+          }
+
+        } catch (
           applyZoomError
-        );
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Zoom Reader gagal diterapkan setelah Zoom In:",
+              applyZoomError
+            );
+          }
+
+          return false;
+        }
+
+      } else {
+
+        if (
+          typeof logBootstrapWarn ===
+            "function"
+        ) {
+
+          logBootstrapWarn(
+            "applyZoom() tidak tersedia saat Zoom In."
+          );
+        }
+
+        return false;
       }
 
-      return false;
-    }
-
-  } else {
-
-    if (
-      typeof logBootstrapWarn ===
-        "function"
-    ) {
-
-      logBootstrapWarn(
-        "applyZoom() tidak tersedia saat Zoom In."
-      );
-    }
-
-    return false;
-  }
-
-  if (
-    typeof markDisplayAsCustom ===
-      "function"
-  ) {
-
-    try {
-
-      markDisplayAsCustom();
-
-    } catch (
-      markCustomError
-    ) {
-
       if (
-        typeof logBootstrapWarn ===
+        typeof markDisplayAsCustom ===
           "function"
       ) {
 
-        logBootstrapWarn(
-          "Status tampilan Custom gagal diperbarui setelah Zoom In:",
-          markCustomError
-        );
-      }
-    }
-  }
+        try {
 
-  return true;
-}
+          markDisplayAsCustom();
+
+        } catch (
+          markCustomError
+        ) {
+
+          if (
+            typeof logBootstrapWarn ===
+              "function"
+          ) {
+
+            logBootstrapWarn(
+              "Status tampilan Custom gagal diperbarui setelah Zoom In:",
+              markCustomError
+            );
+          }
+        }
+      }
+
+      return true;
+    }
     /* Batas CALLBACK Klik Zoom In */
 
   );
@@ -19477,12 +19942,34 @@ if (
           safeReadingMode + 1
         ) % 3;
 
+      let localStorageSiap =
+        false;
+
+      try {
+
+        localStorageSiap =
+          typeof localStorage !==
+            "undefined" &&
+          Boolean(
+            localStorage
+          ) &&
+          typeof localStorage.setItem ===
+            "function";
+
+      } catch (
+        localStorageAccessError
+      ) {
+
+        logWarn(
+          "localStorage tidak dapat diakses untuk menyimpan Reading Mode:",
+          localStorageAccessError
+        );
+
+        return false;
+      }
+
       if (
-        typeof localStorage ===
-          "undefined" ||
-        !localStorage ||
-        typeof localStorage.setItem !==
-          "function"
+        !localStorageSiap
       ) {
 
         logWarn(
@@ -19883,7 +20370,7 @@ if (
   contrastSlider.addEventListener(
     "input",
 
-    /* CALLBACK Input Contrast Slider */
+        /* CALLBACK Input Contrast Slider */
     (e) => {
 
       const logWarn = (
@@ -19944,12 +20431,34 @@ if (
           )
         );
 
+      let localStorageSiap =
+        false;
+
+      try {
+
+        localStorageSiap =
+          typeof localStorage !==
+            "undefined" &&
+          Boolean(
+            localStorage
+          ) &&
+          typeof localStorage.setItem ===
+            "function";
+
+      } catch (
+        localStorageAccessError
+      ) {
+
+        logWarn(
+          "localStorage tidak dapat diakses untuk menyimpan Contrast:",
+          localStorageAccessError
+        );
+
+        return false;
+      }
+
       if (
-        typeof localStorage ===
-          "undefined" ||
-        !localStorage ||
-        typeof localStorage.setItem !==
-          "function"
+        !localStorageSiap
       ) {
 
         logWarn(
@@ -20276,400 +20785,422 @@ if (
   readerResetButton.addEventListener(
     "click",
 
-    /* CALLBACK Reset Tampilan */
+        /* CALLBACK Reset Tampilan */
     () => {
 
-  const logWarn = (
-    ...args
-  ) => {
-
-    if (
-      typeof console !==
-        "undefined" &&
-      console &&
-      typeof console.warn ===
-        "function"
-    ) {
-
-      console.warn(
+      const logWarn = (
         ...args
-      );
-    }
-  };
+      ) => {
 
-  const nextReadingMode =
-    0;
+        if (
+          typeof console !==
+            "undefined" &&
+          console &&
+          typeof console.warn ===
+            "function"
+        ) {
 
-  const nextZoomLevel =
-    1;
+          console.warn(
+            ...args
+          );
+        }
+      };
 
-  const nextBrightnessLevel =
-    100;
+      const nextReadingMode =
+        0;
 
-  const nextContrastLevel =
-    100;
+      const nextZoomLevel =
+        1;
 
-  if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.setItem !==
-      "function"
-  ) {
+      const nextBrightnessLevel =
+        100;
 
-    logWarn(
-      "localStorage tidak tersedia untuk mereset tampilan Reader."
-    );
+      const nextContrastLevel =
+        100;
 
-    return false;
-  }
-
-  if (
-    typeof readingModeKey !==
-      "string" ||
-    !readingModeKey ||
-    typeof zoomKey !==
-      "string" ||
-    !zoomKey ||
-    typeof brightnessKey !==
-      "string" ||
-    !brightnessKey ||
-    typeof contrastKey !==
-      "string" ||
-    !contrastKey
-  ) {
-
-    logWarn(
-      "Salah satu key pengaturan tampilan Reader tidak valid."
-    );
-
-    return false;
-  }
-
-  try {
-
-    localStorage.setItem(
-      readingModeKey,
-      String(
-        nextReadingMode
-      )
-    );
-
-    localStorage.setItem(
-      zoomKey,
-      String(
-        nextZoomLevel
-      )
-    );
-
-    localStorage.setItem(
-      brightnessKey,
-      String(
-        nextBrightnessLevel
-      )
-    );
-
-    localStorage.setItem(
-      contrastKey,
-      String(
-        nextContrastLevel
-      )
-    );
-
-  } catch (
-    storageError
-  ) {
-
-    logWarn(
-      "Reset tampilan Reader gagal disimpan ke localStorage:",
-      storageError
-    );
-
-    return false;
-  }
-
-  readingMode =
-    nextReadingMode;
-
-  zoomLevel =
-    nextZoomLevel;
-
-  brightnessLevel =
-    nextBrightnessLevel;
-
-  contrastLevel =
-    nextContrastLevel;
-
-  let resetBerhasil =
-    true;
-
-  if (
-    typeof applySavedReadingMode ===
-      "function"
-  ) {
-
-    try {
-
-      const readingModeResult =
-        applySavedReadingMode();
-
-      if (
-        readingModeResult ===
-          false
-      ) {
-
-        logWarn(
-          "applySavedReadingMode() mengembalikan false setelah reset."
-        );
-
-        resetBerhasil =
-          false;
-      }
-
-    } catch (
-      readingModeError
-    ) {
-
-      logWarn(
-        "Reading Mode gagal diterapkan setelah reset:",
-        readingModeError
-      );
-
-      resetBerhasil =
+      let localStorageSiap =
         false;
-    }
-
-  } else {
-
-    logWarn(
-      "applySavedReadingMode() tidak tersedia setelah reset."
-    );
-
-    resetBerhasil =
-      false;
-  }
-
-  if (
-    typeof applyZoom ===
-      "function"
-  ) {
-
-    try {
-
-      const zoomResult =
-        applyZoom();
-
-      if (
-        zoomResult ===
-          false
-      ) {
-
-        logWarn(
-          "applyZoom() mengembalikan false setelah reset."
-        );
-
-        resetBerhasil =
-          false;
-      }
-
-    } catch (
-      zoomError
-    ) {
-
-      logWarn(
-        "Zoom gagal diterapkan setelah reset:",
-        zoomError
-      );
-
-      resetBerhasil =
-        false;
-    }
-
-  } else {
-
-    logWarn(
-      "applyZoom() tidak tersedia setelah reset."
-    );
-
-    resetBerhasil =
-      false;
-  }
-
-  if (
-    typeof applySavedBrightness ===
-      "function"
-  ) {
-
-    try {
-
-      const brightnessResult =
-        applySavedBrightness();
-
-      if (
-        brightnessResult ===
-          false
-      ) {
-
-        logWarn(
-          "applySavedBrightness() mengembalikan false setelah reset."
-        );
-
-        resetBerhasil =
-          false;
-      }
-
-    } catch (
-      brightnessError
-    ) {
-
-      logWarn(
-        "Brightness gagal diterapkan setelah reset:",
-        brightnessError
-      );
-
-      resetBerhasil =
-        false;
-    }
-
-  } else {
-
-    logWarn(
-      "applySavedBrightness() tidak tersedia setelah reset."
-    );
-
-    resetBerhasil =
-      false;
-  }
-
-  if (
-    typeof applySavedContrast ===
-      "function"
-  ) {
-
-    try {
-
-      const contrastResult =
-        applySavedContrast();
-
-      if (
-        contrastResult ===
-          false
-      ) {
-
-        logWarn(
-          "applySavedContrast() mengembalikan false setelah reset."
-        );
-
-        resetBerhasil =
-          false;
-      }
-
-    } catch (
-      contrastError
-    ) {
-
-      logWarn(
-        "Contrast gagal diterapkan setelah reset:",
-        contrastError
-      );
-
-      resetBerhasil =
-        false;
-    }
-
-  } else {
-
-    logWarn(
-      "applySavedContrast() tidak tersedia setelah reset."
-    );
-
-    resetBerhasil =
-      false;
-  }
-
-  if (
-    typeof document !==
-      "undefined" &&
-    document &&
-    typeof document.getElementById ===
-      "function"
-  ) {
-
-    const brightnessPanel =
-      document.getElementById(
-        "brightness-panel"
-      );
-
-    const contrastPanel =
-      document.getElementById(
-        "contrast-panel"
-      );
-
-    if (
-      brightnessPanel &&
-      brightnessPanel.style
-    ) {
 
       try {
 
-        brightnessPanel.style.display =
-          "none";
+        localStorageSiap =
+          typeof localStorage !==
+            "undefined" &&
+          Boolean(
+            localStorage
+          ) &&
+          typeof localStorage.setItem ===
+            "function";
 
       } catch (
-        brightnessPanelError
+        localStorageAccessError
       ) {
 
         logWarn(
-          "Panel Brightness gagal ditutup setelah reset:",
-          brightnessPanelError
+          "localStorage tidak dapat diakses untuk mereset tampilan Reader:",
+          localStorageAccessError
         );
-      }
-    }
 
-    if (
-      contrastPanel &&
-      contrastPanel.style
-    ) {
+        return false;
+      }
+
+      if (
+        !localStorageSiap
+      ) {
+
+        logWarn(
+          "localStorage tidak tersedia untuk mereset tampilan Reader."
+        );
+
+        return false;
+      }
+
+      if (
+        typeof readingModeKey !==
+          "string" ||
+        !readingModeKey ||
+        typeof zoomKey !==
+          "string" ||
+        !zoomKey ||
+        typeof brightnessKey !==
+          "string" ||
+        !brightnessKey ||
+        typeof contrastKey !==
+          "string" ||
+        !contrastKey
+      ) {
+
+        logWarn(
+          "Salah satu key pengaturan tampilan Reader tidak valid."
+        );
+
+        return false;
+      }
 
       try {
 
-        contrastPanel.style.display =
-          "none";
+        localStorage.setItem(
+          readingModeKey,
+          String(
+            nextReadingMode
+          )
+        );
+
+        localStorage.setItem(
+          zoomKey,
+          String(
+            nextZoomLevel
+          )
+        );
+
+        localStorage.setItem(
+          brightnessKey,
+          String(
+            nextBrightnessLevel
+          )
+        );
+
+        localStorage.setItem(
+          contrastKey,
+          String(
+            nextContrastLevel
+          )
+        );
 
       } catch (
-        contrastPanelError
+        storageError
       ) {
 
         logWarn(
-          "Panel Contrast gagal ditutup setelah reset:",
-          contrastPanelError
+          "Reset tampilan Reader gagal disimpan ke localStorage:",
+          storageError
         );
+
+        return false;
       }
+
+      readingMode =
+        nextReadingMode;
+
+      zoomLevel =
+        nextZoomLevel;
+
+      brightnessLevel =
+        nextBrightnessLevel;
+
+      contrastLevel =
+        nextContrastLevel;
+
+      let resetBerhasil =
+        true;
+
+      if (
+        typeof applySavedReadingMode ===
+          "function"
+      ) {
+
+        try {
+
+          const readingModeResult =
+            applySavedReadingMode();
+
+          if (
+            readingModeResult ===
+              false
+          ) {
+
+            logWarn(
+              "applySavedReadingMode() mengembalikan false setelah reset."
+            );
+
+            resetBerhasil =
+              false;
+          }
+
+        } catch (
+          readingModeError
+        ) {
+
+          logWarn(
+            "Reading Mode gagal diterapkan setelah reset:",
+            readingModeError
+          );
+
+          resetBerhasil =
+            false;
+        }
+
+      } else {
+
+        logWarn(
+          "applySavedReadingMode() tidak tersedia setelah reset."
+        );
+
+        resetBerhasil =
+          false;
+      }
+
+      if (
+        typeof applyZoom ===
+          "function"
+      ) {
+
+        try {
+
+          const zoomResult =
+            applyZoom();
+
+          if (
+            zoomResult ===
+              false
+          ) {
+
+            logWarn(
+              "applyZoom() mengembalikan false setelah reset."
+            );
+
+            resetBerhasil =
+              false;
+          }
+
+        } catch (
+          zoomError
+        ) {
+
+          logWarn(
+            "Zoom gagal diterapkan setelah reset:",
+            zoomError
+          );
+
+          resetBerhasil =
+            false;
+        }
+
+      } else {
+
+        logWarn(
+          "applyZoom() tidak tersedia setelah reset."
+        );
+
+        resetBerhasil =
+          false;
+      }
+
+      if (
+        typeof applySavedBrightness ===
+          "function"
+      ) {
+
+        try {
+
+          const brightnessResult =
+            applySavedBrightness();
+
+          if (
+            brightnessResult ===
+              false
+          ) {
+
+            logWarn(
+              "applySavedBrightness() mengembalikan false setelah reset."
+            );
+
+            resetBerhasil =
+              false;
+          }
+
+        } catch (
+          brightnessError
+        ) {
+
+          logWarn(
+            "Brightness gagal diterapkan setelah reset:",
+            brightnessError
+          );
+
+          resetBerhasil =
+            false;
+        }
+
+      } else {
+
+        logWarn(
+          "applySavedBrightness() tidak tersedia setelah reset."
+        );
+
+        resetBerhasil =
+          false;
+      }
+
+      if (
+        typeof applySavedContrast ===
+          "function"
+      ) {
+
+        try {
+
+          const contrastResult =
+            applySavedContrast();
+
+          if (
+            contrastResult ===
+              false
+          ) {
+
+            logWarn(
+              "applySavedContrast() mengembalikan false setelah reset."
+            );
+
+            resetBerhasil =
+              false;
+          }
+
+        } catch (
+          contrastError
+        ) {
+
+          logWarn(
+            "Contrast gagal diterapkan setelah reset:",
+            contrastError
+          );
+
+          resetBerhasil =
+            false;
+        }
+
+      } else {
+
+        logWarn(
+          "applySavedContrast() tidak tersedia setelah reset."
+        );
+
+        resetBerhasil =
+          false;
+      }
+
+      if (
+        typeof document !==
+          "undefined" &&
+        document &&
+        typeof document.getElementById ===
+          "function"
+      ) {
+
+        const brightnessPanel =
+          document.getElementById(
+            "brightness-panel"
+          );
+
+        const contrastPanel =
+          document.getElementById(
+            "contrast-panel"
+          );
+
+        if (
+          brightnessPanel &&
+          brightnessPanel.style
+        ) {
+
+          try {
+
+            brightnessPanel.style.display =
+              "none";
+
+          } catch (
+            brightnessPanelError
+          ) {
+
+            logWarn(
+              "Panel Brightness gagal ditutup setelah reset:",
+              brightnessPanelError
+            );
+          }
+        }
+
+        if (
+          contrastPanel &&
+          contrastPanel.style
+        ) {
+
+          try {
+
+            contrastPanel.style.display =
+              "none";
+
+          } catch (
+            contrastPanelError
+          ) {
+
+            logWarn(
+              "Panel Contrast gagal ditutup setelah reset:",
+              contrastPanelError
+            );
+          }
+        }
+      }
+
+      if (
+        typeof markDisplayAsCustom ===
+          "function"
+      ) {
+
+        try {
+
+          markDisplayAsCustom();
+
+        } catch (
+          customDisplayError
+        ) {
+
+          logWarn(
+            "Status tampilan Custom gagal diperbarui setelah reset:",
+            customDisplayError
+          );
+        }
+      }
+
+      return resetBerhasil;
     }
-  }
-
-  if (
-    typeof markDisplayAsCustom ===
-      "function"
-  ) {
-
-    try {
-
-      markDisplayAsCustom();
-
-    } catch (
-      customDisplayError
-    ) {
-
-      logWarn(
-        "Status tampilan Custom gagal diperbarui setelah reset:",
-        customDisplayError
-      );
-    }
-  }
-
-  return resetBerhasil;
-}
     /* Batas CALLBACK Reset Tampilan */
 
   );
@@ -21273,7 +21804,7 @@ if (
   presetSaveButton.addEventListener(
     "click",
 
-    /* CALLBACK Klik Preset Save */
+        /* CALLBACK Klik Preset Save */
     () => {
 
   const logWarn = (
@@ -21566,12 +22097,34 @@ if (
       nextPreset
   };
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.setItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk menyimpan Preset:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.setItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -21991,7 +22544,7 @@ if (
   presetLoadButton.addEventListener(
     "click",
 
-    /* CALLBACK Klik Preset Load */
+        /* CALLBACK Klik Preset Load */
     () => {
 
   const logWarn = (
@@ -22274,12 +22827,34 @@ if (
       ? rawContrastLevel
       : 100;
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.setItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk memuat Preset:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.setItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -22933,6 +23508,7 @@ if (
 }
     /* Batas CALLBACK Klik Preset Load */
 
+
   );
 
 } else {
@@ -23437,16 +24013,38 @@ async () => {
     return false;
   }
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.getItem ===
+        "function" &&
+      typeof localStorage.setItem ===
+        "function" &&
+      typeof localStorage.removeItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk merename Preset:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.getItem !==
-      "function" ||
-    typeof localStorage.setItem !==
-      "function" ||
-    typeof localStorage.removeItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -24002,7 +24600,7 @@ if (
   presetDuplicateButton.addEventListener(
     "click",
 
-    /* CALLBACK Klik Preset Duplicate */
+        /* CALLBACK Klik Preset Duplicate */
 () => {
 
   const logWarn = (
@@ -24465,12 +25063,34 @@ if (
     return false;
   }
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.setItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk menduplikat Preset:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.setItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
