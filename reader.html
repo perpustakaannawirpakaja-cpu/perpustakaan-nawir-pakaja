@@ -25723,12 +25723,34 @@ if (
     return false;
   }
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.setItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk menyimpan Default Preset:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.setItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -26085,7 +26107,7 @@ if (
 
   return defaultBerhasil;
 }
-    /* Batas CALLBACK Klik Preset Default */
+/* Batas CALLBACK Klik Preset Default */
 
   );
 
@@ -26197,14 +26219,36 @@ if (
       ? presetList.value.trim()
       : "";
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.getItem ===
+        "function" &&
+      typeof localStorage.removeItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk membatalkan Default Preset:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.getItem !==
-      "function" ||
-    typeof localStorage.removeItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -26505,52 +26549,6 @@ if (
     selectionExists
   ) {
 
-    if (
-      typeof updatePresetActionState ===
-        "function"
-    ) {
-
-      try {
-
-        const actionStateResult =
-          updatePresetActionState();
-
-        if (
-          actionStateResult ===
-            false
-        ) {
-
-          logWarn(
-            "updatePresetActionState() mengembalikan false setelah Default Preset dibatalkan."
-          );
-
-          clearDefaultBerhasil =
-            false;
-        }
-
-      } catch (
-        actionStateError
-      ) {
-
-        logWarn(
-          "Status aksi Preset gagal diperbarui setelah Default dibatalkan:",
-          actionStateError
-        );
-
-        clearDefaultBerhasil =
-          false;
-      }
-
-    } else {
-
-      logWarn(
-        "updatePresetActionState() tidak tersedia setelah Default Preset dibatalkan."
-      );
-
-      clearDefaultBerhasil =
-        false;
-    }
-
     try {
 
       presetList.value =
@@ -26567,6 +26565,52 @@ if (
 
       return false;
     }
+  }
+
+  if (
+    typeof updatePresetActionState ===
+      "function"
+  ) {
+
+    try {
+
+      const actionStateResult =
+        updatePresetActionState();
+
+      if (
+        actionStateResult ===
+          false
+      ) {
+
+        logWarn(
+          "updatePresetActionState() mengembalikan false setelah Default Preset dibatalkan."
+        );
+
+        clearDefaultBerhasil =
+          false;
+      }
+
+    } catch (
+      actionStateError
+    ) {
+
+      logWarn(
+        "Status aksi Preset gagal diperbarui setelah Default dibatalkan:",
+        actionStateError
+      );
+
+      clearDefaultBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "updatePresetActionState() tidak tersedia setelah Default Preset dibatalkan."
+    );
+
+    clearDefaultBerhasil =
+      false;
   }
 
   try {
@@ -26848,12 +26892,34 @@ if (
     return false;
   }
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.getItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk membaca Default Preset saat export:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.getItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -27996,6 +28062,20 @@ if (
       );
     }
 
+    if (
+      Object.prototype.hasOwnProperty.call(
+        importData,
+        "version"
+      ) &&
+      importData.version !==
+        1
+    ) {
+
+      throw new Error(
+        "Versi file preset tidak didukung"
+      );
+    }
+
     const presetsAvailable =
       typeof displayPresets !==
         "undefined" &&
@@ -28048,15 +28128,17 @@ if (
         importData.presets
       );
 
+    const normalizedImportedPresets =
+      {};
+
     for (
-      const importedName
+      const importedRawName
       of importedPresetNames
     ) {
 
       if (
-        typeof importedName !==
-          "string" ||
-        !importedName.trim()
+        typeof importedRawName !==
+          "string"
       ) {
 
         throw new Error(
@@ -28064,9 +28146,39 @@ if (
         );
       }
 
+      const importedName =
+        importedRawName.trim();
+
+      if (
+        !importedName ||
+        importedName ===
+          "__proto__" ||
+        importedName ===
+          "prototype" ||
+        importedName ===
+          "constructor"
+      ) {
+
+        throw new Error(
+          "Nama Preset hasil import tidak valid"
+        );
+      }
+
+      if (
+        Object.prototype.hasOwnProperty.call(
+          normalizedImportedPresets,
+          importedName
+        )
+      ) {
+
+        throw new Error(
+          `Nama Preset "${importedName}" duplikat setelah normalisasi`
+        );
+      }
+
       const importedPreset =
         importData.presets[
-          importedName
+          importedRawName
         ];
 
       if (
@@ -28082,11 +28194,85 @@ if (
           `Data Preset "${importedName}" tidak valid`
         );
       }
+
+      const readingModeRaw =
+        Number(
+          importedPreset.readingMode ??
+            0
+        );
+
+      const zoomRaw =
+        Number(
+          importedPreset.zoomLevel ??
+            1
+        );
+
+      const brightnessRaw =
+        Number(
+          importedPreset.brightnessLevel ??
+            100
+        );
+
+      const contrastRaw =
+        Number(
+          importedPreset.contrastLevel ??
+            100
+        );
+
+      const readingMode =
+        Number.isInteger(
+          readingModeRaw
+        ) &&
+        readingModeRaw >= 0 &&
+        readingModeRaw <= 2
+          ? readingModeRaw
+          : 0;
+
+      const zoomLevel =
+        Number.isFinite(
+          zoomRaw
+        ) &&
+        zoomRaw >= 0.6 &&
+        zoomRaw <= 2
+          ? zoomRaw
+          : 1;
+
+      const brightnessLevel =
+        Number.isFinite(
+          brightnessRaw
+        ) &&
+        brightnessRaw >= 50 &&
+        brightnessRaw <= 130
+          ? brightnessRaw
+          : 100;
+
+      const contrastLevel =
+        Number.isFinite(
+          contrastRaw
+        ) &&
+        contrastRaw >= 70 &&
+        contrastRaw <= 150
+          ? contrastRaw
+          : 100;
+
+      normalizedImportedPresets[
+        importedName
+      ] = {
+        readingMode,
+        zoomLevel,
+        brightnessLevel,
+        contrastLevel
+      };
     }
+
+    const normalizedImportedPresetNames =
+      Object.keys(
+        normalizedImportedPresets
+      );
 
     const nextDisplayPresets = {
       ...displayPresets,
-      ...importData.presets
+      ...normalizedImportedPresets
     };
 
     let importedDefaultPreset =
@@ -28428,8 +28614,100 @@ if (
         false;
     }
 
+    if (
+      typeof updatePresetSummary ===
+        "function"
+    ) {
+
+      try {
+
+        const summaryResult =
+          updatePresetSummary();
+
+        if (
+          summaryResult ===
+            false
+        ) {
+
+          logWarn(
+            "updatePresetSummary() mengembalikan false setelah Import Preset."
+          );
+
+          importSucceeded =
+            false;
+        }
+
+      } catch (
+        summaryError
+      ) {
+
+        logWarn(
+          "Ringkasan Preset gagal diperbarui setelah import:",
+          summaryError
+        );
+
+        importSucceeded =
+          false;
+      }
+
+    } else {
+
+      logWarn(
+        "updatePresetSummary() tidak tersedia setelah Import Preset."
+      );
+
+      importSucceeded =
+        false;
+    }
+
+    if (
+      typeof updatePresetActionState ===
+        "function"
+    ) {
+
+      try {
+
+        const actionStateResult =
+          updatePresetActionState();
+
+        if (
+          actionStateResult ===
+            false
+        ) {
+
+          logWarn(
+            "updatePresetActionState() mengembalikan false setelah Import Preset."
+          );
+
+          importSucceeded =
+            false;
+        }
+
+      } catch (
+        actionStateError
+      ) {
+
+        logWarn(
+          "Status aksi Preset gagal diperbarui setelah import:",
+          actionStateError
+        );
+
+        importSucceeded =
+          false;
+      }
+
+    } else {
+
+      logWarn(
+        "updatePresetActionState() tidak tersedia setelah Import Preset."
+      );
+
+      importSucceeded =
+        false;
+    }
+
     const importCount =
-      importedPresetNames.length;
+      normalizedImportedPresetNames.length;
 
     try {
 
@@ -28842,16 +29120,38 @@ if (
     return false;
   }
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.getItem ===
+        "function" &&
+      typeof localStorage.setItem ===
+        "function" &&
+      typeof localStorage.removeItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk menghapus Preset:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.getItem !==
-      "function" ||
-    typeof localStorage.setItem !==
-      "function" ||
-    typeof localStorage.removeItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -29218,6 +29518,52 @@ if (
   }
 
   if (
+    typeof updatePresetSummary ===
+      "function"
+  ) {
+
+    try {
+
+      const summaryResult =
+        updatePresetSummary();
+
+      if (
+        summaryResult ===
+          false
+      ) {
+
+        logWarn(
+          "updatePresetSummary() mengembalikan false setelah Preset dihapus."
+        );
+
+        deleteBerhasil =
+          false;
+      }
+
+    } catch (
+      summaryError
+    ) {
+
+      logWarn(
+        "Ringkasan Preset gagal diperbarui setelah penghapusan:",
+        summaryError
+      );
+
+      deleteBerhasil =
+        false;
+    }
+
+  } else {
+
+    logWarn(
+      "updatePresetSummary() tidak tersedia setelah Preset dihapus."
+    );
+
+    deleteBerhasil =
+      false;
+  }
+
+  if (
     typeof updatePresetActionState ===
       "function"
   ) {
@@ -29472,7 +29818,7 @@ if (
       typeof console !==
         "undefined" &&
       console &&
-       typeof console.warn ===
+      typeof console.warn ===
         "function"
     ) {
 
@@ -29527,12 +29873,34 @@ if (
       )
     );
 
+  let localStorageSiap =
+    false;
+
+  try {
+
+    localStorageSiap =
+      typeof localStorage !==
+        "undefined" &&
+      Boolean(
+        localStorage
+      ) &&
+      typeof localStorage.setItem ===
+        "function";
+
+  } catch (
+    localStorageAccessError
+  ) {
+
+    logWarn(
+      "localStorage tidak dapat diakses untuk menyimpan Brightness:",
+      localStorageAccessError
+    );
+
+    return false;
+  }
+
   if (
-    typeof localStorage ===
-      "undefined" ||
-    !localStorage ||
-    typeof localStorage.setItem !==
-      "function"
+    !localStorageSiap
   ) {
 
     logWarn(
@@ -29545,7 +29913,7 @@ if (
   if (
     typeof brightnessKey !==
       "string" ||
-    !brightnessKey
+    !brightnessKey.trim()
   ) {
 
     logWarn(
@@ -29665,6 +30033,9 @@ if (
     return false;
   }
 
+  let callbackBerhasil =
+    true;
+
   if (
     typeof markDisplayAsCustom ===
       "function"
@@ -29672,7 +30043,21 @@ if (
 
     try {
 
-      markDisplayAsCustom();
+      const customStateResult =
+        markDisplayAsCustom();
+
+      if (
+        customStateResult !==
+          true
+      ) {
+
+        logWarn(
+          "Status Custom Display tidak berhasil diperbarui setelah perubahan Brightness."
+        );
+
+        callbackBerhasil =
+          false;
+      }
 
     } catch (
       customStateError
@@ -29682,10 +30067,68 @@ if (
         "Status Custom Display gagal diperbarui setelah perubahan Brightness:",
         customStateError
       );
+
+      callbackBerhasil =
+        false;
     }
+
+  } else {
+
+    logWarn(
+      "Function markDisplayAsCustom tidak tersedia setelah perubahan Brightness."
+    );
+
+    callbackBerhasil =
+      false;
   }
 
-  return true;
+  if (
+    typeof updatePresetSummary ===
+      "function"
+  ) {
+
+    try {
+
+      const summaryResult =
+        updatePresetSummary();
+
+      if (
+        summaryResult !==
+          true
+      ) {
+
+        logWarn(
+          "Ringkasan preset gagal diperbarui setelah perubahan Brightness."
+        );
+
+        callbackBerhasil =
+          false;
+      }
+
+    } catch (
+      summaryError
+    ) {
+
+      logWarn(
+        "Ringkasan preset gagal diperbarui setelah perubahan Brightness:",
+        summaryError
+      );
+
+      callbackBerhasil =
+        false;
+      }
+
+  } else {
+
+    logWarn(
+      "Function updatePresetSummary tidak tersedia setelah perubahan Brightness."
+    );
+
+    callbackBerhasil =
+      false;
+  }
+
+  return callbackBerhasil;
 }
 /* Batas CALLBACK Input Brightness Slider */
 );
@@ -29708,144 +30151,193 @@ if (
 /* Batas EVENT brightness-slider/input */
 
 /* === TOP LEVEL FUNCTION === */
+
 function applySavedBrightness() {
 
-  const logWarn = (
-    ...args
-  ) => {
-
+  const logWarn = (...args) => {
     if (
-      typeof console !==
-        "undefined" &&
+      typeof console !== "undefined" &&
       console &&
-      typeof console.warn ===
-        "function"
+      typeof console.warn === "function"
     ) {
-
-      console.warn(
-        ...args
-      );
+      console.warn(...args);
     }
   };
 
-  if (
-    typeof document ===
-      "undefined" ||
-    !document ||
-    typeof document.getElementById !==
-      "function"
-  ) {
+  const rawBrightness =
+    typeof brightnessLevel !== "undefined"
+      ? brightnessLevel
+      : undefined;
 
-    logWarn(
-      "Document tidak tersedia untuk menerapkan brightness Reader."
-    );
-
-    return false;
-  }
-
-  const brightnessValue =
-    typeof brightnessLevel !==
-      "undefined"
-      ? Number(
-          brightnessLevel
-        )
-      : NaN;
+  const brightnessValue = Number(rawBrightness);
 
   if (
-    !Number.isFinite(
-      brightnessValue
-    ) ||
+    !Number.isFinite(brightnessValue) ||
     brightnessValue < 50 ||
     brightnessValue > 130
   ) {
-
     logWarn(
       "brightnessLevel Reader tidak valid:",
-      brightnessLevel
+      rawBrightness
     );
-
     return false;
   }
 
-  const slider =
-    document.getElementById(
-      "brightness-slider"
-    );
-
-  const valueLabel =
-    document.getElementById(
-      "brightness-value"
-    );
-
-  const page =
-    document.getElementById(
-      "page-flip"
-    );
+  const normalizedBrightness = Math.round(brightnessValue);
 
   if (
-    !slider
+    typeof document === "undefined" ||
+    !document ||
+    typeof document.getElementById !== "function"
   ) {
-
     logWarn(
-      "Slider brightness Reader tidak ditemukan."
+      "Document tidak tersedia untuk menerapkan brightness Reader."
     );
-
     return false;
   }
 
-  if (
-    !valueLabel
-  ) {
+  let slider = null;
+  let valueLabel = null;
+  let page = null;
 
+  try {
+    slider = document.getElementById("brightness-slider");
+    valueLabel = document.getElementById("brightness-value");
+    page = document.getElementById("page-flip");
+  } catch (elementLookupError) {
     logWarn(
-      "Label brightness Reader tidak ditemukan."
+      "Elemen Reader gagal diperiksa untuk menerapkan brightness:",
+      elementLookupError
     );
+    return false;
+  }
 
+  if (!slider) {
+    logWarn("Slider brightness Reader tidak ditemukan.");
+    return false;
+  }
+
+  if (!valueLabel) {
+    logWarn("Label brightness Reader tidak ditemukan.");
     return false;
   }
 
   if (
     !page ||
     !page.style ||
-    typeof page.style.setProperty !==
-      "function"
+    typeof page.style.setProperty !== "function"
   ) {
-
     logWarn(
       "Elemen page-flip Reader tidak tersedia untuk menerapkan brightness."
     );
+    return false;
+  }
 
+  const previousBrightnessState = brightnessLevel;
+  let previousSliderValue = "";
+  let previousLabelText = "";
+  let previousCssValue = "";
+  let previousCssValueAvailable = false;
+
+  try {
+    previousSliderValue = slider.value;
+    previousLabelText = valueLabel.textContent;
+
+    if (typeof page.style.getPropertyValue === "function") {
+      previousCssValue = page.style.getPropertyValue(
+        "--reader-brightness"
+      );
+      previousCssValueAvailable = true;
+    }
+  } catch (snapshotError) {
+    logWarn(
+      "State tampilan Brightness sebelumnya gagal dibaca:",
+      snapshotError
+    );
     return false;
   }
 
   try {
+    slider.value = String(normalizedBrightness);
 
-    slider.value =
-      brightnessValue;
+    if (Number(slider.value) !== normalizedBrightness) {
+      throw new Error(
+        "Nilai slider brightness tidak sesuai dengan nilai normalisasi."
+      );
+    }
 
-    valueLabel.textContent =
-      brightnessValue +
-      "%";
+    valueLabel.textContent = normalizedBrightness + "%";
 
     page.style.setProperty(
       "--reader-brightness",
-      brightnessValue / 100
+      String(normalizedBrightness / 100)
     );
 
-  } catch (
-    applyError
-  ) {
+    brightnessLevel = normalizedBrightness;
+  } catch (applyError) {
+    try {
+      slider.value = previousSliderValue;
+      valueLabel.textContent = previousLabelText;
+
+      if (previousCssValueAvailable) {
+        if (previousCssValue) {
+          page.style.setProperty(
+            "--reader-brightness",
+            previousCssValue
+          );
+        } else if (typeof page.style.removeProperty === "function") {
+          page.style.removeProperty("--reader-brightness");
+        }
+      }
+
+      brightnessLevel = previousBrightnessState;
+    } catch (rollbackError) {
+      logWarn(
+        "Pemulihan tampilan Brightness setelah gagal menerapkan nilai baru juga gagal:",
+        rollbackError
+      );
+    }
 
     logWarn(
       "Brightness Reader gagal diterapkan:",
       applyError
     );
-
     return false;
+  }
+
+  if (brightnessValue !== normalizedBrightness) {
+    try {
+      const storageSiap =
+        typeof localStorage !== "undefined" &&
+        Boolean(localStorage) &&
+        typeof localStorage.setItem === "function";
+
+      const storageKey =
+        typeof brightnessKey === "string"
+          ? brightnessKey.trim()
+          : "";
+
+      if (storageSiap && storageKey) {
+        localStorage.setItem(
+          storageKey,
+          String(normalizedBrightness)
+        );
+      } else {
+        logWarn(
+          "Normalisasi Brightness berhasil diterapkan, tetapi localStorage atau brightnessKey tidak tersedia untuk menyimpan nilai integer."
+        );
+      }
+    } catch (storageError) {
+      logWarn(
+        "Normalisasi Brightness berhasil diterapkan, tetapi gagal disimpan ke localStorage:",
+        storageError
+      );
+    }
   }
 
   return true;
 }
+
 /* === BATAS function applySavedBrightness === */
 
 applySavedBrightness();
