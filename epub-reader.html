@@ -1,1307 +1,2575 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-<meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    >
 
-<title>EPUB Reader - Perpustakaan Nawir Pakaja</title>
+    <title>EPUB Reader - Perpustakaan Nawir Pakaja</title>
 
-<style>
-:root{
-  --bg:#f4f7fb;
-  --card:#ffffff;
-  --text:#172033;
-  --muted:#667085;
-  --primary:#2563eb;
-  --border:#e4e7ec;
-}
+    <style>
+      :root{
+        --bg:#f4f7fb;
+        --card:#ffffff;
+        --text:#172033;
+        --muted:#667085;
+        --primary:#2563eb;
+        --border:#e4e7ec;
+      }
 
-*{
-  box-sizing:border-box;
-}
+      *{
+        box-sizing:border-box;
+      }
 
-html,
-body{
-  margin:0;
-  width:100%;
-  height:100%;
-}
+      html,
+      body{
+        margin:0;
+        width:100%;
+        height:100%;
+      }
 
-body{
-  display:flex;
-  flex-direction:column;
+      body{
+        display:flex;
+        flex-direction:column;
 
-  background:var(--bg);
-  color:var(--text);
+        background:var(--bg);
+        color:var(--text);
 
-  font-family:
-    Arial,
-    sans-serif;
-}
+        font-family:
+          Arial,
+          sans-serif;
+      }
 
-header{
-  flex:0 0 auto;
+      header{
+        flex:0 0 auto;
 
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
 
-  padding:10px 12px;
+        padding:10px 12px;
 
-  background:var(--card);
+        background:var(--card);
 
-  border-bottom:
-    1px solid var(--border);
-}
+        border-bottom:
+          1px solid var(--border);
+      }
 
-.reader-title{
-  min-width:0;
+      .reader-title{
+        min-width:0;
 
-  font-size:14px;
-  font-weight:700;
+        font-size:14px;
+        font-weight:700;
 
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
 
-.reader-back{
-  flex:0 0 auto;
+      .reader-back{
+        flex:0 0 auto;
 
-  padding:8px 10px;
+        padding:8px 10px;
 
-  border:1px solid var(--border);
-  border-radius:10px;
+        border:1px solid var(--border);
+        border-radius:10px;
 
-  background:var(--card);
-  color:var(--text);
+        background:var(--card);
+        color:var(--text);
 
-  font-size:13px;
-  font-weight:700;
+        font-size:13px;
+        font-weight:700;
 
-  cursor:pointer;
-}
+        cursor:pointer;
+      }
 
-#viewer{
-  flex:1 1 auto;
+      #viewer{
+        flex:1 1 auto;
 
-  min-height:0;
-  width:100%;
+        min-height:0;
+        width:100%;
 
-  background:#ffffff;
-}
+        background:#ffffff;
+      }
 
-.reader-status{
-  flex:0 0 auto;
+      .reader-status{
+        flex:0 0 auto;
 
-  min-height:38px;
+        min-height:38px;
 
-  display:flex;
-  align-items:center;
-  justify-content:center;
+        display:flex;
+        align-items:center;
+        justify-content:center;
 
-  padding:8px 12px;
+        padding:8px 12px;
 
-  color:var(--muted);
+        color:var(--muted);
 
-  font-size:12px;
-  text-align:center;
+        font-size:12px;
+        text-align:center;
 
-  background:var(--card);
+        background:var(--card);
 
-  border-top:
-    1px solid var(--border);
-}
+        border-top:
+          1px solid var(--border);
+      }
 
-.reader-controls{
-  flex:0 0 auto;
+      .reader-controls{
+        flex:0 0 auto;
 
-  display:grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
+        display:grid;
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
 
-  gap:10px;
+        gap:10px;
 
-  padding:
-    10px 12px 14px;
+        padding:
+          10px 12px 14px;
 
-  background:var(--card);
-}
+        background:var(--card);
+      }
 
-.reader-controls button{
-  min-height:44px;
+      .reader-controls button{
+        min-height:44px;
 
-  border:0;
-  border-radius:12px;
+        border:0;
+        border-radius:12px;
 
-  background:var(--primary);
-  color:#ffffff;
+        background:var(--primary);
+        color:#ffffff;
 
-  font-size:15px;
-  font-weight:700;
+        font-size:15px;
+        font-weight:700;
 
-  cursor:pointer;
-}
+        cursor:pointer;
+      }
 
-.reader-controls button:disabled{
-  opacity:.45;
-  cursor:not-allowed;
-}
+      .reader-controls button:disabled{
+        opacity:.45;
+        cursor:not-allowed;
+      }
 
-@media (
-  orientation: landscape
-) and (
-  max-height: 700px
-) {
-
-  body{
-    position:relative;
-    overflow:hidden;
-  }
-
-  header{
-    position:absolute;
-    top:0;
-    left:0;
-    right:0;
-
-    z-index:20;
-
-    padding:
-      4px 8px;
-
-    background:
-      rgba(255,255,255,.92);
-  }
-
-  .reader-back{
-    padding:
-      5px 8px;
-
-    font-size:
-      12px;
-  }
-
-  .reader-title{
-    font-size:
-      12px;
-  }
-
-  #viewer{
-    position:absolute;
-
-    top:44px;
-    right:0;
-    bottom:44px;
-    left:0;
-
-    width:100%;
-    height:auto;
-  }
-
-  .reader-status{
-    position:absolute;
-
-    left:50%;
-    bottom:56px;
-
-    z-index:20;
-
-    min-height:0;
-
-    padding:
-      3px 10px;
-
-    transform:
-      translateX(-50%);
-
-    border:
-      1px solid var(--border);
-
-    border-radius:
-      12px;
-
-    background:
-      rgba(255,255,255,.88);
-
-    font-size:
-      11px;
-  }
-
-  .reader-controls{
-    position:absolute;
-
-    left:8px;
-    right:8px;
-    bottom:6px;
-
-    z-index:20;
-
-    gap:
-      6px;
-
-    padding:0;
-
-    background:
-      transparent;
-  }
-
-  .reader-controls button{
-    min-height:
-      34px;
-
-    font-size:
-      13px;
-
-    opacity:.90;
-  }
-}
-</style>
-</head>
-
-<body>
-
-<header>
-
-  <button
-    type="button"
-    class="reader-back"
-    id="back-btn"
-  >
-    ← Kembali
-  </button>
-
-  <div
-    class="reader-title"
-    id="reader-title"
-  >
-    EPUB Reader
-  </div>
-
-</header>
-
-<div id="viewer"></div>
-
-<div
-  class="reader-status"
-  id="reader-status"
-  aria-live="polite"
->
-  Menyiapkan EPUB...
-</div>
-
-<div class="reader-controls">
-
-  <button
-    type="button"
-    id="prev-btn"
-    disabled
-  >
-    ← Sebelumnya
-  </button>
-
-  <button
-    type="button"
-    id="next-btn"
-    disabled
-  >
-    Berikutnya →
-  </button>
-
-</div>
-
-<script
-  src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"
-></script>
-
-<script
-  src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"
-></script>
-
-<script
-  src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-></script>
-
-<script>
-const SUPABASE_URL =
-  "https://lacdmofkvrmygwczoeux.supabase.co";
-
-const SUPABASE_KEY =
-  "sb_publishable_vu1p7MFzan_Dqx_58B8dmQ_V14Hm0Vj";
-
-const db =
-  supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
-  
-const viewer =
-  document.getElementById(
-    "viewer"
-  );
-
-const status =
-  document.getElementById(
-    "reader-status"
-  );
-
-const title =
-  document.getElementById(
-    "reader-title"
-  );
-
-const prevButton =
-  document.getElementById(
-    "prev-btn"
-  );
-
-const nextButton =
-  document.getElementById(
-    "next-btn"
-  );
-
-const backButton =
-  document.getElementById(
-    "back-btn"
-  );
-
-let epubBook =
-  null;
-
-let rendition =
-  null;
-
-let epubReadingKey =
-  null;
-
-let epubResizeTimer =
-  null;
-
-let epubViewerWidth =
-  0;
-
-let epubViewerHeight =
-  0;
-
-function buatEpubReadingKey(
-  epubUrl
-) {
-
-  if (
-    typeof epubUrl !==
-      "string" ||
-    !epubUrl.trim()
-  ) {
-    return null;
-  }
-
-  return (
-    "lastEpub:" +
-    encodeURIComponent(
-      epubUrl.trim()
-    )
-  );
-}
-
-function simpanProgressEpubLokal({
-  cfi,
-  pageNumber = null,
-  totalPages = null
-}) {
-
-  if (
-    !epubReadingKey ||
-    typeof cfi !== "string" ||
-    !cfi.trim()
-  ) {
-    return;
-  }
-
-  const progress = {
-    cfi: cfi.trim(),
-    page_number:
-  pageNumber !== null &&
-  pageNumber !== undefined &&
-  Number.isFinite(
-    Number(pageNumber)
-  )
-    ? Number(pageNumber)
-    : null,
-
-total_pages:
-  totalPages !== null &&
-  totalPages !== undefined &&
-  Number.isFinite(
-    Number(totalPages)
-  )
-    ? Number(totalPages)
-    : null,
-
-    updated_at:
-      new Date().toISOString()
-  };
-
-  localStorage.setItem(
-    epubReadingKey,
-    JSON.stringify(
-      progress
-    )
-  );
-}
-
-function ambilProgressEpubLokal() {
-
-  if (!epubReadingKey) {
-    return null;
-  }
-
-  const raw =
-    localStorage.getItem(
-      epubReadingKey
-    );
-
-  if (!raw) {
-    return null;
-  }
-
-  try {
-
-    const progress =
-      JSON.parse(raw);
-
-    if (
-      !progress ||
-      typeof progress.cfi !==
-        "string" ||
-      !progress.cfi.trim()
-    ) {
-      return null;
-    }
-
-    return {
-      ...progress,
-      cfi:
-        progress.cfi.trim()
-    };
-
-  } catch (error) {
-
-    console.warn(
-      "Progress EPUB lokal tidak valid:",
-      error
-    );
-
-    return null;
-  }
-}
-
-async function simpanProgressEpubCloud({
-  cfi,
-  pageNumber = null
-}) {
-
-  if (
-    !epubReadingKey ||
-    typeof cfi !== "string" ||
-    !cfi.trim()
-  ) {
-    return;
-  }
-
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
-
-  if (
-    userError ||
-    !user
-  ) {
-    return;
-  }
-
-  const halaman =
-    pageNumber !== null &&
-    pageNumber !== undefined &&
-    Number.isFinite(
-      Number(pageNumber)
-    )
-      ? Math.max(
-          1,
-          Math.trunc(
-            Number(pageNumber)
-          )
-        )
-      : 1;
-
-  const { error } =
-    await db
-      .from("reader_progress")
-      .upsert(
-        {
-          user_id:
-            user.id,
-
-          book_key:
-            epubReadingKey,
-
-          page_number:
-            halaman,
-
-          reader_type:
-            "epub",
-
-          location_cfi:
-            cfi.trim(),
-
-          updated_at:
-            new Date().toISOString()
-        },
-        {
-          onConflict:
-            "user_id,book_key"
-        }
-      );
-
-  if (error) {
-
-    console.error(
-      "Gagal menyimpan progress EPUB ke cloud:",
-      error
-    );
-  }
-}
-
-let epubProgressCloudSaveTimer =
-  null;
-
-function jadwalkanSimpanProgressEpubCloud({
-  cfi,
-  pageNumber = null
-}) {
-
-  clearTimeout(
-    epubProgressCloudSaveTimer
-  );
-
-  epubProgressCloudSaveTimer =
-    setTimeout(
-      () => {
-
-        simpanProgressEpubCloud({
-          cfi,
-          pageNumber
-        });
-
-      },
-      800
-    );
-}
-
-async function ambilProgressEpubCloud() {
-
-  if (!epubReadingKey) {
-    return null;
-  }
-
-  const {
-    data: { user },
-    error: userError
-  } = await db.auth.getUser();
-
-  if (
-    userError ||
-    !user
-  ) {
-    return null;
-  }
-
-  const {
-    data,
-    error
-  } = await db
-    .from("reader_progress")
-    .select(
-      "page_number, location_cfi, updated_at"
-    )
-    .eq(
-      "user_id",
-      user.id
-    )
-    .eq(
-      "book_key",
-      epubReadingKey
-    )
-    .eq(
-      "reader_type",
-      "epub"
-    )
-    .maybeSingle();
-
-  if (error) {
-
-    console.error(
-      "Gagal mengambil progress EPUB dari cloud:",
-      error
-    );
-
-    return null;
-  }
-
-  if (
-    !data ||
-    typeof data.location_cfi !==
-      "string" ||
-    !data.location_cfi.trim()
-  ) {
-    return null;
-  }
-
-  return {
-    cfi:
-      data.location_cfi.trim(),
-
-    page_number:
-      data.page_number,
-
-    updated_at:
-      data.updated_at
-  };
-}
-
-function pilihProgressEpubTerbaru(
-  progressLokal,
-  progressCloud
-) {
-
-  if (
-    !progressLokal &&
-    !progressCloud
-  ) {
-    return null;
-  }
-
-  if (!progressLokal) {
-    return progressCloud;
-  }
-
-  if (!progressCloud) {
-    return progressLokal;
-  }
-
-  const waktuLokal =
-    Date.parse(
-      progressLokal.updated_at || ""
-    );
-
-  const waktuCloud =
-    Date.parse(
-      progressCloud.updated_at || ""
-    );
-
-  if (
-    Number.isFinite(waktuCloud) &&
-    (
-      !Number.isFinite(waktuLokal) ||
-      waktuCloud > waktuLokal
-    )
-  ) {
-    return progressCloud;
-  }
-
-  return progressLokal;
-}
-
-function ambilUrlEpub() {
-
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
-
-  const file =
-    params.get(
-      "file"
-    );
-
-  if (!file) {
-    return null;
-  }
-
-  try {
-
-    const url =
-      new URL(
-        file,
-        window.location.href
-      );
-
-    if (
-      url.protocol !== "https:" &&
-      url.protocol !== "http:"
-    ) {
-      return null;
-    }
-
-    return url.href;
-
-  } catch (error) {
-
-    console.error(
-      "URL EPUB tidak valid:",
-      error
-    );
-
-    return null;
-  }
-}
-
-function pasangSwipeEpub(
-  contents
-) {
-
-  const doc =
-    contents?.document;
-
-  if (!doc) {
-    return;
-  }
-
-  if (
-    typeof contents.scaler ===
-      "function" &&
-    !contents.__centerScalerPatched
-  ) {
-
-  const scalerAsli =
-    contents.scaler.bind(
-      contents
-    );
-
-  contents.scaler =
-    function (
-      scale,
-      offsetX,
-      offsetY
-    ) {
-
-      const viewport =
-        contents.viewport?.();
-
-      const viewportWidth =
-        Number.parseFloat(
-          viewport?.width
-        );
-
-      const viewerWidth =
-        viewer
-          ?.getBoundingClientRect()
-          ?.width;
-
-      let offsetXBaru =
-        offsetX;
-
-      if (
-        Number.isFinite(
-          viewportWidth
-        ) &&
-        Number.isFinite(
-          viewerWidth
-        ) &&
-        Number.isFinite(
-          scale
-        )
+      @media (
+        orientation: landscape
+      ) and (
+        max-height: 700px
       ) {
 
-        const lebarHasilScale =
-          viewportWidth *
-          scale;
-
-        const sisaLebar =
-          viewerWidth -
-          lebarHasilScale;
-
-        if (
-          sisaLebar > 0
-        ) {
-          offsetXBaru =
-            sisaLebar /
-            (
-              2 *
-              scale
-            );
-        }
-      }
-
-      return scalerAsli(
-        scale,
-        offsetXBaru,
-        offsetY
-      );
-    };
-
-  contents.__centerScalerPatched =
-    true;
-}
-
-  let startX = 0;
-  let startY = 0;
-
-  doc.addEventListener(
-    "touchstart",
-    (event) => {
-
-      const touch =
-        event.touches?.[0];
-
-      if (!touch) {
-        return;
-      }
-
-      startX =
-        touch.clientX;
-
-      startY =
-        touch.clientY;
-    },
-    {
-      passive: true
-    }
-  );
-
-  doc.addEventListener(
-    "touchend",
-    async (event) => {
-
-      const touch =
-        event.changedTouches?.[0];
-
-      if (!touch || !rendition) {
-        return;
-      }
-
-      const deltaX =
-        touch.clientX - startX;
-
-      const deltaY =
-        touch.clientY - startY;
-
-      const jarakX =
-        Math.abs(deltaX);
-
-      const jarakY =
-        Math.abs(deltaY);
-
-      if (
-        jarakX < 50 ||
-        jarakX <= jarakY
-      ) {
-        return;
-      }
-
-      if (
-        deltaX < 0 &&
-        !nextButton.disabled
-      ) {
-        await rendition.next();
-        return;
-      }
-
-      if (
-        deltaX > 0 &&
-        !prevButton.disabled
-      ) {
-        await rendition.prev();
-      }
-    },
-    {
-      passive: true
-    }
-  );
-}
-
-function tungguLayoutEpubStabil() {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        resolve();
-      });
-    });
-  });
-}
-
-function jadwalkanResizeEpub() {
-
-  clearTimeout(
-    epubResizeTimer
-  );
-
-  epubResizeTimer =
-    setTimeout(
-      async () => {
-
-        if (
-          !rendition ||
-          !viewer
-        ) {
-          return;
+        body{
+          position:relative;
+          overflow:hidden;
         }
 
-        await tungguLayoutEpubStabil();
+        header{
+          position:absolute;
+          top:0;
+          left:0;
+          right:0;
 
-        const lokasi =
-          rendition.currentLocation();
+          z-index:20;
 
-        const cfi =
-          lokasi?.start?.cfi || null;
+          padding:
+            4px 8px;
 
-        const rect =
-          viewer.getBoundingClientRect();
-
-        const width =
-          Math.max(
-            1,
-            Math.round(
-              rect.width
-            )
-          );
-
-        const height =
-          Math.max(
-            1,
-            Math.round(
-              rect.height
-            )
-          );
-
-        if (
-          width === epubViewerWidth &&
-          height === epubViewerHeight
-        ) {
-          return;
+          background:
+            rgba(255,255,255,.92);
         }
+
+        .reader-back{
+          padding:
+            5px 8px;
+
+          font-size:
+            12px;
+        }
+
+        .reader-title{
+          font-size:
+            12px;
+        }
+
+        #viewer{
+          position:absolute;
+
+          top:44px;
+          right:0;
+          bottom:44px;
+          left:0;
+
+          width:100%;
+          height:auto;
+        }
+
+        .reader-status{
+          position:absolute;
+
+          left:50%;
+          bottom:56px;
+
+          z-index:20;
+
+          min-height:0;
+
+          padding:
+            3px 10px;
+
+          transform:
+            translateX(-50%);
+
+          border:
+            1px solid var(--border);
+
+          border-radius:
+            12px;
+
+          background:
+            rgba(255,255,255,.88);
+
+          font-size:
+            11px;
+        }
+
+        .reader-controls{
+          position:absolute;
+
+          left:8px;
+          right:8px;
+          bottom:6px;
+
+          z-index:20;
+
+          gap:
+            6px;
+
+          padding:0;
+
+          background:
+            transparent;
+        }
+
+        .reader-controls button{
+          min-height:
+            34px;
+
+          font-size:
+            13px;
+
+          opacity:.90;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <header>
+
+      <button
+        type="button"
+        class="reader-back"
+        id="back-btn"
+      >
+        ← Kembali
+      </button>
+
+      <div
+        class="reader-title"
+        id="reader-title"
+      >
+        EPUB Reader
+      </div>
+
+    </header>
+
+    <div id="viewer"></div>
+
+    <div
+      class="reader-status"
+      id="reader-status"
+      aria-live="polite"
+    >
+      Menyiapkan EPUB...
+    </div>
+
+    <div class="reader-controls">
+
+      <button
+        type="button"
+        id="prev-btn"
+        disabled
+      >
+        ← Sebelumnya
+      </button>
+
+      <button
+        type="button"
+        id="next-btn"
+        disabled
+      >
+        Berikutnya →
+      </button>
+
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"
+    ></script>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"
+    ></script>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    ></script>
+
+    <script>
+      const SUPABASE_URL =
+        "https://lacdmofkvrmygwczoeux.supabase.co";
+
+      const SUPABASE_KEY =
+        "sb_publishable_vu1p7MFzan_Dqx_58B8dmQ_V14Hm0Vj";
+
+      /* === BOOTSTRAP SUPABASE CLIENT === */
+      const db = (() => {
+        const logWarn = (...args) => {
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.warn === "function"
+            ) {
+              console.warn(...args);
+            }
+          } catch (logError) {
+            // Logger tidak boleh menghentikan bootstrap EPUB Reader.
+          }
+        };
 
         try {
-
-          await rendition.resize(
-            width,
-            height
-          );
-
-          if (cfi) {
-
-            await rendition.display(
-              cfi
-            );
+          if (
+            typeof supabase === "undefined" || !supabase ||
+            typeof supabase.createClient !== "function"
+          ) {
+            logWarn("Library Supabase EPUB Reader tidak tersedia.");
+            return null;
           }
 
-          epubViewerWidth =
-            width;
+          if (
+            typeof SUPABASE_URL !== "string" || !SUPABASE_URL.trim() ||
+            typeof SUPABASE_KEY !== "string" || !SUPABASE_KEY.trim()
+          ) {
+            logWarn("Konfigurasi Supabase EPUB Reader tidak valid.");
+            return null;
+          }
 
-          epubViewerHeight =
-            height;
+          const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+          if (
+            !client || typeof client !== "object" ||
+            !client.auth || typeof client.auth.getUser !== "function" ||
+            typeof client.from !== "function"
+          ) {
+            logWarn("API Supabase Client EPUB Reader tidak lengkap.");
+            return null;
+          }
+
+          return client;
         } catch (error) {
-
-          console.warn(
-            "Resize EPUB gagal:",
-            error
-          );
+          logWarn("Inisialisasi Supabase EPUB Reader gagal:", error);
+          return null;
         }
+      })();
+      /* === BATAS BOOTSTRAP SUPABASE CLIENT === */
 
-      },
-      180
-    );
-}
+      /* === BOOTSTRAP DOM ELEMENTS === */
+      const {
+        viewer, status, title,
+        prevButton, nextButton, backButton
+      } = (() => {
+        const elements = {};
+        const required = [
+          ["viewer", "viewer", "DIV"],
+          ["status", "reader-status", "DIV"],
+          ["title", "reader-title", "DIV"],
+          ["prevButton", "prev-btn", "BUTTON"],
+          ["nextButton", "next-btn", "BUTTON"],
+          ["backButton", "back-btn", "BUTTON"]
+        ];
 
-async function bukaEpub() {
+        try {
+          if (
+            typeof document === "undefined" || !document ||
+            typeof document.getElementById !== "function"
+          ) {
+            throw new Error("API DOM EPUB Reader tidak tersedia.");
+          }
 
-  const epubUrl =
-    ambilUrlEpub();
+          const invalidIds = [];
+          for (const [name, id, tag] of required) {
+            try {
+              const element = document.getElementById(id);
+              if (
+                !element || element.nodeType !== 1 ||
+                element.id !== id || element.tagName !== tag ||
+                (tag === "BUTTON" && (
+                  typeof element.addEventListener !== "function" ||
+                  typeof element.disabled !== "boolean"
+                )) ||
+                (name === "viewer" &&
+                  typeof element.getBoundingClientRect !== "function")
+              ) {
+                invalidIds.push(id);
+                continue;
+              }
+              elements[name] = element;
+            } catch (lookupError) {
+              invalidIds.push(id);
+            }
+          }
 
-  epubReadingKey =
-  buatEpubReadingKey(
-    epubUrl
-  );
+          if (invalidIds.length) {
+            throw new Error("Elemen DOM EPUB Reader tidak valid: " + invalidIds.join(", "));
+          }
 
-  if (!epubUrl) {
+          return elements;
+        } catch (error) {
+          try {
+            if (elements.status) {
+              elements.status.textContent = "❌ Elemen EPUB Reader tidak lengkap.";
+            }
+          } catch (uiError) {
+            // Pesan status tidak boleh menutupi kegagalan utama.
+          }
 
-    status.textContent =
-      "❌ URL EPUB tidak ditemukan atau tidak valid.";
+          for (const name of ["prevButton", "nextButton", "backButton"]) {
+            try {
+              if (elements[name]) elements[name].disabled = true;
+            } catch (uiError) {
+              // Penonaktifan tombol dilakukan semampunya.
+            }
+          }
 
-    return;
-  }
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.error === "function"
+            ) {
+              console.error("Bootstrap DOM EPUB Reader gagal:", error);
+            }
+          } catch (logError) {
+            // Logger tidak boleh menutupi kegagalan utama.
+          }
 
-  if (
-    typeof ePub !==
-    "function"
-  ) {
-
-    status.textContent =
-      "❌ Mesin EPUB belum berhasil dimuat.";
-
-    return;
-  }
-
-  try {
-
-    status.textContent =
-      "⏳ Membuka EPUB...";
-
-    epubBook =
-      ePub(
-        epubUrl
-      );
-
-    rendition =
-      epubBook.renderTo(
-        viewer,
-        {
-          width:
-            "100%",
-
-          height:
-            "100%",
-
-          flow:
-            "paginated",
-
-          spread:
-            "none"
+          // Hentikan script ini jika DOM wajib tidak lengkap.
+          // Unit berikutnya tidak boleh bekerja dengan referensi null.
+          throw error;
         }
-      );
+      })();
+      /* === BATAS BOOTSTRAP DOM ELEMENTS === */
 
-    rendition.hooks.content.register(
-      pasangSwipeEpub
-    );
+      let epubBook =
+        null;
 
-    rendition.on(
-      "relocated",
-      function (location) {
+      let rendition =
+        null;
 
-    const spineIndex =
-  Number(
-    location?.start?.index
-  );
+      let epubReadingKey =
+        null;
 
-const totalSpine =
-  Array.isArray(
-    epubBook?.spine?.spineItems
-  )
-    ? epubBook.spine.spineItems.length
-    : 0;
+      let epubResizeTimer =
+        null;
 
-const current =
-  Number.isInteger(spineIndex)
-    ? spineIndex + 1
-    : (
-        location?.start
-          ?.displayed
-          ?.page || 1
-      );
+      let epubViewerWidth =
+        0;
 
-const total =
-  totalSpine > 0
-    ? totalSpine
-    : (
-        location?.start
-          ?.displayed
-          ?.total || 1
-      );
+      let epubViewerHeight =
+        0;
 
-    const cfi =
-      location?.start
-        ?.cfi;
+      /* === TOP LEVEL FUNCTION === */
+      function buatEpubReadingKey(epubUrl) {
+        try {
+          if (typeof epubUrl !== "string") return null;
 
-    if (
-      current &&
-      total
-    ) {
-      status.textContent =
-        `Halaman ${current} / ${total}`;
-    }
+          const sourceUrl = epubUrl.trim();
+          if (!sourceUrl) return null;
 
-    prevButton.disabled =
-      current <= 1;
-
-    nextButton.disabled =
-      current >= total;
-
-    simpanProgressEpubLokal({
-      cfi,
-      pageNumber: current,
-      totalPages: total
-    });
-
-    jadwalkanSimpanProgressEpubCloud({
-      cfi,
-      pageNumber: current
-    });
-        
-  }
-);
-
-    const metadata =
-      await epubBook.loaded.metadata;
-
-    if (
-      metadata?.title
-    ) {
-      title.textContent =
-        metadata.title;
-
-      document.title =
-        metadata.title +
-        " - Perpustakaan Nawir Pakaja";
-    }
-
-    const progressLokal =
-      ambilProgressEpubLokal();
-
-    const progressCloud =
-      await ambilProgressEpubCloud();
-
-    const progressTerbaru =
-      pilihProgressEpubTerbaru(
-        progressLokal,
-        progressCloud
-      );
-
-    if (
-      progressTerbaru?.cfi
-    ) {
-
-      try {
-
-        await rendition.display(
-          progressTerbaru.cfi
-        );
-
-        console.log(
-          "Resume EPUB dari progress terbaru:",
-          progressTerbaru.cfi
-        );
-
-      } catch (error) {
-
-        console.warn(
-          "Resume EPUB gagal, membuka dari awal:",
-          error
-        );
-
-        await rendition.display();
+          return "lastEpub:" + encodeURIComponent(sourceUrl);
+        } catch (error) {
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.warn === "function"
+            ) {
+              console.warn("Pembentukan book key EPUB gagal.");
+            }
+          } catch (logError) {
+            // Logger tidak boleh mengganggu pembentukan book key.
+          }
+          return null;
+        }
       }
+      /* === BATAS function buatEpubReadingKey === */
 
-    } else {
+      /* === TOP LEVEL FUNCTION === */
+      function simpanProgressEpubLokal(input) {
+        const logWarn = (message) => {
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.warn === "function"
+            ) {
+              console.warn(message);
+            }
+          } catch (logError) {
+            // Logger tidak boleh mengganggu penyimpanan progress.
+          }
+        };
 
-      await rendition.display();
-    }
+        const normalisasiHalaman = (value) => {
+          if (typeof value === "string") {
+            const text = value.trim();
+            if (!/^\d+$/.test(text)) return null;
+            value = Number(text);
+          }
 
-    status.textContent =
-      "✅ EPUB berhasil dibuka.";
-    
-  } catch (error) {
+          return Number.isSafeInteger(value) && value > 0
+            ? value
+            : null;
+        };
 
-    console.error(
-      "Gagal membuka EPUB:",
-      error
-    );
+        try {
+          if (!input || typeof input !== "object" || Array.isArray(input)) {
+            return false;
+          }
 
-    status.textContent =
-      "❌ EPUB gagal dibuka.";
+          const key = epubReadingKey;
+          if (
+            typeof key !== "string" || key !== key.trim() ||
+            !key.startsWith("lastEpub:") || key.length <= "lastEpub:".length
+          ) {
+            return false;
+          }
 
-    prevButton.disabled =
-      true;
+          const { cfi, pageNumber = null, totalPages = null } = input;
+          if (typeof cfi !== "string") return false;
 
-    nextButton.disabled =
-      true;
-  }
-}
+          const lokasi = cfi.trim();
+          if (
+            !lokasi.startsWith("epubcfi(") || !lokasi.endsWith(")") ||
+            !lokasi.slice(8, -1).trim()
+          ) {
+            return false;
+          }
 
-prevButton.addEventListener(
-  "click",
-  async () => {
+          const halaman = normalisasiHalaman(pageNumber);
+          let total = normalisasiHalaman(totalPages);
+          if (halaman !== null && total !== null && halaman > total) {
+            total = null;
+          }
 
-    if (!rendition) {
-      return;
-    }
+          const storage = typeof localStorage !== "undefined" ? localStorage : null;
+          if (!storage || typeof storage.setItem !== "function") {
+            logWarn("Penyimpanan progress EPUB lokal tidak tersedia.");
+            return false;
+          }
 
-    await rendition.prev();
-  }
-);
+          const progress = {
+            cfi: lokasi,
+            page_number: halaman,
+            total_pages: total,
+            updated_at: new Date().toISOString()
+          };
 
-nextButton.addEventListener(
-  "click",
-  async () => {
+          const serialized = JSON.stringify(progress);
+          if (typeof serialized !== "string") return false;
 
-    if (!rendition) {
-      return;
-    }
+          storage.setItem(key, serialized);
+          return true;
+        } catch (error) {
+          logWarn("Progress EPUB lokal gagal disimpan.");
+          return false;
+        }
+      }
+      /* === BATAS function simpanProgressEpubLokal === */
 
-    await rendition.next();
-  }
-);
+      /* === TOP LEVEL FUNCTION === */
+      function ambilProgressEpubLokal() {
+        const logWarn = (message) => {
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.warn === "function"
+            ) {
+              console.warn(message);
+            }
+          } catch (logError) {
+            // Logger tidak boleh mengganggu pembacaan progress.
+          }
+        };
 
-backButton.addEventListener(
-  "click",
-  () => {
+        const normalisasiHalaman = (value) => {
+          if (typeof value === "string") {
+            const text = value.trim();
+            if (!/^\d+$/.test(text)) return null;
+            value = Number(text);
+          }
 
-    if (
-      window.history.length >
-      1
-    ) {
-      window.history.back();
-      return;
-    }
+          return Number.isSafeInteger(value) && value > 0
+            ? value
+            : null;
+        };
 
-    window.location.href =
-      "index.html";
-  }
-);
+        try {
+          const key = epubReadingKey;
+          if (
+            typeof key !== "string" || key !== key.trim() ||
+            !key.startsWith("lastEpub:") || key.length <= "lastEpub:".length
+          ) {
+            return null;
+          }
 
-window.addEventListener(
-  "keydown",
-  async (event) => {
+          const storage = typeof localStorage !== "undefined" ? localStorage : null;
+          if (!storage || typeof storage.getItem !== "function") {
+            logWarn("Pembacaan progress EPUB lokal tidak tersedia.");
+            return null;
+          }
 
-    if (!rendition) {
-      return;
-    }
+          const raw = storage.getItem(key);
+          if (raw === null || raw === "") return null;
+          if (typeof raw !== "string") return null;
 
-    if (
-      event.key ===
-      "ArrowLeft"
-    ) {
-      event.preventDefault();
-      await rendition.prev();
-    }
+          const progress = JSON.parse(raw);
+          if (!progress || typeof progress !== "object" || Array.isArray(progress)) {
+            return null;
+          }
 
-    if (
-      event.key ===
-      "ArrowRight"
-    ) {
-      event.preventDefault();
-      await rendition.next();
-    }
-  }
-);
+          if (typeof progress.cfi !== "string") return null;
+          const lokasi = progress.cfi.trim();
+          if (
+            !lokasi.startsWith("epubcfi(") || !lokasi.endsWith(")") ||
+            !lokasi.slice(8, -1).trim()
+          ) {
+            return null;
+          }
 
-window.addEventListener(
-  "resize",
-  jadwalkanResizeEpub
-);
+          const halaman = normalisasiHalaman(progress.page_number);
+          let total = normalisasiHalaman(progress.total_pages);
+          if (halaman !== null && total !== null && halaman > total) {
+            total = null;
+          }
 
-window.addEventListener(
-  "orientationchange",
-  jadwalkanResizeEpub
-);
+          const waktu = typeof progress.updated_at === "string"
+            ? progress.updated_at.trim()
+            : "";
+          const updatedAt = waktu && Number.isFinite(Date.parse(waktu))
+            ? waktu
+            : null;
 
-bukaEpub();
-</script>
+          return {
+            cfi: lokasi,
+            page_number: halaman,
+            total_pages: total,
+            updated_at: updatedAt
+          };
+        } catch (error) {
+          logWarn("Progress EPUB lokal gagal dibaca atau tidak valid.");
+          return null;
+        }
+      }
+      /* === BATAS function ambilProgressEpubLokal === */
 
-</body>
+      /* === TOP LEVEL ASYNC FUNCTION === */
+      async function simpanProgressEpubCloud(input) {
+        const log = (level, message) => {
+          try {
+            if (typeof console === "undefined" || !console) return;
+            if (level === "warn" && typeof console.warn === "function") {
+              console.warn(message);
+            } else if (level === "error" && typeof console.error === "function") {
+              console.error(message);
+            }
+          } catch (logError) {
+            // Logger tidak boleh mengganggu penyimpanan cloud.
+          }
+        };
+
+        const normalisasiHalaman = (value) => {
+          if (typeof value === "string") {
+            const text = value.trim();
+            if (!/^\d+$/.test(text)) return null;
+            value = Number(text);
+          }
+          return Number.isSafeInteger(value) && value > 0
+            ? value
+            : null;
+        };
+
+        try {
+          if (!input || typeof input !== "object" || Array.isArray(input)) {
+            return false;
+          }
+
+          const key = epubReadingKey;
+          if (
+            typeof key !== "string" || key !== key.trim() ||
+            !key.startsWith("lastEpub:") || key.length <= "lastEpub:".length
+          ) {
+            return false;
+          }
+
+          const { cfi, pageNumber = null } = input;
+          if (typeof cfi !== "string") return false;
+          const lokasi = cfi.trim();
+          if (
+            !lokasi.startsWith("epubcfi(") || !lokasi.endsWith(")") ||
+            !lokasi.slice(8, -1).trim()
+          ) {
+            return false;
+          }
+
+          // Pertahankan fallback cloud lama sampai schema aktual diverifikasi.
+          const halaman = normalisasiHalaman(pageNumber) ?? 1;
+          const updatedAt = new Date().toISOString();
+
+          const client = typeof db !== "undefined" ? db : null;
+          if (
+            !client || !client.auth ||
+            typeof client.auth.getUser !== "function" ||
+            typeof client.from !== "function"
+          ) {
+            log("warn", "Supabase tidak tersedia untuk menyimpan progress EPUB.");
+            return false;
+          }
+
+          const userResult = await client.auth.getUser();
+          if (!userResult || userResult.error !== null) {
+            log("warn", "Autentikasi progress EPUB tidak berhasil.");
+            return false;
+          }
+
+          const userId = userResult.data?.user?.id;
+          if (
+            typeof userId !== "string" || !userId ||
+            userId !== userId.trim()
+          ) {
+            return false;
+          }
+
+          if (epubReadingKey !== key) return false;
+
+          const progressTable = client.from("reader_progress");
+          if (!progressTable || typeof progressTable.upsert !== "function") {
+            log("warn", "API upsert reader_progress tidak tersedia.");
+            return false;
+          }
+
+          const result = await progressTable.upsert(
+            {
+              user_id: userId,
+              book_key: key,
+              page_number: halaman,
+              reader_type: "epub",
+              location_cfi: lokasi,
+              updated_at: updatedAt
+            },
+            {
+              onConflict: "user_id,book_key"
+            }
+          );
+
+          if (!result || result.error !== null) {
+            log("error", "Gagal menyimpan progress EPUB ke cloud.");
+            return false;
+          }
+
+          return true;
+        } catch (error) {
+          log("error", "Penyimpanan progress EPUB ke cloud gagal.");
+          return false;
+        }
+      }
+      /* === BATAS function simpanProgressEpubCloud === */
+
+      let epubProgressCloudSaveTimer =
+        null;
+
+      /* === TOP LEVEL FUNCTION === */
+      function jadwalkanSimpanProgressEpubCloud(input) {
+        const logWarn = (message) => {
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.warn === "function"
+            ) {
+              console.warn(message);
+            }
+          } catch (logError) {
+            // Logger tidak boleh mengganggu scheduler cloud.
+          }
+        };
+
+        try {
+          if (!input || typeof input !== "object" || Array.isArray(input)) {
+            return false;
+          }
+
+          const key = epubReadingKey;
+          const activeRendition = rendition;
+          if (
+            typeof key !== "string" || key !== key.trim() ||
+            !key.startsWith("lastEpub:") || key.length <= "lastEpub:".length
+          ) {
+            return false;
+          }
+
+          const { cfi, pageNumber = null } = input;
+          if (typeof cfi !== "string") return false;
+          const lokasi = cfi.trim();
+          if (
+            !lokasi.startsWith("epubcfi(") || !lokasi.endsWith(")") ||
+            !lokasi.slice(8, -1).trim()
+          ) {
+            return false;
+          }
+
+          let halaman = pageNumber;
+          if (typeof halaman === "string") {
+            const text = halaman.trim();
+            halaman = /^\d+$/.test(text) ? Number(text) : null;
+          }
+          if (!Number.isSafeInteger(halaman) || halaman <= 0) {
+            halaman = null;
+          }
+
+          if (
+            typeof setTimeout !== "function" ||
+            typeof clearTimeout !== "function" ||
+            typeof simpanProgressEpubCloud !== "function"
+          ) {
+            logWarn("Scheduler progress EPUB tidak tersedia.");
+            return false;
+          }
+
+          const scheduler = jadwalkanSimpanProgressEpubCloud;
+          const previousTimer = epubProgressCloudSaveTimer;
+          const token = { started: false };
+          const isCurrent = () => (
+            scheduler.latest === token &&
+            epubReadingKey === key && rendition === activeRendition
+          );
+
+          const timer = setTimeout(
+            /* CALLBACK setTimeout() EPUB Progress Cloud Save */
+            async () => {
+              let job = null;
+              try {
+                if (scheduler.latest !== token || token.started) return false;
+                token.started = true;
+                epubProgressCloudSaveTimer = null;
+                if (!isCurrent()) return false;
+
+                // Tunggu request sebelumnya, termasuk jika request itu gagal.
+                const running = scheduler.inFlight;
+                if (running) {
+                  try {
+                    await running;
+                  } catch (previousError) {
+                    // Kegagalan sebelumnya tidak membatalkan progress terbaru.
+                  }
+                }
+                if (!isCurrent()) return false;
+
+                job = Promise.resolve().then(
+                  /* CALLBACK Promise.then() EPUB Progress Cloud Save */
+                  () => {
+                    if (!isCurrent()) return false;
+                    return simpanProgressEpubCloud({
+                      cfi: lokasi,
+                      pageNumber: halaman
+                    });
+                  }
+                  /* Batas CALLBACK Promise.then() EPUB Progress Cloud Save */
+                );
+                scheduler.inFlight = job;
+
+                const result = await job;
+                if (result !== true) {
+                  if (isCurrent()) logWarn("Progress EPUB terjadwal gagal disimpan.");
+                  return false;
+                }
+                return true;
+              } catch (error) {
+                logWarn("Eksekusi scheduler progress EPUB gagal.");
+                return false;
+              } finally {
+                if (job !== null && scheduler.inFlight === job) {
+                  scheduler.inFlight = null;
+                }
+              }
+            },
+            /* Batas CALLBACK setTimeout() EPUB Progress Cloud Save */
+            800
+          );
+
+          // Timer lama baru digantikan setelah registrasi timer baru berhasil.
+          scheduler.latest = token;
+          epubProgressCloudSaveTimer = timer;
+          if (previousTimer !== null) {
+            try {
+              clearTimeout(previousTimer);
+            } catch (clearError) {
+              // Token lama sudah tidak valid, meski pembatalan timer gagal.
+              logWarn("Timer progress EPUB sebelumnya gagal dibatalkan.");
+            }
+          }
+          return true;
+        } catch (error) {
+          logWarn("Penjadwalan progress EPUB ke cloud gagal.");
+          return false;
+        }
+      }
+      /* === BATAS function jadwalkanSimpanProgressEpubCloud === */
+
+      /* === TOP LEVEL ASYNC FUNCTION === */
+      async function ambilProgressEpubCloud() {
+        const logWarn = (message) => {
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.warn === "function"
+            ) {
+              console.warn(message);
+            }
+          } catch (logError) {
+            // Logger tidak boleh mengganggu pembacaan progress cloud.
+          }
+        };
+
+        const normalisasiHalaman = (value) => {
+          if (typeof value === "string") {
+            const text = value.trim();
+            if (!/^\d+$/.test(text)) return null;
+            value = Number(text);
+          }
+          return Number.isSafeInteger(value) && value > 0
+            ? value
+            : null;
+        };
+
+        const ambilUserId = (result) => {
+          if (!result || result.error !== null) return null;
+          const id = result.data?.user?.id;
+          return typeof id === "string" && id && id === id.trim()
+            ? id
+            : null;
+        };
+
+        try {
+          const key = epubReadingKey;
+          const activeRendition = rendition;
+          if (
+            typeof key !== "string" || key !== key.trim() ||
+            !key.startsWith("lastEpub:") || key.length <= "lastEpub:".length
+          ) {
+            return null;
+          }
+
+          const isCurrent = () => (
+            epubReadingKey === key && rendition === activeRendition
+          );
+
+          const client = typeof db !== "undefined" ? db : null;
+          if (
+            !client || !client.auth ||
+            typeof client.auth.getUser !== "function" ||
+            typeof client.from !== "function"
+          ) {
+            return null;
+          }
+
+          const userId = ambilUserId(await client.auth.getUser());
+          if (!userId || !isCurrent()) return null;
+
+          const table = client.from("reader_progress");
+          if (!table || typeof table.select !== "function") {
+            logWarn("API pembacaan reader_progress tidak tersedia.");
+            return null;
+          }
+
+          const query = table
+            .select("page_number, location_cfi, updated_at")
+            .eq("user_id", userId)
+            .eq("book_key", key)
+            .eq("reader_type", "epub");
+
+          if (!query || typeof query.maybeSingle !== "function") {
+            logWarn("Query progress EPUB tidak mendukung maybeSingle.");
+            return null;
+          }
+
+          const result = await query.maybeSingle();
+          if (!isCurrent()) return null;
+          if (!result || result.error !== null) {
+            logWarn("Gagal mengambil progress EPUB dari cloud.");
+            return null;
+          }
+
+          const data = result.data;
+          if (!data || typeof data !== "object" || Array.isArray(data)) {
+            return null;
+          }
+          if (typeof data.location_cfi !== "string") return null;
+          const lokasi = data.location_cfi.trim();
+          if (
+            !lokasi.startsWith("epubcfi(") || !lokasi.endsWith(")") ||
+            !lokasi.slice(8, -1).trim()
+          ) {
+            return null;
+          }
+
+          const halaman = normalisasiHalaman(data.page_number);
+          const waktu = typeof data.updated_at === "string"
+            ? data.updated_at.trim()
+            : "";
+          const updatedAt = waktu && Number.isFinite(Date.parse(waktu))
+            ? waktu
+            : null;
+
+          // Verifikasi kembali akun sebelum menyerahkan progress kepada pemanggil.
+          const currentUserId = ambilUserId(await client.auth.getUser());
+          if (currentUserId !== userId || !isCurrent()) return null;
+
+          return {
+            cfi: lokasi,
+            page_number: halaman,
+            updated_at: updatedAt
+          };
+        } catch (error) {
+          logWarn("Progress EPUB cloud gagal dibaca.");
+          return null;
+        }
+      }
+      /* === BATAS function ambilProgressEpubCloud === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function pilihProgressEpubTerbaru(progressLokal, progressCloud) {
+        const logWarn = (message) => {
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.warn === "function"
+            ) {
+              console.warn(message);
+            }
+          } catch (logError) {
+            // Logger tidak boleh mengganggu pemilihan progress.
+          }
+        };
+
+        const normalisasiHalaman = (value) => {
+          if (typeof value === "string") {
+            const text = value.trim();
+            if (!/^\d+$/.test(text)) return null;
+            value = Number(text);
+          }
+          return Number.isSafeInteger(value) && value > 0
+            ? value
+            : null;
+        };
+
+        const normalisasiProgress = (progress) => {
+          try {
+            if (!progress || typeof progress !== "object" || Array.isArray(progress)) {
+              return null;
+            }
+
+            const cfi = progress.cfi;
+            if (typeof cfi !== "string") return null;
+            const lokasi = cfi.trim();
+            if (
+              !lokasi.startsWith("epubcfi(") || !lokasi.endsWith(")") ||
+              !lokasi.slice(8, -1).trim()
+            ) {
+              return null;
+            }
+
+            const halaman = normalisasiHalaman(progress.page_number);
+            let total = normalisasiHalaman(progress.total_pages);
+            if (halaman !== null && total !== null && halaman > total) {
+              total = null;
+            }
+
+            const rawWaktu = progress.updated_at;
+            const waktu = typeof rawWaktu === "string" ? rawWaktu.trim() : "";
+            const timestamp = waktu ? Date.parse(waktu) : NaN;
+            const updatedAt = Number.isFinite(timestamp) ? waktu : null;
+
+            return {
+              data: {
+                cfi: lokasi,
+                page_number: halaman,
+                total_pages: total,
+                updated_at: updatedAt
+              },
+              timestamp
+            };
+          } catch (error) {
+            logWarn("Kandidat progress EPUB gagal divalidasi.");
+            return null;
+          }
+        };
+
+        try {
+          const lokal = normalisasiProgress(progressLokal);
+          const cloud = normalisasiProgress(progressCloud);
+
+          if (!lokal) return cloud ? cloud.data : null;
+          if (!cloud) return lokal.data;
+
+          if (
+            Number.isFinite(cloud.timestamp) &&
+            (!Number.isFinite(lokal.timestamp) || cloud.timestamp > lokal.timestamp)
+          ) {
+            return cloud.data;
+          }
+
+          // Pertahankan prioritas lokal untuk timestamp sama atau keduanya invalid.
+          return lokal.data;
+        } catch (error) {
+          logWarn("Pemilihan progress EPUB gagal.");
+          return null;
+        }
+      }
+      /* === BATAS function pilihProgressEpubTerbaru === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function ambilUrlEpub() {
+        const logWarn = (message) => {
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.warn === "function"
+            ) {
+              console.warn(message);
+            }
+          } catch (logError) {
+            // Logger tidak boleh mengganggu validasi URL EPUB.
+          }
+        };
+
+        try {
+          if (
+            typeof window === "undefined" || !window ||
+            typeof URLSearchParams !== "function" ||
+            typeof URL !== "function"
+          ) {
+            logWarn("API pembacaan URL EPUB tidak tersedia.");
+            return null;
+          }
+
+          const location = window.location;
+          if (!location) return null;
+
+          const { search, href } = location;
+          if (
+            typeof search !== "string" ||
+            typeof href !== "string" || !href.trim()
+          ) {
+            return null;
+          }
+
+          const params = new URLSearchParams(search);
+          const files = params.getAll("file");
+          if (files.length !== 1 || typeof files[0] !== "string") {
+            return null;
+          }
+
+          const file = files[0];
+          const source = file.trim();
+          if (
+            !source || /[\u0000-\u001F\u007F]/.test(file) ||
+            source.startsWith("?") || source.startsWith("#")
+          ) {
+            return null;
+          }
+
+          const url = new URL(file, href);
+          if (
+            (url.protocol !== "https:" && url.protocol !== "http:") ||
+            !url.hostname || url.username || url.password
+          ) {
+            return null;
+          }
+
+          // Pertahankan URL kanonis lama untuk identitas progress EPUB.
+          return url.href;
+        } catch (error) {
+          logWarn("URL EPUB gagal dibaca atau tidak valid.");
+          return null;
+        }
+      }
+      /* === BATAS function ambilUrlEpub === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function pasangSwipeEpub(contents) {
+        const logWarn = (message) => {
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.warn === "function"
+            ) {
+              console.warn(message);
+            }
+          } catch (logError) {
+            // Logger tidak boleh mengganggu interaksi EPUB.
+          }
+        };
+
+        try {
+          const doc = contents?.document;
+          const activeRendition = rendition;
+          const key = epubReadingKey;
+          if (
+            !doc || typeof doc.addEventListener !== "function" ||
+            typeof doc.removeEventListener !== "function" ||
+            !activeRendition || typeof activeRendition !== "object"
+          ) {
+            return false;
+          }
+
+          const owner = pasangSwipeEpub;
+          if (!owner.bindings) owner.bindings = new WeakMap();
+          if (!owner.centered) owner.centered = new WeakSet();
+          if (!owner.inFlight) owner.inFlight = new WeakSet();
+          const bindings = owner.bindings;
+          const centered = owner.centered;
+          const inFlight = owner.inFlight;
+
+          // Centering bersifat opsional; kegagalannya tidak memblokir swipe.
+          try {
+            if (
+              typeof contents.scaler === "function" &&
+              !contents.__centerScalerPatched && !centered.has(contents)
+            ) {
+              const scalerAsli = contents.scaler.bind(contents);
+
+              /* CALLBACK override contents.scaler */
+              const scalerBaru = function (scale, offsetX, offsetY, ...rest) {
+                let offsetXBaru = offsetX;
+                try {
+                  if (Number.isFinite(scale) && scale > 0) {
+                    const viewportWidth = Number.parseFloat(contents.viewport?.()?.width);
+                    const viewerWidth = viewer?.getBoundingClientRect()?.width;
+                    if (
+                      Number.isFinite(viewportWidth) && viewportWidth > 0 &&
+                      Number.isFinite(viewerWidth) && viewerWidth > 0
+                    ) {
+                      const lebarHasilScale = viewportWidth * scale;
+                      const sisaLebar = viewerWidth - lebarHasilScale;
+                      const pembagi = 2 * scale;
+                      if (
+                        Number.isFinite(lebarHasilScale) && lebarHasilScale > 0 &&
+                        sisaLebar > 0 && Number.isFinite(pembagi) && pembagi > 0
+                      ) {
+                        const kandidat = sisaLebar / pembagi;
+                        if (Number.isFinite(kandidat)) offsetXBaru = kandidat;
+                      }
+                    }
+                  }
+                } catch (error) {
+                  logWarn("Penghitungan centering EPUB gagal; gunakan offset asli.");
+                }
+
+                // Kesalahan scaler asli tetap menjadi tanggung jawab EPUB.js.
+                return scalerAsli(scale, offsetXBaru, offsetY, ...rest);
+              };
+              /* Batas CALLBACK override contents.scaler */
+
+              contents.scaler = scalerBaru;
+              if (contents.scaler !== scalerBaru) {
+                throw new Error("Override scaler EPUB tidak berhasil.");
+              }
+              centered.add(contents);
+              contents.__centerScalerPatched = true;
+            }
+          } catch (error) {
+            logWarn("Pemasangan centering EPUB gagal.");
+          }
+
+          const previous = bindings.get(doc);
+          if (
+            previous?.active && previous.contents === contents &&
+            previous.rendition === activeRendition && previous.key === key
+          ) {
+            return true;
+          }
+          if (previous) previous.cleanup();
+
+          const binding = {
+            active: false,
+            contents,
+            rendition: activeRendition,
+            key,
+            cleanup: null
+          };
+          let gesture = null;
+          const options = { passive: true };
+          const isCurrent = () => (
+            binding.active && bindings.get(doc) === binding &&
+            rendition === activeRendition && epubReadingKey === key &&
+            contents.document === doc
+          );
+
+          /* CALLBACK touchstart EPUB Swipe */
+          const onTouchStart = (event) => {
+            gesture = null;
+            try {
+              if (!isCurrent() || event?.touches?.length !== 1) return false;
+              const touch = event.touches[0];
+              if (
+                !touch || !Number.isInteger(touch.identifier) ||
+                !Number.isFinite(touch.clientX) || !Number.isFinite(touch.clientY)
+              ) {
+                return false;
+              }
+              gesture = {
+                identifier: touch.identifier,
+                x: touch.clientX,
+                y: touch.clientY
+              };
+              return true;
+            } catch (error) {
+              logWarn("Touchstart EPUB gagal.");
+              return false;
+            }
+          };
+          /* Batas CALLBACK touchstart EPUB Swipe */
+
+          /* CALLBACK touchcancel EPUB Swipe */
+          const onTouchCancel = () => {
+            gesture = null;
+          };
+          /* Batas CALLBACK touchcancel EPUB Swipe */
+
+          /* CALLBACK touchend EPUB Swipe */
+          const onTouchEnd = async (event) => {
+            const start = gesture;
+            gesture = null;
+            let locked = false;
+            try {
+              if (
+                !start || !isCurrent() || inFlight.has(activeRendition) ||
+                event?.touches?.length !== 0 || event?.changedTouches?.length !== 1
+              ) {
+                return false;
+              }
+              const touch = event.changedTouches[0];
+              if (
+                !touch || touch.identifier !== start.identifier ||
+                !Number.isFinite(touch.clientX) || !Number.isFinite(touch.clientY)
+              ) {
+                return false;
+              }
+
+              const deltaX = touch.clientX - start.x;
+              const deltaY = touch.clientY - start.y;
+              const jarakX = Math.abs(deltaX);
+              const jarakY = Math.abs(deltaY);
+              if (
+                !Number.isFinite(jarakX) || !Number.isFinite(jarakY) ||
+                jarakX < 50 || jarakX <= jarakY
+              ) {
+                return false;
+              }
+
+              const arah = deltaX < 0 ? "next" : "prev";
+              const tombol = arah === "next" ? nextButton : prevButton;
+              const navigasi = activeRendition[arah];
+              if (!tombol || tombol.disabled !== false || typeof navigasi !== "function") {
+                return false;
+              }
+
+              if (!isCurrent() || inFlight.has(activeRendition)) return false;
+              inFlight.add(activeRendition);
+              locked = true;
+              const result = await navigasi.call(activeRendition);
+              return result !== false && isCurrent();
+            } catch (error) {
+              logWarn("Navigasi swipe EPUB gagal.");
+              return false;
+            } finally {
+              if (locked) inFlight.delete(activeRendition);
+            }
+          };
+          /* Batas CALLBACK touchend EPUB Swipe */
+
+          const listeners = [
+            ["touchstart", onTouchStart],
+            ["touchcancel", onTouchCancel],
+            ["touchend", onTouchEnd]
+          ];
+          const cleanup = () => {
+            binding.active = false;
+            gesture = null;
+            if (bindings.get(doc) === binding) bindings.delete(doc);
+            for (const [name, handler] of listeners) {
+              try {
+                doc.removeEventListener(name, handler, false);
+              } catch (error) {
+                logWarn("Pelepasan listener swipe EPUB gagal.");
+              }
+            }
+          };
+          binding.cleanup = cleanup;
+
+          try {
+            for (const [name, handler] of listeners) {
+              doc.addEventListener(name, handler, options);
+            }
+            bindings.set(doc, binding);
+            binding.active = true;
+            return true;
+          } catch (error) {
+            cleanup();
+            logWarn("Pemasangan listener swipe EPUB gagal.");
+            return false;
+          }
+        } catch (error) {
+          logWarn("Inisialisasi swipe EPUB gagal.");
+          return false;
+        }
+      }
+      /* === BATAS function pasangSwipeEpub === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function tungguLayoutEpubStabil() {
+        const logWarn = (message) => {
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.warn === "function"
+            ) {
+              console.warn(message);
+            }
+          } catch (logError) {
+            // Logger tidak boleh mengganggu penyelesaian Promise.
+          }
+        };
+
+        return new Promise(
+          /* CALLBACK Promise executor EPUB Layout */
+          (resolve) => {
+            let selesai = false;
+            let framePertama = null;
+            let frameKedua = null;
+            let timer = null;
+
+            const finish = (hasil) => {
+              if (selesai) return;
+              selesai = true;
+
+              try {
+                if (timer !== null) clearTimeout(timer);
+              } catch (error) {
+                logWarn("Pembersihan timer layout EPUB gagal.");
+              }
+              timer = null;
+
+              for (const frame of [framePertama, frameKedua]) {
+                try {
+                  if (frame !== null && typeof cancelAnimationFrame === "function") {
+                    cancelAnimationFrame(frame);
+                  }
+                } catch (error) {
+                  logWarn("Pembatalan animation frame EPUB gagal.");
+                }
+              }
+              framePertama = null;
+              frameKedua = null;
+              resolve(hasil);
+            };
+
+            try {
+              if (
+                typeof requestAnimationFrame !== "function" ||
+                typeof setTimeout !== "function" ||
+                typeof clearTimeout !== "function"
+              ) {
+                logWarn("API stabilisasi layout EPUB tidak tersedia.");
+                finish(false);
+                return;
+              }
+
+              // Batas nominal; timer browser dapat tertunda pada tab tidak aktif.
+              timer = setTimeout(
+                /* CALLBACK timeout EPUB Layout */
+                () => {
+                  if (selesai) return;
+                  timer = null;
+                  logWarn("Waktu tunggu animation frame EPUB terlampaui.");
+                  finish(false);
+                },
+                /* Batas CALLBACK timeout EPUB Layout */
+                1000
+              );
+
+              framePertama = requestAnimationFrame(
+                /* CALLBACK requestAnimationFrame tingkat 1 */
+                () => {
+                  if (selesai) return;
+                  framePertama = null;
+                  try {
+                    frameKedua = requestAnimationFrame(
+                      /* CALLBACK requestAnimationFrame tingkat 2 */
+                      () => {
+                        if (selesai) return;
+                        frameKedua = null;
+                        finish(true);
+                      }
+                      /* Batas CALLBACK requestAnimationFrame tingkat 2 */
+                    );
+                  } catch (error) {
+                    logWarn("Animation frame kedua EPUB gagal dijadwalkan.");
+                    finish(false);
+                  }
+                }
+                /* Batas CALLBACK requestAnimationFrame tingkat 1 */
+              );
+            } catch (error) {
+              logWarn("Stabilisasi layout EPUB gagal dijadwalkan.");
+              finish(false);
+            }
+          }
+          /* Batas CALLBACK Promise executor EPUB Layout */
+        );
+      }
+      /* === BATAS function tungguLayoutEpubStabil === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function jadwalkanResizeEpub() {
+        const logWarn = (message) => {
+          try {
+            if (
+              typeof console !== "undefined" && console &&
+              typeof console.warn === "function"
+            ) {
+              console.warn(message);
+            }
+          } catch (logError) {
+            // Logger tidak boleh mengganggu resize EPUB.
+          }
+        };
+
+        try {
+          const activeRendition = rendition;
+          const activeViewer = viewer;
+          const key = epubReadingKey;
+          if (
+            !activeRendition || typeof activeRendition !== "object" ||
+            !activeViewer || typeof activeViewer.getBoundingClientRect !== "function" ||
+            typeof key !== "string" || !key.startsWith("lastEpub:") ||
+            key !== key.trim() || key.length <= "lastEpub:".length ||
+            typeof activeRendition.currentLocation !== "function" ||
+            typeof activeRendition.resize !== "function" ||
+            typeof activeRendition.display !== "function" ||
+            typeof tungguLayoutEpubStabil !== "function" ||
+            typeof pasangSwipeEpub !== "function" ||
+            typeof setTimeout !== "function" || typeof clearTimeout !== "function"
+          ) {
+            return false;
+          }
+
+          const scheduler = jadwalkanResizeEpub;
+          if (!scheduler.running) scheduler.running = new WeakMap();
+          if (!scheduler.cache) scheduler.cache = new WeakMap();
+          if (!pasangSwipeEpub.inFlight) pasangSwipeEpub.inFlight = new WeakSet();
+          const running = scheduler.running;
+          const cache = scheduler.cache;
+          const inFlight = pasangSwipeEpub.inFlight;
+          const token = { attempt: null, retries: 0 };
+          const isSame = () => (
+            rendition === activeRendition && viewer === activeViewer && epubReadingKey === key
+          );
+          const isCurrent = () => scheduler.latest === token && isSame();
+
+          const arm = () => {
+            const attempt = { started: false };
+            const timer = setTimeout(
+              /* CALLBACK setTimeout() EPUB Resize */
+              async () => {
+                try {
+                  if (scheduler.latest !== token || token.attempt !== attempt || attempt.started) {
+                    return false;
+                  }
+                  attempt.started = true;
+                  epubResizeTimer = null;
+                  if (!isCurrent()) return false;
+
+                  // Resize terbaru menunggu resize lama pada rendition yang sama.
+                  const previousJob = running.get(activeRendition);
+                  if (previousJob) await previousJob;
+                  if (!isCurrent()) return false;
+
+                  const layoutSiap = await tungguLayoutEpubStabil();
+                  if (layoutSiap !== true || !isCurrent()) return false;
+
+                  // Jangan menabrak swipe yang sedang berlangsung. Batasi percobaan ulang.
+                  if (inFlight.has(activeRendition)) {
+                    if (token.retries >= 10) {
+                      logWarn("Resize EPUB ditunda: navigasi masih berlangsung.");
+                      return false;
+                    }
+                    token.retries += 1;
+                    arm();
+                    return false;
+                  }
+
+                  const rect = activeViewer.getBoundingClientRect();
+                  const width = Math.round(rect?.width);
+                  const height = Math.round(rect?.height);
+                  if (
+                    typeof rect?.width !== "number" || typeof rect?.height !== "number" ||
+                    !Number.isSafeInteger(width) || width <= 0 ||
+                    !Number.isSafeInteger(height) || height <= 0
+                  ) {
+                    return false;
+                  }
+
+                  const last = cache.get(activeRendition);
+                  if (last && last.key === key && last.viewer === activeViewer &&
+                      last.width === width && last.height === height) {
+                    epubViewerWidth = width;
+                    epubViewerHeight = height;
+                    return true;
+                  }
+
+                  if (!isCurrent()) return false;
+                  inFlight.add(activeRendition);
+                  // Job terdaftar sebelum operasi asynchronous dimulai.
+                  const job = Promise.resolve().then(
+                    /* CALLBACK Promise.then() EPUB Resize */
+                    async () => {
+                      try {
+                        if (!isCurrent()) return false;
+                        const lokasi = await activeRendition.currentLocation();
+                        if (!isCurrent()) return false;
+                        const rawCfi = lokasi?.start?.cfi;
+                        const cfi = typeof rawCfi === "string" ? rawCfi.trim() : "";
+                        if (!cfi.startsWith("epubcfi(") || !cfi.endsWith(")") ||
+                            !cfi.slice(8, -1).trim()) {
+                          // Reader belum memiliki posisi yang dapat dipulihkan.
+                          return false;
+                        }
+
+                        // Jangan percaya cache lama jika resize atau pemulihan gagal.
+                        cache.delete(activeRendition);
+                        epubViewerWidth = 0;
+                        epubViewerHeight = 0;
+                        const resized = await activeRendition.resize(width, height);
+                        if (!isSame()) return false;
+                        if (resized === false) throw new Error("Resize gagal.");
+
+                        // Selesaikan pemulihan pada buku yang sama walau ada jadwal baru.
+                        const displayed = await activeRendition.display(cfi);
+                        if (!isSame()) return false;
+                        if (displayed === false) throw new Error("Pemulihan CFI gagal.");
+
+                        cache.set(activeRendition, { key, viewer: activeViewer, width, height });
+                        epubViewerWidth = width;
+                        epubViewerHeight = height;
+                        return true;
+                      } catch (error) {
+                        logWarn("Resize atau pemulihan posisi EPUB gagal.");
+                        return false;
+                      }
+                    }
+                    /* Batas CALLBACK Promise.then() EPUB Resize */
+                  );
+                  running.set(activeRendition, job);
+                  try {
+                    return await job;
+                  } finally {
+                    if (running.get(activeRendition) === job) {
+                      running.delete(activeRendition);
+                      inFlight.delete(activeRendition);
+                    }
+                  }
+                } catch (error) {
+                  logWarn("Eksekusi scheduler resize EPUB gagal.");
+                  return false;
+                }
+              },
+              /* Batas CALLBACK setTimeout() EPUB Resize */
+              180
+            );
+            token.attempt = attempt;
+            epubResizeTimer = timer;
+          };
+
+          const previousTimer = epubResizeTimer;
+          // Pertahankan jadwal lama jika registrasi timer baru gagal.
+          arm();
+          scheduler.latest = token;
+          if (previousTimer !== null) {
+            try {
+              clearTimeout(previousTimer);
+            } catch (error) {
+              logWarn("Timer resize EPUB sebelumnya gagal dibatalkan.");
+            }
+          }
+          return true;
+        } catch (error) {
+          logWarn("Penjadwalan resize EPUB gagal.");
+          return false;
+        }
+      }
+      /* === BATAS function jadwalkanResizeEpub === */
+
+      /* === TOP LEVEL ASYNC FUNCTION === */
+      async function bukaEpub() {
+        const owner = bukaEpub;
+        if (owner.opening) return false;
+        if (owner.session?.ready && owner.session.rendition === rendition &&
+            owner.session.key === epubReadingKey) return true;
+        // Reader ini membuka satu buku per halaman. Jangan ganti instance aktif diam-diam.
+        if (rendition || epubBook) return false;
+
+        const log = (level, message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console[level] === "function") console[level](message);
+          } catch (error) {
+            // Logger tidak boleh memengaruhi lifecycle Reader.
+          }
+        };
+        const validCfi = (value) => {
+          const cfi = typeof value === "string" ? value.trim() : "";
+          return cfi.startsWith("epubcfi(") && cfi.endsWith(")") &&
+            cfi.slice(8, -1).trim() ? cfi : null;
+        };
+        const positif = (value) => Number.isSafeInteger(value) && value > 0;
+        const session = { ready: false, key: null, rendition: null };
+        owner.opening = true;
+        owner.session = session;
+        let book = null;
+        let active = null;
+        let lock = null;
+        let locked = false;
+        let lastLocation = null;
+        let lastCfi = null;
+        let displayFailed = false;
+        let initialRect = null;
+        let contentHook = null;
+        let onRelocated = null;
+        let onDisplayError = null;
+        let pesanGagal = "❌ EPUB gagal dibuka.";
+        const isCurrent = () => owner.session === session &&
+          epubBook === book && rendition === active && epubReadingKey === session.key;
+
+        // Timeout hanya membatasi penantian; tidak membatalkan operasi internal.
+        const tunggu = async (task, ms) => {
+          let timer = null;
+          try {
+            if (typeof setTimeout !== "function" || typeof clearTimeout !== "function") {
+              throw new Error("API timer tidak tersedia.");
+            }
+            let resolveTimeout;
+            const timeout = new Promise((resolve) => { resolveTimeout = resolve; });
+            timer = setTimeout(() => resolveTimeout({ timeout: true }), ms);
+            const work = Promise.resolve().then(task).then(
+              (value) => ({ value }),
+              () => ({ failed: true })
+            );
+            return await Promise.race([work, timeout]);
+          } finally {
+            try {
+              if (timer !== null) clearTimeout(timer);
+            } catch (error) {
+              log("warn", "Pembersihan timer pembukaan EPUB gagal.");
+            }
+          }
+        };
+
+        const bacaLokasi = (location) => {
+          const start = location?.start;
+          const end = location?.end;
+          const cfi = validCfi(start?.cfi);
+          if (!cfi) return null;
+          const index = start?.index;
+          const totalSpine = Array.isArray(book?.spine?.spineItems)
+            ? book.spine.spineItems.length : 0;
+          const bagianValid = Number.isSafeInteger(index) && index >= 0 &&
+            positif(totalSpine) && index < totalSpine;
+          const page = start?.displayed?.page;
+          const pages = start?.displayed?.total;
+          const halamanValid = positif(page) && positif(pages) && page <= pages;
+          const bagian = bagianValid ? index + 1 : null;
+          // Pertahankan arti metadata cloud lama (spine, bukan jumlah halaman layar).
+          const pageNumber = bagian ?? (halamanValid ? page : null);
+          const totalPages = bagianValid ? totalSpine : (halamanValid ? pages : null);
+          const labels = [];
+          if (bagianValid) labels.push(`Bagian ${bagian} / ${totalSpine}`);
+          if (halamanValid) labels.push(`Halaman ${page} / ${pages}`);
+          // Jika flag tidak tersedia, jangan menutup navigasi hanya berdasarkan spine.
+          const atStart = typeof location.atStart === "boolean" ? location.atStart :
+            bagianValid && index === 0 && halamanValid && page === 1;
+          const endIndex = end?.index;
+          const endPage = end?.displayed?.page;
+          const endTotal = end?.displayed?.total;
+          const atEnd = typeof location.atEnd === "boolean" ? location.atEnd :
+            positif(totalSpine) && endIndex === totalSpine - 1 &&
+            positif(endPage) && positif(endTotal) && endPage === endTotal;
+          return { cfi, pageNumber, totalPages, atStart, atEnd,
+            label: labels.join(" · ") || "EPUB berhasil dibuka." };
+        };
+
+        const terapkanLokasi = (data, simpan) => {
+          if (!data || !session.ready || !isCurrent()) return false;
+          prevButton.disabled = data.atStart;
+          nextButton.disabled = data.atEnd;
+          status.textContent = data.label;
+          const resizeAktif = jadwalkanResizeEpub.running?.has(active) === true;
+          // Lokasi awal dan relocation sementara selama resize bukan navigasi baru.
+          if (resizeAktif) return true;
+          const berubah = lastCfi !== null && lastCfi !== data.cfi;
+          lastCfi = data.cfi;
+          if (simpan && berubah) {
+            simpanProgressEpubLokal(data);
+            jadwalkanSimpanProgressEpubCloud(data);
+          }
+          return true;
+        };
+
+        try {
+          prevButton.disabled = true;
+          nextButton.disabled = true;
+          const url = ambilUrlEpub();
+          const key = buatEpubReadingKey(url);
+          if (!url || !key) {
+            pesanGagal = "❌ URL EPUB tidak ditemukan atau tidak valid.";
+            return false;
+          }
+          if (typeof ePub !== "function") {
+            pesanGagal = "❌ Mesin EPUB belum berhasil dimuat.";
+            return false;
+          }
+          status.textContent = "⏳ Membuka EPUB...";
+          session.key = key;
+          epubReadingKey = key;
+          epubViewerWidth = 0;
+          epubViewerHeight = 0;
+          book = ePub(url);
+          if (!book || typeof book.renderTo !== "function") throw new Error("Book tidak valid.");
+          epubBook = book;
+
+          // Tunggu kesiapan buku sebelum membuat rendition jika API tersedia.
+          if (book.opened && typeof book.opened.then === "function") {
+            const opened = await tunggu(() => book.opened, 30000);
+            if (opened.timeout || opened.failed || !isCurrent()) throw new Error("Book belum siap.");
+          }
+          initialRect = viewer.getBoundingClientRect();
+          active = book.renderTo(viewer, {
+            width: "100%", height: "100%", flow: "paginated", spread: "none"
+          });
+          session.rendition = active;
+          rendition = active;
+          if (!active || typeof active !== "object" || typeof active.on !== "function" ||
+              typeof active.display !== "function" || typeof active.next !== "function" ||
+              typeof active.prev !== "function" || typeof active.resize !== "function" ||
+              typeof active.currentLocation !== "function" ||
+              typeof active.hooks?.content?.register !== "function") {
+            throw new Error("API rendition tidak lengkap.");
+          }
+          if (!pasangSwipeEpub.inFlight) pasangSwipeEpub.inFlight = new WeakSet();
+          lock = pasangSwipeEpub.inFlight;
+          lock.add(active);
+          locked = true;
+
+          /* CALLBACK content hook EPUB */
+          contentHook = (contents) => {
+            if (!isCurrent()) return false;
+            return pasangSwipeEpub(contents);
+          };
+          /* Batas CALLBACK content hook EPUB */
+          active.hooks.content.register(contentHook);
+
+          /* CALLBACK relocated EPUB */
+          onRelocated = (location) => {
+            try {
+              if (!isCurrent()) return false;
+              const data = bacaLokasi(location);
+              if (!data) return false;
+              lastLocation = data;
+              if (!session.ready) return true;
+              return terapkanLokasi(data, true);
+            } catch (error) {
+              log("warn", "Pemrosesan lokasi EPUB gagal.");
+              return false;
+            }
+          };
+          /* Batas CALLBACK relocated EPUB */
+          active.on("relocated", onRelocated);
+
+          /* CALLBACK displayError EPUB */
+          onDisplayError = () => {
+            if (isCurrent() && !session.ready) displayFailed = true;
+            log("warn", "Mesin EPUB melaporkan kegagalan display.");
+          };
+          /* Batas CALLBACK displayError EPUB */
+          active.on("displayError", onDisplayError);
+
+          // Metadata opsional: kegagalannya tidak menghalangi pembacaan buku.
+          const metadata = await tunggu(() => book.loaded?.metadata, 4000);
+          if (!isCurrent()) return false;
+          const judul = metadata.value?.title;
+          if (typeof judul === "string" && judul.trim()) {
+            title.textContent = judul.trim();
+            document.title = judul.trim() + " - Perpustakaan Nawir Pakaja";
+          }
+
+          const progressLokal = ambilProgressEpubLokal();
+          const hasilCloud = await tunggu(() => ambilProgressEpubCloud(), 4000);
+          if (!isCurrent()) return false;
+          if (hasilCloud.timeout) log("warn", "Pembacaan cloud EPUB melewati batas tunggu.");
+          const progressCloud = hasilCloud.value ?? null;
+          const terbaru = pilihProgressEpubTerbaru(progressLokal, progressCloud);
+          const lokal = pilihProgressEpubTerbaru(progressLokal, null);
+          const cloud = pilihProgressEpubTerbaru(null, progressCloud);
+          const targets = [...new Set([terbaru?.cfi, lokal?.cfi, cloud?.cfi]
+            .map(validCfi).filter(Boolean)), undefined];
+
+          let berhasil = false;
+          for (const target of targets) {
+            if (!isCurrent()) return false;
+            lastLocation = null;
+            displayFailed = false;
+            const hasil = await tunggu(() => target === undefined
+              ? active.display() : active.display(target), 20000);
+            if (!isCurrent()) return false;
+            // Jangan antrekan display baru bila request sebelumnya masih pending.
+            if (hasil.timeout || displayFailed) throw new Error("Display EPUB tidak terselesaikan.");
+            if (!hasil.failed && hasil.value !== false) {
+              berhasil = true;
+              break;
+            }
+            log("warn", "Kandidat posisi EPUB gagal dibuka.");
+          }
+          if (!berhasil) throw new Error("Semua kandidat display gagal.");
+
+          session.ready = true;
+          if (lastLocation) terapkanLokasi(lastLocation, false);
+          else status.textContent = "✅ EPUB berhasil dibuka.";
+          // Jika relocation datang belakangan, event pertama menetapkan baseline saja.
+          return true;
+        } catch (error) {
+          session.ready = false;
+          log("error", "Pembukaan EPUB gagal.");
+          return false;
+        } finally {
+          if (locked) lock.delete(active);
+          if (!session.ready && owner.session === session) {
+            owner.session = null;
+            const masihMilikKita = (rendition === active || rendition === null) &&
+              (epubBook === book || epubBook === null);
+            if (masihMilikKita) {
+              rendition = null;
+              epubBook = null;
+              epubReadingKey = null;
+              epubViewerWidth = 0;
+              epubViewerHeight = 0;
+            }
+            // Cabut handler dan hook milik sesi gagal sebelum destroy.
+            for (const [event, handler] of [["relocated", onRelocated], ["displayError", onDisplayError]]) {
+              try {
+                if (handler && typeof active?.off === "function") active.off(event, handler);
+              } catch (error) { log("warn", "Pelepasan event EPUB gagal."); }
+            }
+            try {
+              if (contentHook && typeof active?.hooks?.content?.deregister === "function") {
+                active.hooks.content.deregister(contentHook);
+              }
+            } catch (error) { log("warn", "Pelepasan hook EPUB gagal."); }
+            try {
+              if (typeof book?.destroy === "function") book.destroy();
+              else if (typeof active?.destroy === "function") active.destroy();
+            } catch (error) { log("warn", "Pembersihan instance EPUB gagal."); }
+            if (masihMilikKita) {
+              try {
+                prevButton.disabled = true;
+                nextButton.disabled = true;
+                status.textContent = pesanGagal;
+              } catch (error) { log("warn", "Pembaruan status kegagalan EPUB gagal."); }
+            }
+          }
+          owner.opening = false;
+          if (session.ready && isCurrent()) {
+            try {
+              const rect = viewer.getBoundingClientRect();
+              if (initialRect && (rect.width !== initialRect.width || rect.height !== initialRect.height)) {
+                jadwalkanResizeEpub();
+              }
+            } catch (error) { log("warn", "Penjadwalan resize setelah pembukaan gagal."); }
+          }
+        }
+      }
+      /* === BATAS function bukaEpub === */
+
+      /* === EVENT prevButton/click === */
+      {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") {
+              console.warn(message);
+            }
+          } catch (error) {
+            // Logger tidak boleh mengganggu navigasi EPUB.
+          }
+        };
+
+        try {
+          prevButton.addEventListener(
+            "click",
+            /* CALLBACK click Previous EPUB Page */
+            async () => {
+              let active = null;
+              let lock = null;
+              let locked = false;
+              try {
+                const session = bukaEpub.session;
+                active = rendition;
+                const key = epubReadingKey;
+                const book = epubBook;
+                const isCurrent = () => (
+                  bukaEpub.opening === false && bukaEpub.session === session &&
+                  session?.ready === true && session.rendition === active &&
+                  session.key === key && rendition === active &&
+                  epubReadingKey === key && epubBook === book
+                );
+
+                if (!book || !active || typeof active !== "object" ||
+                    typeof key !== "string" || key !== key.trim() ||
+                    !key.startsWith("lastEpub:") || key.length <= "lastEpub:".length ||
+                    !isCurrent() || prevButton.disabled !== false ||
+                    typeof active.prev !== "function") {
+                  return false;
+                }
+
+                // Gunakan lock yang sama dengan swipe, resize dan pembukaan buku.
+                lock = pasangSwipeEpub.inFlight;
+                if (!lock || typeof lock.has !== "function" ||
+                    typeof lock.add !== "function" || typeof lock.delete !== "function") {
+                  logWarn("Pengunci navigasi EPUB tidak tersedia.");
+                  return false;
+                }
+                if (lock.has(active)) return false;
+                lock.add(active);
+                locked = true;
+
+                const result = await active.prev();
+                return result !== false && isCurrent();
+              } catch (error) {
+                logWarn("Navigasi ke halaman EPUB sebelumnya gagal.");
+                return false;
+              } finally {
+                if (locked) {
+                  try {
+                    lock.delete(active);
+                  } catch (error) {
+                    logWarn("Pengunci navigasi EPUB sebelumnya gagal dilepas.");
+                  }
+                }
+              }
+            }
+            /* Batas CALLBACK click Previous EPUB Page */
+          );
+        } catch (error) {
+          logWarn("Pemasangan event tombol Sebelumnya EPUB gagal.");
+        }
+      }
+      /* === BATAS EVENT prevButton/click === */
+
+      /* === EVENT nextButton/click === */
+      {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") {
+              console.warn(message);
+            }
+          } catch (error) {
+            // Logger tidak boleh mengganggu navigasi EPUB.
+          }
+        };
+
+        try {
+          nextButton.addEventListener(
+            "click",
+            /* CALLBACK click Next EPUB Page */
+            async () => {
+              let active = null;
+              let lock = null;
+              let locked = false;
+              try {
+                const session = bukaEpub.session;
+                active = rendition;
+                const key = epubReadingKey;
+                const book = epubBook;
+                const isCurrent = () => (
+                  bukaEpub.opening === false && bukaEpub.session === session &&
+                  session?.ready === true && session.rendition === active &&
+                  session.key === key && rendition === active &&
+                  epubReadingKey === key && epubBook === book
+                );
+
+                if (!book || !active || typeof active !== "object" ||
+                    typeof key !== "string" || key !== key.trim() ||
+                    !key.startsWith("lastEpub:") || key.length <= "lastEpub:".length ||
+                    !isCurrent() || nextButton.disabled !== false ||
+                    typeof active.next !== "function") {
+                  return false;
+                }
+
+                // Gunakan lock yang sama dengan swipe, resize dan pembukaan buku.
+                lock = pasangSwipeEpub.inFlight;
+                if (!lock || typeof lock.has !== "function" ||
+                    typeof lock.add !== "function" || typeof lock.delete !== "function") {
+                  logWarn("Pengunci navigasi EPUB tidak tersedia.");
+                  return false;
+                }
+                if (lock.has(active)) return false;
+                lock.add(active);
+                locked = true;
+
+                const result = await active.next();
+                return result !== false && isCurrent();
+              } catch (error) {
+                logWarn("Navigasi ke halaman EPUB berikutnya gagal.");
+                return false;
+              } finally {
+                if (locked) {
+                  try {
+                    lock.delete(active);
+                  } catch (error) {
+                    logWarn("Pengunci navigasi EPUB berikutnya gagal dilepas.");
+                  }
+                }
+              }
+            }
+            /* Batas CALLBACK click Next EPUB Page */
+          );
+        } catch (error) {
+          logWarn("Pemasangan event tombol Berikutnya EPUB gagal.");
+        }
+      }
+      /* === BATAS EVENT nextButton/click === */
+
+      /* === EVENT backButton/click === */
+      {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") console.warn(message);
+          } catch (error) {
+            // Logger tidak boleh mengganggu navigasi keluar.
+          }
+        };
+
+        try {
+          backButton.addEventListener(
+            "click",
+            /* CALLBACK click Exit EPUB Reader */
+            async () => {
+              const owner = bukaEpub;
+              if (owner.closing || backButton.disabled !== false) return false;
+              owner.closing = true;
+              let active = null;
+              let lock = null;
+              let locked = false;
+              try {
+                if (typeof window === "undefined" || !window ||
+                    !window.location || typeof window.location.href !== "string") {
+                  return false;
+                }
+                const location = window.location;
+                backButton.disabled = true;
+                const session = owner.session;
+                const book = epubBook;
+                const key = epubReadingKey;
+                active = rendition;
+                const isSame = () => owner.session === session &&
+                  rendition === active && epubBook === book && epubReadingKey === key;
+                const ready = owner.opening === false && session?.ready === true &&
+                  session.rendition === active && session.key === key &&
+                  book && active && typeof active === "object";
+
+                // Jangan menghambat keluar ketika pembukaan buku belum selesai.
+                if (ready) {
+                  lock = pasangSwipeEpub.inFlight;
+                  const lockValid = lock && typeof lock.has === "function" &&
+                    typeof lock.add === "function" && typeof lock.delete === "function";
+                  if (!lockValid) logWarn("Pengunci keluar EPUB tidak tersedia.");
+
+                  // Tunggu navigasi/resize yang berjalan dan scheduler cloud yang sudah ada.
+                  // Maksimal 50 jeda 50 ms (nominal 2,5 detik; timer dapat tertunda).
+                  // Jangan membuat upsert baru atau membaca ulang progress lokal lama.
+                  for (let attempt = 0; attempt <= 50; attempt++) {
+                    if (!isSame() || session.ready !== true) return false;
+                    if (lockValid && !locked && !lock.has(active)) {
+                      lock.add(active);
+                      locked = true;
+                    }
+                    const cloudBusy = epubProgressCloudSaveTimer !== null ||
+                      Boolean(jadwalkanSimpanProgressEpubCloud.inFlight);
+                    const navigationBusy = lockValid && !locked;
+                    if (!cloudBusy && !navigationBusy) break;
+                    if (attempt === 50 || typeof setTimeout !== "function") {
+                      logWarn("Keluar EPUB tanpa konfirmasi penyelesaian operasi tertunda.");
+                      break;
+                    }
+                    try {
+                      await new Promise((resolve) => setTimeout(resolve, 50));
+                    } catch (error) {
+                      logWarn("Timer penantian keluar EPUB gagal.");
+                      break;
+                    }
+                  }
+                }
+
+                // Jika identitas sesi berubah, jangan bertindak terhadap sesi baru.
+                if (!isSame() || window.location !== location) return false;
+
+                // Tujuan tetap koleksi Perpustakaan, bukan riwayat browser yang ambigu.
+                location.href = "index.html";
+
+                // Hentikan jadwal resize milik halaman ini. Job yang sudah berjalan
+                // tidak dihentikan paksa. Token membatalkan callback yang belum mulai.
+                const resizeTimer = epubResizeTimer;
+                jadwalkanResizeEpub.latest = null;
+                epubResizeTimer = null;
+                try {
+                  if (resizeTimer !== null && typeof clearTimeout === "function") {
+                    clearTimeout(resizeTimer);
+                  }
+                } catch (error) {
+                  logWarn("Timer resize EPUB gagal dibatalkan ketika keluar.");
+                }
+                // Timer cloud yang masih tertunda dibiarkan: navigasi bisa dibatalkan.
+                // Jangan destroy instance atau kosongkan session sebelum page unload.
+                return true;
+              } catch (error) {
+                logWarn("Navigasi kembali ke Perpustakaan gagal.");
+                return false;
+              } finally {
+                if (locked) {
+                  try { lock.delete(active); }
+                  catch (error) { logWarn("Pengunci keluar EPUB gagal dilepas."); }
+                }
+                owner.closing = false;
+                try { backButton.disabled = false; }
+                catch (error) { logWarn("Status tombol Kembali EPUB gagal dipulihkan."); }
+              }
+            }
+            /* Batas CALLBACK click Exit EPUB Reader */
+          );
+        } catch (error) {
+          logWarn("Pemasangan event tombol Kembali EPUB gagal.");
+        }
+      }
+      /* === BATAS EVENT backButton/click === */
+
+      /* === EVENT window/keydown === */
+      {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") console.warn(message);
+          } catch (error) {
+            // Logger tidak boleh mengganggu navigasi keyboard EPUB.
+          }
+        };
+
+        const fokusInteraktif = (event) => {
+          const selector = "input, textarea, select, audio, video, " +
+            "[role='textbox'], [role='searchbox'], [role='combobox'], " +
+            "[role='spinbutton'], [role='slider'], [role='listbox'], " +
+            "[role='menu'], [role='menubar'], [role='tree'], [role='grid'], " +
+            "[role='tablist'], [role='radiogroup']";
+          const path = typeof event.composedPath === "function"
+            ? event.composedPath() : [];
+          const targets = [event.target, ...path];
+          for (const target of targets) {
+            const element = target?.nodeType === 3 ? target.parentElement : target;
+            if (element?.isContentEditable === true ||
+                (typeof element?.closest === "function" && element.closest(selector))) {
+              return true;
+            }
+          }
+          return false;
+        };
+
+        try {
+          if (typeof window === "undefined" || !window ||
+              typeof window.addEventListener !== "function") {
+            throw new Error("API keydown EPUB tidak tersedia.");
+          }
+          window.addEventListener(
+            "keydown",
+            /* CALLBACK keydown EPUB Navigation */
+            async (event) => {
+              let active = null;
+              let lock = null;
+              let locked = false;
+              try {
+                if (!event || typeof event !== "object" ||
+                    event.defaultPrevented || event.repeat || event.isComposing ||
+                    event.altKey || event.ctrlKey || event.metaKey || event.shiftKey ||
+                    event.cancelable === false || typeof event.preventDefault !== "function") {
+                  return false;
+                }
+                const arah = event.key === "ArrowLeft" ? "prev" :
+                  event.key === "ArrowRight" ? "next" : null;
+                if (!arah || fokusInteraktif(event)) return false;
+
+                const owner = bukaEpub;
+                const session = owner.session;
+                active = rendition;
+                const key = epubReadingKey;
+                const book = epubBook;
+                const tombol = arah === "prev" ? prevButton : nextButton;
+                const isCurrent = () => (
+                  !owner.closing && owner.opening === false && owner.session === session &&
+                  session?.ready === true && session.rendition === active &&
+                  session.key === key && rendition === active &&
+                  epubReadingKey === key && epubBook === book
+                );
+
+                if (!book || !active || typeof active !== "object" ||
+                    typeof key !== "string" || key !== key.trim() ||
+                    !key.startsWith("lastEpub:") || key.length <= "lastEpub:".length ||
+                    !isCurrent() || !tombol || tombol.disabled !== false ||
+                    typeof active[arah] !== "function") {
+                  return false;
+                }
+
+                // Gunakan pengunci yang sama dengan semua jalur navigasi Reader.
+                lock = pasangSwipeEpub.inFlight;
+                if (!lock || typeof lock.has !== "function" ||
+                    typeof lock.add !== "function" || typeof lock.delete !== "function") {
+                  logWarn("Pengunci navigasi keyboard EPUB tidak tersedia.");
+                  return false;
+                }
+                if (lock.has(active)) return false;
+                lock.add(active);
+                locked = true;
+
+                // Hanya konsumsi tombol panah yang benar-benar ditangani Reader.
+                // preventDefault harus dipanggil sebelum await.
+                event.preventDefault();
+                const result = await active[arah]();
+                return result !== false && isCurrent();
+              } catch (error) {
+                logWarn("Navigasi keyboard EPUB gagal.");
+                return false;
+              } finally {
+                if (locked) {
+                  try { lock.delete(active); }
+                  catch (error) { logWarn("Pengunci keyboard EPUB gagal dilepas."); }
+                }
+              }
+            }
+            /* Batas CALLBACK keydown EPUB Navigation */
+          );
+        } catch (error) {
+          logWarn("Pemasangan event keyboard EPUB gagal.");
+        }
+      }
+      /* === BATAS EVENT window/keydown === */
+
+      /* === EVENT window/resize === */
+      {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") console.warn(message);
+          } catch (error) {
+            // Logger tidak boleh mengganggu event resize EPUB.
+          }
+        };
+
+        try {
+          if (typeof window === "undefined" || !window ||
+              typeof window.addEventListener !== "function") {
+            logWarn("API event resize EPUB tidak tersedia.");
+          } else {
+            window.addEventListener(
+              "resize",
+              /* CALLBACK resize EPUB Reader */
+              () => {
+                try {
+                  if (typeof bukaEpub !== "function" ||
+                      typeof jadwalkanResizeEpub !== "function") return false;
+
+                  const owner = bukaEpub;
+                  const session = owner.session;
+                  const active = rendition;
+                  const key = epubReadingKey;
+                  const book = epubBook;
+                  if (owner.closing || owner.opening !== false ||
+                      session?.ready !== true || !book ||
+                      !active || typeof active !== "object" ||
+                      session.rendition !== active || session.key !== key ||
+                      typeof key !== "string" || key !== key.trim() ||
+                      !key.startsWith("lastEpub:") || key.length <= "lastEpub:".length) {
+                    return false;
+                  }
+
+                  // Jangan menolak hanya karena lock aktif: scheduler Unit 14
+                  // menangani debounce, penantian job, dan retry navigasi.
+                  return jadwalkanResizeEpub() === true;
+                } catch (error) {
+                  logWarn("Event resize EPUB gagal diproses.");
+                  return false;
+                }
+              }
+              /* Batas CALLBACK resize EPUB Reader */
+            );
+          }
+        } catch (error) {
+          logWarn("Pemasangan event resize EPUB gagal.");
+        }
+      }
+      /* === BATAS EVENT window/resize === */
+
+      /* === EVENT window/orientationchange === */
+      {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") console.warn(message);
+          } catch (error) {
+            // Logger tidak boleh mengganggu event orientationchange EPUB.
+          }
+        };
+
+        try {
+          if (typeof window === "undefined" || !window ||
+              typeof window.addEventListener !== "function") {
+            logWarn("API event orientationchange EPUB tidak tersedia.");
+          } else {
+            window.addEventListener(
+              "orientationchange",
+              /* CALLBACK orientationchange EPUB Reader */
+              () => {
+                try {
+                  if (typeof bukaEpub !== "function" ||
+                      typeof jadwalkanResizeEpub !== "function") return false;
+
+                  const owner = bukaEpub;
+                  const session = owner.session;
+                  const active = rendition;
+                  const key = epubReadingKey;
+                  const book = epubBook;
+                  if (owner.closing || owner.opening !== false ||
+                      session?.ready !== true || !book ||
+                      !active || typeof active !== "object" ||
+                      session.rendition !== active || session.key !== key ||
+                      typeof key !== "string" || key !== key.trim() ||
+                      !key.startsWith("lastEpub:") || key.length <= "lastEpub:".length) {
+                    return false;
+                  }
+
+                  // Jangan menolak hanya karena lock aktif: scheduler Unit 14
+                  // menangani debounce, penantian job, dan retry navigasi.
+                  return jadwalkanResizeEpub() === true;
+                } catch (error) {
+                  logWarn("Event orientationchange EPUB gagal diproses.");
+                  return false;
+                }
+              }
+              /* Batas CALLBACK orientationchange EPUB Reader */
+            );
+          }
+        } catch (error) {
+          logWarn("Pemasangan event orientationchange EPUB gagal.");
+        }
+      }
+      /* === BATAS EVENT window/orientationchange === */
+
+      /* === BOOTSTRAP BUKA EPUB === */
+      (async () => {
+        const logError = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.error === "function") console.error(message);
+          } catch (error) {
+            // Logger tidak boleh mengganggu bootstrap EPUB Reader.
+          }
+        };
+
+        let owner = null;
+        let session = null;
+        const tampilkanGagal = () => {
+          try {
+            // Jangan menimpa sesi aktif, sesi pengganti, atau proses keluar.
+            if (owner?.closing || owner?.session?.ready ||
+                (owner?.session && owner.session !== session)) return;
+          } catch (error) {
+            logError("Identitas sesi bootstrap EPUB gagal diperiksa.");
+            return;
+          }
+
+          // Pesan spesifik dari Unit 15 lebih informatif daripada fallback umum.
+          try {
+            if (typeof status !== "undefined" && status &&
+                !(typeof status.textContent === "string" &&
+                  status.textContent.trim().startsWith("❌"))) {
+              status.textContent = "❌ EPUB gagal disiapkan. Silakan kembali ke koleksi.";
+            }
+          } catch (error) {
+            logError("Status kegagalan bootstrap EPUB gagal ditampilkan.");
+          }
+          for (const getButton of [() => prevButton, () => nextButton]) {
+            try {
+              const button = getButton();
+              if (button) button.disabled = true;
+            } catch (error) {
+              logError("Tombol navigasi EPUB gagal dinonaktifkan.");
+            }
+          }
+          // Tombol Kembali dan data progress tidak diubah oleh bootstrap.
+        };
+
+        try {
+          if (typeof bukaEpub !== "function") {
+            logError("Function bukaEpub() tidak tersedia saat bootstrap.");
+            tampilkanGagal();
+            return false;
+          }
+          owner = bukaEpub;
+          if (owner.opening || owner.closing) return false;
+
+          // Unit 15 menetapkan session secara sinkron sebelum await pertama.
+          const pending = owner();
+          session = owner.session;
+          const result = await pending;
+          if (result === true) return true;
+
+          logError("Bootstrap EPUB selesai tanpa status berhasil.");
+          tampilkanGagal();
+          return false;
+        } catch (error) {
+          logError("Eksekusi bootstrap EPUB gagal.");
+          tampilkanGagal();
+          return false;
+        }
+      })();
+      /* === BATAS BOOTSTRAP BUKA EPUB === */
+    </script>
+
+  </body>
 </html>
