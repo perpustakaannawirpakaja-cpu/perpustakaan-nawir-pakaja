@@ -1,595 +1,1299 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Admin - Perpustakaan Nawir Pakaja</title>
-
-<style>
-:root{
-  --bg:#f4f7fb;
-  --card:#ffffff;
-  --text:#172033;
-  --muted:#667085;
-  --primary:#2563eb;
-  --border:#e4e7ec;
-}
-
-body.dark{
-  --bg:#0f172a;
-  --card:#1e293b;
-  --text:#f8fafc;
-  --muted:#cbd5e1;
-  --primary:#2563eb;
-  --border:#334155;
-}
-
-*{
-  box-sizing:border-box;
-}
-
-body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  transition:.3s;
-}
-
-header{
-  padding:20px;
-  background:var(--card);
-  border-bottom:1px solid var(--border);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-}
-
-header h1{
-  margin:0;
-  font-size:22px;
-}
-
-.header-buttons{
-  display:flex;
-  gap:8px;
-}
-
-button,
-.back{
-  border:0;
-  border-radius:12px;
-  padding:12px 16px;
-  cursor:pointer;
-  font-size:15px;
-}
-
-.theme{
-  background:var(--primary);
-  color:white;
-}
-
-.back{
-  background:var(--bg);
-  color:var(--text);
-  text-decoration:none;
-  border:1px solid var(--border);
-}
-
-.container{
-  max-width:900px;
-  margin:auto;
-  padding:22px;
-}
-
-.welcome{
-  margin-bottom:22px;
-}
-
-.welcome h2{
-  margin-bottom:8px;
-}
-
-.welcome p{
-  color:var(--muted);
-  line-height:1.6;
-}
-
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:22px;
-  padding:22px;
-  margin-bottom:20px;
-  box-shadow:0 10px 30px rgba(0,0,0,.05);
-}
-
-.card h2{
-  margin-top:0;
-}
-
-label{
-  display:block;
-  margin-top:16px;
-  margin-bottom:7px;
-  font-weight:bold;
-}
-
-input,
-select{
-  width:100%;
-  padding:14px;
-  border-radius:12px;
-  border:1px solid var(--border);
-  background:var(--bg);
-  color:var(--text);
-  font-size:16px;
-}
-
-.file-box{
-  border:2px dashed var(--border);
-  padding:20px;
-  border-radius:16px;
-  margin-top:8px;
-  text-align:center;
-}
-
-.file-box p{
-  color:var(--muted);
-}
-
-.save{
-  width:100%;
-  margin-top:22px;
-  background:var(--primary);
-  color:white;
-  font-weight:bold;
-  font-size:16px;
-}
-
-.message{
-  display:none;
-  margin-top:15px;
-  padding:14px;
-  border-radius:12px;
-  background:#dcfce7;
-  color:#166534;
-}
-
-.book{
-  padding:15px 0;
-  border-bottom:1px solid var(--border);
-  display:flex;
-  justify-content:space-between;
-  gap:15px;
-  align-items:center;
-}
-
-.book:last-child{
-  border-bottom:0;
-}
-
-.book-title{
-  font-weight:bold;
-}
-
-.book-info{
-  margin-top:5px;
-  color:var(--muted);
-  font-size:14px;
-}
-
-.delete{
-  background:#fee2e2;
-  color:#b91c1c;
-  padding:9px 12px;
-}
-
-.empty{
-  text-align:center;
-  padding:25px 10px;
-  color:var(--muted);
-}
-
-.stats{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:12px;
-  margin-bottom:20px;
-}
-
-.stat{
-  background:var(--card);
-  border:1px solid var(--border);
-  padding:18px;
-  border-radius:18px;
-}
-
-.stat strong{
-  display:block;
-  font-size:28px;
-  margin-top:5px;
-}
-
-@media(max-width:600px){
-  header{
-    align-items:flex-start;
-  }
-
-  header h1{
-    font-size:19px;
-  }
-
-  .container{
-    padding:16px;
-  }
-}
-</style>
-</head>
-
-<body>
-
-<header>
-
-<h1>🔐 Admin Perpustakaan</h1>
-
-<div class="header-buttons">
-  <a href="index.html" class="back">← Beranda</a>
-  <button class="theme" onclick="toggleTheme()" id="themeButton">
-    🌙 Dark
-  </button>
-</div>
-
-</header>
-
-<div class="container">
-
-<div class="welcome">
-
-<h2>Dashboard Admin</h2>
-
-<p>
-Kelola koleksi digital Perpustakaan Nawir Pakaja.
-Tambahkan buku dan kelompokkan berdasarkan abjad A–Z.
-</p>
-
-</div>
-
-<div class="stats">
-
-<div class="stat">
-📚 Total Buku
-<strong id="totalBooks">0</strong>
-</div>
-
-<div class="stat">
-🔤 Kategori
-<strong id="totalCategories">0</strong>
-</div>
-
-</div>
-
-<div class="card">
-
-<h2>📤 Upload Buku</h2>
-
-<label>Judul Buku</label>
-
-<input
-type="text"
-id="title"
-placeholder="Contoh: I'tiqad Ahlus Sunnah Wal Jama'ah"
->
-
-<label>Penulis</label>
-
-<input
-type="text"
-id="author"
-placeholder="Nama penulis"
->
-
-<label>Kategori Abjad</label>
-
-<select id="category">
-
-<option value="">Pilih kategori</option>
-<option>A</option>
-<option>B</option>
-<option>C</option>
-<option>D</option>
-<option>E</option>
-<option>F</option>
-<option>G</option>
-<option>H</option>
-<option>I</option>
-<option>J</option>
-<option>K</option>
-<option>L</option>
-<option>M</option>
-<option>N</option>
-<option>O</option>
-<option>P</option>
-<option>Q</option>
-<option>R</option>
-<option>S</option>
-<option>T</option>
-<option>U</option>
-<option>V</option>
-<option>W</option>
-<option>X</option>
-<option>Y</option>
-<option>Z</option>
-
-</select>
-
-<label>File Buku</label>
-
-<div class="file-box">
-
-<input
-type="file"
-id="bookFile"
-accept=".pdf,application/pdf"
->
-
-<p>Format sementara: PDF</p>
-
-</div>
-
-<button class="save" onclick="addBook()">
-📚 Tambahkan ke Koleksi
-</button>
-
-<div class="message" id="message">
-✅ Buku berhasil ditambahkan ke daftar admin.
-</div>
-
-</div>
-
-<div class="card">
-
-<h2>📖 Daftar Buku</h2>
-
-<div id="bookList"></div>
-
-</div>
-
-</div>
-
-<script>
-
-const STORAGE_KEY = "nawirLibraryBooks";
-
-function toggleTheme(){
-
-  document.body.classList.toggle("dark");
-
-  const dark =
-    document.body.classList.contains("dark");
-
-  localStorage.setItem(
-    "nawirTheme",
-    dark ? "dark" : "light"
-  );
-
-  updateThemeButton();
-}
-
-function updateThemeButton(){
-
-  const button =
-    document.getElementById("themeButton");
-
-  if(document.body.classList.contains("dark")){
-    button.innerHTML="☀️ Light";
-  }else{
-    button.innerHTML="🌙 Dark";
-  }
-}
-
-function loadTheme(){
-
-  if(localStorage.getItem("nawirTheme")==="dark"){
-    document.body.classList.add("dark");
-  }
-
-  updateThemeButton();
-}
-
-function getBooks(){
-
-  try{
-    return JSON.parse(
-      localStorage.getItem(STORAGE_KEY)
-    ) || [];
-  }
-  catch{
-    return [];
-  }
-}
-
-function saveBooks(books){
-
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(books)
-  );
-}
-
-function addBook(){
-
-  const title =
-    document.getElementById("title")
-    .value.trim();
-
-  const author =
-    document.getElementById("author")
-    .value.trim();
-
-  const category =
-    document.getElementById("category")
-    .value;
-
-  const fileInput =
-    document.getElementById("bookFile");
-
-  if(!title){
-    alert("Masukkan judul buku.");
-    return;
-  }
-
-  if(!category){
-    alert("Pilih kategori A–Z.");
-    return;
-  }
-
-  if(!fileInput.files.length){
-    alert("Pilih file PDF terlebih dahulu.");
-    return;
-  }
-
-  const file = fileInput.files[0];
-
-  if(
-    file.type !== "application/pdf" &&
-    !file.name.toLowerCase().endsWith(".pdf")
-  ){
-    alert("File harus berformat PDF.");
-    return;
-  }
-
-  const books = getBooks();
-
-  books.push({
-    id:Date.now(),
-    title:title,
-    author:author || "-",
-    category:category,
-    fileName:file.name
-  });
-
-  saveBooks(books);
-
-  document.getElementById("title").value="";
-  document.getElementById("author").value="";
-  document.getElementById("category").value="";
-  fileInput.value="";
-
-  const message =
-    document.getElementById("message");
-
-  message.style.display="block";
-
-  setTimeout(()=>{
-    message.style.display="none";
-  },3000);
-
-  renderBooks();
-}
-
-function deleteBook(id){
-
-  if(!confirm("Hapus buku ini dari daftar?")){
-    return;
-  }
-
-  const books =
-    getBooks().filter(
-      book => book.id !== id
-    );
-
-  saveBooks(books);
-
-  renderBooks();
-}
-
-function renderBooks(){
-
-  const books = getBooks();
-
-  const list =
-    document.getElementById("bookList");
-
-  document.getElementById(
-    "totalBooks"
-  ).textContent = books.length;
-
-  const categories =
-    new Set(
-      books.map(book=>book.category)
-    );
-
-  document.getElementById(
-    "totalCategories"
-  ).textContent = categories.size;
-
-  if(books.length===0){
-
-    list.innerHTML=`
-      <div class="empty">
-        📚<br><br>
-        Belum ada buku dalam koleksi.
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin - Perpustakaan Nawir Pakaja</title>
+
+    <style>
+      :root{
+        --bg:#f4f7fb;
+        --card:#ffffff;
+        --text:#172033;
+        --muted:#667085;
+        --primary:#2563eb;
+        --border:#e4e7ec;
+      }
+
+      body.dark{
+        --bg:#0f172a;
+        --card:#1e293b;
+        --text:#f8fafc;
+        --muted:#cbd5e1;
+        --primary:#2563eb;
+        --border:#334155;
+      }
+
+      *{
+        box-sizing:border-box;
+      }
+
+      body{
+        margin:0;
+        font-family:Arial, sans-serif;
+        background:var(--bg);
+        color:var(--text);
+        transition:.3s;
+      }
+
+      header{
+        padding:20px;
+        background:var(--card);
+        border-bottom:1px solid var(--border);
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:12px;
+      }
+
+      header h1{
+        margin:0;
+        font-size:22px;
+      }
+
+      .header-buttons{
+        display:flex;
+        gap:8px;
+      }
+
+      button,
+      .back{
+        border:0;
+        border-radius:12px;
+        padding:12px 16px;
+        cursor:pointer;
+        font-size:15px;
+      }
+
+      .theme{
+        background:var(--primary);
+        color:white;
+      }
+
+      .back{
+        background:var(--bg);
+        color:var(--text);
+        text-decoration:none;
+        border:1px solid var(--border);
+      }
+
+      .container{
+        max-width:900px;
+        margin:auto;
+        padding:22px;
+      }
+
+      .welcome{
+        margin-bottom:22px;
+      }
+
+      .welcome h2{
+        margin-bottom:8px;
+      }
+
+      .welcome p{
+        color:var(--muted);
+        line-height:1.6;
+      }
+
+      .card{
+        background:var(--card);
+        border:1px solid var(--border);
+        border-radius:22px;
+        padding:22px;
+        margin-bottom:20px;
+        box-shadow:0 10px 30px rgba(0,0,0,.05);
+      }
+
+      .card h2{
+        margin-top:0;
+      }
+
+      label{
+        display:block;
+        margin-top:16px;
+        margin-bottom:7px;
+        font-weight:bold;
+      }
+
+      input,
+      select{
+        width:100%;
+        padding:14px;
+        border-radius:12px;
+        border:1px solid var(--border);
+        background:var(--bg);
+        color:var(--text);
+        font-size:16px;
+      }
+
+      .file-box{
+        border:2px dashed var(--border);
+        padding:20px;
+        border-radius:16px;
+        margin-top:8px;
+        text-align:center;
+      }
+
+      .file-box p{
+        color:var(--muted);
+      }
+
+      .save{
+        width:100%;
+        margin-top:22px;
+        background:var(--primary);
+        color:white;
+        font-weight:bold;
+        font-size:16px;
+      }
+
+      .message{
+        display:none;
+        margin-top:15px;
+        padding:14px;
+        border-radius:12px;
+        background:#dcfce7;
+        color:#166534;
+      }
+
+      .book{
+        padding:15px 0;
+        border-bottom:1px solid var(--border);
+        display:flex;
+        justify-content:space-between;
+        gap:15px;
+        align-items:center;
+      }
+
+      .book:last-child{
+        border-bottom:0;
+      }
+
+      .book-title{
+        font-weight:bold;
+      }
+
+      .book-info{
+        margin-top:5px;
+        color:var(--muted);
+        font-size:14px;
+      }
+
+      .delete{
+        background:#fee2e2;
+        color:#b91c1c;
+        padding:9px 12px;
+      }
+
+      .empty{
+        text-align:center;
+        padding:25px 10px;
+        color:var(--muted);
+      }
+
+      .stats{
+        display:grid;
+        grid-template-columns:repeat(2,1fr);
+        gap:12px;
+        margin-bottom:20px;
+      }
+
+      .stat{
+        background:var(--card);
+        border:1px solid var(--border);
+        padding:18px;
+        border-radius:18px;
+      }
+
+      .stat strong{
+        display:block;
+        font-size:28px;
+        margin-top:5px;
+      }
+
+      @media(max-width:600px){
+        header{
+          align-items:flex-start;
+        }
+
+        header h1{
+          font-size:19px;
+        }
+
+        .container{
+          padding:16px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <header>
+
+      <h1>🔐 Admin Perpustakaan</h1>
+
+      <div class="header-buttons">
+        <a href="index.html" class="back">← Beranda</a>
+        <button class="theme" onclick="toggleTheme()" id="themeButton">
+          🌙 Dark
+        </button>
       </div>
-    `;
 
-    return;
-  }
+    </header>
 
-  books.sort(
-    (a,b)=>
-    a.title.localeCompare(b.title)
-  );
+    <div class="container">
 
-  list.innerHTML =
-    books.map(book=>`
+      <div class="welcome">
 
-      <div class="book">
+        <h2>Dashboard Admin</h2>
 
-        <div>
+        <p>
+          Kelola koleksi digital Perpustakaan Nawir Pakaja.
+          Tambahkan buku dan kelompokkan berdasarkan abjad A–Z.
+        </p>
 
-          <div class="book-title">
-            📖 ${escapeHtml(book.title)}
-          </div>
+      </div>
 
-          <div class="book-info">
-            Penulis:
-            ${escapeHtml(book.author)}
-            • Kategori ${book.category}
-            <br>
-            📄 ${escapeHtml(book.fileName)}
-          </div>
+      <div class="stats">
+
+        <div class="stat">
+          📚 Total Buku
+          <strong id="totalBooks">0</strong>
+        </div>
+
+        <div class="stat">
+          🔤 Kategori
+          <strong id="totalCategories">0</strong>
+        </div>
+
+      </div>
+
+      <div class="card">
+
+        <h2>📤 Upload Buku</h2>
+
+        <label>Judul Buku</label>
+
+        <input
+          type="text"
+          id="title"
+          placeholder="Contoh: I'tiqad Ahlus Sunnah Wal Jama'ah"
+        >
+
+        <label>Penulis</label>
+
+        <input
+          type="text"
+          id="author"
+          placeholder="Nama penulis"
+        >
+
+        <label>Kategori Abjad</label>
+
+        <select id="category">
+
+          <option value="">Pilih kategori</option>
+          <option>A</option>
+          <option>B</option>
+          <option>C</option>
+          <option>D</option>
+          <option>E</option>
+          <option>F</option>
+          <option>G</option>
+          <option>H</option>
+          <option>I</option>
+          <option>J</option>
+          <option>K</option>
+          <option>L</option>
+          <option>M</option>
+          <option>N</option>
+          <option>O</option>
+          <option>P</option>
+          <option>Q</option>
+          <option>R</option>
+          <option>S</option>
+          <option>T</option>
+          <option>U</option>
+          <option>V</option>
+          <option>W</option>
+          <option>X</option>
+          <option>Y</option>
+          <option>Z</option>
+
+        </select>
+
+        <label>File Buku</label>
+
+        <div class="file-box">
+
+          <input
+            type="file"
+            id="bookFile"
+            accept=".pdf,application/pdf"
+          >
+
+          <p>Format sementara: PDF</p>
 
         </div>
 
-        <button
-          class="delete"
-          onclick="deleteBook(${book.id})"
-        >
-          Hapus
+        <button class="save" onclick="addBook()">
+          📚 Tambahkan ke Koleksi
         </button>
+
+        <div class="message" id="message">
+          ✅ Buku berhasil ditambahkan ke daftar admin.
+        </div>
 
       </div>
 
-    `).join("");
-}
+      <div class="card">
 
-function escapeHtml(text){
+        <h2>📖 Daftar Buku</h2>
 
-  const div =
-    document.createElement("div");
+        <div id="bookList"></div>
 
-  div.textContent=text;
+      </div>
 
-  return div.innerHTML;
-}
+    </div>
 
-loadTheme();
-renderBooks();
+    <script>
 
-</script>
+      const STORAGE_KEY = "nawirLibraryBooks";
 
-</body>
+      /* === TOP LEVEL FUNCTION === */
+      function toggleTheme() {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") {
+              console.warn(message);
+            }
+          } catch (error) {
+            // Logger tidak boleh mengganggu perubahan tema Admin.
+          }
+        };
+
+        let dark;
+        try {
+          const classes = typeof document !== "undefined"
+            ? document?.body?.classList : null;
+          if (!classes || typeof classes.toggle !== "function") {
+            logWarn("API perubahan tema Admin tidak tersedia.");
+            return false;
+          }
+
+          dark = classes.toggle("dark");
+          if (typeof dark !== "boolean") return false;
+        } catch (error) {
+          logWarn("Perubahan tema Admin gagal.");
+          return false;
+        }
+
+        let tersimpan = false;
+        try {
+          const storage = typeof localStorage !== "undefined" ? localStorage : null;
+          if (!storage || typeof storage.setItem !== "function") {
+            logWarn("Penyimpanan preferensi tema Admin tidak tersedia.");
+          } else {
+            // Pertahankan key lama sampai migrasi tema antarfile disepakati.
+            storage.setItem("nawirTheme", dark ? "dark" : "light");
+            tersimpan = true;
+          }
+        } catch (error) {
+          logWarn("Preferensi tema Admin gagal disimpan.");
+        }
+
+        let tombolDiperbarui = false;
+        try {
+          if (typeof updateThemeButton === "function") {
+            // Unit 03 lama belum memiliki return Boolean.
+            tombolDiperbarui = updateThemeButton() !== false;
+          }
+          if (!tombolDiperbarui) logWarn("Label tombol tema Admin gagal diperbarui.");
+        } catch (error) {
+          logWarn("Pembaruan tombol tema Admin gagal.");
+        }
+
+        // Tema visual tetap berlaku walaupun penyimpanan atau label gagal.
+        return tersimpan && tombolDiperbarui;
+      }
+      /* === BATAS function toggleTheme === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function updateThemeButton() {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") {
+              console.warn(message);
+            }
+          } catch (error) {
+            // Logger tidak boleh mengganggu pembaruan label tema Admin.
+          }
+        };
+
+        try {
+          const doc = typeof document !== "undefined" ? document : null;
+          const classes = doc?.body?.classList;
+          if (!doc || typeof doc.getElementById !== "function" ||
+              !classes || typeof classes.contains !== "function") {
+            logWarn("API pembaruan label tema Admin tidak tersedia.");
+            return false;
+          }
+
+          const button = doc.getElementById("themeButton");
+          if (!button || button.nodeType !== 1 ||
+              button.id !== "themeButton" || button.tagName !== "BUTTON") {
+            logWarn("Elemen tombol tema Admin tidak valid.");
+            return false;
+          }
+
+          const dark = classes.contains("dark");
+          if (typeof dark !== "boolean") {
+            logWarn("Status tema Admin tidak valid.");
+            return false;
+          }
+
+          const label = dark ? "☀️ Light" : "🌙 Dark";
+          // Label menunjukkan tindakan berikutnya, bukan nama tema aktif.
+          button.textContent = label;
+          return button.textContent === label;
+        } catch (error) {
+          logWarn("Pembaruan label tombol tema Admin gagal.");
+          return false;
+        }
+      }
+      /* === BATAS function updateThemeButton === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function loadTheme() {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") {
+              console.warn(message);
+            }
+          } catch (error) {
+            // Logger tidak boleh menghambat inisialisasi Admin.
+          }
+        };
+
+        let tema = "light";
+        let preferensiValid = false;
+        try {
+          const storage = typeof localStorage !== "undefined" ? localStorage : null;
+          if (!storage || typeof storage.getItem !== "function") {
+            logWarn("Pembacaan preferensi tema Admin tidak tersedia.");
+          } else {
+            // Pertahankan key lama sampai kebijakan migrasi H005 disepakati.
+            const tersimpan = storage.getItem("nawirTheme");
+            if (tersimpan === "dark" || tersimpan === "light") {
+              tema = tersimpan;
+              preferensiValid = true;
+            } else if (tersimpan === null) {
+              // Belum ada preferensi: Light Mode merupakan default normal.
+              preferensiValid = true;
+            } else {
+              logWarn("Preferensi tema Admin tidak valid; gunakan Light Mode.");
+            }
+          }
+        } catch (error) {
+          logWarn("Preferensi tema Admin gagal dibaca; gunakan Light Mode.");
+        }
+
+        let temaDiterapkan = false;
+        try {
+          const doc = typeof document !== "undefined" ? document : null;
+          const classes = doc?.body?.classList;
+          if (!classes || typeof classes.toggle !== "function" ||
+              typeof classes.contains !== "function") {
+            logWarn("API penerapan tema Admin tidak tersedia.");
+          } else {
+            const dark = tema === "dark";
+            classes.toggle("dark", dark);
+            temaDiterapkan = classes.contains("dark") === dark;
+            if (!temaDiterapkan) logWarn("Tema Admin gagal diterapkan.");
+          }
+        } catch (error) {
+          logWarn("Penerapan tema Admin gagal.");
+        }
+
+        let tombolDiperbarui = false;
+        try {
+          // Unit 03 sudah memiliki kontrak return Boolean.
+          if (typeof updateThemeButton === "function") {
+            tombolDiperbarui = updateThemeButton() === true;
+          }
+          if (!tombolDiperbarui) logWarn("Label tema awal Admin gagal diperbarui.");
+        } catch (error) {
+          logWarn("Sinkronisasi label tema awal Admin gagal.");
+        }
+
+        // Fallback tidak menimpa preferensi tersimpan atau data koleksi.
+        return preferensiValid && temaDiterapkan && tombolDiperbarui;
+      }
+      /* === BATAS function loadTheme === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function getBooks() {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") console.warn(message);
+          } catch (error) {
+            // Logger tidak boleh menutupi kegagalan pembacaan koleksi.
+          }
+        };
+
+        const teksValid = (value) =>
+          typeof value === "string" && value.trim().length > 0;
+
+        let tahap = "akses penyimpanan";
+        try {
+          const storage = typeof localStorage !== "undefined" ? localStorage : null;
+          if (!storage || typeof storage.getItem !== "function") {
+            throw new Error("API penyimpanan tidak tersedia.");
+          }
+
+          const raw = storage.getItem(STORAGE_KEY);
+          // Hanya key yang belum tersedia merupakan koleksi kosong normal.
+          if (raw === null) return [];
+          if (typeof raw !== "string") throw new Error("Tipe data storage tidak valid.");
+
+          tahap = "parsing JSON";
+          const books = JSON.parse(raw);
+          tahap = "struktur koleksi";
+          if (!Array.isArray(books)) throw new Error("Koleksi bukan array.");
+
+          const ids = new Set();
+          for (const book of books) {
+            tahap = "struktur metadata buku";
+            if (!book || typeof book !== "object" || Array.isArray(book)) {
+              throw new Error("Record buku tidak valid.");
+            }
+
+            tahap = "identitas buku";
+            if (!Number.isSafeInteger(book.id) || book.id <= 0 || ids.has(book.id)) {
+              throw new Error("ID buku tidak valid atau duplikat.");
+            }
+            ids.add(book.id);
+
+            tahap = "metadata buku";
+            if (!teksValid(book.title) || !teksValid(book.author) ||
+                !teksValid(book.fileName) || typeof book.category !== "string" ||
+                book.category.length !== 1 || !/^[A-Z]$/.test(book.category)) {
+              throw new Error("Metadata buku tidak valid.");
+            }
+          }
+
+          // Pertahankan urutan, ID, metadata, dan field tambahan data lama.
+          return books;
+        } catch (error) {
+          // Jangan mengembalikan [] saat gagal: pemanggil lama dapat menimpa data.
+          // Jangan mencatat isi JSON atau metadata pengguna ke console.
+          const pesan = "Koleksi Admin gagal dibaca atau tidak valid (" + tahap + ").";
+          logWarn(pesan);
+          throw new Error(pesan);
+        }
+      }
+      /* === BATAS function getBooks === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function saveBooks(books, expectedSnapshot = undefined) {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") console.warn(message);
+          } catch (error) {
+            // Logger tidak boleh menutupi kegagalan penyimpanan koleksi.
+          }
+        };
+
+        const teksValid = (value) =>
+          typeof value === "string" && value.trim().length > 0;
+
+        const validasiKoleksi = (data) => {
+          if (!Array.isArray(data)) throw new Error("Koleksi bukan array.");
+          const ids = new Set();
+          const metadata = [];
+          for (const book of data) {
+            if (!book || typeof book !== "object" || Array.isArray(book)) {
+              throw new Error("Record buku tidak valid.");
+            }
+            const { id, title, author, category, fileName } = book;
+            if (!Number.isSafeInteger(id) || id <= 0 || ids.has(id)) {
+              throw new Error("ID buku tidak valid atau duplikat.");
+            }
+            if (!teksValid(title) || !teksValid(author) || !teksValid(fileName) ||
+                typeof category !== "string" || category.length !== 1 ||
+                !/^[A-Z]$/.test(category)) {
+              throw new Error("Metadata buku tidak valid.");
+            }
+            ids.add(id);
+            metadata.push([id, title, author, category, fileName]);
+          }
+          return metadata;
+        };
+
+        let tahap = "validasi koleksi baru";
+        try {
+          const metadata = validasiKoleksi(books);
+          tahap = "serialisasi JSON";
+          const serialized = JSON.stringify(books,
+            /* CALLBACK JSON.stringify() Admin Collection */
+            (key, value) => {
+              if (value === undefined || typeof value === "function" ||
+                  typeof value === "symbol" || typeof value === "bigint" ||
+                  (typeof value === "number" && !Number.isFinite(value))) {
+                throw new Error("Nilai tidak dapat disimpan sebagai JSON.");
+              }
+              return value;
+            }
+            /* Batas CALLBACK JSON.stringify() Admin Collection */
+          );
+          if (typeof serialized !== "string") {
+            throw new Error("Serialisasi koleksi tidak valid.");
+          }
+
+          tahap = "validasi hasil serialisasi";
+          const hasil = validasiKoleksi(JSON.parse(serialized));
+          if (JSON.stringify(hasil) !== JSON.stringify(metadata)) {
+            throw new Error("Metadata berubah selama serialisasi.");
+          }
+
+          tahap = "akses penyimpanan";
+          const storage = typeof localStorage !== "undefined" ? localStorage : null;
+          if (!storage || typeof storage.getItem !== "function" ||
+              typeof storage.setItem !== "function" || typeof getBooks !== "function") {
+            throw new Error("API penyimpanan tidak tersedia.");
+          }
+
+          // Jangan menimpa koleksi yang sudah rusak atau gagal dibaca.
+          tahap = "validasi koleksi lama";
+          const current = getBooks();
+          validasiKoleksi(current);
+
+          // Unit 07 dan 08 nantinya mengirim snapshot sebelum perubahan data.
+          // Parameter opsional menjaga kompatibilitas pemanggil lama.
+          tahap = "pemeriksaan snapshot";
+          if (expectedSnapshot !== undefined &&
+              (typeof expectedSnapshot !== "string" ||
+               JSON.stringify(current) !== expectedSnapshot)) {
+            throw new Error("Koleksi berubah sejak pembacaan awal.");
+          }
+
+          tahap = "penulisan koleksi";
+          storage.setItem(STORAGE_KEY, serialized);
+          return true;
+        } catch (error) {
+          // Pemanggil lama mengabaikan return false; hentikan dengan exception.
+          // Jangan mencatat isi koleksi atau melakukan rollback destruktif.
+          const pesan = "Koleksi Admin gagal disimpan (" + tahap + ").";
+          logWarn(pesan);
+          throw new Error(pesan);
+        }
+      }
+      /* === BATAS function saveBooks === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function addBook() {
+        const owner = addBook;
+        if (owner.inProgress) return false;
+        owner.inProgress = true;
+
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") console.warn(message);
+          } catch (error) {
+            // Logger tidak boleh mengganggu pendaftaran buku Admin.
+          }
+        };
+        const beriTahu = (message) => {
+          try {
+            if (typeof alert === "function") alert(message);
+            else logWarn(message);
+          } catch (error) {
+            logWarn(message);
+          }
+        };
+
+        let tahap = "validasi formulir";
+        let pesanGagal = "Formulir buku Admin tidak tersedia atau tidak valid.";
+        let tersimpan = false;
+        try {
+          // Nonaktifkan pesan lama; callback lama tidak boleh menyentuh pesan baru.
+          const timerLama = owner.messageTimer;
+          const token = {};
+          owner.messageToken = token;
+          owner.messageTimer = null;
+          try {
+            if (timerLama != null && typeof clearTimeout === "function") {
+              clearTimeout(timerLama);
+            }
+          } catch (error) {
+            logWarn("Timer pesan Admin sebelumnya gagal dibatalkan.");
+          }
+
+          const doc = typeof document !== "undefined" ? document : null;
+          if (!doc || typeof doc.getElementById !== "function") {
+            throw new Error(pesanGagal);
+          }
+          const ambilElemen = (id, tag) => {
+            const element = doc.getElementById(id);
+            if (!element || element.nodeType !== 1 || element.id !== id ||
+                element.tagName !== tag) throw new Error("Elemen Admin tidak valid.");
+            return element;
+          };
+
+          let message = null;
+          try {
+            message = ambilElemen("message", "DIV");
+            message.style.display = "none";
+          } catch (error) {
+            message = null;
+            logWarn("Elemen pesan Admin tidak tersedia.");
+          }
+
+          const titleInput = ambilElemen("title", "INPUT");
+          const authorInput = ambilElemen("author", "INPUT");
+          const categoryInput = ambilElemen("category", "SELECT");
+          const fileInput = ambilElemen("bookFile", "INPUT");
+          if (titleInput.type !== "text" || authorInput.type !== "text" ||
+              fileInput.type !== "file" || typeof titleInput.value !== "string" ||
+              typeof authorInput.value !== "string" ||
+              typeof categoryInput.value !== "string") throw new Error(pesanGagal);
+
+          const title = titleInput.value.trim();
+          const author = authorInput.value.trim() || "-";
+          const category = categoryInput.value;
+          if (!title) {
+            beriTahu("Masukkan judul buku.");
+            return false;
+          }
+          if (category.length !== 1 || !/^[A-Z]$/.test(category)) {
+            beriTahu("Pilih kategori A–Z yang valid.");
+            return false;
+          }
+
+          tahap = "validasi file";
+          pesanGagal = "File PDF tidak dapat diperiksa.";
+          const files = fileInput.files;
+          if (!files || files.length !== 1 || !files[0]) {
+            beriTahu("Pilih tepat satu file PDF terlebih dahulu.");
+            return false;
+          }
+          const file = files[0];
+          const nama = typeof file.name === "string" ? file.name.trim() : "";
+          const tipe = typeof file.type === "string" ? file.type.trim().toLowerCase() : null;
+          // Samakan kebijakan metadata PDF dengan jalur Import PDF Index.
+          if (!nama.toLowerCase().endsWith(".pdf") || tipe === null ||
+              (tipe !== "" && tipe !== "application/pdf")) {
+            beriTahu("File harus berekstensi .pdf dan bertipe PDF jika MIME tersedia.");
+            return false;
+          }
+          const MAX_PDF_SIZE = 50 * 1024 * 1024;
+          if (!Number.isSafeInteger(file.size) || file.size <= 0 || file.size > MAX_PDF_SIZE) {
+            beriTahu("File PDF harus berukuran lebih dari 0 byte dan maksimal 50 MB.");
+            return false;
+          }
+
+          tahap = "pembacaan koleksi";
+          pesanGagal = "Koleksi gagal dibaca. Data tidak ditimpa; periksa penyimpanan lokal.";
+          if (typeof getBooks !== "function" || typeof saveBooks !== "function") {
+            throw new Error("API koleksi tidak tersedia.");
+          }
+          const books = getBooks();
+          if (!Array.isArray(books)) throw new Error("Koleksi tidak valid.");
+          const expectedSnapshot = JSON.stringify(books);
+          if (typeof expectedSnapshot !== "string") throw new Error("Snapshot tidak valid.");
+
+          tahap = "pembentukan ID";
+          pesanGagal = "ID buku baru gagal dibentuk. Data tidak disimpan.";
+          const ids = new Set(books.map(book => book.id));
+          let id = Date.now();
+          if (!Number.isSafeInteger(id) || id <= 0) throw new Error("ID tidak valid.");
+          while (ids.has(id)) {
+            if (id === Number.MAX_SAFE_INTEGER) throw new Error("Batas ID tercapai.");
+            id += 1;
+          }
+          books.push({ id, title, author, category, fileName: file.name });
+
+          tahap = "penyimpanan koleksi";
+          pesanGagal = "Metadata buku gagal disimpan. Input dipertahankan; periksa koleksi sebelum mencoba lagi.";
+          if (saveBooks(books, expectedSnapshot) !== true) {
+            throw new Error("Penyimpanan tidak terkonfirmasi.");
+          }
+          tersimpan = true;
+
+          // Setelah commit, kegagalan UI bukan kegagalan penyimpanan.
+          let resetBerhasil = true;
+          for (const input of [titleInput, authorInput, categoryInput, fileInput]) {
+            try {
+              input.value = "";
+              if (input.value !== "") resetBerhasil = false;
+            } catch (error) {
+              resetBerhasil = false;
+            }
+          }
+          let renderBerhasil = false;
+          try {
+            // Unit 09 lama belum mengembalikan Boolean.
+            renderBerhasil = typeof renderBooks === "function" && renderBooks() !== false;
+          } catch (error) {
+            logWarn("Daftar Admin gagal diperbarui setelah penyimpanan.");
+          }
+
+          const pesanSukses = "✅ Metadata buku tersimpan secara lokal. File PDF belum diunggah.";
+          let pesanTerlihat = false;
+          try {
+            if (message && doc.getElementById("message") === message) {
+              message.textContent = pesanSukses;
+              message.style.display = "block";
+              pesanTerlihat = true;
+              if (typeof setTimeout === "function") {
+                owner.messageTimer = setTimeout(
+                  /* CALLBACK setTimeout() Admin Book Success Message */
+                  () => {
+                    try {
+                      if (owner.messageToken !== token) return false;
+                      owner.messageToken = null;
+                      owner.messageTimer = null;
+                      if (doc.getElementById("message") !== message) return false;
+                      message.style.display = "none";
+                      return true;
+                    } catch (error) {
+                      logWarn("Pesan sukses Admin gagal disembunyikan.");
+                      return false;
+                    }
+                  },
+                  /* Batas CALLBACK setTimeout() Admin Book Success Message */
+                  3000
+                );
+              }
+            }
+          } catch (error) {
+            logWarn("Pesan sukses atau timer Admin gagal diperbarui.");
+          }
+          if (!resetBerhasil || !renderBerhasil) {
+            beriTahu("Metadata sudah tersimpan. Formulir atau daftar gagal diperbarui; muat ulang halaman sebelum menambah lagi.");
+          } else if (!pesanTerlihat) {
+            beriTahu(pesanSukses);
+          }
+          return true;
+        } catch (error) {
+          logWarn("Pendaftaran buku Admin mengalami kegagalan (" + tahap + ").");
+          beriTahu(tersimpan
+            ? "Metadata sudah tersimpan. Muat ulang halaman sebelum menambah lagi."
+            : pesanGagal);
+          return tersimpan;
+        } finally {
+          owner.inProgress = false;
+        }
+      }
+      /* === BATAS function addBook === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function deleteBook(id) {
+        const owner = deleteBook;
+        if (owner.inProgress ||
+            (typeof addBook === "function" && addBook.inProgress)) return false;
+        owner.inProgress = true;
+
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") console.warn(message);
+          } catch (error) {
+            // Logger tidak boleh mengganggu penghapusan metadata buku.
+          }
+        };
+        const beriTahu = (message) => {
+          try {
+            if (typeof alert === "function") alert(message);
+            else logWarn(message);
+          } catch (error) {
+            logWarn(message);
+          }
+        };
+
+        let tahap = "validasi ID";
+        let pesanGagal = "ID buku tidak valid.";
+        let terhapus = false;
+        try {
+          // ID lokal berasal dari tombol Hapus yang dibentuk renderBooks().
+          if (!Number.isSafeInteger(id) || id <= 0) {
+            beriTahu(pesanGagal);
+            return false;
+          }
+
+          tahap = "pembacaan koleksi";
+          pesanGagal = "Koleksi gagal dibaca. Metadata tidak dihapus; periksa penyimpanan lokal.";
+          if (typeof getBooks !== "function" || typeof saveBooks !== "function") {
+            throw new Error("API koleksi tidak tersedia.");
+          }
+          const books = getBooks();
+          if (!Array.isArray(books)) throw new Error("Koleksi tidak valid.");
+          const expectedSnapshot = JSON.stringify(books);
+          if (typeof expectedSnapshot !== "string") throw new Error("Snapshot tidak valid.");
+
+          tahap = "identifikasi buku";
+          const target = books.find(
+            /* CALLBACK find() Admin Delete Target */
+            book => book.id === id
+            /* Batas CALLBACK find() Admin Delete Target */
+          );
+          if (!target) {
+            beriTahu("Buku tidak ditemukan dalam koleksi lokal. Muat ulang daftar buku.");
+            return false;
+          }
+          const remaining = books.filter(
+            /* CALLBACK filter() Admin Delete Book */
+            book => book.id !== id
+            /* Batas CALLBACK filter() Admin Delete Book */
+          );
+          pesanGagal = "Identitas buku tidak dapat dipastikan. Metadata tidak dihapus.";
+          if (remaining.length !== books.length - 1) throw new Error("Target tidak unik.");
+
+          tahap = "konfirmasi penghapusan";
+          pesanGagal = "Konfirmasi penghapusan tidak tersedia atau gagal. Metadata tidak dihapus.";
+          if (typeof confirm !== "function") throw new Error("API confirm tidak tersedia.");
+          const yakin = confirm(
+            `Hapus metadata buku "${target.title}" dari koleksi lokal?\n` +
+            `ID: ${id}\n\n` +
+            "Penghapusan ini hanya berlaku pada daftar Admin di browser ini, bukan file PDF/EPUB atau data Supabase."
+          );
+          if (yakin !== true) return false;
+
+          tahap = "penyimpanan koleksi";
+          pesanGagal = "Penghapusan metadata tidak terkonfirmasi. Muat ulang daftar sebelum mencoba lagi.";
+          // Snapshot diambil sebelum dialog konfirmasi, bukan setelahnya.
+          if (saveBooks(remaining, expectedSnapshot) !== true) {
+            throw new Error("Penghapusan tidak terkonfirmasi.");
+          }
+          terhapus = true;
+
+          tahap = "pembaruan daftar";
+          let renderBerhasil = false;
+          try {
+            // Unit 09 lama belum mempunyai kontrak return Boolean.
+            renderBerhasil = typeof renderBooks === "function" && renderBooks() !== false;
+          } catch (error) {
+            logWarn("Daftar Admin gagal diperbarui setelah penghapusan.");
+          }
+          if (!renderBerhasil) {
+            beriTahu("Metadata sudah dihapus. Daftar gagal diperbarui; muat ulang halaman.");
+          }
+          return true;
+        } catch (error) {
+          logWarn("Penghapusan metadata Admin mengalami kegagalan (" + tahap + ").");
+          beriTahu(terhapus
+            ? "Metadata sudah dihapus. Muat ulang halaman."
+            : pesanGagal);
+          return terhapus;
+        } finally {
+          owner.inProgress = false;
+        }
+      }
+      /* === BATAS function deleteBook === */
+
+      /* === TOP LEVEL FUNCTION === */
+      function renderBooks() {
+        const owner = renderBooks;
+        if (owner.inProgress) return false;
+        owner.inProgress = true;
+        const token = {};
+        // Semua callback dari render sebelumnya menjadi kedaluwarsa.
+        owner.renderToken = token;
+
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") console.warn(message);
+          } catch (error) {
+            // Logger tidak boleh mengganggu rendering koleksi Admin.
+          }
+        };
+        const beriTahu = (message) => {
+          try {
+            if (typeof alert === "function") alert(message);
+            else logWarn(message);
+          } catch (error) {
+            logWarn(message);
+          }
+        };
+
+        let doc = null;
+        let list = null;
+        let totalBooks = null;
+        let totalCategories = null;
+        let tahap = "validasi DOM";
+        const ambilElemen = (id, tag) => {
+          const element = doc.getElementById(id);
+          if (!element || element.nodeType !== 1 || element.id !== id ||
+              element.tagName !== tag) throw new Error("Elemen Admin tidak valid.");
+          return element;
+        };
+        const buatElemen = (tag, className, text) => {
+          const element = doc.createElement(tag);
+          if (className) element.className = className;
+          if (text !== undefined) element.textContent = text;
+          return element;
+        };
+        const tampilkanGagal = (pesan) => {
+          // Jangan menampilkan nol ketika jumlah koleksi sebenarnya tidak diketahui.
+          for (const counter of [totalBooks, totalCategories]) {
+            try {
+              if (counter && doc.getElementById(counter.id) === counter) {
+                counter.textContent = "—";
+              }
+            } catch (error) {
+              logWarn("Counter kegagalan Admin tidak dapat diperbarui.");
+            }
+          }
+          try {
+            if (list && doc.getElementById("bookList") === list) {
+              list.textContent = pesan;
+            }
+          } catch (error) {
+            logWarn("Pesan kegagalan daftar Admin tidak dapat ditampilkan.");
+          }
+        };
+
+        try {
+          doc = typeof document !== "undefined" ? document : null;
+          if (!doc || typeof doc.getElementById !== "function") {
+            throw new Error("API DOM tidak tersedia.");
+          }
+          // Ambil masing-masing elemen agar fallback dapat memperbarui yang masih valid.
+          try { list = ambilElemen("bookList", "DIV"); }
+          catch (error) { logWarn("Elemen daftar Admin tidak valid."); }
+          try { totalBooks = ambilElemen("totalBooks", "STRONG"); }
+          catch (error) { logWarn("Counter buku Admin tidak valid."); }
+          try { totalCategories = ambilElemen("totalCategories", "STRONG"); }
+          catch (error) { logWarn("Counter kategori Admin tidak valid."); }
+          if (!list || !totalBooks || !totalCategories ||
+              typeof doc.createElement !== "function" ||
+              typeof doc.createDocumentFragment !== "function" ||
+              typeof list.replaceChildren !== "function" ||
+              typeof list.contains !== "function") {
+            throw new Error("API rendering Admin tidak tersedia.");
+          }
+
+          tahap = "pembacaan koleksi";
+          if (typeof getBooks !== "function") throw new Error("API koleksi tidak tersedia.");
+          const books = getBooks();
+          if (!Array.isArray(books)) throw new Error("Koleksi tidak valid.");
+          const snapshot = JSON.stringify(books);
+          if (typeof snapshot !== "string") throw new Error("Snapshot tidak valid.");
+
+          tahap = "penyusunan daftar";
+          const categories = new Set(books.map(
+            /* CALLBACK map() Admin Category Counter */
+            book => book.category
+            /* Batas CALLBACK map() Admin Category Counter */
+          ));
+          const sorted = books.slice().sort(
+            /* CALLBACK sort() Admin Book Title */
+            (a, b) => a.title.localeCompare(b.title)
+            /* Batas CALLBACK sort() Admin Book Title */
+          );
+          const fragment = doc.createDocumentFragment();
+          if (sorted.length === 0) {
+            const empty = buatElemen("div", "empty", "📚");
+            empty.setAttribute("role", "status");
+            empty.appendChild(buatElemen("br"));
+            empty.appendChild(buatElemen("br"));
+            empty.appendChild(doc.createTextNode("Belum ada buku dalam koleksi."));
+            fragment.appendChild(empty);
+          }
+
+          for (const book of sorted) {
+            const row = buatElemen("div", "book");
+            const detail = buatElemen("div");
+            detail.appendChild(buatElemen("div", "book-title", "📖 " + book.title));
+            const info = buatElemen("div", "book-info",
+              "Penulis: " + book.author + " • Kategori " + book.category);
+            info.appendChild(buatElemen("br"));
+            info.appendChild(doc.createTextNode("📄 " + book.fileName));
+            detail.appendChild(info);
+            row.appendChild(detail);
+
+            const button = buatElemen("button", "delete", "Hapus");
+            button.type = "button";
+            button.setAttribute("aria-label", "Hapus metadata buku " + book.title);
+            const id = book.id;
+            button.addEventListener("click",
+              /* CALLBACK click() Admin Delete Book */
+              () => {
+                try {
+                  if (owner.inProgress || owner.renderToken !== token ||
+                      doc.getElementById("bookList") !== list || !list.contains(button)) {
+                    return false;
+                  }
+                  if (typeof deleteBook !== "function" ||
+                      typeof getBooks !== "function") {
+                    beriTahu("Penghapusan metadata Admin tidak tersedia.");
+                    return false;
+                  }
+                  if (deleteBook.inProgress ||
+                      (typeof addBook === "function" && addBook.inProgress)) return false;
+                  // Jangan menghapus berdasarkan tombol dari snapshot koleksi lama.
+                  const current = getBooks();
+                  if (!Array.isArray(current) || JSON.stringify(current) !== snapshot) {
+                    owner();
+                    beriTahu("Koleksi berubah. Daftar diperbarui jika memungkinkan; pilih ulang buku yang akan dihapus.");
+                    return false;
+                  }
+                  if (owner.renderToken !== token || owner.inProgress ||
+                      doc.getElementById("bookList") !== list || !list.contains(button)) return false;
+                  return deleteBook(id) === true;
+                } catch (error) {
+                  logWarn("Aksi tombol Hapus Admin gagal diproses.");
+                  owner();
+                  beriTahu("Aksi Hapus tidak terkonfirmasi. Periksa daftar sebelum mencoba lagi.");
+                  return false;
+                }
+              }
+              /* Batas CALLBACK click() Admin Delete Book */
+            );
+            row.appendChild(button);
+            fragment.appendChild(row);
+          }
+
+          tahap = "penerapan daftar";
+          if (doc.getElementById("bookList") !== list ||
+              doc.getElementById("totalBooks") !== totalBooks ||
+              doc.getElementById("totalCategories") !== totalCategories) {
+            throw new Error("Identitas DOM berubah.");
+          }
+          // Bangun daftar di luar DOM aktif; jangan menyisipkan metadata sebagai HTML.
+          list.replaceChildren(fragment);
+          totalBooks.textContent = String(books.length);
+          totalCategories.textContent = String(categories.size);
+          return true;
+        } catch (error) {
+          // Daftar lama tidak boleh tetap menjadi sumber aksi Hapus yang aktif.
+          owner.renderToken = null;
+          logWarn("Rendering koleksi Admin gagal (" + tahap + ").");
+          tampilkanGagal(tahap === "pembacaan koleksi"
+            ? "Koleksi gagal dibaca. Data lokal tidak diubah."
+            : "Daftar buku gagal ditampilkan. Muat ulang halaman.");
+          return false;
+        } finally {
+          owner.inProgress = false;
+        }
+      }
+      /* === BATAS function renderBooks === */
+
+      /* === UNIT 10 - UNUSED FUNCTION REMOVED === */
+      // escapeHtml() tidak lagi digunakan setelah secure DOM rendering Unit 09.
+      /* === BATAS UNIT 10 === */
+
+      /* === BOOTSTRAP LOAD THEME === */
+      (() => {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") console.warn(message);
+          } catch (error) {
+            // Logger tidak boleh menghentikan bootstrap koleksi Admin.
+          }
+        };
+
+        try {
+          if (typeof loadTheme !== "function") {
+            logWarn("Function loadTheme() tidak tersedia saat bootstrap Admin.");
+            return false;
+          }
+
+          // Unit 04 bertanggung jawab atas fallback tema dan label tombol.
+          const result = loadTheme();
+          if (result !== true) {
+            logWarn("Inisialisasi tema Admin tidak sepenuhnya berhasil.");
+            return false;
+          }
+          return true;
+        } catch (error) {
+          logWarn("Bootstrap tema Admin gagal dijalankan.");
+          return false;
+        }
+        // Jangan menghentikan bootstrap koleksi atau menulis ulang preferensi.
+      })();
+      /* === BATAS BOOTSTRAP LOAD THEME === */
+      /* === BOOTSTRAP RENDER BOOKS === */
+      (() => {
+        const logWarn = (message) => {
+          try {
+            if (typeof console !== "undefined" && console &&
+                typeof console.warn === "function") console.warn(message);
+          } catch (error) {
+            // Logger tidak boleh mengganggu bootstrap koleksi Admin.
+          }
+        };
+
+        const tampilkanGagal = () => {
+          // Fallback hanya untuk kegagalan pemanggilan atau kontrak bootstrap.
+          // Jangan menimpa hasil rendering yang sedang berlangsung.
+          try {
+            if (typeof renderBooks === "function") {
+              if (renderBooks.inProgress) return;
+              renderBooks.renderToken = null;
+            }
+          } catch (error) {
+            logWarn("Token rendering Admin gagal dinonaktifkan.");
+          }
+
+          const pesan = "Inisialisasi daftar buku gagal. Muat ulang halaman.";
+          for (const [id, tag, text] of [
+            ["totalBooks", "STRONG", "—"],
+            ["totalCategories", "STRONG", "—"],
+            ["bookList", "DIV", pesan]
+          ]) {
+            try {
+              const doc = typeof document !== "undefined" ? document : null;
+              if (!doc || typeof doc.getElementById !== "function") continue;
+              const element = doc.getElementById(id);
+              if (element && element.nodeType === 1 &&
+                  element.id === id && element.tagName === tag) {
+                element.textContent = text;
+              }
+            } catch (error) {
+              logWarn("Fallback bootstrap koleksi Admin gagal diperbarui.");
+            }
+          }
+        };
+
+        try {
+          if (typeof renderBooks !== "function") {
+            logWarn("Function renderBooks() tidak tersedia saat bootstrap Admin.");
+            tampilkanGagal();
+            return false;
+          }
+
+          const result = renderBooks();
+          if (result === true) return true;
+          if (result === false) {
+            // Unit 09 mengelola error state dan guard rendering sendiri.
+            logWarn("Inisialisasi koleksi Admin tidak sepenuhnya berhasil.");
+            return false;
+          }
+
+          logWarn("Kontrak hasil renderBooks() tidak valid saat bootstrap Admin.");
+          tampilkanGagal();
+          return false;
+        } catch (error) {
+          logWarn("Bootstrap koleksi Admin gagal dijalankan.");
+          tampilkanGagal();
+          return false;
+        }
+      })();
+      /* === BATAS BOOTSTRAP RENDER BOOKS === */
+
+    </script>
+
+  </body>
 </html>
